@@ -822,23 +822,100 @@
 
                 </div>
 
+                <!-- ==========================================================
+                     VIEW: FORECAST E SAÚDE COMERCIAL (ETAPA 8)
+                     ========================================================== -->
                 <div id="view-forecast" class="spa-view" style="display: none;">
-                    <div class="card">
-                        <h3 style="margin-bottom: 12px; font-weight: 700;">Previsões de Faturamento (Forecast)</h3>
-                        <p style="color: var(--text-secondary); margin-bottom: 20px;">
-                            Previsões financeiras baseadas em probabilidade e índice de saúde comercial geral da empresa.
-                        </p>
-                        <div class="alert-box" style="border-color: var(--warning); background-color: var(--warning-light); color: var(--warning-dark);">
-                            <div class="alert-icon">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+
+                    <!-- Cabeçalho com seletor de cenário -->
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 24px;">
+                        <div>
+                            <h2 style="font-size: 20px; font-weight: 800; color: var(--text-primary); margin: 0;">📈 Forecast &amp; Saúde Comercial</h2>
+                            <p id="forecast-scenario-label" style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Cenário de Previsão</p>
+                        </div>
+                        <div style="display: flex; gap: 12px; align-items: center;">
+                            <select id="forecast-scenario-filter" class="filter-control" style="height: 38px; min-width: 180px;">
+                                <option value="pessimistic">Cenário Pessimista 🔻</option>
+                                <option value="realistic" selected>Cenário Realista ⚖️</option>
+                                <option value="optimistic">Cenário Otimista 🚀</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- KPIs de Faturamento -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 24px;">
+                        <div class="card" style="padding: 20px; text-align: center; border-bottom: 3px solid #6366f1;">
+                            <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">Forecast do Pipeline</div>
+                            <div id="fc-kpi-pipeline" style="font-size: 22px; font-weight: 800; color: #6366f1;">R$ 0</div>
+                            <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">receita esperada do pipeline</div>
+                        </div>
+                        <div class="card" style="padding: 20px; text-align: center; border-bottom: 3px solid var(--success);">
+                            <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">Receita Mês Atual</div>
+                            <div id="fc-kpi-current" style="font-size: 22px; font-weight: 800; color: var(--success);">R$ 0</div>
+                            <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">ganhos já realizados</div>
+                        </div>
+                        <div class="card" style="padding: 20px; text-align: center; border-bottom: 3px solid var(--primary);">
+                            <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">Mês Anterior</div>
+                            <div id="fc-kpi-lastmonth" style="font-size: 22px; font-weight: 800; color: var(--text-primary);">R$ 0</div>
+                            <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">para comparação</div>
+                        </div>
+                        <div class="card" style="padding: 20px; text-align: center; border-bottom: 3px solid var(--warning);">
+                            <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">Crescimento M/M</div>
+                            <div id="fc-kpi-growth" style="font-size: 22px; font-weight: 800;">0%</div>
+                            <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">vs. mês anterior</div>
+                        </div>
+                    </div>
+
+                    <!-- Linha 2: Projeção Gráfica + Saúde Comercial -->
+                    <div style="display: grid; grid-template-columns: 3fr 2fr; gap: 24px; margin-bottom: 24px;">
+
+                        <!-- Gráfico de Projeção -->
+                        <div class="card" style="padding: 24px;">
+                            <h4 style="font-weight: 700; font-size: 13px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 20px;">
+                                📊 Projeção de Receita — Últimos 2 + Próximos 3 Meses
+                            </h4>
+                            <div id="fc-projection-chart">
+                                <!-- Carregado via JS -->
                             </div>
-                            <div class="alert-content">
-                                <h4>Em Construção</h4>
-                                <p>A inteligência preventiva e o forecast de receitas serão lançados na <strong>Etapa 8 — Forecast, Alertas e Saúde Comercial</strong>.</p>
+                        </div>
+
+                        <!-- Health Score -->
+                        <div class="card" style="padding: 24px;">
+                            <h4 style="font-weight: 700; font-size: 13px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 20px;">
+                                💓 Saúde Comercial
+                            </h4>
+                            <div id="fc-health-score">
+                                <!-- Carregado via JS -->
                             </div>
                         </div>
                     </div>
+
+                    <!-- Linha 3: Pipeline Breakdown + Alertas Inteligentes -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+
+                        <!-- Pipeline Breakdown -->
+                        <div class="card" style="padding: 24px;">
+                            <h4 style="font-weight: 700; font-size: 13px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 20px;">
+                                🔮 Pipeline Ponderado por Probabilidade
+                            </h4>
+                            <div id="fc-pipeline-breakdown" style="display: flex; flex-direction: column; gap: 10px;">
+                                <!-- Carregado via JS -->
+                            </div>
+                        </div>
+
+                        <!-- Alertas Inteligentes -->
+                        <div class="card" style="padding: 24px;">
+                            <h4 style="font-weight: 700; font-size: 13px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 20px;">
+                                🚨 Alertas &amp; Recomendações
+                            </h4>
+                            <div id="fc-alerts">
+                                <!-- Carregado via JS -->
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
+
 
                 <div id="view-ai" class="spa-view" style="display: none;">
                     <div class="card">

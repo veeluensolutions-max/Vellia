@@ -7,6 +7,7 @@ import { Proposals } from "./proposals.js";
 import { Dashboard } from "./dashboard.js";
 import { Goals } from "./goals.js";
 import { Services } from "./services.js";
+import { Forecast } from "./forecast.js";
 
 // Elementos Globais DOM
 const elements = {
@@ -176,6 +177,8 @@ function navigateTo(viewName) {
         Goals.init();
     } else if (viewName === "services") {
         Services.init();
+    } else if (viewName === "forecast") {
+        Forecast.init();
     }
 }
 

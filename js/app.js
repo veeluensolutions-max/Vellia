@@ -6,6 +6,7 @@ import { Kanban } from "./kanban.js";
 import { Proposals } from "./proposals.js";
 import { Dashboard } from "./dashboard.js";
 import { Goals } from "./goals.js";
+import { Services } from "./services.js";
 
 // Elementos Globais DOM
 const elements = {
@@ -173,6 +174,8 @@ function navigateTo(viewName) {
         Proposals.init();
     } else if (viewName === "goals") {
         Goals.init();
+    } else if (viewName === "services") {
+        Services.init();
     }
 }
 

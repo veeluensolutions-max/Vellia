@@ -202,6 +202,38 @@ const INITIAL_PROPOSALS = [
     }
 ];
 
+const INITIAL_SERVICES = [
+    {
+        id: "srv_1",
+        name: "Sistema de Gestão (ERP)",
+        category: "Software",
+        baseMargin: 65, // %
+        isActive: true
+    },
+    {
+        id: "srv_2",
+        name: "Ponto de Venda (PDV)",
+        category: "Software",
+        baseMargin: 70,
+        isActive: true
+    },
+    {
+        id: "srv_3",
+        name: "Aplicativo Mobile",
+        category: "Desenvolvimento",
+        baseMargin: 50,
+        isActive: true
+    },
+    {
+        id: "srv_4",
+        name: "Consultoria e Implantação",
+        category: "Serviço",
+        baseMargin: 85,
+        isActive: true
+    }
+];
+
+
 // Inicialização segura do localStorage
 function initStorage() {
     if (!localStorage.getItem("comercial_users")) {
@@ -220,8 +252,8 @@ function initStorage() {
     if (!localStorage.getItem("comercial_goals")) {
         localStorage.setItem("comercial_goals", JSON.stringify([]));
     }
-    if (!localStorage.getItem("comercial_services")) {
-        localStorage.setItem("comercial_services", JSON.stringify([]));
+    if (!localStorage.getItem("comercial_services") || localStorage.getItem("comercial_services") === "[]") {
+        localStorage.setItem("comercial_services", JSON.stringify(INITIAL_SERVICES));
     }
 }
 
@@ -402,6 +434,41 @@ export const Store = {
         localStorage.setItem("comercial_logs", JSON.stringify([]));
         this.addLog("sistema@vellia.com", "LOGS_CLEARED", "Os logs de auditoria foram limpos.", "WARN");
     },
+
+    // CATÁLOGO DE SERVIÇOS (ETAPA 7)
+    getServices() {
+        return JSON.parse(localStorage.getItem("comercial_services")) || [];
+    },
+
+    getServiceById(id) {
+        return this.getServices().find(s => s.id === id);
+    },
+
+    addService(data) {
+        const services = this.getServices();
+        const newService = {
+            id: `srv_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+            name: data.name,
+            category: data.category || "Geral",
+            baseMargin: parseFloat(data.baseMargin) || 50,
+            isActive: true
+        };
+        services.push(newService);
+        localStorage.setItem("comercial_services", JSON.stringify(services));
+        return newService;
+    },
+
+    updateService(id, data) {
+        const services = this.getServices();
+        const idx = services.findIndex(s => s.id === id);
+        if (idx !== -1) {
+            services[idx] = { ...services[idx], ...data };
+            localStorage.setItem("comercial_services", JSON.stringify(services));
+            return true;
+        }
+        return false;
+    },
+
 
     // Métodos utilitários para resetar banco se necessário
     resetAll() {

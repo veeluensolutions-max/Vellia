@@ -1,0 +1,188 @@
+import { Store } from "./store.js";
+import { CRM } from "./crm.js";
+
+let draggedLeadId = null;
+
+export const Kanban = {
+    init() {
+        this.renderKanban();
+    },
+
+    renderKanban() {
+        const leads = Store.getLeads();
+        
+        // Colunas e IDs
+        const columns = {
+            "Contato": document.getElementById("cards-Contato"),
+            "Lead Gerado": document.getElementById("cards-Lead-Gerado"),
+            "Lead Qualificado": document.getElementById("cards-Lead-Qualificado"),
+            "Proposta Enviada": document.getElementById("cards-Proposta-Enviada"),
+            "Negociação": document.getElementById("cards-Negociacao"),
+            "Cliente Fechado": document.getElementById("cards-Cliente-Fechado"),
+            "Cliente Perdido": document.getElementById("cards-Cliente-Perdido")
+        };
+
+        const counters = {
+            "Contato": document.getElementById("count-Contato"),
+            "Lead Gerado": document.getElementById("count-Lead-Gerado"),
+            "Lead Qualificado": document.getElementById("count-Lead-Qualificado"),
+            "Proposta Enviada": document.getElementById("count-Proposta-Enviada"),
+            "Negociação": document.getElementById("count-Negociacao"),
+            "Cliente Fechado": document.getElementById("count-Cliente-Fechado"),
+            "Cliente Perdido": document.getElementById("count-Cliente-Perdido")
+        };
+
+        // Limpar colunas e contadores
+        Object.keys(columns).forEach(stage => {
+            if (columns[stage]) columns[stage].innerHTML = "";
+            if (counters[stage]) counters[stage].textContent = "0";
+        });
+
+        // Contadores locais
+        const stageCounts = {
+            "Contato": 0,
+            "Lead Gerado": 0,
+            "Lead Qualificado": 0,
+            "Proposta Enviada": 0,
+            "Negociação": 0,
+            "Cliente Fechado": 0,
+            "Cliente Perdido": 0
+        };
+
+        // Renderizar cada Lead
+        leads.forEach(lead => {
+            const container = columns[lead.stage];
+            if (!container) return;
+
+            // Incrementar contagem
+            stageCounts[lead.stage]++;
+
+            // Calcular dias sem contato
+            let daysNoContact = 0;
+            if (lead.interactions && lead.interactions.length > 0) {
+                const sortedInts = [...lead.interactions].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+                const diffTime = Math.abs(new Date() - new Date(sortedInts[0].timestamp));
+                daysNoContact = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            } else if (lead.stageHistory && lead.stageHistory.length > 0) {
+                const sortedHist = [...lead.stageHistory].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+                const diffTime = Math.abs(new Date() - new Date(sortedHist[0].timestamp));
+                daysNoContact = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            }
+
+            const card = document.createElement("div");
+            card.className = "kanban-card";
+            card.setAttribute("draggable", "true");
+            card.setAttribute("data-id", lead.id);
+
+            // Ícone e estilo para dias sem contato
+            let timeColor = "var(--text-muted)";
+            if (daysNoContact >= 7 && lead.stage !== "Cliente Fechado" && lead.stage !== "Cliente Perdido") {
+                timeColor = "var(--danger)";
+            } else if (daysNoContact >= 3 && lead.stage !== "Cliente Fechado" && lead.stage !== "Cliente Perdido") {
+                timeColor = "var(--warning)";
+            }
+
+            card.innerHTML = `
+                <div class="kanban-card-company">${lead.company}</div>
+                <div class="kanban-card-contact">${lead.contact} • <span style="font-size:11px; color:var(--text-muted);">${lead.role || 'Sem cargo'}</span></div>
+                <div class="kanban-card-details">
+                    <span class="kanban-card-tag">${lead.segment}</span>
+                    <span class="kanban-card-time" style="color: ${timeColor}; font-weight: 500;">
+                        🕒 ${daysNoContact === 0 ? 'Hoje' : `${daysNoContact} dias`}
+                    </span>
+                </div>
+            `;
+
+            // Clique para detalhes
+            card.addEventListener("click", () => {
+                CRM.openLeadDrawer(lead.id);
+            });
+
+            // Eventos de arrastar
+            card.addEventListener("dragstart", (e) => this.handleDragStart(e, lead.id));
+            card.addEventListener("dragend", (e) => this.handleDragEnd(e));
+
+            container.appendChild(card);
+        });
+
+        // Atualizar contadores no topo das colunas
+        Object.keys(counters).forEach(stage => {
+            if (counters[stage]) {
+                counters[stage].textContent = stageCounts[stage];
+            }
+        });
+
+        // Configurar zonas de Drop (containers de cards de cada coluna)
+        Object.keys(columns).forEach(stage => {
+            const container = columns[stage];
+            if (!container) return;
+
+            container.addEventListener("dragover", (e) => this.handleDragOver(e));
+            container.addEventListener("dragenter", (e) => this.handleDragEnter(e, container));
+            container.addEventListener("dragleave", (e) => this.handleDragLeave(e, container));
+            container.addEventListener("drop", (e) => this.handleDrop(e, stage, container));
+        });
+    },
+
+    // ==========================================================================
+    // TRATADORES DE EVENTO DRAG & DROP
+    // ==========================================================================
+
+    handleDragStart(e, leadId) {
+        draggedLeadId = leadId;
+        e.dataTransfer.setData("text/plain", leadId);
+        e.currentTarget.classList.add("dragging");
+    },
+
+    handleDragEnd(e) {
+        e.currentTarget.classList.remove("dragging");
+        // Remover classe de drop em todas as colunas
+        document.querySelectorAll(".kanban-col-cards").forEach(col => {
+            col.classList.remove("drag-over");
+        });
+        draggedLeadId = null;
+    },
+
+    handleDragOver(e) {
+        e.preventDefault(); // Necessário para permitir Drop
+    },
+
+    handleDragEnter(e, container) {
+        e.preventDefault();
+        container.classList.add("drag-over");
+    },
+
+    handleDragLeave(e, container) {
+        // Verificar se está realmente saindo do container e não de um filho (card)
+        if (!container.contains(e.relatedTarget)) {
+            container.classList.remove("drag-over");
+        }
+    },
+
+    handleDrop(e, targetStage, container) {
+        e.preventDefault();
+        container.classList.remove("drag-over");
+        
+        const leadId = e.dataTransfer.getData("text/plain") || draggedLeadId;
+        if (!leadId) return;
+
+        const lead = Store.getLeadById(leadId);
+        if (!lead) return;
+
+        // Se o estágio for o mesmo, não faz nada
+        if (lead.stage === targetStage) return;
+
+        // Registrar listener único para recarregar Kanban quando a mudança ocorrer
+        const onStageChanged = () => {
+            this.renderKanban();
+            window.removeEventListener("vellia:stageChanged", onStageChanged);
+            window.removeEventListener("vellia:stageCancelled", onStageChanged);
+        };
+
+        window.addEventListener("vellia:stageChanged", onStageChanged, { once: true });
+        window.addEventListener("vellia:stageCancelled", onStageChanged, { once: true });
+
+        // Chamar fluxo de transição com justificativa do CRM
+        CRM.triggerStageChange(leadId, targetStage);
+    }
+};

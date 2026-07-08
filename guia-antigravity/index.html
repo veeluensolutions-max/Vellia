@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guia de Uso | Antigravity IDE</title>
+    <meta name="description" content="Guia completo de uso do Antigravity - o assistente de programação com IA do Google DeepMind integrado ao seu editor de código.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="bg-grid"></div>
+    <div class="bg-glow bg-glow--1"></div>
+    <div class="bg-glow bg-glow--2"></div>
+    <div class="bg-glow bg-glow--3"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="navbar__brand">
+            <div class="navbar__logo">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                    <circle cx="14" cy="14" r="12" stroke="url(#logo-grad)" stroke-width="2.5"/>
+                    <path d="M14 6L14 22M8 14H20" stroke="url(#logo-grad)" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="14" cy="14" r="4" fill="url(#logo-grad)" opacity="0.6"/>
+                    <defs>
+                        <linearGradient id="logo-grad" x1="0" y1="0" x2="28" y2="28">
+                            <stop stop-color="#818cf8"/>
+                            <stop offset="1" stop-color="#c084fc"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+            <span class="navbar__title">Antigravity</span>
+            <span class="navbar__badge">Guide</span>
+        </div>
+        <ul class="navbar__links">
+            <li><a href="#inicio" class="navbar__link active">Início</a></li>
+            <li><a href="#recursos" class="navbar__link">Recursos</a></li>
+            <li><a href="#ferramentas" class="navbar__link">Ferramentas</a></li>
+            <li><a href="#comandos" class="navbar__link">Comandos</a></li>
+            <li><a href="#dicas" class="navbar__link">Dicas</a></li>
+        </ul>
+        <button class="navbar__menu-btn" id="menuBtn" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </button>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobileMenu">
+        <ul class="mobile-menu__links">
+            <li><a href="#inicio" class="mobile-menu__link">Início</a></li>
+            <li><a href="#recursos" class="mobile-menu__link">Recursos</a></li>
+            <li><a href="#ferramentas" class="mobile-menu__link">Ferramentas</a></li>
+            <li><a href="#comandos" class="mobile-menu__link">Comandos</a></li>
+            <li><a href="#dicas" class="mobile-menu__link">Dicas</a></li>
+        </ul>
+    </div>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero" id="inicio">
+            <div class="hero__content">
+                <div class="hero__eyebrow">
+                    <span class="hero__pill">✨ Powered by Google DeepMind</span>
+                </div>
+                <h1 class="hero__title">
+                    O seu assistente de
+                    <span class="hero__title--gradient">programação com IA</span>
+                    direto no editor.
+                </h1>
+                <p class="hero__subtitle">
+                    O Antigravity é uma extensão agentica de IA integrada ao seu IDE. 
+                    Ele pode editar código, executar comandos, navegar na web, gerar imagens 
+                    e muito mais — tudo por conversa natural.
+                </p>
+                <div class="hero__actions">
+                    <a href="#recursos" class="btn btn--primary">
+                        <span>Explorar Recursos</span>
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </a>
+                    <a href="#ferramentas" class="btn btn--ghost">Ver Ferramentas</a>
+                </div>
+                <div class="hero__stats">
+                    <div class="hero__stat">
+                        <span class="hero__stat-number" data-count="15">0</span><span class="hero__stat-plus">+</span>
+                        <span class="hero__stat-label">Ferramentas</span>
+                    </div>
+                    <div class="hero__stat-divider"></div>
+                    <div class="hero__stat">
+                        <span class="hero__stat-number" data-count="5">0</span>
+                        <span class="hero__stat-label">Slash Commands</span>
+                    </div>
+                    <div class="hero__stat-divider"></div>
+                    <div class="hero__stat">
+                        <span class="hero__stat-number" data-count="100">0</span><span class="hero__stat-plus">%</span>
+                        <span class="hero__stat-label">Autônomo</span>
+                    </div>
+                </div>
+            </div>
+            <div class="hero__visual">
+                <div class="terminal">
+                    <div class="terminal__header">
+                        <div class="terminal__dots">
+                            <span class="terminal__dot terminal__dot--red"></span>
+                            <span class="terminal__dot terminal__dot--yellow"></span>
+                            <span class="terminal__dot terminal__dot--green"></span>
+                        </div>
+                        <span class="terminal__title">Antigravity Chat</span>
+                    </div>
+                    <div class="terminal__body">
+                        <div class="chat-msg chat-msg--user">
+                            <div class="chat-msg__avatar chat-msg__avatar--user">U</div>
+                            <div class="chat-msg__bubble">Crie uma landing page moderna com dark mode</div>
+                        </div>
+                        <div class="chat-msg chat-msg--ai">
+                            <div class="chat-msg__avatar chat-msg__avatar--ai">AG</div>
+                            <div class="chat-msg__bubble">
+                                <span class="typing-indicator">
+                                    <span></span><span></span><span></span>
+                                </span>
+                                <span class="chat-msg__text" id="typingText"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="section" id="recursos">
+            <div class="section__header">
+                <span class="section__eyebrow">Recursos</span>
+                <h2 class="section__title">Tudo que você precisa,<br><span class="text-gradient">em um só lugar.</span></h2>
+                <p class="section__desc">O Antigravity combina múltiplas capacidades de IA para acelerar seu fluxo de desenvolvimento.</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card feature-card--large">
+                    <div class="feature-card__icon feature-card__icon--purple">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                            <polyline points="14,2 14,8 20,8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                            <line x1="10" y1="9" x2="8" y2="9"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-card__title">Edição Inteligente de Código</h3>
+                    <p class="feature-card__desc">Edita arquivos com precisão cirúrgica. Pode fazer substituições pontuais ou criar arquivos inteiros do zero, mantendo o contexto do projeto.</p>
+                    <div class="feature-card__code">
+                        <code><span class="code-kw">replace_file_content</span>(<span class="code-str">"arquivo.ts"</span>, ...)</code>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-card__icon feature-card__icon--blue">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="4,17 10,11 4,5"/>
+                            <line x1="12" y1="19" x2="20" y2="19"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-card__title">Terminal Integrado</h3>
+                    <p class="feature-card__desc">Executa comandos diretamente no seu sistema: instala pacotes, roda testes, builds e deploys.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-card__icon feature-card__icon--cyan">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-card__title">Pesquisa na Web</h3>
+                    <p class="feature-card__desc">Busca documentação, soluções e referências na internet sem você sair do editor.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-card__icon feature-card__icon--pink">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21,15 16,10 5,21"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-card__title">Geração de Imagens</h3>
+                    <p class="feature-card__desc">Cria imagens, mockups e assets visuais com IA generativa, direto no seu projeto.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-card__icon feature-card__icon--orange">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                            <line x1="8" y1="21" x2="16" y2="21"/>
+                            <line x1="12" y1="17" x2="12" y2="21"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-card__title">Navegador Integrado</h3>
+                    <p class="feature-card__desc">Abre páginas web, preenche formulários, clica em botões e navega — tudo automatizado.</p>
+                </div>
+                <div class="feature-card feature-card--large">
+                    <div class="feature-card__icon feature-card__icon--green">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-card__title">Planejamento Inteligente</h3>
+                    <p class="feature-card__desc">Para tarefas complexas, cria planos de implementação detalhados, pede sua aprovação e executa passo a passo. Você mantém o controle total.</p>
+                    <div class="feature-card__flow">
+                        <span class="flow-step">Pesquisa</span>
+                        <span class="flow-arrow">→</span>
+                        <span class="flow-step">Plano</span>
+                        <span class="flow-arrow">→</span>
+                        <span class="flow-step">Aprovação</span>
+                        <span class="flow-arrow">→</span>
+                        <span class="flow-step">Execução</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tools Section -->
+        <section class="section section--dark" id="ferramentas">
+            <div class="section__header">
+                <span class="section__eyebrow">Ferramentas</span>
+                <h2 class="section__title">Ferramentas poderosas<br><span class="text-gradient">ao seu comando.</span></h2>
+                <p class="section__desc">Conheça todas as ferramentas disponíveis e como usá-las por linguagem natural.</p>
+            </div>
+            <div class="tools-container">
+                <div class="tool-category">
+                    <h3 class="tool-category__title">
+                        <span class="tool-category__icon">📁</span>
+                        Arquivos
+                    </h3>
+                    <div class="tool-list">
+                        <div class="tool-item" data-tool="write">
+                            <div class="tool-item__header">
+                                <code class="tool-item__name">write_to_file</code>
+                                <span class="tool-item__tag">Criar</span>
+                            </div>
+                            <p class="tool-item__desc">Cria novos arquivos com conteúdo completo</p>
+                            <div class="tool-item__example">
+                                <span class="tool-item__example-label">Exemplo:</span>
+                                <em>"Crie um arquivo utils.ts com funções de formatação"</em>
+                            </div>
+                        </div>
+                        <div class="tool-item" data-tool="edit">
+                            <div class="tool-item__header">
+                                <code class="tool-item__name">replace_file_content</code>
+                                <span class="tool-item__tag">Editar</span>
+                            </div>
+                            <p class="tool-item__desc">Edita trechos específicos de um arquivo existente</p>
+                            <div class="tool-item__example">
+                                <span class="tool-item__example-label">Exemplo:</span>
+                                <em>"Mude a cor do botão de azul para roxo"</em>
+                            </div>
+                        </div>
+                        <div class="tool-item" data-tool="view">
+                            <div class="tool-item__header">
+                                <code class="tool-item__name">view_file</code>
+                                <span class="tool-item__tag">Ler</span>
+                            </div>
+                            <p class="tool-item__desc">Lê o conteúdo de arquivos de texto e imagens</p>
+                            <div class="tool-item__example">
+                                <span class="tool-item__example-label">Exemplo:</span>
+                                <em>"Mostre o conteúdo do arquivo package.json"</em>
+                            </div>
+                        </div>
+                        <div class="tool-item" data-tool="list">
+                            <div class="tool-item__header">
+                                <code class="tool-item__name">list_dir</code>
+                                <span class="tool-item__tag">Navegar</span>
+                            </div>
+                            <p class="tool-item__desc">Lista os arquivos e pastas de um diretório</p>
+                            <div class="tool-item__example">
+                                <span class="tool-item__example-label">Exemplo:</span>
+                                <em>"O que tem na pasta src?"</em>
+                            </div>
+                        </div>
+                        <div class="tool-item" data-tool="grep">
+                            <div class="tool-item__header">
+                                <code class="tool-item__name">grep_search</code>
+                                <span class="tool-item__tag">Buscar</span>
+                            </div>
+                            <p class="tool-item__desc">Busca padrões de texto dentro dos arquivos do projeto</p>
+                            <div class="tool-item__example">
+                                <span class="tool-item__example-label">Exemplo:</span>
+                                <em>"Onde usamos a função handleSubmit?"</em>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tool-category">
+                    <h3 class="tool-category__title">
+                        <span class="tool-category__icon">⚡</span>
+                        Execução
+                    </h3>
+                    <div class="tool-list">
+                        <div class="tool-item" data-tool="cmd">
+                            <div class="tool-item__header">
+                                <code class="tool-item__name">run_command</code>
+                                <span class="tool-item__tag">Terminal</span>
+                            </div>
+                            <p class="tool-item__desc">Executa comandos no terminal do seu sistema</p>
+                            <div class="tool-item__example">
+                                <span class="tool-item__example-label">Exemplo:</span>
+                                <em>"Instale o pacote axios e rode os testes"</em>
+                            </div>
+                        </div>
+                        <div class="tool-item" data-tool="browser">
+                            <div class="tool-item__header">
+                                <code class="tool-item__name">browser_subagent</code>
+                                <span class="tool-item__tag">Navegador</span>
+                            </div>
+                            <p class="tool-item__desc">Controla um navegador para interagir com páginas web</p>
+                            <div class="tool-item__example">
+                                <span class="tool-item__example-label">Exemplo:</span>
+                                <em>"Abra o site e faça login com essas credenciais"</em>
+                            </div>
+                        </div>
+                        <div class="tool-item" data-tool="schedule">
+                            <div class="tool-item__header">
+                                <code class="tool-item__name">schedule</code>
+                                <span class="tool-item__tag">Timer</span>
+                            </div>
+                            <p class="tool-item__desc">Agenda timers e tarefas recorrentes (cron)</p>
+                            <div class="tool-item__example">
+                                <span class="tool-item__example-label">Exemplo:</span>
+                                <em>"A cada 5 minutos verifique o status do deploy"</em>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tool-category">
+                    <h3 class="tool-category__title">
+                        <span class="tool-category__icon">🌐</span>
+                        Web & Pesquisa
+                    </h3>
+                    <div class="tool-list">
+                        <div class="tool-item" data-tool="search">
+                            <div class="tool-item__header">
+                                <code class="tool-item__name">search_web</code>
+                                <span class="tool-item__tag">Pesquisar</span>
+                            </div>
+                            <p class="tool-item__desc">Faz buscas na web e retorna resultados resumidos</p>
+                            <div class="tool-item__example">
+                                <span class="tool-item__example-label">Exemplo:</span>
+                                <em>"Pesquise como configurar Prisma com PostgreSQL"</em>
+                            </div>
+                        </div>
+                        <div class="tool-item" data-tool="url">
+                            <div class="tool-item__header">
+                                <code class="tool-item__name">read_url_content</code>
+                                <span class="tool-item__tag">URL</span>
+                            </div>
+                            <p class="tool-item__desc">Lê o conteúdo de uma URL e converte para texto</p>
+                            <div class="tool-item__example">
+                                <span class="tool-item__example-label">Exemplo:</span>
+                                <em>"Leia a documentação em https://docs.example.com"</em>
+                            </div>
+                        </div>
+                        <div class="tool-item" data-tool="img">
+                            <div class="tool-item__header">
+                                <code class="tool-item__name">generate_image</code>
+                                <span class="tool-item__tag">Imagem</span>
+                            </div>
+                            <p class="tool-item__desc">Gera imagens com IA a partir de descrições em texto</p>
+                            <div class="tool-item__example">
+                                <span class="tool-item__example-label">Exemplo:</span>
+                                <em>"Gere um ícone minimalista de um foguete"</em>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slash Commands -->
+        <section class="section" id="comandos">
+            <div class="section__header">
+                <span class="section__eyebrow">Slash Commands</span>
+                <h2 class="section__title">Atalhos poderosos<br><span class="text-gradient">na ponta dos dedos.</span></h2>
+                <p class="section__desc">Digite esses comandos no chat para ativar workflows especializados.</p>
+            </div>
+            <div class="commands-grid">
+                <div class="command-card">
+                    <div class="command-card__header">
+                        <code class="command-card__cmd">/goal</code>
+                        <div class="command-card__glow"></div>
+                    </div>
+                    <h3 class="command-card__title">Modo Objetivo</h3>
+                    <p class="command-card__desc">Para tarefas longas e complexas. O agente trabalha de forma contínua até atingir o objetivo completo, sem parar no meio.</p>
+                    <div class="command-card__usecase">
+                        <span class="command-card__usecase-label">Ideal para:</span>
+                        Refatorações grandes, migrações, tarefas overnight
+                    </div>
+                </div>
+                <div class="command-card">
+                    <div class="command-card__header">
+                        <code class="command-card__cmd">/schedule</code>
+                        <div class="command-card__glow"></div>
+                    </div>
+                    <h3 class="command-card__title">Agendar Tarefas</h3>
+                    <p class="command-card__desc">Configura tarefas recorrentes ou timers únicos. Perfeito para monitoramento e automações periódicas.</p>
+                    <div class="command-card__usecase">
+                        <span class="command-card__usecase-label">Ideal para:</span>
+                        Monitorar deploys, health checks, verificações periódicas
+                    </div>
+                </div>
+                <div class="command-card">
+                    <div class="command-card__header">
+                        <code class="command-card__cmd">/grill-me</code>
+                        <div class="command-card__glow"></div>
+                    </div>
+                    <h3 class="command-card__title">Entrevista Interativa</h3>
+                    <p class="command-card__desc">O agente faz perguntas para alinhar decisões de design e requisitos antes de começar a implementar.</p>
+                    <div class="command-card__usecase">
+                        <span class="command-card__usecase-label">Ideal para:</span>
+                        Novos projetos, decisões de arquitetura, requisitos vagos
+                    </div>
+                </div>
+                <div class="command-card">
+                    <div class="command-card__header">
+                        <code class="command-card__cmd">/learn</code>
+                        <div class="command-card__glow"></div>
+                    </div>
+                    <h3 class="command-card__title">Aprender Padrões</h3>
+                    <p class="command-card__desc">Ensina o agente a lembrar de padrões, convenções ou configurações específicas do seu projeto.</p>
+                    <div class="command-card__usecase">
+                        <span class="command-card__usecase-label">Ideal para:</span>
+                        Após corrigir o agente, setups complexos, convenções do time
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tips Section -->
+        <section class="section section--dark" id="dicas">
+            <div class="section__header">
+                <span class="section__eyebrow">Dicas Pro</span>
+                <h2 class="section__title">Extraia o máximo<br><span class="text-gradient">do Antigravity.</span></h2>
+                <p class="section__desc">Técnicas para tornar suas interações mais eficientes e resultados mais precisos.</p>
+            </div>
+            <div class="tips-container">
+                <div class="tip-card">
+                    <span class="tip-card__number">01</span>
+                    <h3 class="tip-card__title">Seja Específico</h3>
+                    <p class="tip-card__desc">Quanto mais detalhes você fornecer, melhor o resultado. Em vez de "faça um site", diga "crie uma landing page com hero section, dark mode, e seção de preços com 3 planos".</p>
+                    <div class="tip-card__comparison">
+                        <div class="tip-card__bad">
+                            <span class="tip-card__label tip-card__label--bad">❌ Vago</span>
+                            <p>"Faça um formulário"</p>
+                        </div>
+                        <div class="tip-card__good">
+                            <span class="tip-card__label tip-card__label--good">✅ Específico</span>
+                            <p>"Crie um formulário de cadastro com campos nome, email e senha, com validação e feedback visual"</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="tip-card">
+                    <span class="tip-card__number">02</span>
+                    <h3 class="tip-card__title">Itere Incrementalmente</h3>
+                    <p class="tip-card__desc">Não tente fazer tudo de uma vez. Comece com a estrutura básica, depois peça melhorias pontuais como "adicione animações", "melhore as cores", "torne responsivo".</p>
+                </div>
+                <div class="tip-card">
+                    <span class="tip-card__number">03</span>
+                    <h3 class="tip-card__title">Use Referências</h3>
+                    <p class="tip-card__desc">Aponte para arquivos existentes como referência: "Siga o mesmo padrão do componente Header.tsx" ou "Use o mesmo estilo de animação da página de login".</p>
+                </div>
+                <div class="tip-card">
+                    <span class="tip-card__number">04</span>
+                    <h3 class="tip-card__title">Aproveite o Contexto</h3>
+                    <p class="tip-card__desc">O Antigravity vê quais arquivos você tem abertos no editor. Abra os arquivos relevantes antes de pedir alterações para dar mais contexto.</p>
+                </div>
+                <div class="tip-card">
+                    <span class="tip-card__number">05</span>
+                    <h3 class="tip-card__title">Revise os Planos</h3>
+                    <p class="tip-card__desc">Para tarefas complexas, o agente cria um plano de implementação. Revise com atenção antes de aprovar — é mais fácil corrigir no plano do que no código.</p>
+                </div>
+                <div class="tip-card">
+                    <span class="tip-card__number">06</span>
+                    <h3 class="tip-card__title">Ensine com /learn</h3>
+                    <p class="tip-card__desc">Quando corrigir o agente, use <code>/learn</code> para que ele memorize a preferência. Na próxima vez, ele já saberá fazer do jeito certo.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="cta-section">
+            <div class="cta-content">
+                <h2 class="cta-title">Pronto para <span class="text-gradient">decolar</span>?</h2>
+                <p class="cta-desc">Comece a usar o Antigravity agora mesmo. Basta abrir o chat no seu editor e começar a conversar.</p>
+                <div class="cta-shortcut">
+                    <kbd>Ctrl</kbd> <span>+</span> <kbd>Shift</kbd> <span>+</span> <kbd>P</kbd>
+                    <span class="cta-shortcut__label">→ "Antigravity: Open Chat"</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer__content">
+            <div class="footer__brand">
+                <span class="footer__logo">Antigravity</span>
+                <p class="footer__tagline">Assistente de programação com IA do Google DeepMind</p>
+            </div>
+            <div class="footer__links">
+                <a href="#inicio">Início</a>
+                <a href="#recursos">Recursos</a>
+                <a href="#ferramentas">Ferramentas</a>
+                <a href="#comandos">Comandos</a>
+                <a href="#dicas">Dicas</a>
+            </div>
+            <div class="footer__copy">
+                <p>Guia criado com ❤️ usando Antigravity &bull; 2026</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

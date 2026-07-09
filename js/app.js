@@ -14,6 +14,7 @@ import { DataExport } from "./export.js";
 import { Team } from "./team.js";
 import { Performance } from "./performance.js";
 import { WhatsApp } from "./whatsapp.js";
+import { Pricing } from "./pricing.js";
 
 // Elementos Globais DOM
 const elements = {
@@ -49,6 +50,7 @@ function initApp() {
     setupEventListeners();
     setupTheme();
     WhatsApp.init();
+    Pricing.init();
     checkSession();
 }
 

@@ -854,10 +854,8 @@
                             </h4>
                             <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 20px;">Classificação estratégica baseada no crescimento de vendas (Eixo Y) e participação no faturamento (Eixo X).</p>
                             
-                            <div class="bcg-wrapper">
-                                <div id="bcg-matrix-container" class="bcg-matrix">
-                                    <!-- Renderizado via JS -->
-                                </div>
+                            <div class="bcg-wrapper" style="height: 300px; position: relative; width: 100%;">
+                                <canvas id="chart-bcg-matrix"></canvas>
                             </div>
                         </div>
 
@@ -883,11 +881,12 @@
                                 <thead>
                                     <tr>
                                         <th>Produto/Serviço</th>
-                                        <th>Categoria</th>
-                                        <th>Receita Gerada</th>
-                                        <th>Share (%)</th>
-                                        <th>Crescimento</th>
-                                        <th>Margem Est.</th>
+                                        <th>Qtd. Vendida</th>
+                                        <th>Preço Tabela (R$)</th>
+                                        <th>Ticket Médio (R$)</th>
+                                        <th>Faturamento (R$)</th>
+                                        <th>Ciclo Médio (Dias)</th>
+                                        <th>Classificação BCG</th>
                                     </tr>
                                 </thead>
                                 <tbody id="services-table-body">
@@ -961,7 +960,12 @@
                             <h4 style="font-weight: 700; font-size: 13px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 20px;">
                                 💓 Saúde Comercial
                             </h4>
-                            <div id="fc-health-score">
+                            <div id="fc-health-score" style="position: relative; height: 180px; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+                                <canvas id="chart-health-score" style="max-height: 140px;"></canvas>
+                                <div id="health-score-value" style="font-size: 32px; font-weight: 800; margin-top: -40px;">0</div>
+                                <div id="health-score-label" style="font-size: 14px; font-weight: 600; margin-top: 4px;"></div>
+                            </div>
+                            <div id="health-score-metrics" style="margin-top: 10px; font-size: 12px; color: var(--text-muted); display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                                 <!-- Carregado via JS -->
                             </div>
                         </div>

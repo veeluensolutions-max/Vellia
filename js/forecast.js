@@ -251,43 +251,50 @@ export const Forecast = {
         else if (score >= 60) { scoreColor = "#f59e0b"; scoreLabel = "Bom"; scoreIcon = "🟡"; }
         else if (score >= 40) { scoreColor = "#f97316"; scoreLabel = "Regular"; scoreIcon = "🟠"; }
 
-        const dashArray = Math.round((score / 100) * 283); // Circunferência do círculo r=45 → 2π×45≈283
+        // Gauge usando Chart.js
+        const ctx = document.getElementById("chart-health-score")?.getContext("2d");
+        if (ctx) {
+            if (window.healthScoreChart) window.healthScoreChart.destroy();
+            window.healthScoreChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [score, 100 - score],
+                        backgroundColor: [scoreColor, 'var(--bg-surface)'],
+                        borderWidth: 0,
+                        circumference: 180,
+                        rotation: 270
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%',
+                    plugins: { tooltip: { enabled: false }, legend: { display: false } }
+                }
+            });
+        }
 
-        container.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 32px; flex-wrap: wrap;">
-                <!-- SVG Gauge Circular -->
-                <div style="display: flex; flex-direction: column; align-items: center; flex-shrink: 0;">
-                    <svg width="110" height="110" viewBox="0 0 110 110">
-                        <circle cx="55" cy="55" r="45" fill="none" stroke="var(--bg-surface)" stroke-width="10"/>
-                        <circle cx="55" cy="55" r="45" fill="none" stroke="${scoreColor}" stroke-width="10"
-                            stroke-dasharray="${dashArray} 283"
-                            stroke-dashoffset="71"
-                            stroke-linecap="round"
-                            transform="rotate(-90, 55, 55)"
-                            style="transition: stroke-dasharray 1.2s ease;">
-                        </circle>
-                        <text x="55" y="52" text-anchor="middle" fill="${scoreColor}" font-size="22" font-weight="800" font-family="Inter, sans-serif">${score}</text>
-                        <text x="55" y="68" text-anchor="middle" fill="var(--text-muted)" font-size="9" font-family="Inter, sans-serif">/ 100</text>
-                    </svg>
-                    <div style="font-size: 13px; font-weight: 700; color: ${scoreColor}; margin-top: 4px;">${scoreIcon} ${scoreLabel}</div>
+        const scoreVal = document.getElementById("health-score-value");
+        if(scoreVal) { scoreVal.textContent = score; scoreVal.style.color = scoreColor; }
+
+        const scoreLbl = document.getElementById("health-score-label");
+        if(scoreLbl) { scoreLbl.textContent = `${scoreIcon} ${scoreLabel}`; scoreLbl.style.color = scoreColor; }
+
+        const metricsContainer = document.getElementById("health-score-metrics");
+        if(metricsContainer) {
+            metricsContainer.innerHTML = [
+                { label: "Taxa de Conversão", val: `${(convRate * 100).toFixed(1)}%`, color: convRate >= 0.3 ? "var(--success)" : "var(--danger)" },
+                { label: "Pipeline Ativo", val: `${open} propostas`, color: open > 0 ? "var(--primary)" : "var(--text-muted)" },
+                { label: "Leads Quentes", val: `${activeLeads - coldLeads}`, color: "var(--success)" },
+                { label: "Oportunidades Perdidas", val: `${lost}`, color: "var(--danger)" }
+            ].map(m => `
+                <div style="background: var(--bg-surface); padding: 10px; border-radius: var(--radius-sm);">
+                    <div style="font-size: 10px; text-transform: uppercase;">${m.label}</div>
+                    <div style="font-size: 14px; font-weight: 700; color: ${m.color}; mt-2">${m.val}</div>
                 </div>
-                
-                <!-- Métricas -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; flex: 1; min-width: 220px;">
-                    ${[
-                        { label: "Taxa de Conversão", val: `${(convRate * 100).toFixed(1)}%`, color: convRate >= 0.3 ? "var(--success)" : "var(--danger)" },
-                        { label: "Pipeline Ativo", val: `${open} propostas`, color: open > 0 ? "var(--primary)" : "var(--text-muted)" },
-                        { label: "Leads Quentes", val: `${activeLeads - coldLeads}`, color: "var(--success)" },
-                        { label: "Leads Frios (>14d)", val: `${coldLeads}`, color: coldLeads > 2 ? "var(--danger)" : "var(--text-muted)" }
-                    ].map(m => `
-                        <div style="background: var(--bg-app); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px;">
-                            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">${m.label}</div>
-                            <div style="font-size: 18px; font-weight: 800; color: ${m.color};">${m.val}</div>
-                        </div>
-                    `).join("")}
-                </div>
-            </div>
-        `;
+            `).join("");
+        }
     },
 
     // ===========================================================================

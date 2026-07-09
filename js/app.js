@@ -519,21 +519,7 @@ function setupSellerQuickActions() {
     }
 }
 
-// ==========================================================================
-// TEMA (DARK/LIGHT MODE)
-// ==========================================================================
 
-function setupTheme() {
-    const savedTheme = localStorage.getItem("vellia_theme") || "light";
-    document.documentElement.setAttribute("data-theme", savedTheme);
-}
-
-function toggleTheme() {
-    const currentTheme = document.documentElement.getAttribute("data-theme") || "light";
-    const newTheme = currentTheme === "light" ? "dark" : "light";
-    document.documentElement.setAttribute("data-theme", newTheme);
-    localStorage.setItem("vellia_theme", newTheme);
-}
 
 // ==========================================================================
 // CONFIGURAÇÃO DOS EVENT LISTENERS

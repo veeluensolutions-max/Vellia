@@ -548,8 +548,6 @@ export const Proposals = {
         this.renderStats();
         this.renderTable();
         this.renderLossAnalysis();
-    },
-        this.renderLossAnalysis();
 
         // Notificar demais módulos
         window.dispatchEvent(new CustomEvent("vellia:proposalUpdated"));

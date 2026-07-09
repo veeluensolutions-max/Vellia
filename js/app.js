@@ -13,6 +13,7 @@ import { Notifications } from "./notifications.js";
 import { DataExport } from "./export.js";
 import { Team } from "./team.js";
 import { Performance } from "./performance.js";
+import { WhatsApp } from "./whatsapp.js";
 
 // Elementos Globais DOM
 const elements = {
@@ -47,6 +48,7 @@ const elements = {
 function initApp() {
     setupEventListeners();
     setupTheme();
+    WhatsApp.init();
     checkSession();
 }
 
@@ -612,6 +614,26 @@ function setupEventListeners() {
             }
         });
     }
+
+    // Ouvir disparos do simulador de WhatsApp para atualizar visões ativas
+    window.addEventListener("vellia:waSent", () => {
+        const currentHash = window.location.hash.replace("#", "") || "dashboard";
+        if (currentHash === "dashboard") {
+            const user = Auth.getCurrentUser();
+            if (user && user.role === "seller") {
+                updateDashboardCounters();
+            } else {
+                Dashboard.init();
+                updateDashboardCounters();
+            }
+        } else if (currentHash === "performance") {
+            Performance.init();
+        } else if (currentHash === "team") {
+            Team.init();
+        } else if (currentHash === "goals") {
+            Goals.init();
+        }
+    });
 }
 
 // Iniciar a aplicação quando o DOM estiver pronto

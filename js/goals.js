@@ -266,8 +266,15 @@ export const Goals = {
             const sent = myProps.length;
             const convRate = sent > 0 ? Math.round((won / sent) * 100) : 0;
             const goalPct = goals.meta_revenue > 0 ? Math.min(Math.round((revenue / goals.meta_revenue) * 100), 100) : 0;
-            const score = revenue + (won * 1000) + (sent * 100);
-            return { ...u, won, revenue, sent, convRate, goalPct, score };
+            
+            // Contar quantos WhatsApp foram enviados por este vendedor
+            const waCount = Store.getLeads().reduce((total, lead) => {
+                const myWa = (lead.interactions || []).filter(int => int.type === "WhatsApp" && int.userEmail === u.email).length;
+                return total + myWa;
+            }, 0);
+
+            const score = revenue + (won * 1000) + (sent * 100) + (waCount * 5);
+            return { ...u, won, revenue, sent, convRate, goalPct, score, waCount };
         }).sort((a, b) => b.score - a.score);
 
         const medals = ["🥇", "🥈", "🥉"];
@@ -288,6 +295,7 @@ export const Goals = {
                         <span style="font-size: 11px; color: var(--text-muted);">📝 ${r.sent} propostas</span>
                         <span style="font-size: 11px; color: var(--success);">✅ ${r.won} ganhos</span>
                         <span style="font-size: 11px; color: var(--text-muted);">📈 ${r.convRate}% conv.</span>
+                        <span style="font-size: 11px; color: #25d366; font-weight: 600;">💬 ${r.waCount || 0} zap</span>
                     </div>
                     <div style="margin-top: 8px;">
                         <div style="height: 5px; background: var(--bg-app); border-radius: 99px; overflow: hidden;">

@@ -54,6 +54,25 @@ export const Proposals = {
         const btnLose = document.getElementById("btn-proposal-lose");
         if (btnLose) btnLose.addEventListener("click", () => this.openLossModal());
 
+        const btnWa = document.getElementById("btn-proposal-wa");
+        if (btnWa) {
+            btnWa.addEventListener("click", () => {
+                if (!activeProposalId) return;
+                const proposal = Store.getProposalById(activeProposalId);
+                if (!proposal) return;
+                
+                const leads = Store.getLeads();
+                const lead = leads.find(l => l.company.toLowerCase() === proposal.company.toLowerCase());
+                
+                if (lead) {
+                    this.closeDetailModal();
+                    window.WhatsApp?.openModalForProposal(lead.id, proposal.id);
+                } else {
+                    alert("Aviso: Nenhum contato associado a esta empresa para puxar telefone.");
+                }
+            });
+        }
+
         // Modal de perda
         const btnCloseLoss = document.getElementById("btn-close-loss-modal");
         if (btnCloseLoss) btnCloseLoss.addEventListener("click", () => this.closeLossModal());
@@ -401,9 +420,11 @@ export const Proposals = {
         // Mostrar/ocultar botões de ação conforme status
         const btnWin = document.getElementById("btn-proposal-win");
         const btnLose = document.getElementById("btn-proposal-lose");
+        const btnWa = document.getElementById("btn-proposal-wa");
         const isPending = proposal.status === "Enviada" || proposal.status === "Em Negociação";
         if (btnWin) btnWin.style.display = isPending ? "flex" : "none";
         if (btnLose) btnLose.style.display = isPending ? "flex" : "none";
+        if (btnWa) btnWa.style.display = isPending ? "flex" : "none";
 
         document.getElementById("proposal-detail-modal")?.classList.add("open");
         document.getElementById("proposal-detail-overlay").style.display = "block";

@@ -417,10 +417,14 @@ export const VelliaAI = {
                         text: `🔔 **Insight Proativo:** Detectei ${ctx.coldLeads.length > 0 ? `**${ctx.coldLeads.length} lead(s) frio(s)**` : ""}${ctx.coldLeads.length > 0 && ctx.expiringProps.length > 0 ? " e " : ""}${ctx.expiringProps.length > 0 ? `**${ctx.expiringProps.length} proposta(s) vencendo em breve**` : ""} que precisam de atenção.\n\nDigite "**alertas**" para ver os detalhes ou "**próximas ações**" para saber o que fazer agora.`,
                         type: "warning"
                     };
+
                     chatHistory.push(proactive);
                     renderMessage(proactive, container);
                 }
             }, 1500);
+
+            // Popula os Insights do Dia no painel lateral
+            this.renderDailyInsights(container);
 
             // Chips de atalho
             chips.forEach(chip => {
@@ -463,7 +467,95 @@ export const VelliaAI = {
             chatHistory.push(aiMsg);
             renderMessage(aiMsg, container);
         }, delay);
+    },
+
+    renderDailyInsights(chatContainer) {
+        const insightsContainer = document.getElementById("ai-insights-container");
+        if (!insightsContainer) return;
+        
+        const ctx = analyzeContext();
+        insightsContainer.innerHTML = "";
+        
+        const insights = [];
+        
+        // Insight 1: Risco de Churn ou Leads Frios
+        if (ctx.atRiskProps && ctx.atRiskProps.length > 0) {
+            insights.push({
+                icon: "⚠️",
+                title: "Propostas em Risco",
+                desc: `Você tem ${ctx.atRiskProps.length} proposta(s) com alto risco de perda.`,
+                action: "Revisar Propostas",
+                route: "proposals",
+                command: "risco"
+            });
+        } else if (ctx.coldLeads.length > 0) {
+            insights.push({
+                icon: "🧊",
+                title: "Leads Frios",
+                desc: `${ctx.coldLeads.length} lead(s) sem contato há mais de 14 dias.`,
+                action: "Ver Leads",
+                route: "crm",
+                command: "leads frios"
+            });
+        }
+
+        // Insight 2: Metas ou Scoring
+        if (ctx.scoredLeads && ctx.scoredLeads.length > 0) {
+            const top = ctx.scoredLeads[0];
+            insights.push({
+                icon: "🔥",
+                title: "Lead Quente",
+                desc: `${top.company} está com score alto (${top._score}). Boa chance de fechamento.`,
+                action: "Detalhes do Lead",
+                route: "crm",
+                command: "melhores leads"
+            });
+        } else {
+            insights.push({
+                icon: "🎯",
+                title: "Progresso",
+                desc: `Confira como está sua meta do mês.`,
+                action: "Ver Meta",
+                route: "dashboard",
+                command: "meta"
+            });
+        }
+        
+        // Insight 3: Dica de Negócio
+        if (ctx.openProps.length > 0) {
+            insights.push({
+                icon: "💰",
+                title: "Pipeline Ativo",
+                desc: `Você tem ${ctx.openProps.length} proposta(s) aberta(s).`,
+                action: "Ver Resumo",
+                route: "proposals",
+                command: "resumo"
+            });
+        } else {
+            insights.push({
+                icon: "🔍",
+                title: "Prospectar",
+                desc: "Seu pipeline está vazio. É hora de prospectar!",
+                action: "Novo Lead",
+                route: "crm",
+                command: "próximas ações"
+            });
+        }
+
+        insightsContainer.innerHTML = insights.map(ins => `
+            <div style="background: var(--bg-app); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border-color)'" onclick="document.getElementById('ai-chat-input').value='${ins.command}'; document.getElementById('ai-chat-form').dispatchEvent(new Event('submit'))">
+                <div style="display: flex; gap: 10px; align-items: flex-start;">
+                    <div style="font-size: 18px;">${ins.icon}</div>
+                    <div>
+                        <div style="font-weight: 700; font-size: 12px; color: var(--text-primary); margin-bottom: 4px;">${ins.title}</div>
+                        <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">${ins.desc}</div>
+                        <span style="font-size: 10px; font-weight: 700; color: var(--primary);">Ask: "${ins.command}" →</span>
+                    </div>
+                </div>
+            </div>
+        `).join("");
     }
 };
-e x p o r t   {   a n a l y z e C o n t e x t   } ;  
+e x p o r t   {   a n a l y z e C o n t e x t   } ; 
+ 
  

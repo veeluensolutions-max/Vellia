@@ -563,10 +563,19 @@ function setupEventListeners() {
         toggleTheme();
     });
 
-    // Mobile Sidebar Hamburguer
+    // Sidebar Hamburger (Mobile & Desktop)
     elements.menuToggleBtn.addEventListener("click", () => {
-        elements.sidebar.classList.add("open");
-        elements.sidebarOverlay.classList.add("open");
+        if (window.innerWidth <= 768) {
+            elements.sidebar.classList.add("open");
+            elements.sidebarOverlay.classList.add("open");
+        } else {
+            const wrapper = document.querySelector(".app-wrapper");
+            if (wrapper) {
+                wrapper.classList.toggle("sidebar-collapsed");
+                // Disparar redimensionamento para ajustar gráficos após a transição
+                setTimeout(() => window.dispatchEvent(new Event('resize')), 300);
+            }
+        }
     });
 
     // Mobile Overlay Click

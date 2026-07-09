@@ -1,6 +1,8 @@
 import { Store } from "./store.js";
 import { Auth } from "./auth.js";
 
+const charts = {};
+
 export const Dashboard = {
     init() {
         this.renderAll();
@@ -69,9 +71,16 @@ export const Dashboard = {
     // ===========================================================================
     // FUNIL DE VENDAS (BARRAS HORIZONTAIS SVG)
     // ===========================================================================
+    // ===========================================================================
+    // FUNIL DE VENDAS (CHART.JS)
+    // ===========================================================================
     renderFunnelChart(leads) {
-        const container = document.getElementById("chart-funnel");
-        if (!container) return;
+        const canvas = document.getElementById("chart-funnel");
+        if (!canvas) return;
+
+        if (charts.funnel) {
+            charts.funnel.destroy();
+        }
 
         const stages = [
             { label: "Contato", color: "#94a3b8" },
@@ -83,170 +92,217 @@ export const Dashboard = {
             { label: "Cliente Perdido", color: "#ef4444" }
         ];
 
-        const counts = stages.map(s => ({
-            ...s,
-            count: leads.filter(l => l.stage === s.label).length
-        }));
+        const labels = stages.map(s => s.label);
+        const data = stages.map(s => leads.filter(l => l.stage === s.label).length);
+        const bgColors = stages.map(s => s.color);
 
-        const max = Math.max(...counts.map(c => c.count), 1);
-
-        container.innerHTML = counts.map(item => {
-            const pct = Math.round((item.count / max) * 100);
-            return `
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-                    <div style="width: 130px; font-size: 12px; font-weight: 500; color: var(--text-secondary); text-align: right; flex-shrink: 0;">${item.label}</div>
-                    <div style="flex-grow: 1; height: 28px; background: var(--bg-app); border-radius: 6px; overflow: hidden; position: relative;">
-                        <div style="height: 100%; width: ${pct}%; background: ${item.color}; border-radius: 6px; transition: width 0.7s cubic-bezier(0.4,0,0.2,1); display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; min-width: ${item.count > 0 ? '28px' : '0'};">
-                            ${item.count > 0 ? `<span style="font-size: 11px; font-weight: 700; color: #fff;">${item.count}</span>` : ''}
-                        </div>
-                        ${item.count === 0 ? '<span style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 11px; color: var(--text-muted); font-weight: 500;">0</span>' : ''}
-                    </div>
-                </div>
-            `;
-        }).join("");
+        charts.funnel = new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Leads',
+                    data: data,
+                    backgroundColor: bgColors,
+                    borderRadius: 6,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { display: false, grid: { display: false } },
+                    y: { 
+                        grid: { display: false },
+                        ticks: {
+                            color: '#64748b',
+                            font: { family: 'Inter, sans-serif', weight: 500, size: 12 }
+                        }
+                    }
+                }
+            }
+        });
     },
 
     // ===========================================================================
-    // GRÁFICO DE RECEITA MENSAL (BARRAS VERTICAIS SVG)
+    // GRÁFICO DE RECEITA MENSAL (CHART.JS)
     // ===========================================================================
     renderRevenueChart(proposals) {
-        const container = document.getElementById("chart-revenue");
-        if (!container) return;
+        const canvas = document.getElementById("chart-revenue");
+        if (!canvas) return;
 
-        // Últimos 6 meses
+        if (charts.revenue) {
+            charts.revenue.destroy();
+        }
+
         const months = [];
         for (let i = 5; i >= 0; i--) {
             const d = new Date();
             d.setMonth(d.getMonth() - i);
             months.push({
-                label: d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", ""),
+                label: d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "").toUpperCase(),
                 year: d.getFullYear(),
                 month: d.getMonth()
             });
         }
 
-        const monthlyRevenue = months.map(m => {
-            const total = proposals
+        const labels = months.map(m => m.label);
+        const data = months.map(m => {
+            return proposals
                 .filter(p => p.status === "Ganho" && p.closedAt)
                 .filter(p => {
                     const d = new Date(p.closedAt);
                     return d.getMonth() === m.month && d.getFullYear() === m.year;
                 })
                 .reduce((sum, p) => sum + (p.value || 0), 0);
-            return { ...m, total };
         });
 
-        const maxVal = Math.max(...monthlyRevenue.map(m => m.total), 1);
-        const chartH = 160;
-        const fmt = v => v >= 1000 ? `R$ ${(v / 1000).toFixed(0)}k` : `R$ ${v}`;
+        const ctx = canvas.getContext('2d');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 250);
+        gradient.addColorStop(0, 'rgba(16, 185, 129, 0.4)');
+        gradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
 
-        container.innerHTML = `
-            <div style="display: flex; align-items: flex-end; gap: 12px; height: ${chartH}px; padding: 0 8px;">
-                ${monthlyRevenue.map(m => {
-                    const barH = Math.max((m.total / maxVal) * (chartH - 30), m.total > 0 ? 8 : 4);
-                    const opacity = m.total > 0 ? 1 : 0.3;
-                    return `
-                        <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end;">
-                            ${m.total > 0 ? `<div style="font-size: 10px; font-weight: 700; color: var(--success);">${fmt(m.total)}</div>` : ''}
-                            <div style="width: 100%; height: ${barH}px; background: linear-gradient(180deg, #10b981, #059669); border-radius: 6px 6px 0 0; opacity: ${opacity}; transition: height 0.7s ease;"></div>
-                            <div style="font-size: 11px; color: var(--text-muted); font-weight: 500;">${m.label}</div>
-                        </div>
-                    `;
-                }).join("")}
-            </div>
-        `;
+        charts.revenue = new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Receita (R$)',
+                    data: data,
+                    borderColor: '#10b981',
+                    backgroundColor: gradient,
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#10b981',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(context.parsed.y);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#64748b', font: { family: 'Inter, sans-serif', weight: 500 } }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: {
+                            color: '#64748b',
+                            font: { family: 'Inter, sans-serif' },
+                            callback: function(value) {
+                                return value >= 1000 ? 'R$ ' + (value/1000) + 'k' : 'R$ ' + value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
     },
 
     // ===========================================================================
-    // DONUT DE CONVERSÃO (SVG)
+    // DONUT DE CONVERSÃO (CHART.JS)
     // ===========================================================================
     renderConversionDonut(proposals) {
-        const container = document.getElementById("chart-conversion");
-        if (!container) return;
+        const canvas = document.getElementById("chart-conversion");
+        if (!canvas) return;
+
+        if (charts.conversion) {
+            charts.conversion.destroy();
+        }
 
         const total = proposals.length;
         const won = proposals.filter(p => p.status === "Ganho").length;
         const lost = proposals.filter(p => p.status === "Perdido").length;
         const pending = total - won - lost;
-        const convRate = total > 0 ? Math.round((won / total) * 100) : 0;
 
         if (total === 0) {
-            container.innerHTML = `<p style="text-align:center; color: var(--text-muted); padding: 40px 0; font-size: 13px;">Sem propostas ainda.</p>`;
-            return;
+            // Render an empty gray donut or text if preferred, but for now just empty chart
         }
 
-        // SVG Donut
-        const r = 60, cx = 80, cy = 80;
-        const circumference = 2 * Math.PI * r;
-        const wonPct = (won / total);
-        const lostPct = (lost / total);
-        const pendingPct = (pending / total);
-
-        const wonDash = wonPct * circumference;
-        const lostDash = lostPct * circumference;
-        const pendingDash = pendingPct * circumference;
-
-        const wonOffset = 0;
-        const lostOffset = -wonDash;
-        const pendingOffset = -(wonDash + lostDash);
-
-        container.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
-                <div style="position: relative; width: 160px; height: 160px; flex-shrink: 0;">
-                    <svg width="160" height="160" viewBox="0 0 160 160">
-                        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--bg-app)" stroke-width="18"/>
-                        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#10b981" stroke-width="18"
-                            stroke-dasharray="${wonDash} ${circumference - wonDash}"
-                            stroke-dashoffset="${wonOffset}"
-                            transform="rotate(-90 ${cx} ${cy})" stroke-linecap="round"/>
-                        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#ef4444" stroke-width="18"
-                            stroke-dasharray="${lostDash} ${circumference - lostDash}"
-                            stroke-dashoffset="${lostOffset}"
-                            transform="rotate(-90 ${cx} ${cy})" stroke-linecap="round"/>
-                        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#f59e0b" stroke-width="18"
-                            stroke-dasharray="${pendingDash} ${circumference - pendingDash}"
-                            stroke-dashoffset="${pendingOffset}"
-                            transform="rotate(-90 ${cx} ${cy})" stroke-linecap="round"/>
-                        <text x="${cx}" y="${cy - 6}" text-anchor="middle" fill="var(--text-primary)" font-size="22" font-weight="800">${convRate}%</text>
-                        <text x="${cx}" y="${cy + 14}" text-anchor="middle" fill="var(--text-muted)" font-size="10">conversão</text>
-                    </svg>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 12px; flex-grow: 1;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <div style="width: 12px; height: 12px; border-radius: 50%; background: #10b981; flex-shrink: 0;"></div>
-                        <div>
-                            <div style="font-size: 13px; font-weight: 600; color: var(--text-primary);">Ganhos</div>
-                            <div style="font-size: 11px; color: var(--text-muted);">${won} proposta${won !== 1 ? 's' : ''} · ${Math.round(wonPct * 100)}%</div>
-                        </div>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <div style="width: 12px; height: 12px; border-radius: 50%; background: #ef4444; flex-shrink: 0;"></div>
-                        <div>
-                            <div style="font-size: 13px; font-weight: 600; color: var(--text-primary);">Perdidos</div>
-                            <div style="font-size: 11px; color: var(--text-muted);">${lost} proposta${lost !== 1 ? 's' : ''} · ${Math.round(lostPct * 100)}%</div>
-                        </div>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <div style="width: 12px; height: 12px; border-radius: 50%; background: #f59e0b; flex-shrink: 0;"></div>
-                        <div>
-                            <div style="font-size: 13px; font-weight: 600; color: var(--text-primary);">Em Aberto</div>
-                            <div style="font-size: 11px; color: var(--text-muted);">${pending} proposta${pending !== 1 ? 's' : ''} · ${Math.round(pendingPct * 100)}%</div>
-                        </div>
-                    </div>
-                    <div style="padding-top: 8px; border-top: 1px solid var(--border-color); font-size: 12px; color: var(--text-muted);">
-                        Total: <strong style="color: var(--text-primary);">${total} propostas</strong>
-                    </div>
-                </div>
-            </div>
-        `;
+        charts.conversion = new Chart(canvas, {
+            type: 'doughnut',
+            data: {
+                labels: ['Ganhos', 'Perdidos', 'Em Aberto'],
+                datasets: [{
+                    data: [won, lost, pending],
+                    backgroundColor: ['#10b981', '#ef4444', '#f59e0b'],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '75%',
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            color: '#64748b',
+                            font: { family: 'Inter, sans-serif', weight: 500 },
+                            usePointStyle: true,
+                            padding: 20
+                        }
+                    }
+                }
+            },
+            plugins: [{
+                id: 'textCenter',
+                beforeDraw: function(chart) {
+                    if (total === 0) return;
+                    var width = chart.width,
+                        height = chart.height,
+                        ctx = chart.ctx;
+            
+                    ctx.restore();
+                    var fontSize = (height / 114).toFixed(2);
+                    ctx.font = "800 " + fontSize + "em Inter, sans-serif";
+                    ctx.textBaseline = "middle";
+                    ctx.fillStyle = "#1e293b";
+            
+                    var convRate = Math.round((won / total) * 100);
+                    var text = convRate + "%",
+                        textX = Math.round((chart.chartArea.left + chart.chartArea.right - ctx.measureText(text).width) / 2),
+                        textY = chart.chartArea.top + (chart.chartArea.bottom - chart.chartArea.top) / 2;
+            
+                    ctx.fillText(text, textX, textY);
+                    ctx.save();
+                }
+            }]
+        });
     },
 
     // ===========================================================================
-    // LEADS POR SEGMENTO (BARRAS HORIZONTAIS)
+    // LEADS POR SEGMENTO (CHART.JS POLAR AREA)
     // ===========================================================================
     renderSegmentBreakdown(leads) {
-        const container = document.getElementById("chart-segments");
-        if (!container) return;
+        const canvas = document.getElementById("chart-segments");
+        if (!canvas) return;
+
+        if (charts.segments) {
+            charts.segments.destroy();
+        }
 
         const segMap = {};
         leads.forEach(l => {
@@ -255,30 +311,48 @@ export const Dashboard = {
         });
 
         const sorted = Object.entries(segMap).sort((a, b) => b[1] - a[1]).slice(0, 6);
-        const max = Math.max(...sorted.map(s => s[1]), 1);
+        const labels = sorted.map(s => s[0]);
+        const data = sorted.map(s => s[1]);
+        const colors = [
+            'rgba(99, 102, 241, 0.8)',
+            'rgba(139, 92, 246, 0.8)',
+            'rgba(245, 158, 11, 0.8)',
+            'rgba(16, 185, 129, 0.8)',
+            'rgba(249, 115, 22, 0.8)',
+            'rgba(239, 68, 68, 0.8)'
+        ];
 
-        const colors = ["#6366f1", "#8b5cf6", "#f59e0b", "#10b981", "#f97316", "#ef4444"];
-
-        if (sorted.length === 0) {
-            container.innerHTML = `<p style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px 0;">Nenhum lead cadastrado.</p>`;
-            return;
-        }
-
-        container.innerHTML = sorted.map(([seg, count], i) => {
-            const pct = Math.round((count / max) * 100);
-            const color = colors[i % colors.length];
-            return `
-                <div style="margin-bottom: 12px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                        <span style="font-size: 12px; font-weight: 600; color: var(--text-primary);">${seg}</span>
-                        <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">${count} lead${count !== 1 ? 's' : ''}</span>
-                    </div>
-                    <div style="height: 8px; background: var(--bg-app); border-radius: 99px; overflow: hidden;">
-                        <div style="height: 100%; width: ${pct}%; background: ${color}; border-radius: 99px; transition: width 0.7s ease;"></div>
-                    </div>
-                </div>
-            `;
-        }).join("");
+        charts.segments = new Chart(canvas, {
+            type: 'polarArea',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: colors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            color: '#64748b',
+                            font: { family: 'Inter, sans-serif', size: 11 },
+                            usePointStyle: true
+                        }
+                    }
+                },
+                scales: {
+                    r: {
+                        ticks: { display: false },
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    }
+                }
+            }
+        });
     },
 
     // ===========================================================================

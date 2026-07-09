@@ -8,6 +8,11 @@ import { Dashboard } from "./dashboard.js";
 import { Goals } from "./goals.js";
 import { Services } from "./services.js";
 import { Forecast } from "./forecast.js";
+import { VelliaAI } from "./ai.js";
+import { Notifications } from "./notifications.js";
+import { DataExport } from "./export.js";
+import { Team } from "./team.js";
+import { Performance } from "./performance.js";
 
 // Elementos Globais DOM
 const elements = {
@@ -76,6 +81,10 @@ function showAppShell(user) {
     // Ir para a view ativa atual ou padrão (dashboard)
     const currentHash = window.location.hash.replace("#", "") || "dashboard";
     navigateTo(currentHash);
+
+    // Inicializar Notificações e Exportação
+    Notifications.init();
+    DataExport.init();
 }
 
 // Configura quais botões do menu lateral aparecem baseado nas regras do perfil
@@ -173,12 +182,18 @@ function navigateTo(viewName) {
         Kanban.init();
     } else if (viewName === "proposals") {
         Proposals.init();
+    } else if (viewName === "team") {
+        Team.init();
+    } else if (viewName === "performance") {
+        Performance.init();
     } else if (viewName === "goals") {
         Goals.init();
     } else if (viewName === "services") {
         Services.init();
     } else if (viewName === "forecast") {
         Forecast.init();
+    } else if (viewName === "ai") {
+        VelliaAI.init();
     }
 }
 
@@ -498,6 +513,22 @@ function setupSellerQuickActions() {
             setTimeout(() => alert("Arraste o lead desejado para a coluna 'Cliente Fechado' para consolidar a venda!"), 300);
         });
     }
+}
+
+// ==========================================================================
+// TEMA (DARK/LIGHT MODE)
+// ==========================================================================
+
+function setupTheme() {
+    const savedTheme = localStorage.getItem("vellia_theme") || "light";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+}
+
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute("data-theme") || "light";
+    const newTheme = currentTheme === "light" ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", newTheme);
+    localStorage.setItem("vellia_theme", newTheme);
 }
 
 // ==========================================================================

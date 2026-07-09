@@ -162,7 +162,7 @@ const INITIAL_PROPOSALS = [
         validUntil: new Date(Date.now() + 3600000 * 24 * 10).toISOString(),
         competitor: "",
         lossReason: "",
-        notes: "Apresentação agendada para a próxima semana.",
+        notes: "Apresentação agendada para a próxima semana. Cliente comentou que o preço pode estar caro em comparação com a concorrência.",
         createdBy: "vendedor@vellia.com",
         createdAt: new Date(Date.now() - 3600000 * 24 * 5).toISOString()
     },
@@ -233,6 +233,26 @@ const INITIAL_SERVICES = [
     }
 ];
 
+const INITIAL_GOALS = [
+    {
+        userEmail: "vendedor@vellia.com",
+        period: "2026-07",
+        targets: {
+            revenue: 150000,
+            proposals: 20,
+            leadsQualified: 30
+        }
+    },
+    {
+        userEmail: "gerente@vellia.com",
+        period: "2026-07",
+        targets: {
+            revenue: 300000,
+            proposals: 50,
+            leadsQualified: 80
+        }
+    }
+];
 
 // Inicialização segura do localStorage
 function initStorage() {
@@ -249,8 +269,8 @@ function initStorage() {
     if (!localStorage.getItem("comercial_proposals") || localStorage.getItem("comercial_proposals") === "[]") {
         localStorage.setItem("comercial_proposals", JSON.stringify(INITIAL_PROPOSALS));
     }
-    if (!localStorage.getItem("comercial_goals")) {
-        localStorage.setItem("comercial_goals", JSON.stringify([]));
+    if (!localStorage.getItem("comercial_goals") || localStorage.getItem("comercial_goals") === "[]") {
+        localStorage.setItem("comercial_goals", JSON.stringify(INITIAL_GOALS));
     }
     if (!localStorage.getItem("comercial_services") || localStorage.getItem("comercial_services") === "[]") {
         localStorage.setItem("comercial_services", JSON.stringify(INITIAL_SERVICES));
@@ -309,12 +329,13 @@ export const Store = {
         return newLead;
     },
 
-    updateLead(leadId, updatedData) {
+    updateLead(leadId, updatedData, userEmail = "sistema@vellia.com") {
         const leads = this.getLeads();
         const index = leads.findIndex(l => l.id === leadId);
         if (index !== -1) {
             leads[index] = { ...leads[index], ...updatedData };
             localStorage.setItem("comercial_leads", JSON.stringify(leads));
+            this.addLog(userEmail, "LEAD_UPDATED", `Lead ${leads[index].company} atualizado.`);
             return leads[index];
         }
         return null;
@@ -397,12 +418,13 @@ export const Store = {
         return newProposal;
     },
 
-    updateProposal(id, updates) {
+    updateProposal(id, updates, userEmail = "sistema@vellia.com") {
         const proposals = this.getProposals();
         const index = proposals.findIndex(p => p.id === id);
         if (index !== -1) {
             proposals[index] = { ...proposals[index], ...updates };
             localStorage.setItem("comercial_proposals", JSON.stringify(proposals));
+            this.addLog(userEmail, "PROPOSAL_UPDATED", `Proposta ${proposals[index].title} atualizada.`);
             return proposals[index];
         }
         return null;
@@ -469,6 +491,32 @@ export const Store = {
         return false;
     },
 
+
+    // ==========================================
+    // METAS (GOALS)
+    // ==========================================
+    getGoals() {
+        return JSON.parse(localStorage.getItem("comercial_goals")) || [];
+    },
+
+    saveGoals(goalsData) {
+        localStorage.setItem("comercial_goals", JSON.stringify(goalsData));
+    },
+
+    getGoalByUserAndPeriod(email, period) {
+        return this.getGoals().find(g => g.userEmail === email && g.period === period);
+    },
+
+    setGoal(email, period, targets) {
+        let goals = this.getGoals();
+        let idx = goals.findIndex(g => g.userEmail === email && g.period === period);
+        if (idx !== -1) {
+            goals[idx].targets = { ...goals[idx].targets, ...targets };
+        } else {
+            goals.push({ userEmail: email, period, targets });
+        }
+        this.saveGoals(goals);
+    },
 
     // Métodos utilitários para resetar banco se necessário
     resetAll() {

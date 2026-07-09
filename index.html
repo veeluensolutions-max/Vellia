@@ -6,6 +6,8 @@
     <title>Vellia - Sistema Comercial Inteligente</title>
     <!-- CSS Customizado -->
     <link rel="stylesheet" href="css/styles.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
@@ -116,10 +118,16 @@
                                 <span>Propostas & Vendas</span>
                             </a>
                         </li>
-                        <li class="menu-item" data-view="goals" id="menu-goals">
-                            <a href="#goals">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                                <span>Metas & Performance</span>
+                        <li class="menu-item" data-view="team" id="menu-team">
+                            <a href="#team">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                <span>Equipe Comercial</span>
+                            </a>
+                        </li>
+                        <li class="menu-item" data-view="performance" id="menu-performance">
+                            <a href="#performance">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                                <span>Performance</span>
                             </a>
                         </li>
                         <li class="menu-item" data-view="services" id="menu-services" style="display: none;">
@@ -179,8 +187,49 @@
                 </div>
 
                 <div class="header-actions">
+                    <!-- Botão Exportação -->
+                    <div class="export-wrapper" style="position: relative;">
+                        <button id="btn-export-menu" class="action-btn" title="Exportar Dados">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        </button>
+                        
+                        <!-- Dropdown Exportação -->
+                        <div id="export-panel" class="notifications-panel" style="display: none; width: 220px; right: 0;">
+                            <div class="notif-header">
+                                <h3>Exportar Relatórios</h3>
+                            </div>
+                            <div class="notif-list" style="padding: 8px;">
+                                <button id="btn-export-leads" class="btn btn-outline" style="width: 100%; margin-bottom: 8px; justify-content: flex-start; border: none; font-weight: normal; padding: 10px 12px; background: transparent;">
+                                    <span style="margin-right: 8px;">👥</span> Base de Leads (CSV)
+                                </button>
+                                <button id="btn-export-proposals" class="btn btn-outline" style="width: 100%; justify-content: flex-start; border: none; font-weight: normal; padding: 10px 12px; background: transparent;">
+                                    <span style="margin-right: 8px;">📝</span> Propostas (CSV)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botão Notificações -->
+                    <div class="notifications-wrapper" style="position: relative;">
+                        <button id="btn-notifications" class="action-btn" title="Notificações">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                            <span id="notif-badge" class="notif-badge" style="display: none;">0</span>
+                        </button>
+                        
+                        <!-- Dropdown de Notificações -->
+                        <div id="notifications-panel" class="notifications-panel" style="display: none;">
+                            <div class="notif-header">
+                                <h3>Alertas Inteligentes</h3>
+                                <button id="btn-mark-all-read" class="btn-text">Marcar todas lidas</button>
+                            </div>
+                            <div id="notif-list" class="notif-list">
+                                <!-- Preenchido via JS -->
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Botão Alternador de Tema -->
-                    <button id="btn-theme-toggle" class="theme-toggle" title="Alternar Tema">
+                    <button id="btn-theme-toggle" class="theme-toggle action-btn" title="Alternar Tema">
                         <!-- Ícone de Sol (Light) -->
                         <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
                         <!-- Ícone de Lua (Dark) -->
@@ -210,14 +259,14 @@
                                 <h4 style="font-weight: 700; margin-bottom: 18px; font-size: 13px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
                                     <span>🔻</span> Funil de Vendas — Distribuição por Estágio
                                 </h4>
-                                <div id="chart-funnel"><!-- Carregado via JS --></div>
+                                <canvas id="chart-funnel" style="width: 100%; height: 280px;"></canvas>
                             </div>
 
                             <div class="card" style="padding: 20px 24px;">
                                 <h4 style="font-weight: 700; margin-bottom: 18px; font-size: 13px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
                                     <span>📈</span> Receita Mensal — Últimos 6 Meses
                                 </h4>
-                                <div id="chart-revenue"><!-- Carregado via JS --></div>
+                                <canvas id="chart-revenue" style="width: 100%; height: 280px;"></canvas>
                             </div>
                         </div>
 
@@ -227,14 +276,14 @@
                                 <h4 style="font-weight: 700; margin-bottom: 18px; font-size: 13px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
                                     <span>🎯</span> Taxa de Conversão de Propostas
                                 </h4>
-                                <div id="chart-conversion"><!-- Carregado via JS --></div>
+                                <canvas id="chart-conversion" style="width: 100%; height: 280px;"></canvas>
                             </div>
 
                             <div class="card" style="padding: 20px 24px;">
                                 <h4 style="font-weight: 700; margin-bottom: 18px; font-size: 13px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
                                     <span>🏢</span> Leads por Segmento de Mercado
                                 </h4>
-                                <div id="chart-segments"><!-- Carregado via JS --></div>
+                                <canvas id="chart-segments" style="width: 100%; height: 280px;"></canvas>
                             </div>
                         </div>
 
@@ -652,25 +701,17 @@
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
                             Análise de Perdas e Concorrência
                         </h4>
-                        <div id="loss-analysis-container">
-                            <!-- Carregado via JS -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ==========================================================
-                     VIEW: METAS, BONIFICAÇÃO E PERFORMANCE (ETAPA 6)
+                        <div                <!-- ==========================================================
+                     VIEW: EQUIPE COMERCIAL E METAS (ETAPAS 12 e 13)
                      ========================================================== -->
-                <div id="view-goals" class="spa-view" style="display: none;">
-
-                    <!-- Cabeçalho com filtro de período e botão de configurar metas -->
+                <div id="view-team" class="spa-view" style="display: none;">
                     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 24px;">
                         <div>
-                            <h2 style="font-size: 20px; font-weight: 800; color: var(--text-primary); margin: 0;">🎯 Metas &amp; Performance</h2>
-                            <p id="goals-period-label" style="font-size: 13px; color: var(--text-muted); margin-top: 4px;"></p>
+                            <h2 style="font-size: 20px; font-weight: 800; color: var(--text-primary); margin: 0;">👥 Equipe Comercial</h2>
+                            <p id="team-period-label" style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Gerenciamento de Metas, Ranking e Produtividade</p>
                         </div>
                         <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                            <select id="goals-period-filter" class="filter-control" style="height: 38px; min-width: 160px;">
+                            <select id="team-period-filter" class="filter-control" style="height: 38px; min-width: 160px;">
                                 <option value="week">Semana Atual</option>
                                 <option value="month" selected>Mês Atual</option>
                                 <option value="quarter">Trimestre</option>
@@ -682,46 +723,82 @@
                             </button>
                         </div>
                     </div>
-
-                    <!-- Linha 1: Progresso Pessoal + Ranking -->
-                    <div style="display: grid; grid-template-columns: 3fr 2fr; gap: 24px; margin-bottom: 24px;">
-
-                        <!-- Progresso Pessoal -->
-                        <div class="card" style="padding: 20px 24px;">
-                            <h4 style="font-weight: 700; margin-bottom: 20px; font-size: 13px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;">Meu Progresso Individual</h4>
-                            <div id="goals-personal-progress" style="display: flex; flex-direction: column; gap: 14px;">
-                                <!-- Carregado via JS -->
-                            </div>
+                    
+                    <div class="card" style="margin-bottom: 24px; padding: 0; overflow: hidden;">
+                        <div style="padding: 16px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                            <h3 style="font-size: 14px; font-weight: 700; margin: 0;">Tabela de Performance (Rankeada)</h3>
+                            <button id="btn-export-team-excel" class="btn btn-outline" style="height: 32px; padding: 0 12px; font-size: 12px; gap: 6px; color: var(--success); border-color: var(--success);">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                Exportar Excel
+                            </button>
                         </div>
-
-                        <!-- Ranking do Time -->
-                        <div class="card" style="padding: 20px 24px;">
-                            <h4 style="font-weight: 700; margin-bottom: 20px; font-size: 13px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;">🏆 Ranking da Equipe</h4>
-                            <div id="goals-team-ranking" style="display: flex; flex-direction: column; gap: 12px;">
-                                <!-- Carregado via JS -->
-                            </div>
+                        <div class="table-responsive">
+                            <table class="crm-table">
+                                <thead>
+                                    <tr>
+                                        <th>Posição</th>
+                                        <th>Nome</th>
+                                        <th>Contatos</th>
+                                        <th>Leads Gerados</th>
+                                        <th>Qualificados</th>
+                                        <th>Propostas</th>
+                                        <th>Fechados</th>
+                                        <th>Receita (R$)</th>
+                                        <th>Conversão</th>
+                                        <th>Meta (%)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="team-table-body">
+                                    <!-- Preenchido via JS -->
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-
-                    <!-- Linha 2: Bonificação + Visão Geral do Time -->
+                    
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
-
-                        <!-- Calculadora de Bônus -->
                         <div class="card" style="padding: 20px 24px;">
-                            <h4 style="font-weight: 700; margin-bottom: 20px; font-size: 13px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
-                                <span>💎</span> Calculadora de Bonificação
-                            </h4>
-                            <div id="goals-bonus-section">
-                                <!-- Carregado via JS -->
-                            </div>
+                            <h4 style="font-weight: 700; margin-bottom: 20px; font-size: 13px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;">Meu Progresso Individual</h4>
+                            <div id="team-personal-progress" style="display: flex; flex-direction: column; gap: 14px;"></div>
                         </div>
-
-                        <!-- Visão Geral do Time -->
                         <div class="card" style="padding: 20px 24px;">
-                            <h4 style="font-weight: 700; margin-bottom: 20px; font-size: 13px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
-                                <span>📊</span> Performance Consolidada do Time
-                            </h4>
-                            <div id="goals-overview">
+                            <h4 style="font-weight: 700; margin-bottom: 20px; font-size: 13px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;">💎 Calculadora de Bonificação</h4>
+                            <div id="team-bonus-section"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==========================================================
+                     VIEW: PERFORMANCE & GRÁFICOS (ETAPA 14)
+                     ========================================================== -->
+                <div id="view-performance" class="spa-view" style="display: none;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 24px;">
+                        <div>
+                            <h2 style="font-size: 20px; font-weight: 800; color: var(--text-primary); margin: 0;">📈 Gráficos de Performance</h2>
+                            <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Acompanhamento visual de evolução, pipeline e conversão</p>
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                        <div class="card" style="padding: 20px;">
+                            <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 16px;">Evolução Diária (Leads)</h3>
+                            <canvas id="chart-daily-evolution" height="250"></canvas>
+                        </div>
+                        <div class="card" style="padding: 20px;">
+                            <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 16px;">Evolução 12 Meses (Acumulado)</h3>
+                            <canvas id="chart-yearly-evolution" height="250"></canvas>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                        <div class="card" style="padding: 20px;">
+                            <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 16px;">Funil Comercial de Conversão</h3>
+                            <canvas id="chart-commercial-funnel" height="300"></canvas>
+                        </div>
+                        <div class="card" style="padding: 20px;">
+                            <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 16px;">Pipeline Financeiro</h3>
+                            <canvas id="chart-financial-pipeline" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>           <div id="goals-overview">
                                 <!-- Carregado via JS -->
                             </div>
                         </div>
@@ -917,23 +994,111 @@
                 </div>
 
 
+                <!-- ==========================================================
+                     VIEW: VELLIA AI ASSISTANT (ETAPA 9)
+                     ========================================================== -->
                 <div id="view-ai" class="spa-view" style="display: none;">
-                    <div class="card">
-                        <h3 style="margin-bottom: 12px; font-weight: 700;">Vellia AI Assistant</h3>
-                        <p style="color: var(--text-secondary); margin-bottom: 20px;">
-                            Seu assistente comercial nativo inteligente, capaz de sugerir interações, indicar leads frios e guiar no fechamento.
-                        </p>
-                        <div class="alert-box" style="border-color: var(--warning); background-color: var(--warning-light); color: var(--warning-dark);">
-                            <div class="alert-icon">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <div style="display: grid; grid-template-columns: 1fr 320px; gap: 24px; height: calc(100vh - 160px); min-height: 500px;">
+
+                        <!-- Chat Principal -->
+                        <div class="card" style="display: flex; flex-direction: column; padding: 0; overflow: hidden;">
+
+                            <!-- Header do Chat -->
+                            <div style="display: flex; align-items: center; gap: 14px; padding: 18px 24px; border-bottom: 1px solid var(--border-color); background: linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.05) 100%);">
+                                <div style="width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(99,102,241,0.3);">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                                </div>
+                                <div>
+                                    <div style="font-weight: 800; font-size: 15px; color: var(--text-primary);">Vellia AI</div>
+                                    <div style="font-size: 12px; color: var(--success); display: flex; align-items: center; gap: 5px;">
+                                        <span style="width: 7px; height: 7px; background: var(--success); border-radius: 50%; display: inline-block; animation: pulse 2s infinite;"></span>
+                                        Assistente Comercial Online
+                                    </div>
+                                </div>
+                                <div style="margin-left: auto; font-size: 11px; color: var(--text-muted); background: var(--bg-app); border: 1px solid var(--border-color); padding: 4px 10px; border-radius: 99px;">Motor Local — Dados Privados 🔒</div>
                             </div>
-                            <div class="alert-content">
-                                <h4>Em Construção</h4>
-                                <p>O assistente com IA generativa e preditiva será implementado na <strong>Etapa 9 — Assistente Comercial com IA</strong>.</p>
+
+                            <!-- Área de Mensagens -->
+                            <div id="ai-chat-messages" style="flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 16px;">
+                                <!-- Mensagens renderizadas via JS -->
+                            </div>
+
+                            <!-- Input do Chat -->
+                            <div style="border-top: 1px solid var(--border-color); padding: 16px 24px;">
+                                <!-- Chips de atalho -->
+                                <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+                                    <button class="ai-chip" data-query="resumo">📊 Resumo</button>
+                                    <button class="ai-chip" data-query="leads frios">🧊 Leads Frios</button>
+                                    <button class="ai-chip" data-query="alertas">🚨 Alertas</button>
+                                    <button class="ai-chip" data-query="próximas ações">💡 Próximas Ações</button>
+                                    <button class="ai-chip" data-query="meta">🎯 Minha Meta</button>
+                                    <button class="ai-chip" data-query="concorrência">🏆 Concorrentes</button>
+                                </div>
+                                <form id="ai-chat-form" style="display: flex; gap: 12px;">
+                                    <input
+                                        id="ai-chat-input"
+                                        type="text"
+                                        class="form-control"
+                                        placeholder="Pergunte algo ao Vellia AI... ex: 'quais leads frios tenho?'"
+                                        autocomplete="off"
+                                        style="flex: 1; height: 44px;"
+                                    >
+                                    <button type="submit" class="btn btn-primary" style="padding: 0 18px; height: 44px; flex-shrink: 0;">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                                    </button>
+                                </form>
                             </div>
                         </div>
+
+                        <!-- Painel Lateral: Capacidades da IA -->
+                        <div style="display: flex; flex-direction: column; gap: 16px;">
+
+                            <div class="card" style="padding: 20px;">
+                                <h4 style="font-weight: 700; font-size: 13px; color: var(--text-primary); margin-bottom: 16px;">🧠 O que o Vellia AI sabe</h4>
+                                <div style="display: flex; flex-direction: column; gap: 10px;">
+                                    ${[
+                                        ["📊", "Análise do pipeline e status de propostas"],
+                                        ["🧊", "Identificação de leads frios e inativos"],
+                                        ["🎯", "Progresso de metas e bonificações"],
+                                        ["⚠️", "Alertas de prazos e urgências"],
+                                        ["🏆", "Análise de perdas e concorrência"],
+                                        ["💡", "Sugestão de próximas ações prioritárias"],
+                                        ["💰", "Ticket médio e métricas financeiras"],
+                                        ["🔍", "Busca de informações por empresa"]
+                                    ].map(([icon, label]) => `
+                                        <div style="display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-secondary);">
+                                            <span style="font-size: 16px;">${icon}</span>
+                                            <span>${label}</span>
+                                        </div>
+                                    `).join("")}
+                                </div>
+                            </div>
+
+                            <div class="card" style="padding: 20px; background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.05));">
+                                <h4 style="font-weight: 700; font-size: 13px; color: var(--primary); margin-bottom: 8px;">🔒 Privacidade Total</h4>
+                                <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6;">O Vellia AI opera <strong>100% localmente</strong> no seu navegador. Nenhum dado é enviado para servidores externos. Sua inteligência de negócios é completamente privada.</p>
+                            </div>
+
+                            <div class="card" style="padding: 20px;">
+                                <h4 style="font-weight: 700; font-size: 13px; color: var(--text-primary); margin-bottom: 12px;">⌨️ Exemplos de perguntas</h4>
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    ${[
+                                        "Quais leads estão frios?",
+                                        "Como está minha meta?",
+                                        "O que devo fazer hoje?",
+                                        "Análise de concorrência",
+                                        "Resumo do pipeline",
+                                        "Qual meu ticket médio?"
+                                    ].map(q => `
+                                        <div style="font-size: 12px; color: var(--text-muted); padding: 6px 10px; background: var(--bg-app); border: 1px solid var(--border-color); border-radius: var(--radius-md); cursor: default; font-style: italic;">"${q}"</div>
+                                    `).join("")}
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
+
 
             </section>
         </main>
@@ -949,8 +1114,13 @@
 
     <!-- Painel Lateral (Drawer) de Detalhes do Lead -->
     <div id="lead-drawer" class="drawer">
-        <div class="drawer-header">
-            <h3 class="drawer-title" id="drawer-lead-company">Nome da Empresa</h3>
+        <div class="drawer-header" style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <h3 class="drawer-title" id="drawer-lead-company">Nome da Empresa</h3>
+                <button id="btn-edit-lead" class="action-btn" title="Editar Lead" style="background: none; border: none; cursor: pointer; color: var(--text-muted);">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+            </div>
             <button id="btn-close-drawer" class="drawer-close">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
@@ -1134,6 +1304,172 @@
         </form>
     </div>
 
+    <!-- Modal: Edição de Lead -->
+    <div id="edit-lead-modal" class="modal">
+        <div class="modal-header">
+            <h3 style="font-weight: 700;">Editar Lead</h3>
+            <button id="btn-close-edit-lead" class="drawer-close">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <form id="edit-lead-form" onsubmit="return false;">
+            <input type="hidden" id="edit-lead-id">
+            <div class="modal-body">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                    <div class="form-group">
+                        <label for="edit-lead-company">Empresa *</label>
+                        <input type="text" id="edit-lead-company" class="form-control" style="padding: 10px 12px;" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-lead-contact">Contato *</label>
+                        <input type="text" id="edit-lead-contact" class="form-control" style="padding: 10px 12px;" required>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                    <div class="form-group">
+                        <label for="edit-lead-email">E-mail</label>
+                        <input type="email" id="edit-lead-email" class="form-control" style="padding: 10px 12px;">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-lead-whatsapp">WhatsApp *</label>
+                        <input type="text" id="edit-lead-whatsapp" class="form-control" style="padding: 10px 12px;" required>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                    <div class="form-group">
+                        <label for="edit-lead-segment">Segmento</label>
+                        <select id="edit-lead-segment" class="filter-control" style="height: 42px;">
+                            <option value="Tecnologia">Tecnologia</option>
+                            <option value="Construção Civil">Construção Civil</option>
+                            <option value="Transportes">Transportes</option>
+                            <option value="Saúde">Saúde</option>
+                            <option value="Varejo">Varejo</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-lead-source">Origem do Lead</label>
+                        <select id="edit-lead-source" class="filter-control" style="height: 42px;">
+                            <option value="Google Ads">Google Ads</option>
+                            <option value="Indicação">Indicação</option>
+                            <option value="Outbound">Outbound / Cold Call</option>
+                            <option value="Redes Sociais">Redes Sociais</option>
+                            <option value="Evento">Evento</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="btn-cancel-edit-lead" class="btn btn-outline">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Modal: Edição de Proposta -->
+    <div id="edit-proposal-modal" class="modal">
+        <div class="modal-header">
+            <h3 style="font-weight: 700;">Editar Proposta</h3>
+            <button id="btn-close-edit-proposal" class="drawer-close">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <form id="edit-proposal-form" onsubmit="return false;">
+            <input type="hidden" id="edit-proposal-id">
+            <div class="modal-body">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                    <div class="form-group">
+                        <label for="edit-prop-number">Número da Proposta</label>
+                        <input type="text" id="edit-prop-number" class="form-control" style="padding: 10px 12px;" readonly disabled>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-prop-service">Serviço *</label>
+                        <select id="edit-prop-service" class="form-control" style="padding: 10px 12px;" required>
+                            <option value="">Selecione...</option>
+                            <option value="Licenciamento Ambiental">Licenciamento Ambiental</option>
+                            <option value="Monitoramento Ambiental">Monitoramento Ambiental</option>
+                            <option value="ESG">ESG</option>
+                            <option value="NR-13">NR-13</option>
+                            <option value="Estudos Ambientais">Estudos Ambientais</option>
+                            <option value="Consultorias Técnicas">Consultorias Técnicas</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="edit-prop-title">Título da Proposta *</label>
+                    <input type="text" id="edit-prop-title" class="form-control" style="padding: 10px 12px;" required>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                    <div class="form-group">
+                        <label for="edit-prop-value">Valor (R$) *</label>
+                        <input type="number" id="edit-prop-value" class="form-control" style="padding: 10px 12px;" required min="0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-prop-valid">Data de Validade</label>
+                        <input type="date" id="edit-prop-valid" class="form-control" style="padding: 10px 12px;">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="edit-prop-notes">Anotações / Notas</label>
+                    <textarea id="edit-prop-notes" class="form-control" rows="3" style="padding: 10px 12px;"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="btn-cancel-edit-proposal" class="btn btn-outline">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+            </div>
+        </form>
+    </div>
+    <!-- Modal: Qualificar Lead -->
+    <div id="qualify-lead-modal" class="modal" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3 style="font-weight: 700;">Qualificar Lead</h3>
+        </div>
+        <form id="qualify-lead-form">
+            <div class="modal-body">
+                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
+                    Para transformar este contato em um <strong>Lead Qualificado</strong>, preencha os dados estratégicos abaixo:
+                </p>
+                <div class="form-group">
+                    <label for="qualify-service">Serviço Solicitado *</label>
+                    <select id="qualify-service" class="form-control" required>
+                        <option value="">Selecione o serviço...</option>
+                        <option value="Licenciamento Ambiental">Licenciamento Ambiental</option>
+                        <option value="Monitoramento Ambiental">Monitoramento Ambiental</option>
+                        <option value="ESG">ESG</option>
+                        <option value="NR-13">NR-13</option>
+                        <option value="Estudos Ambientais">Estudos Ambientais</option>
+                        <option value="Consultorias Técnicas">Consultorias Técnicas</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="qualify-value">Valor Estimado (R$) *</label>
+                        <input type="number" id="qualify-value" class="form-control" placeholder="0.00" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="qualify-prob">Probabilidade (%) *</label>
+                        <input type="number" id="qualify-prob" class="form-control" placeholder="Ex: 50" min="0" max="100" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="qualify-deadline">Prazo Esperado *</label>
+                    <input type="date" id="qualify-deadline" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="qualify-notes">Observações</label>
+                    <textarea id="qualify-notes" class="form-control" placeholder="Detalhes da oportunidade..." style="min-height: 60px;"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="btn-cancel-qualify" class="btn btn-outline">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Qualificar Lead</button>
+            </div>
+        </form>
+    </div>
+
     <!-- Modal de Justificativa / Motivo de Etapa -->
     <div id="stage-reason-modal" class="modal" style="max-width: 450px;">
         <div class="modal-header">
@@ -1190,6 +1526,25 @@
                     <input type="text" id="proposal-contact" class="form-control" placeholder="Nome do responsável">
                 </div>
             </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                <div class="form-group">
+                    <label for="proposal-number">Número da Proposta</label>
+                    <input type="text" id="proposal-number" class="form-control" placeholder="Gerado automaticamente" disabled>
+                </div>
+                <div class="form-group">
+                    <label for="proposal-service">Serviço *</label>
+                    <select id="proposal-service" class="form-control" required>
+                        <option value="">Selecione...</option>
+                        <option value="Licenciamento Ambiental">Licenciamento Ambiental</option>
+                        <option value="Monitoramento Ambiental">Monitoramento Ambiental</option>
+                        <option value="ESG">ESG</option>
+                        <option value="NR-13">NR-13</option>
+                        <option value="Estudos Ambientais">Estudos Ambientais</option>
+                        <option value="Consultorias Técnicas">Consultorias Técnicas</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+            </div>
             <div class="form-group">
                 <label for="proposal-title">Título da Proposta *</label>
                 <input type="text" id="proposal-title" class="form-control" placeholder="Ex: Proposta Comercial - Sistema de Gestão" required>
@@ -1208,6 +1563,11 @@
                 <label for="proposal-notes">Observações</label>
                 <textarea id="proposal-notes" class="form-control" placeholder="Condições especiais, escopo, contexto da proposta..." style="min-height: 80px; resize: vertical;"></textarea>
             </div>
+            <div class="form-group">
+                <label>Anexos (Opcional)</label>
+                <input type="file" id="proposal-files" class="form-control" multiple accept=".pdf,.doc,.docx,.xls,.xlsx" style="padding: 8px;">
+                <small style="color: var(--text-muted); font-size: 11px;">Suportado: PDF, Word, Excel.</small>
+            </div>
             <div class="modal-footer" style="padding: 0; border: none; margin-top: 4px;">
                 <button type="button" id="btn-cancel-proposal" class="btn btn-outline">Cancelar</button>
                 <button type="submit" class="btn btn-primary">
@@ -1220,8 +1580,13 @@
 
     <!-- Modal: Detalhes da Proposta -->
     <div id="proposal-detail-modal" class="modal-container" style="z-index:1001; max-width: 560px;">
-        <div class="modal-header">
-            <h3 class="modal-title">Detalhes da Proposta</h3>
+        <div class="modal-header" style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <h3 class="modal-title">Detalhes da Proposta</h3>
+                <button id="btn-edit-proposal" class="action-btn" title="Editar Proposta" style="background: none; border: none; cursor: pointer; color: var(--text-muted);">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+            </div>
             <button id="btn-close-proposal-detail" class="btn-icon-close" aria-label="Fechar">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
@@ -1229,6 +1594,8 @@
         <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
                 <div>
+                    <div style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Serviço</div>
+                    <div id="detail-service" style="font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: 8px;">—</div>
                     <div id="detail-company" style="font-size: 18px; font-weight: 700; color: var(--text-primary);"></div>
                     <div id="detail-contact" style="font-size: 13px; color: var(--text-secondary);"></div>
                 </div>
@@ -1277,6 +1644,60 @@
         </div>
     </div>
 
+    <!-- Modal: Registrar Ganho -->
+    <div id="win-modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1100;"></div>
+    <div id="win-modal" class="modal-container" style="z-index:1101; max-width: 480px;">
+        <div class="modal-header">
+            <h3 class="modal-title" style="color: var(--success);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                Registrar Venda (Ganho)
+            </h3>
+            <button id="btn-close-win-modal" class="btn-icon-close" aria-label="Fechar">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <form id="win-form" class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
+            <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+                Parabéns pelo fechamento! Preencha os dados do contrato para atualizar a <strong>Receita e Pipeline</strong>.
+            </p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                <div class="form-group">
+                    <label for="win-service">Serviço Contratado *</label>
+                    <select id="win-service" class="form-control" required>
+                        <option value="">Selecione...</option>
+                        <option value="Licenciamento Ambiental">Licenciamento Ambiental</option>
+                        <option value="Monitoramento Ambiental">Monitoramento Ambiental</option>
+                        <option value="ESG">ESG</option>
+                        <option value="NR-13">NR-13</option>
+                        <option value="Estudos Ambientais">Estudos Ambientais</option>
+                        <option value="Consultorias Técnicas">Consultorias Técnicas</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="win-value">Valor Final (R$) *</label>
+                    <input type="number" id="win-value" class="form-control" placeholder="0.00" step="0.01" min="0" required>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                <div class="form-group">
+                    <label for="win-date">Data de Fechamento *</label>
+                    <input type="date" id="win-date" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="win-execution">Previsão de Execução</label>
+                    <input type="date" id="win-execution" class="form-control">
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 0; border: none; margin-top: 4px;">
+                <button type="button" id="btn-cancel-win" class="btn btn-outline">Cancelar</button>
+                <button type="submit" class="btn btn-primary" style="background: var(--success); border-color: var(--success);">
+                    Confirmar Venda
+                </button>
+            </div>
+        </form>
+    </div>
+
     <!-- Modal: Registrar Perda -->
     <div id="loss-modal" class="modal-container" style="z-index:1101; max-width: 440px;">
         <div class="modal-header">
@@ -1309,6 +1730,10 @@
             <div class="form-group">
                 <label for="loss-competitor">Concorrente Vencedor (se houver)</label>
                 <input type="text" id="loss-competitor" class="form-control" placeholder="Ex: Softex Soluções, Outro CRM...">
+            </div>
+            <div class="form-group">
+                <label for="loss-notes">Observações</label>
+                <textarea id="loss-notes" class="form-control" placeholder="Detalhes extras..." style="min-height: 60px;"></textarea>
             </div>
             <div class="modal-footer" style="padding: 0; border: none; margin-top: 4px;">
                 <button type="button" id="btn-cancel-loss" class="btn btn-outline">Cancelar</button>

@@ -25,7 +25,11 @@ export const CRM = {
             drawerInteractionForm: document.getElementById("drawer-interaction-form"),
             drawerChangeStage: document.getElementById("drawer-change-stage"),
             stageReasonForm: document.getElementById("stage-reason-form"),
-            btnCancelStageReason: document.getElementById("btn-cancel-stage-reason")
+            btnCancelStageReason: document.getElementById("btn-cancel-stage-reason"),
+            btnEditLead: document.getElementById("btn-edit-lead"),
+            btnCloseEditLead: document.getElementById("btn-close-edit-lead"),
+            btnCancelEditLead: document.getElementById("btn-cancel-edit-lead"),
+            editLeadForm: document.getElementById("edit-lead-form")
         };
 
         // Modal Novo Lead
@@ -36,6 +40,17 @@ export const CRM = {
             elements.newLeadForm.addEventListener("submit", (e) => {
                 e.preventDefault();
                 this.saveNewLead();
+            });
+        }
+
+        // Modal Edição de Lead
+        if (elements.btnEditLead) elements.btnEditLead.addEventListener("click", () => this.openEditLeadModal());
+        if (elements.btnCloseEditLead) elements.btnCloseEditLead.addEventListener("click", () => this.closeEditLeadModal());
+        if (elements.btnCancelEditLead) elements.btnCancelEditLead.addEventListener("click", () => this.closeEditLeadModal());
+        if (elements.editLeadForm) {
+            elements.editLeadForm.addEventListener("submit", (e) => {
+                e.preventDefault();
+                this.saveEditLead();
             });
         }
 
@@ -72,6 +87,15 @@ export const CRM = {
         if (elements.btnCancelStageReason) {
             elements.btnCancelStageReason.addEventListener("click", () => this.cancelStageChangeRequest());
         }
+
+        const btnCancelQualify = document.getElementById("btn-cancel-qualify");
+        if (btnCancelQualify) btnCancelQualify.addEventListener("click", () => this.cancelQualifyLeadRequest());
+
+        const qualifyForm = document.getElementById("qualify-lead-form");
+        if (qualifyForm) qualifyForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            this.confirmQualifyLead();
+        });
     },
 
     // ==========================================================================
@@ -167,7 +191,55 @@ export const CRM = {
             });
         });
     },
+    // ==========================================================================
+    // EDIÇÃO DE LEADS
+    // ==========================================================================
 
+    openEditLeadModal() {
+        if (!activeLeadId) return;
+        const lead = Store.getLeadById(activeLeadId);
+        if (!lead) return;
+
+        document.getElementById("edit-lead-id").value = lead.id;
+        document.getElementById("edit-lead-company").value = lead.company;
+        document.getElementById("edit-lead-contact").value = lead.contact;
+        document.getElementById("edit-lead-email").value = lead.email || "";
+        document.getElementById("edit-lead-whatsapp").value = lead.whatsapp || "";
+        document.getElementById("edit-lead-segment").value = lead.segment || "Outros";
+        document.getElementById("edit-lead-source").value = lead.source || "Outbound";
+
+        document.getElementById("edit-lead-modal").classList.add("open");
+        document.getElementById("modal-overlay").style.display = "block";
+    },
+
+    closeEditLeadModal() {
+        document.getElementById("edit-lead-modal").classList.remove("open");
+        // Only close modal-overlay, preserve drawer-overlay if drawer is open
+        if (!document.getElementById("new-lead-modal").classList.contains("open") && 
+            !document.getElementById("stage-reason-modal").classList.contains("open")) {
+            document.getElementById("modal-overlay").style.display = "none";
+        }
+    },
+
+    saveEditLead() {
+        const id = document.getElementById("edit-lead-id").value;
+        const updatedData = {
+            company: document.getElementById("edit-lead-company").value.trim(),
+            contact: document.getElementById("edit-lead-contact").value.trim(),
+            email: document.getElementById("edit-lead-email").value.trim(),
+            whatsapp: document.getElementById("edit-lead-whatsapp").value.trim(),
+            segment: document.getElementById("edit-lead-segment").value,
+            source: document.getElementById("edit-lead-source").value
+        };
+
+        const user = Auth.getCurrentUser();
+        Store.updateLead(id, updatedData, user ? user.email : "sistema@vellia.com");
+        
+        this.closeEditLeadModal();
+        this.openLeadDrawer(id); // Reload drawer with new data
+        this.renderLeadsTable(); // Update list
+        alert("Lead atualizado com sucesso!");
+    },
     // ==========================================================================
     // CONTROLE DE DRAWERS (DETALHES DO LEAD)
     // ==========================================================================
@@ -339,12 +411,78 @@ export const CRM = {
         // Armazenar temporariamente para confirmação
         pendingStageChange = newStage;
 
-        // Abrir Modal de Justificativa
-        document.getElementById("stage-reason-target-name").textContent = newStage;
-        document.getElementById("stage-reason-text").value = "";
+        // Abrir modal correspondente
+        if (newStage === "Lead Qualificado") {
+            document.getElementById("qualify-lead-form").reset();
+            document.getElementById("qualify-lead-modal").classList.add("open");
+        } else {
+            document.getElementById("stage-reason-target-name").textContent = newStage;
+            document.getElementById("stage-reason-text").value = "";
+            document.getElementById("stage-reason-modal").classList.add("open");
+        }
         
-        document.getElementById("stage-reason-modal").classList.add("open");
         document.getElementById("modal-overlay").style.display = "block";
+    },
+
+    confirmQualifyLead() {
+        if (!activeLeadId || pendingStageChange !== "Lead Qualificado") return;
+
+        const service = document.getElementById("qualify-service").value;
+        const value = parseFloat(document.getElementById("qualify-value").value) || 0;
+        const prob = parseInt(document.getElementById("qualify-prob").value) || 0;
+        const deadline = document.getElementById("qualify-deadline").value;
+        const notes = document.getElementById("qualify-notes").value.trim();
+
+        if (!service || !value || !prob || !deadline) return;
+
+        const lead = Store.getLeadById(activeLeadId);
+        const currentUser = Auth.getCurrentUser();
+        if (!lead || !currentUser) return;
+
+        const oldStage = lead.stage;
+
+        // Salva os dados de qualificação no lead
+        Store.updateLead(activeLeadId, {
+            qualification: {
+                service,
+                estimatedValue: value,
+                probability: prob,
+                deadline,
+                notes
+            }
+        }, currentUser.email);
+
+        const reason = `Lead qualificado para serviço: ${service}. Valor Est: R$ ${value}. Probabilidade: ${prob}%. Prazo: ${deadline}. ${notes}`;
+
+        Store.updateLeadStage(activeLeadId, pendingStageChange, currentUser.email, reason);
+        Audit.logStageChange(currentUser.email, lead.company, oldStage, pendingStageChange, reason);
+
+        this.closeQualifyLeadModal();
+
+        const updatedLead = Store.getLeadById(activeLeadId);
+        const stageSelect = document.getElementById("drawer-change-stage");
+        if (stageSelect) stageSelect.value = updatedLead.stage;
+
+        this.renderTimeline(updatedLead);
+        this.renderLeadsTable();
+        pendingStageChange = null;
+        window.dispatchEvent(new CustomEvent("vellia:stageChanged"));
+    },
+
+    cancelQualifyLeadRequest() {
+        if (activeLeadId) {
+            const lead = Store.getLeadById(activeLeadId);
+            const stageSelect = document.getElementById("drawer-change-stage");
+            if (lead && stageSelect) stageSelect.value = lead.stage;
+        }
+        this.closeQualifyLeadModal();
+        window.dispatchEvent(new CustomEvent("vellia:stageCancelled"));
+    },
+
+    closeQualifyLeadModal() {
+        document.getElementById("qualify-lead-modal").classList.remove("open");
+        document.getElementById("modal-overlay").style.display = "none";
+        pendingStageChange = null;
     },
 
     confirmStageChange() {

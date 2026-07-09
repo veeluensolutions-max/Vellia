@@ -1423,13 +1423,48 @@ a {
     flex-shrink: 0;
 }
 
-/* Responsividade dos grids de 2 colunas do dashboard */
+/* Responsive Grid System Classes */
+.grid-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+.grid-3col {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+.grid-1-2col {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 24px;
+}
+
+.grid-3-2col {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    gap: 24px;
+}
+
+.grid-modal-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
 @media (max-width: 900px) {
-    [style*="grid-template-columns: 1fr 1fr"] {
+    .grid-2col, .grid-3col, .grid-1-2col, .grid-3-2col {
         grid-template-columns: 1fr !important;
+        gap: 16px;
     }
-    [style*="grid-template-columns: 3fr 2fr"] {
+}
+
+@media (max-width: 600px) {
+    .grid-modal-2col {
         grid-template-columns: 1fr !important;
+        gap: 12px;
     }
 }
 
@@ -1731,14 +1766,6 @@ a {
 /* ==========================================================================
    EXTRA RESPONSIVENESS OVERRIDES
    ========================================================================== */
-
-/* Stack grids inside modals on small screens */
-@media (max-width: 600px) {
-    .modal [style*="grid-template-columns: 1fr 1fr"],
-    .modal [style*="grid-template-columns:1fr 1fr"] {
-        grid-template-columns: 1fr !important;
-    }
-}
 
 /* Responsive grid for AI Assistant view */
 @media (max-width: 900px) {

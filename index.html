@@ -254,7 +254,7 @@
                         </div>
 
                         <!-- Linha 1: Funil + Receita Mensal -->
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                        <div class="grid-2col" style="margin-bottom: 24px;">
                             <div class="card" style="padding: 20px 24px;">
                                 <h4 style="font-weight: 700; margin-bottom: 18px; font-size: 13px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
                                     <span>🔻</span> Funil de Vendas — Distribuição por Estágio
@@ -271,7 +271,7 @@
                         </div>
 
                         <!-- Linha 2: Conversão + Segmentos -->
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                        <div class="grid-2col" style="margin-bottom: 24px;">
                             <div class="card" style="padding: 20px 24px;">
                                 <h4 style="font-weight: 700; margin-bottom: 18px; font-size: 13px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
                                     <span>🎯</span> Taxa de Conversão de Propostas
@@ -288,7 +288,7 @@
                         </div>
 
                         <!-- Linha 3: Ranking + Feed de Atividade -->
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                        <div class="grid-2col" style="margin-bottom: 24px;">
                             <div class="card" style="padding: 20px 24px;">
                                 <h4 style="font-weight: 700; margin-bottom: 18px; font-size: 13px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
                                     <span>🏆</span> Ranking de Vendedores
@@ -366,7 +366,7 @@
                         </div>
 
                         <!-- Painel de Prioridades -->
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                        <div class="grid-2col">
                             <div class="card" style="padding: 20px;">
                                 <h4 style="font-weight: 700; margin-bottom: 14px; font-size: 14px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;">Leads Sem Contato Recente</h4>
                                 <div id="seller-leads-no-contact" style="display: flex; flex-direction: column; gap: 10px;">
@@ -755,7 +755,7 @@
                         </div>
                     </div>
                     
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                    <div class="grid-2col" style="margin-bottom: 24px;">
                         <div class="card" style="padding: 20px 24px;">
                             <h4 style="font-weight: 700; margin-bottom: 20px; font-size: 13px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;">Meu Progresso Individual</h4>
                             <div id="team-personal-progress" style="display: flex; flex-direction: column; gap: 14px;"></div>
@@ -778,7 +778,7 @@
                         </div>
                     </div>
                     
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                    <div class="grid-2col" style="margin-bottom: 24px;">
                         <div class="card" style="padding: 20px;">
                             <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 16px;">Evolução Diária (Leads)</h3>
                             <canvas id="chart-daily-evolution" height="250"></canvas>
@@ -788,7 +788,7 @@
                             <canvas id="chart-yearly-evolution" height="250"></canvas>
                         </div>
                     </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                    <div class="grid-2col" style="margin-bottom: 24px;">
                         <div class="card" style="padding: 20px;">
                             <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 16px;">Funil Comercial de Conversão</h3>
                             <canvas id="chart-commercial-funnel" height="300"></canvas>
@@ -845,7 +845,7 @@
                         </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                    <div class="grid-2col" style="margin-bottom: 24px;">
                         <!-- Matriz BCG -->
                         <div class="card" style="padding: 24px;">
                             <h4 style="font-weight: 700; margin-bottom: 8px; font-size: 14px; display: flex; align-items: center; gap: 8px;">
@@ -943,7 +943,7 @@
                     </div>
 
                     <!-- Linha 2: Projeção Gráfica + Saúde Comercial -->
-                    <div style="display: grid; grid-template-columns: 3fr 2fr; gap: 24px; margin-bottom: 24px;">
+                    <div class="grid-3-2col" style="margin-bottom: 24px;">
 
                         <!-- Gráfico de Projeção -->
                         <div class="card" style="padding: 24px;">
@@ -972,7 +972,7 @@
                     </div>
 
                     <!-- Linha 3: Pipeline Breakdown + Alertas Inteligentes -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                    <div class="grid-2col" style="margin-bottom: 24px;">
 
                         <!-- Pipeline Breakdown -->
                         <div class="card" style="padding: 24px;">
@@ -1197,7 +1197,7 @@
         </div>
         <form id="new-lead-form" onsubmit="return false;">
             <div class="modal-body">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                <div class="grid-modal-2col" style="margin-bottom: 16px;">
                     <div class="form-group">
                         <label for="lead-company">Empresa *</label>
                         <input type="text" id="lead-company" class="form-control" style="padding: 10px 12px;" required placeholder="Nome da empresa">
@@ -1208,7 +1208,7 @@
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                <div class="grid-modal-2col" style="margin-bottom: 16px;">
                     <div class="form-group">
                         <label for="lead-role">Cargo</label>
                         <input type="text" id="lead-role" class="form-control" style="padding: 10px 12px;" placeholder="Ex: Diretor de Compras">
@@ -1219,7 +1219,7 @@
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                <div class="grid-modal-2col" style="margin-bottom: 16px;">
                     <div class="form-group">
                         <label for="lead-phone">Telefone</label>
                         <input type="text" id="lead-phone" class="form-control" style="padding: 10px 12px;" placeholder="(00) 0000-0000">
@@ -1230,7 +1230,7 @@
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                <div class="grid-modal-2col" style="margin-bottom: 16px;">
                     <div class="form-group">
                         <label for="lead-city">Cidade</label>
                         <input type="text" id="lead-city" class="form-control" style="padding: 10px 12px;" placeholder="Ex: São Paulo">
@@ -1241,7 +1241,7 @@
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                <div class="grid-modal-2col" style="margin-bottom: 16px;">
                     <div class="form-group">
                         <label for="lead-segment">Segmento</label>
                         <select id="lead-segment" class="filter-control" style="height: 42px;">
@@ -1296,7 +1296,7 @@
         <form id="edit-lead-form" onsubmit="return false;">
             <input type="hidden" id="edit-lead-id">
             <div class="modal-body">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                <div class="grid-modal-2col" style="margin-bottom: 16px;">
                     <div class="form-group">
                         <label for="edit-lead-company">Empresa *</label>
                         <input type="text" id="edit-lead-company" class="form-control" style="padding: 10px 12px;" required>
@@ -1306,7 +1306,7 @@
                         <input type="text" id="edit-lead-contact" class="form-control" style="padding: 10px 12px;" required>
                     </div>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                <div class="grid-modal-2col" style="margin-bottom: 16px;">
                     <div class="form-group">
                         <label for="edit-lead-email">E-mail</label>
                         <input type="email" id="edit-lead-email" class="form-control" style="padding: 10px 12px;">
@@ -1316,7 +1316,7 @@
                         <input type="text" id="edit-lead-whatsapp" class="form-control" style="padding: 10px 12px;" required>
                     </div>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                <div class="grid-modal-2col" style="margin-bottom: 16px;">
                     <div class="form-group">
                         <label for="edit-lead-segment">Segmento</label>
                         <select id="edit-lead-segment" class="filter-control" style="height: 42px;">
@@ -1358,7 +1358,7 @@
         <form id="edit-proposal-form" onsubmit="return false;">
             <input type="hidden" id="edit-proposal-id">
             <div class="modal-body">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                <div class="grid-modal-2col" style="margin-bottom: 16px;">
                     <div class="form-group">
                         <label for="edit-prop-number">Número da Proposta</label>
                         <input type="text" id="edit-prop-number" class="form-control" style="padding: 10px 12px;" readonly disabled>
@@ -1381,7 +1381,7 @@
                     <label for="edit-prop-title">Título da Proposta *</label>
                     <input type="text" id="edit-prop-title" class="form-control" style="padding: 10px 12px;" required>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                <div class="grid-modal-2col" style="margin-bottom: 16px;">
                     <div class="form-group">
                         <label for="edit-prop-value">Valor (R$) *</label>
                         <input type="number" id="edit-prop-value" class="form-control" style="padding: 10px 12px;" required min="0" step="0.01">
@@ -1425,7 +1425,7 @@
                         <option value="Outros">Outros</option>
                     </select>
                 </div>
-                <div class="form-row">
+                <div class="grid-modal-2col" style="margin-bottom: 16px;">
                     <div class="form-group">
                         <label for="qualify-value">Valor Estimado (R$) *</label>
                         <input type="number" id="qualify-value" class="form-control" placeholder="0.00" step="0.01" min="0" required>
@@ -1497,7 +1497,7 @@
             </button>
         </div>
         <form id="new-proposal-form" class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div class="grid-modal-2col">
                 <div class="form-group">
                     <label for="proposal-company">Empresa *</label>
                     <input type="text" id="proposal-company" class="form-control" placeholder="Nome da empresa" required>
@@ -1507,7 +1507,7 @@
                     <input type="text" id="proposal-contact" class="form-control" placeholder="Nome do responsável">
                 </div>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div class="grid-modal-2col">
                 <div class="form-group">
                     <label for="proposal-number">Número da Proposta</label>
                     <input type="text" id="proposal-number" class="form-control" placeholder="Gerado automaticamente" disabled>
@@ -1530,7 +1530,7 @@
                 <label for="proposal-title">Título da Proposta *</label>
                 <input type="text" id="proposal-title" class="form-control" placeholder="Ex: Proposta Comercial - Sistema de Gestão" required>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div class="grid-modal-2col">
                 <div class="form-group">
                     <label for="proposal-value">Valor (R$) *</label>
                     <input type="number" id="proposal-value" class="form-control" placeholder="0,00" min="0" step="0.01" required>
@@ -1645,7 +1645,7 @@
             <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
                 Parabéns pelo fechamento! Preencha os dados do contrato para atualizar a <strong>Receita e Pipeline</strong>.
             </p>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div class="grid-modal-2col">
                 <div class="form-group">
                     <label for="win-service">Serviço Contratado *</label>
                     <select id="win-service" class="form-control" required>
@@ -1664,7 +1664,7 @@
                     <input type="number" id="win-value" class="form-control" placeholder="0.00" step="0.01" min="0" required>
                 </div>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div class="grid-modal-2col">
                 <div class="form-group">
                     <label for="win-date">Data de Fechamento *</label>
                     <input type="date" id="win-date" class="form-control" required>
@@ -1749,7 +1749,7 @@
                 <label for="goal-revenue">Meta de Faturamento Mensal (R$) *</label>
                 <input type="number" id="goal-revenue" class="form-control" placeholder="Ex: 30000" min="0" required>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div class="grid-modal-2col">
                 <div class="form-group">
                     <label for="goal-proposals">Propostas Enviadas *</label>
                     <input type="number" id="goal-proposals" class="form-control" min="0" required>
@@ -1759,7 +1759,7 @@
                     <input type="number" id="goal-leads" class="form-control" min="0" required>
                 </div>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div class="grid-modal-2col">
                 <div class="form-group">
                     <label for="goal-calls">Ligações Realizadas *</label>
                     <input type="number" id="goal-calls" class="form-control" min="0" required>

@@ -19,6 +19,19 @@ export const Auth = {
             return { success: false, error: "Usuário ou senha incorretos." };
         }
 
+        if (user.status === "inactive") {
+            Store.addLog(email, "LOGIN_ATTEMPT", `Tentativa de login falhou: conta inativa.`, "WARN");
+            return { success: false, error: "Esta conta está inativa. Entre em contato com o administrador." };
+        }
+
+        // Atualizar data de último login
+        const users = Store.getUsers();
+        const idx = users.findIndex(u => u.id === user.id);
+        if (idx !== -1) {
+            users[idx].lastLoginAt = new Date().toISOString();
+            Store.saveUsers(users);
+        }
+
         // Criar sessão (sem persistir a senha na sessão por segurança)
         const sessionUser = {
             id: user.id,

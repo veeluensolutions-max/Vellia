@@ -9,7 +9,9 @@ const DEFAULT_USERS = [
         email: "admin@vellia.com",
         password: "123456",
         role: "admin",
-        avatar: "AG"
+        avatar: "AG",
+        status: "active",
+        lastLoginAt: null
     },
     {
         id: "usr_gerente",
@@ -17,7 +19,9 @@ const DEFAULT_USERS = [
         email: "gerente@vellia.com",
         password: "123456",
         role: "manager",
-        avatar: "CG"
+        avatar: "CG",
+        status: "active",
+        lastLoginAt: null
     },
     {
         id: "usr_vendedor",
@@ -25,7 +29,9 @@ const DEFAULT_USERS = [
         email: "vendedor@vellia.com",
         password: "123456",
         role: "seller",
-        avatar: "LV"
+        avatar: "LV",
+        status: "active",
+        lastLoginAt: null
     }
 ];
 
@@ -287,6 +293,10 @@ export const Store = {
     // USUÁRIOS
     getUsers() {
         return JSON.parse(localStorage.getItem("comercial_users")) || [];
+    },
+
+    saveUsers(users) {
+        localStorage.setItem("comercial_users", JSON.stringify(users));
     },
 
     getUserByEmail(email) {

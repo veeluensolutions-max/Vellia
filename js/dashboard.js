@@ -52,12 +52,12 @@ export const Dashboard = {
         const kpis = [
             { id: "kpi-total-leads", val: totalLeads, label: "Leads Cadastrados", icon: "👥", color: "var(--primary)", link: "#crm" },
             { id: "kpi-active-leads", val: activeLeads, label: "Leads Ativos", icon: "🔥", color: "#8b5cf6", link: "#crm" },
-            { id: "kpi-closed", val: closedLeads, label: "Clientes Fechados", icon: "🤝", color: "var(--success)" },
-            { id: "kpi-revenue", val: fmt(revenue), label: "Receita Gerada", icon: "💰", color: "var(--success)", large: true },
-            { id: "kpi-pipeline", val: fmt(pipeline), label: "Pipeline em Aberto", icon: "📊", color: "var(--primary)", large: true },
-            { id: "kpi-avg-ticket", val: fmt(avgTicket), label: "Ticket Médio", icon: "🎯", color: "#f97316", large: true },
-            { id: "kpi-conv-rate", val: `${convRate}%`, label: "Taxa de Conversão", icon: "📈", color: convRate >= 30 ? "var(--success)" : convRate >= 15 ? "var(--warning)" : "var(--danger)" },
-            { id: "kpi-total-proposals", val: totalProposals, label: "Total de Propostas", icon: "📝", color: "var(--primary)" },
+            { id: "kpi-closed", val: closedLeads, label: "Clientes Fechados", icon: "🤝", color: "var(--success)", link: "#kanban" },
+            { id: "kpi-revenue", val: fmt(revenue), label: "Receita Gerada", icon: "💰", color: "var(--success)", large: true, link: "#performance" },
+            { id: "kpi-pipeline", val: fmt(pipeline), label: "Pipeline em Aberto", icon: "📊", color: "var(--primary)", large: true, link: "#kanban" },
+            { id: "kpi-avg-ticket", val: fmt(avgTicket), label: "Ticket Médio", icon: "🎯", color: "#f97316", large: true, link: "#proposals" },
+            { id: "kpi-conv-rate", val: `${convRate}%`, label: "Taxa de Conversão", icon: "📈", color: convRate >= 30 ? "var(--success)" : convRate >= 15 ? "var(--warning)" : "var(--danger)", link: "#performance" },
+            { id: "kpi-total-proposals", val: totalProposals, label: "Total de Propostas", icon: "📝", color: "var(--primary)", link: "#proposals" },
         ];
 
         const container = document.getElementById("dashboard-kpis");

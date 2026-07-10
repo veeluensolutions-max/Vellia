@@ -9,7 +9,14 @@ export const Kanban = {
     },
 
     renderKanban() {
-        const leads = Store.getLeads();
+        let leads = Store.getLeads();
+        
+        // Importar Auth se não estiver importado no topo, mas podemos usar localStorage direto para evitar dependência circular se preferirmos,
+        // mas Auth provavelmente está acessível. Kanban importa Auth? Não, então vamos pegar direto do localStorage ou adicionar import.
+        const session = JSON.parse(localStorage.getItem("comercial_session"));
+        if (session && session.role === "seller") {
+            leads = leads.filter(l => l.owner === session.email);
+        }
         
         // Colunas e IDs
         const columns = {

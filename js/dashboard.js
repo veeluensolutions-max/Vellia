@@ -12,8 +12,16 @@ export const Dashboard = {
         const user = Auth.getCurrentUser();
         if (!user) return;
 
-        const leads = Store.getLeads();
-        const proposals = Store.getProposals();
+        let leads = Store.getLeads();
+        const session = JSON.parse(localStorage.getItem("comercial_session"));
+        if (session && session.role === "seller") {
+            leads = leads.filter(l => l.owner === session.email);
+        }
+        
+        let proposals = Store.getProposals();
+        if (session && session.role === "seller") {
+            proposals = proposals.filter(p => p.authorEmail === session.email);
+        }
 
         this.renderKPIs(leads, proposals);
         this.renderFunnelChart(leads);

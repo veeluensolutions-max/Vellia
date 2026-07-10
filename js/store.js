@@ -62,6 +62,7 @@ const INITIAL_LEADS = [
         segment: "Tecnologia",
         source: "Google Ads",
         stage: "Contato",
+        owner: "vendedor@vellia.com",
         interactions: [
             {
                 id: "int_1_1",
@@ -93,6 +94,7 @@ const INITIAL_LEADS = [
         segment: "Construção Civil",
         source: "Indicação",
         stage: "Lead Gerado",
+        owner: "vendedor@vellia.com",
         interactions: [],
         stageHistory: [
             {
@@ -122,6 +124,7 @@ const INITIAL_LEADS = [
         segment: "Transportes",
         source: "Outbound",
         stage: "Lead Qualificado",
+        owner: "vendedor@vellia.com",
         interactions: [
             {
                 id: "int_3_1",
@@ -299,7 +302,7 @@ export const Store = {
         return this.getLeads().find(l => l.id === id);
     },
 
-    addLead(lead) {
+    addLead(lead, userEmail = "sistema@vellia.com") {
         const leads = this.getLeads();
         const newLead = {
             id: `lead_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
@@ -311,9 +314,10 @@ export const Store = {
             email: lead.email || "",
             city: lead.city || "",
             state: lead.state || "",
-            segment: lead.segment || "",
-            source: lead.source || "",
+            segment: lead.segment || "Outros",
+            source: lead.source || "Outbound",
             stage: lead.stage || "Contato",
+            owner: userEmail,
             interactions: lead.interactions || [],
             stageHistory: lead.stageHistory || [
                 {

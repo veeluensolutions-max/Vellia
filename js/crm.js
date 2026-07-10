@@ -106,7 +106,14 @@ export const CRM = {
         const tableBody = document.getElementById("crm-table-body");
         if (!tableBody) return;
 
-        const leads = Store.getLeads();
+        let leads = Store.getLeads();
+        const currentUser = Auth.getCurrentUser();
+        
+        // Vendedor vê apenas seus próprios leads
+        if (currentUser && currentUser.role === "seller") {
+            leads = leads.filter(l => l.owner === currentUser.email);
+        }
+
         const searchQuery = document.getElementById("crm-search")?.value.toLowerCase().trim() || "";
         const stageFilter = document.getElementById("crm-filter-stage")?.value || "all";
 
@@ -149,6 +156,20 @@ export const CRM = {
                 lastContact = `${latest.type} em ${new Date(latest.timestamp).toLocaleDateString("pt-BR")}`;
             }
 
+            // Obter dados do responsável
+            let ownerName = "Sistema";
+            let ownerAvatar = "SI";
+            if (lead.owner) {
+                const ownerUser = Store.getUserByEmail(lead.owner);
+                if (ownerUser) {
+                    ownerName = ownerUser.name;
+                    ownerAvatar = ownerUser.avatar;
+                } else {
+                    ownerName = lead.owner.split("@")[0];
+                    ownerAvatar = ownerName.substring(0,2).toUpperCase();
+                }
+            }
+
             return `
                 <tr class="clickable-row" data-id="${lead.id}">
                     <td><strong>${lead.company}</strong></td>
@@ -166,6 +187,12 @@ export const CRM = {
                     </td>
                     <td>
                         <span class="badge ${stageBadgeClass}">${lead.stage}</span>
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 8px;" title="${lead.owner || 'Sem Dono'}">
+                            <div class="user-avatar" style="width: 24px; height: 24px; font-size: 10px; flex-shrink: 0;">${ownerAvatar}</div>
+                            <span style="font-size: 13px; font-weight: 500;">${ownerName}</span>
+                        </div>
                     </td>
                     <td style="text-align: right;" onclick="event.stopPropagation();">
                         <button class="btn btn-outline btn-wa-lead" data-id="${lead.id}" style="padding: 6px; font-size: 12px; border-color: #25d366; color: #25d366; margin-right: 6px; display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; vertical-align: middle;" title="Enviar WhatsApp">
@@ -616,7 +643,6 @@ export const CRM = {
             segment,
             source,
             stage,
-            userEmail,
             stageHistory: [
                 {
                     stage,
@@ -625,7 +651,7 @@ export const CRM = {
                     reason: `Cadastro inicial do lead via formulário.`
                 }
             ]
-        });
+        }, userEmail);
 
         // Registrar na auditoria
         Audit.logStageChange(userEmail, company, "Nenhum (Novo)", stage, "Cadastro de lead no sistema.");

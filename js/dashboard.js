@@ -50,8 +50,8 @@ export const Dashboard = {
         const fmt = v => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
         const kpis = [
-            { id: "kpi-total-leads", val: totalLeads, label: "Leads Cadastrados", icon: "👥", color: "var(--primary)" },
-            { id: "kpi-active-leads", val: activeLeads, label: "Leads Ativos", icon: "🔥", color: "#8b5cf6" },
+            { id: "kpi-total-leads", val: totalLeads, label: "Leads Cadastrados", icon: "👥", color: "var(--primary)", link: "#crm" },
+            { id: "kpi-active-leads", val: activeLeads, label: "Leads Ativos", icon: "🔥", color: "#8b5cf6", link: "#crm" },
             { id: "kpi-closed", val: closedLeads, label: "Clientes Fechados", icon: "🤝", color: "var(--success)" },
             { id: "kpi-revenue", val: fmt(revenue), label: "Receita Gerada", icon: "💰", color: "var(--success)", large: true },
             { id: "kpi-pipeline", val: fmt(pipeline), label: "Pipeline em Aberto", icon: "📊", color: "var(--primary)", large: true },
@@ -64,7 +64,7 @@ export const Dashboard = {
         if (!container) return;
 
         container.innerHTML = kpis.map(k => `
-            <div class="card stat-card dash-kpi-card" style="--kpi-color: ${k.color};">
+            <div class="card stat-card dash-kpi-card" style="--kpi-color: ${k.color}; ${k.link ? 'cursor: pointer; transition: transform 0.2s;' : ''}" ${k.link ? `onclick="window.location.hash = '${k.link}'"` : ''} ${k.link ? 'onmouseover="this.style.transform=\\'translateY(-3px)\\';"' : ''} ${k.link ? 'onmouseout="this.style.transform=\\'none\\';"' : ''}>
                 <div class="stat-info">
                     <span class="stat-label">${k.label}</span>
                     <span class="stat-value" style="font-size: ${k.large ? '18px' : '26px'}; color: ${k.color};">${k.val}</span>

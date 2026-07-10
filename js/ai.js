@@ -327,6 +327,29 @@ function generateResponse(userInput, ctx) {
         }
     }
 
+    // ── RECUPERAR LEAD FRIO / DICA DE FECHAMENTO ESPECÍFICO ────────────────────
+    if (/fechar|recuperar|dica|salvar/.test(input)) {
+        const company = [...ctx.leads, ...ctx.proposals].find(x => x.company && input.includes(x.company.toLowerCase()));
+        if (company) {
+            const isCold = ctx.coldLeads.some(l => l.id === company.id);
+            const isAtRisk = ctx.atRiskProps.some(p => p.company?.toLowerCase() === company.company?.toLowerCase() || p.leadId === company.id);
+            
+            let tip = "";
+            if (isCold) {
+                tip = `🧊 **Como recuperar ${company.company}:**\n\nEste lead está sem contato há algum tempo. Recomendo enviar uma mensagem via WhatsApp ou ligar oferecendo uma breve demonstração das novas atualizações do sistema, ou perguntar se as prioridades mudaram neste trimestre.`;
+            } else if (isAtRisk) {
+                tip = `⚠️ **Como salvar a proposta de ${company.company}:**\n\nEssa proposta está classificada como de alto risco. Verifique se o decisor financeiro tem alguma objeção de orçamento e proponha um parcelamento facilitado ou uma bonificação no primeiro mês.`;
+            } else {
+                tip = `💡 **Dicas de fechamento para ${company.company}:**\n\nO relacionamento com esse lead está aquecido (Score de Engajamento: **${company._score || 50}**). Esta é a hora ideal para agendar uma reunião final de fechamento e apresentar um caso de sucesso de um segmento similar (Varejo/Serviços).`;
+            }
+            return {
+                text: tip,
+                type: "analysis",
+                action: { label: "Abrir Detalhes do Lead", route: "crm", leadId: company.id }
+            };
+        }
+    }
+
     return {
         text: `🤔 Hmm, não tenho certeza do que você quis dizer com "*${userInput}*".\n\nAlgumas sugestões:\n• "**resumo**" — visão geral\n• "**leads frios**" — quem requer atenção\n• "**alertas**" — situações críticas\n• "**próximas ações**" — o que fazer hoje\n• "**metas**" — quanto falta para bater a meta\n\nOu mencione o nome de uma empresa para ver os detalhes!`,
         type: "fallback"
@@ -354,7 +377,7 @@ function renderMessage(msg, container) {
         </div>` : ""}
         <div class="ai-bubble">
             <div class="ai-bubble-text">${formatted}</div>
-            ${msg.action ? `<button class="btn btn-primary ai-action-btn" data-route="${msg.action.route}" style="margin-top: 12px; font-size: 12px; padding: 8px 16px;">${msg.action.label} →</button>` : ""}
+            ${msg.action ? `<button class="btn btn-primary ai-action-btn" data-route="${msg.action.route}" ${msg.action.leadId ? `data-leadid="${msg.action.leadId}"` : ""} style="margin-top: 12px; font-size: 12px; padding: 8px 16px;">${msg.action.label} →</button>` : ""}
         </div>
         ${!isAI ? `<div class="ai-user-avatar">${Auth.getCurrentUser()?.avatar || "U"}</div>` : ""}
     `;
@@ -363,7 +386,14 @@ function renderMessage(msg, container) {
     const actionBtn = div.querySelector(".ai-action-btn");
     if (actionBtn) {
         actionBtn.addEventListener("click", () => {
-            document.querySelector(`[data-view="${actionBtn.dataset.route}"]`)?.click();
+            const route = actionBtn.dataset.route;
+            const leadId = actionBtn.dataset.leadid;
+            document.querySelector(`[data-view="${route}"]`)?.click();
+            if (leadId) {
+                setTimeout(() => {
+                    import('./crm.js').then(m => m.CRM.openLeadDrawer(leadId));
+                }, 200);
+            }
         });
     }
 
@@ -391,7 +421,6 @@ export const VelliaAI = {
         const container = document.getElementById("ai-chat-messages");
         const input = document.getElementById("ai-chat-input");
         const form = document.getElementById("ai-chat-form");
-        const chips = document.querySelectorAll(".ai-chip");
 
         if (!container || !form) return;
 
@@ -406,6 +435,7 @@ export const VelliaAI = {
                 const welcome = generateResponse("oi", ctx);
                 chatHistory.push({ from: "ai", ...welcome });
                 renderMessage({ from: "ai", ...welcome }, container);
+                this.renderChips(ctx);
             }, 300);
 
             // Insights proativos após 1s
@@ -420,20 +450,12 @@ export const VelliaAI = {
 
                     chatHistory.push(proactive);
                     renderMessage(proactive, container);
+                    this.renderChips(ctx);
                 }
             }, 1500);
 
             // Popula os Insights do Dia no painel lateral
             this.renderDailyInsights(container);
-
-            // Chips de atalho
-            chips.forEach(chip => {
-                chip.addEventListener("click", () => {
-                    const query = chip.dataset.query;
-                    if (input) input.value = query;
-                    this.sendMessage(query, container, input);
-                });
-            });
 
             // Submit do form
             form.addEventListener("submit", (e) => {
@@ -443,6 +465,51 @@ export const VelliaAI = {
                 this.sendMessage(text, container, input);
             });
         }
+    },
+
+    renderChips(ctx) {
+        const chipsContainer = document.getElementById("ai-chips-container");
+        if (!chipsContainer) return;
+
+        const chips = [
+            { icon: "📊", label: "Resumo", query: "resumo" },
+            { icon: "🧊", label: "Leads Frios", query: "leads frios" },
+            { icon: "🚨", label: "Alertas", query: "alertas" }
+        ];
+
+        // Se houver algum lead frio, sugere como recuperar
+        if (ctx.coldLeads && ctx.coldLeads.length > 0) {
+            const l = ctx.coldLeads[0];
+            chips.push({ icon: "❄️", label: `Como recuperar ${l.company}?`, query: `como recuperar ${l.company.toLowerCase()}` });
+        }
+
+        // Se houver proposta em risco
+        if (ctx.atRiskProps && ctx.atRiskProps.length > 0) {
+            const p = ctx.atRiskProps[0];
+            chips.push({ icon: "⚠️", label: `Salvar proposta da ${p.company}?`, query: `como salvar a proposta de ${p.company.toLowerCase()}` });
+        } else if (ctx.scoredLeads && ctx.scoredLeads.length > 0) {
+            // Se houver lead quente
+            const l = ctx.scoredLeads[0];
+            chips.push({ icon: "🔥", label: `Dica de fechamento para ${l.company}?`, query: `dicas para fechar o lead ${l.company.toLowerCase()}` });
+        }
+
+        chips.push({ icon: "🎯", label: "Meta", query: "meta" });
+        chips.push({ icon: "🏆", label: "Concorrentes", query: "concorrência" });
+
+        chipsContainer.innerHTML = chips.map(c => `
+            <button class="ai-chip" data-query="${c.query}">${c.icon} ${c.label}</button>
+        `).join("");
+
+        // Re-vincular eventos
+        chipsContainer.querySelectorAll(".ai-chip").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const query = btn.dataset.query;
+                const input = document.getElementById("ai-chat-input");
+                const messagesContainer = document.getElementById("ai-chat-messages");
+                if (input) input.value = query;
+                this.sendMessage(query, messagesContainer, input);
+            });
+        });
     },
 
     sendMessage(text, container, input) {
@@ -466,6 +533,9 @@ export const VelliaAI = {
             const aiMsg = { from: "ai", ...response };
             chatHistory.push(aiMsg);
             renderMessage(aiMsg, container);
+            
+            // Re-renderizar os chips dinamicamente
+            this.renderChips(ctx);
         }, delay);
     },
 

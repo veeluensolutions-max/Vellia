@@ -1191,13 +1191,8 @@
                             <!-- Input do Chat -->
                             <div style="border-top: 1px solid var(--border-color); padding: 16px 24px;">
                                 <!-- Chips de atalho -->
-                                <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
-                                    <button class="ai-chip" data-query="resumo">📊 Resumo</button>
-                                    <button class="ai-chip" data-query="leads frios">🧊 Leads Frios</button>
-                                    <button class="ai-chip" data-query="alertas">🚨 Alertas</button>
-                                    <button class="ai-chip" data-query="próximas ações">💡 Próximas Ações</button>
-                                    <button class="ai-chip" data-query="meta">🎯 Minha Meta</button>
-                                    <button class="ai-chip" data-query="concorrência">🏆 Concorrentes</button>
+                                <div id="ai-chips-container" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+                                    <!-- Carregado via JS -->
                                 </div>
                                 <form id="ai-chat-form" style="display: flex; gap: 12px;">
                                     <input

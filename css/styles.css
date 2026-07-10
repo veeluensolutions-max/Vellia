@@ -2138,4 +2138,148 @@ a {
     }
 }
 
+/* ==========================================================================
+   VELLIA AI 3.0 CHAT STYLING
+   ========================================================================== */
+.ai-message {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    opacity: 0;
+    transform: translateY(10px);
+    animation: fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.ai-message--assistant {
+    align-self: flex-start;
+    max-width: 80%;
+}
+
+.ai-message--user {
+    align-self: flex-end;
+    max-width: 80%;
+    flex-direction: row-reverse;
+}
+
+.ai-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    background: linear-gradient(135deg, var(--primary), #8b5cf6);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+    flex-shrink: 0;
+}
+
+.ai-user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    background-color: var(--bg-surface-hover);
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 12px;
+    border: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.ai-bubble {
+    padding: 12px 16px;
+    border-radius: 16px;
+    font-size: 13.5px;
+    line-height: 1.5;
+    position: relative;
+    box-shadow: var(--shadow-sm);
+}
+
+.ai-message--assistant .ai-bubble {
+    background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(99,102,241,0.02) 100%);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-top-left-radius: 4px;
+}
+
+.ai-message--user .ai-bubble {
+    background-color: var(--primary);
+    color: #ffffff;
+    border-top-right-radius: 4px;
+}
+
+.ai-bubble-text strong {
+    color: inherit;
+}
+
+/* Typing Indicator Animation */
+.ai-typing-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 0;
+}
+
+.ai-typing-dots span {
+    width: 6px;
+    height: 6px;
+    background-color: var(--text-muted);
+    border-radius: 50%;
+    display: inline-block;
+    animation: aiBounce 1.4s infinite ease-in-out both;
+}
+
+.ai-typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+.ai-typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes aiBounce {
+    0%, 80%, 100% { transform: scale(0); }
+    40% { transform: scale(1.0); }
+}
+
+/* Premium styling for action buttons inside bubble */
+.ai-action-btn {
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+
+.ai-action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.25);
+}
+
+/* Chip microinteractions */
+.ai-chip {
+    padding: 6px 14px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.ai-chip:hover {
+    background: var(--bg-surface-hover);
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+
 

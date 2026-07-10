@@ -120,6 +120,7 @@ export const Team = {
 
         this.renderTable(stats);
         this.renderPersonalProgress(stats);
+        this.renderBonusCalculator();
     },
 
     renderTable(stats) {
@@ -154,19 +155,21 @@ export const Team = {
                         </div>
                     </div>
                 </td>
-                <td>${stat.contacts}</td>
-                <td>${stat.leadsGenerated}</td>
-                <td>${stat.leadsQualified}</td>
-                <td>${stat.proposalsSent}</td>
-                <td>${stat.proposalsWon}</td>
-                <td style="font-weight: 700;">${fmt(stat.revenue)}</td>
-                <td>${stat.conversion}%</td>
+                <td style="text-align: center;">${stat.contacts}</td>
+                <td style="text-align: center;">${stat.leadsGenerated}</td>
+                <td style="text-align: center;">${stat.leadsQualified}</td>
+                <td style="text-align: center;">${stat.proposalsSent}</td>
+                <td style="text-align: center;">${stat.proposalsWon}</td>
+                <td style="font-weight: 700; text-align: right; color: var(--success);">${fmt(stat.revenue)}</td>
+                <td style="text-align: center;">
+                    <span class="badge ${stat.conversion >= 30 ? 'badge-success' : 'badge-warning'}">${stat.conversion}%</span>
+                </td>
                 <td>
-                    <div style="display: flex; align-items: center; gap: 8px;">
+                    <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
                         <div style="flex: 1; height: 6px; background: var(--bg-hover); border-radius: 3px; overflow: hidden;">
                             <div style="height: 100%; width: ${stat.metaPct}%; background: ${metaColor};"></div>
                         </div>
-                        <span style="font-size: 12px; font-weight: 600; color: ${metaColor}; width: 36px;">${stat.metaPct}%</span>
+                        <span style="font-size: 12px; font-weight: 600; color: ${metaColor}; width: 36px; text-align: right;">${stat.metaPct}%</span>
                     </div>
                 </td>
             `;
@@ -194,24 +197,73 @@ export const Team = {
         const propsPct = Math.min(Math.round((myStat.proposalsSent / DEFAULT_GOALS.meta_proposals) * 100), 100);
 
         container.innerHTML = `
-            <div>
-                <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;">
-                    <span style="font-weight: 600;">Receita Gerada</span>
-                    <span>${fmt(myStat.revenue)} / ${fmt(DEFAULT_GOALS.meta_revenue)}</span>
+            <div style="margin-bottom: 24px;">
+                <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px;">
+                    <span style="font-weight: 600; display: flex; align-items: center; gap: 6px;"><span style="font-size: 16px;">💰</span> Receita Gerada</span>
+                    <span style="font-weight: 700;">${fmt(myStat.revenue)} <span style="font-size: 12px; color: var(--text-muted); font-weight: 500;">/ ${fmt(DEFAULT_GOALS.meta_revenue)}</span></span>
                 </div>
-                <div style="height: 8px; background: var(--bg-hover); border-radius: 4px; overflow: hidden;">
-                    <div style="height: 100%; width: ${myStat.metaPct}%; background: ${revenueColor};"></div>
+                <div style="height: 12px; background: var(--bg-hover); border-radius: 6px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">
+                    <div style="height: 100%; width: ${myStat.metaPct}%; background: linear-gradient(90deg, ${revenueColor}, #10b981); border-radius: 6px;"></div>
                 </div>
+                <div style="text-align: right; font-size: 12px; color: ${revenueColor}; font-weight: 700; margin-top: 4px;">${myStat.metaPct}% Concluído</div>
             </div>
             <div>
-                <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;">
-                    <span style="font-weight: 600;">Propostas Enviadas</span>
-                    <span>${myStat.proposalsSent} / ${DEFAULT_GOALS.meta_proposals}</span>
+                <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px;">
+                    <span style="font-weight: 600; display: flex; align-items: center; gap: 6px;"><span style="font-size: 16px;">📄</span> Propostas Enviadas</span>
+                    <span style="font-weight: 700;">${myStat.proposalsSent} <span style="font-size: 12px; color: var(--text-muted); font-weight: 500;">/ ${DEFAULT_GOALS.meta_proposals}</span></span>
                 </div>
-                <div style="height: 8px; background: var(--bg-hover); border-radius: 4px; overflow: hidden;">
-                    <div style="height: 100%; width: ${propsPct}%; background: var(--primary);"></div>
+                <div style="height: 12px; background: var(--bg-hover); border-radius: 6px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">
+                    <div style="height: 100%; width: ${propsPct}%; background: linear-gradient(90deg, var(--primary), #8b5cf6); border-radius: 6px;"></div>
+                </div>
+                <div style="text-align: right; font-size: 12px; color: var(--primary); font-weight: 700; margin-top: 4px;">${propsPct}% Concluído</div>
+            </div>
+        `;
+    },
+
+    renderBonusCalculator() {
+        const container = document.getElementById("team-bonus-section");
+        if (!container) return;
+
+        container.innerHTML = `
+            <div style="background: rgba(139, 92, 246, 0.05); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 12px; padding: 20px;">
+                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; margin-top: 0;">Simule sua bonificação com base no atingimento de metas e taxa de comissão.</p>
+                <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; display: block;">Vendas Estimadas (R$)</label>
+                        <input type="number" id="calc-sales" class="input-control" value="30000" style="width: 100%;">
+                    </div>
+                    <div style="width: 100px;">
+                        <label style="font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; display: block;">Comissão (%)</label>
+                        <input type="number" id="calc-pct" class="input-control" value="5" style="width: 100%;">
+                    </div>
+                </div>
+                <button id="btn-calc-bonus" class="btn btn-primary" style="width: 100%; justify-content: center; background: linear-gradient(90deg, #8b5cf6, #6d28d9); border: none;">
+                    Calcular Projeção
+                </button>
+                <div id="calc-result" style="margin-top: 20px; text-align: center; display: none;">
+                    <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Bônus Projetado</div>
+                    <div id="calc-value" style="font-size: 28px; font-weight: 800; color: #10b981; margin-top: 4px;">R$ 0,00</div>
                 </div>
             </div>
         `;
+
+        const btn = document.getElementById("btn-calc-bonus");
+        if (btn) {
+            btn.addEventListener("click", () => {
+                const sales = parseFloat(document.getElementById("calc-sales").value) || 0;
+                const pct = parseFloat(document.getElementById("calc-pct").value) || 0;
+                const bonus = sales * (pct / 100);
+                
+                const resultDiv = document.getElementById("calc-result");
+                const valDiv = document.getElementById("calc-value");
+                
+                resultDiv.style.display = "block";
+                valDiv.textContent = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(bonus);
+                
+                valDiv.style.transform = "scale(1.1)";
+                valDiv.style.transition = "transform 0.2s ease";
+                setTimeout(() => { valDiv.style.transform = "scale(1)"; }, 200);
+            });
+        }
     }
 };

@@ -64,7 +64,7 @@ export const Dashboard = {
         if (!container) return;
 
         container.innerHTML = kpis.map(k => `
-            <div class="card stat-card dash-kpi-card" style="--kpi-color: ${k.color}; ${k.link ? 'cursor: pointer; transition: transform 0.2s;' : ''}" ${k.link ? `onclick="window.location.hash = '${k.link}'"` : ''} ${k.link ? 'onmouseover="this.style.transform=\\'translateY(-3px)\\';"' : ''} ${k.link ? 'onmouseout="this.style.transform=\\'none\\';"' : ''}>
+            <div class="card stat-card dash-kpi-card" style="--kpi-color: ${k.color}; ${k.link ? 'cursor: pointer; transition: transform 0.2s;' : ''}" ${k.link ? `onclick="window.location.hash = '${k.link}'"` : ''} ${k.link ? 'onmouseover="this.style.transform=&apos;translateY(-3px)&apos;"' : ''} ${k.link ? 'onmouseout="this.style.transform=&apos;none&apos;"' : ''}>
                 <div class="stat-info">
                     <span class="stat-label">${k.label}</span>
                     <span class="stat-value" style="font-size: ${k.large ? '18px' : '26px'}; color: ${k.color};">${k.val}</span>

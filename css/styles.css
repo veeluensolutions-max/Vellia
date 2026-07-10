@@ -663,6 +663,19 @@ a {
     margin-bottom: 24px;
 }
 
+.grid-2col {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.grid-modal-2col {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
 /* Cards */
 .card {
     background-color: var(--bg-surface);

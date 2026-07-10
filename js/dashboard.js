@@ -6,6 +6,49 @@ const charts = {};
 export const Dashboard = {
     init() {
         this.renderAll();
+        this.bindEvents();
+    },
+
+    bindEvents() {
+        // Botões de Ações Rápidas (Seller)
+        const btnNewLead = document.getElementById("btn-quick-new-lead");
+        if (btnNewLead) {
+            btnNewLead.addEventListener("click", () => {
+                window.location.hash = "#crm";
+                setTimeout(() => {
+                    const btn = document.getElementById("btn-new-lead");
+                    if (btn) btn.click();
+                }, 300);
+            });
+        }
+
+        const btnLogCall = document.getElementById("btn-quick-log-call");
+        if (btnLogCall) {
+            btnLogCall.addEventListener("click", () => {
+                window.location.hash = "#crm";
+            });
+        }
+
+        const btnLogMeeting = document.getElementById("btn-quick-log-meeting");
+        if (btnLogMeeting) {
+            btnLogMeeting.addEventListener("click", () => {
+                window.location.hash = "#crm";
+            });
+        }
+
+        const btnChangeStage = document.getElementById("btn-quick-change-stage");
+        if (btnChangeStage) {
+            btnChangeStage.addEventListener("click", () => {
+                window.location.hash = "#kanban";
+            });
+        }
+
+        const btnCloseSale = document.getElementById("btn-quick-close-sale");
+        if (btnCloseSale) {
+            btnCloseSale.addEventListener("click", () => {
+                window.location.hash = "#kanban";
+            });
+        }
     },
 
     renderAll() {

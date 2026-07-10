@@ -30,16 +30,17 @@ export const Integrations = {
                     <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--text-primary);">
                         <div style="display: flex; justify-content: space-between;">
                             <span>Status da Conexão</span>
-                            <span class="badge badge-warning" style="background: #fef08a; color: #854d0e;">Pendente: Setup DB</span>
+                            <span class="badge badge-success" style="background: #dcfce7; color: #16a34a;">🟢 Conectado</span>
                         </div>
                         <div style="display: flex; justify-content: space-between;">
                             <span>Leads Recebidos (Hoje)</span>
-                            <span style="font-weight: 700;">0</span>
+                            <span style="font-weight: 700;" id="meta-leads-count">0</span>
                         </div>
                     </div>
 
-                    <div style="margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border-color);">
-                        <button class="btn btn-outline" style="width: 100%;" onclick="alert('Funcionalidade em desenvolvimento: O fluxo de autenticação com o Banco de Dados será liberado em breve.')">Configurar Banco de Dados</button>
+                    <div style="margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border-color); display: flex; gap: 10px;">
+                        <button class="btn btn-primary" style="flex: 1;" onclick="window.simulateMetaLead()">Simular Lead</button>
+                        <button class="btn btn-outline" style="flex: 1;" onclick="alert('Configurações avançadas do Webhook.')">Configurar</button>
                     </div>
                 </div>
 
@@ -58,4 +59,46 @@ export const Integrations = {
             </div>
         `;
     }
+};
+
+window.simulateMetaLead = function() {
+    import('./store.js').then(module => {
+        const Store = module.Store;
+        const leads = Store.getLeads();
+        
+        const newLead = {
+            id: 'L' + Date.now(),
+            name: 'Lead Simulado (Meta Ads)',
+            email: 'simulado.meta@exemplo.com',
+            phone: '(11) 9' + Math.floor(1000 + Math.random() * 9000) + '-' + Math.floor(1000 + Math.random() * 9000),
+            company: '-',
+            segment: 'Varejo',
+            owner: 'admin@vellia.com',
+            stage: 'Contato',
+            source: 'Meta Ads',
+            date: new Date().toISOString()
+        };
+        
+        leads.unshift(newLead);
+        Store.saveLeads(leads);
+        
+        // Registrar log
+        const logs = Store.getLogs();
+        logs.unshift({
+            id: 'log-' + Date.now(),
+            date: new Date().toISOString(),
+            user: 'Sistema Webhook',
+            action: 'LEAD_RECEIVED',
+            details: \Lead recebido via Meta Ads: \\
+        });
+        Store.saveLogs(logs);
+
+        // Atualizar contador na tela se existir
+        const countSpan = document.getElementById('meta-leads-count');
+        if (countSpan) {
+            countSpan.textContent = parseInt(countSpan.textContent) + 1;
+        }
+
+        alert('Lead simulado recebido com sucesso! V� para a tela de Contatos para visualiz�-lo.');
+    });
 };

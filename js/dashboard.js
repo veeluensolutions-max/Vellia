@@ -433,7 +433,7 @@ export const Dashboard = {
         }
 
         container.innerHTML = ranking.map((r, i) => `
-            <div style="display: flex; align-items: center; gap: 14px; padding: 12px 14px; background: var(--bg-app); border: 1px solid var(--border-color); border-radius: var(--radius-md); margin-bottom: 10px; transition: all var(--transition-fast);">
+            <div onclick="window.location.hash = '#team'" style="display: flex; align-items: center; gap: 14px; padding: 12px 14px; background: var(--bg-app); border: 1px solid var(--border-color); border-radius: var(--radius-md); margin-bottom: 10px; cursor: pointer; transition: all var(--transition-fast);" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
                 <div style="font-size: 22px; width: 32px; text-align: center; flex-shrink: 0;">${medals[i] || `#${i + 1}`}</div>
                 <div class="user-avatar" style="width: 38px; height: 38px; font-size: 13px; flex-shrink: 0;">${r.avatar || r.name.substring(0, 2).toUpperCase()}</div>
                 <div style="flex-grow: 1; min-width: 0;">
@@ -463,6 +463,7 @@ export const Dashboard = {
                 const last = [...lead.stageHistory].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
                 events.push({
                     timestamp: new Date(last.timestamp),
+                    leadId: lead.id,
                     icon: "🔄",
                     text: `<strong>${lead.company}</strong> movido para <strong>${lead.stage}</strong>`,
                     sub: last.userEmail,
@@ -473,8 +474,11 @@ export const Dashboard = {
 
         // Propostas criadas/fechadas
         proposals.forEach(p => {
+            const lead = leads.find(l => l.company === p.company);
+            const leadId = lead ? lead.id : null;
             events.push({
                 timestamp: new Date(p.createdAt),
+                leadId,
                 icon: "📝",
                 text: `Proposta enviada para <strong>${p.company}</strong>`,
                 sub: `${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(p.value)}`,
@@ -483,6 +487,7 @@ export const Dashboard = {
             if (p.closedAt && p.status === "Ganho") {
                 events.push({
                     timestamp: new Date(p.closedAt),
+                    leadId,
                     icon: "✅",
                     text: `Venda fechada com <strong>${p.company}</strong>`,
                     sub: `+${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(p.value)}`,
@@ -492,6 +497,7 @@ export const Dashboard = {
             if (p.closedAt && p.status === "Perdido") {
                 events.push({
                     timestamp: new Date(p.closedAt),
+                    leadId,
                     icon: "❌",
                     text: `Perda registrada — <strong>${p.company}</strong>`,
                     sub: p.lossReason || "Motivo não informado",
@@ -510,7 +516,7 @@ export const Dashboard = {
         const fmtDate = d => d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 
         container.innerHTML = sorted.map(ev => `
-            <div style="display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border-color);">
+            <div ${ev.leadId ? `onclick="window.location.hash = '#crm'; setTimeout(() => import('./crm.js').then(m => m.CRM.openLeadDrawer('${ev.leadId}')), 100);"` : ''} style="display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border-color); ${ev.leadId ? 'cursor: pointer; transition: transform var(--transition-fast);' : ''}" ${ev.leadId ? 'onmouseover="this.style.transform=\'translateX(4px)\'" onmouseout="this.style.transform=\'none\'"' : ''}>
                 <div style="font-size: 18px; flex-shrink: 0; margin-top: 1px;">${ev.icon}</div>
                 <div style="flex-grow: 1; min-width: 0;">
                     <div style="font-size: 13px; color: var(--text-primary); line-height: 1.4;">${ev.text}</div>

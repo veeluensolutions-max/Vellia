@@ -411,7 +411,7 @@ function renderSellerLeadsNoContact(activeLeads) {
         else if (item.days >= 3) timeColor = "var(--warning)";
 
         return `
-            <div class="priorities-list-item" onclick="import('./crm.js').then(m => m.CRM.openLeadDrawer('${item.lead.id}'))">
+            <div class="priorities-list-item" onclick="window.location.hash = '#crm'; setTimeout(() => import('./crm.js').then(m => m.CRM.openLeadDrawer('${item.lead.id}')), 100);">
                 <div>
                     <div class="priority-title">${item.lead.company}</div>
                     <div class="priority-meta">${item.lead.contact} • Estágio: ${item.lead.stage}</div>
@@ -480,7 +480,7 @@ function renderSellerActivities(activeLeads) {
     // Exibir no máximo 3 atividades
     container.innerHTML = activities.slice(0, 3).map(act => {
         return `
-            <div class="priorities-list-item" onclick="import('./crm.js').then(m => m.CRM.openLeadDrawer('${act.leadId}'))">
+            <div class="priorities-list-item" onclick="window.location.hash = '#crm'; setTimeout(() => import('./crm.js').then(m => m.CRM.openLeadDrawer('${act.leadId}')), 100);">
                 <div style="flex-grow: 1; padding-right: 12px;">
                     <div class="priority-title">${act.title}</div>
                     <div class="priority-meta">${act.meta}</div>

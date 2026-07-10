@@ -39,7 +39,28 @@ export const Integrations = {
                     </div>
 
                     <div style="margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border-color); display: flex; gap: 10px;">
-                        <button class="btn btn-primary" style="flex: 1;" onclick="
+                        <button class="btn btn-primary" style="flex: 1;" onclick="window.simulateMetaLead()">Simular Lead</button>
+                        <button class="btn btn-outline" style="flex: 1;" onclick="alert('Configurações avançadas do Webhook.')">Configurar</button>
+                    </div>
+                </div>
+
+                <!-- WhatsApp API Card -->
+                <div class="card stat-card" style="display: flex; flex-direction: column; gap: 16px; opacity: 0.6; cursor: not-allowed;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 48px; height: 48px; border-radius: var(--radius-md); background: #dcfce7; color: #16a34a; display: flex; align-items: center; justify-content: center;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        </div>
+                        <div>
+                            <h3 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0;">WhatsApp API</h3>
+                            <span style="font-size: 12px; color: var(--text-muted);">Em breve</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+};
+
 window.simulateMetaLead = function() {
     import('./store.js').then(module => {
         const Store = module.Store;

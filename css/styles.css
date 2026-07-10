@@ -169,74 +169,315 @@ a {
    LOGIN SCREEN
    ========================================================================== */
 
-.login-container {
+/* ==========================================================================
+   TELA DE LOGIN (SPLIT SCREEN PREMIUM)
+   ========================================================================== */
+
+.login-split-layout {
     display: flex;
-    justify-content: center;
-    align-items: center;
     min-height: 100vh;
-    /* Fundo Moderno Animado */
-    background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-    background-size: 400% 400%;
-    animation: gradientBG 15s ease infinite;
-    padding: 20px;
-}
-
-@keyframes gradientBG {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-
-.login-card {
-    background: var(--bg-surface);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg);
     width: 100%;
-    max-width: 440px;
-    padding: 40px;
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    position: relative;
+    background: var(--bg-app);
     overflow: hidden;
-    animation: scaleIn var(--transition-normal) forwards;
 }
 
-.login-card::before {
-    content: '';
+/* Lado Esquerdo: Hero */
+.login-hero-side {
+    flex: 1;
+    background-color: #0f172a;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px;
+    color: white;
+    overflow: hidden;
+}
+
+/* Blobs Animados */
+.hero-blob {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 4px;
-    background: linear-gradient(90deg, var(--primary), var(--success));
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.6;
+    animation: blobFloat 20s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.login-logo {
+.blob-1 {
+    width: 400px;
+    height: 400px;
+    background: #6366f1;
+    top: -100px;
+    left: -100px;
+    animation-delay: 0s;
+}
+
+.blob-2 {
+    width: 500px;
+    height: 500px;
+    background: #8b5cf6;
+    bottom: -150px;
+    right: -100px;
+    animation-delay: -5s;
+}
+
+.blob-3 {
+    width: 300px;
+    height: 300px;
+    background: #ec4899;
+    top: 30%;
+    left: 40%;
+    animation-delay: -10s;
+    opacity: 0.4;
+}
+
+@keyframes blobFloat {
+    0% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(100px, 50px) scale(1.2); }
+    100% { transform: translate(-50px, 150px) scale(0.9); }
+}
+
+.hero-content {
+    position: relative;
+    z-index: 10;
+    max-width: 500px;
+    width: 100%;
+}
+
+.hero-logo {
     display: flex;
     align-items: center;
     gap: 12px;
-    font-weight: 800;
     font-size: 24px;
-    letter-spacing: -0.5px;
-    color: var(--text-primary);
+    font-weight: 800;
+    margin-bottom: 40px;
+    color: #fff;
 }
 
-.login-logo svg {
+.hero-logo svg {
+    color: #818cf8;
+}
+
+.hero-title {
+    font-size: 48px;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 20px;
+    background: linear-gradient(to right, #fff, #a5b4fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero-subtitle {
+    font-size: 18px;
+    line-height: 1.6;
+    color: #cbd5e1;
+    margin-bottom: 40px;
+}
+
+/* Glassmorphism Card no Hero */
+.hero-glass-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    transform: perspective(1000px) rotateY(-5deg) rotateX(5deg);
+    transition: transform 0.5s ease;
+}
+
+.hero-glass-card:hover {
+    transform: perspective(1000px) rotateY(0deg) rotateX(0deg) translateY(-5px);
+}
+
+/* Lado Direito: Formulário */
+.login-form-side {
+    width: 520px;
+    background: var(--bg-surface);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px;
+    position: relative;
+    z-index: 20;
+    box-shadow: -20px 0 50px rgba(0,0,0,0.05);
+}
+
+.login-form-wrapper {
+    width: 100%;
+    max-width: 380px;
+    margin: 0 auto;
+    animation: fadeIn 0.8s ease-out;
+}
+
+.login-header-new h2 {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.login-header-new p {
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin-bottom: 32px;
+}
+
+/* Formulário Moderno */
+.form-group-new {
+    margin-bottom: 24px;
+}
+
+.form-group-new label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.input-wrapper-new {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-wrapper-new svg {
+    position: absolute;
+    left: 16px;
+    color: var(--text-muted);
+    transition: color 0.3s;
+}
+
+.form-control-new {
+    width: 100%;
+    padding: 14px 16px 14px 46px;
+    background: var(--bg-app);
+    border: 1.5px solid var(--border-color);
+    border-radius: 12px;
+    font-size: 15px;
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.form-control-new:focus {
+    border-color: var(--primary);
+    background: var(--bg-surface);
+    box-shadow: 0 0 0 4px var(--primary-glow);
+}
+
+.form-control-new:focus + svg {
     color: var(--primary);
 }
 
-.login-header h2 {
-    font-size: 22px;
+.btn-primary-new {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
     font-weight: 700;
-    color: var(--text-primary);
-    margin-bottom: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 20px rgba(99,102,241,0.25);
+    margin-top: 8px;
 }
 
-.login-header p {
-    font-size: 14px;
+.btn-primary-new:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(99,102,241,0.35);
+}
+
+/* Presets Demo Moderno */
+.presets-section-new {
+    margin-top: 40px;
+}
+
+.presets-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 24px;
+}
+.presets-divider::before, .presets-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid var(--border-color);
+}
+.presets-divider span {
+    padding: 0 16px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.presets-grid-new {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.preset-btn-new {
+    background: var(--bg-app);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 12px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.preset-btn-new:hover {
+    border-color: var(--primary);
+    background: var(--bg-surface);
+    transform: translateY(-2px);
+}
+
+.preset-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 800;
+    color: white;
+}
+
+.bg-admin { background: linear-gradient(135deg, #f43f5e, #e11d48); }
+.bg-manager { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+.bg-seller { background: linear-gradient(135deg, #10b981, #059669); }
+
+.preset-btn-new span {
+    font-size: 12px;
+    font-weight: 600;
     color: var(--text-secondary);
+}
+
+/* Responsividade Mobile */
+@media (max-width: 992px) {
+    .login-hero-side {
+        display: none;
+    }
+    .login-form-side {
+        width: 100%;
+        padding: 24px;
+    }
 }
 
 .form-group {

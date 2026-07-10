@@ -39,7 +39,7 @@ const elements = {
     logSearch: document.getElementById("log-search"),
     btnRefreshLogs: document.getElementById("btn-refresh-logs"),
     btnClearLogs: document.getElementById("btn-clear-logs"),
-    presetBtns: document.querySelectorAll(".preset-btn"),
+    presetBtns: document.querySelectorAll(".preset-btn-new"),
     menuItems: document.querySelectorAll(".sidebar-menu .menu-item")
 };
 

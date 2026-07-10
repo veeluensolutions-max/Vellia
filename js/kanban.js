@@ -89,14 +89,48 @@ export const Kanban = {
                 timeColor = "var(--warning)";
             }
 
+            const leadProps = Store.getProposals().filter(p => p.leadId === lead.id && p.status !== "Perdido");
+            const leadValue = leadProps.reduce((s, p) => s + (p.value || 0), 0);
+            
+            const users = Store.getUsers();
+            const ownerUser = users.find(u => u.email === lead.owner);
+            const avatar = ownerUser ? ownerUser.avatar : "U";
+            const ownerName = ownerUser ? ownerUser.name : "Indefinido";
+
+            // Prioridade dinâmica baseada no valor ou segmento
+            let priority = "Baixa";
+            let priorityClass = "badge-info"; 
+            if (leadValue > 15000 || lead.segment === "Tecnologia") {
+                priority = "Alta";
+                priorityClass = "badge-danger";
+            } else if (leadValue > 5000 || lead.segment === "Construção Civil") {
+                priority = "Média";
+                priorityClass = "badge-warning";
+            }
+
+            const fmtVal = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(leadValue);
+
             card.innerHTML = `
+                <div class="kanban-card-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                    <span class="badge ${priorityClass}" style="font-size: 9px; padding: 2px 6px; border-radius: 99px;">${priority}</span>
+                    <div class="user-avatar" style="width: 22px; height: 22px; font-size: 9px; font-weight: 700; margin-left: auto;" title="Responsável: ${ownerName}">
+                        ${avatar}
+                    </div>
+                </div>
                 <div class="kanban-card-company">${lead.company}</div>
                 <div class="kanban-card-contact">${lead.contact} • <span style="font-size:11px; color:var(--text-muted);">${lead.role || 'Sem cargo'}</span></div>
-                <div class="kanban-card-details">
+                
+                ${leadValue > 0 ? `
+                <div class="kanban-card-value" style="font-size: 13px; font-weight: 800; color: var(--success); margin: 4px 0 2px 0;">
+                    ${fmtVal}
+                </div>
+                ` : ""}
+                
+                <div class="kanban-card-details" style="margin-top: 4px;">
                     <span class="kanban-card-tag">${lead.segment}</span>
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span class="kanban-card-time" style="color: ${timeColor}; font-weight: 500;">
-                            🕒 ${daysNoContact === 0 ? 'Hoje' : `${daysNoContact} dias`}
+                            🕒 ${daysNoContact === 0 ? 'Hoje' : `${daysNoContact}d`}
                         </span>
                         <button class="kanban-card-wa-btn" data-id="${lead.id}" onclick="event.stopPropagation(); window.WhatsApp?.openModalForLead('${lead.id}')" style="background: none; border: none; cursor: pointer; color: #25d366; display: flex; align-items: center; justify-content: center; padding: 2px;" title="Enviar WhatsApp">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>

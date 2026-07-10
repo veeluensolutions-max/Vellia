@@ -532,7 +532,8 @@ function setupSellerQuickActions() {
 
 function setupEventListeners() {
     // Form de Login
-    elements.loginForm.addEventListener("submit", () => {
+    elements.loginForm.addEventListener("submit", (e) => {
+        e.preventDefault();
         const email = elements.loginEmail.value.trim();
         const password = elements.loginPassword.value;
         

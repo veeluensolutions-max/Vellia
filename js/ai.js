@@ -549,7 +549,7 @@ export const VelliaAI = {
                     <div>
                         <div style="font-weight: 700; font-size: 12px; color: var(--text-primary); margin-bottom: 4px;">${ins.title}</div>
                         <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">${ins.desc}</div>
-                        <span style="font-size: 10px; font-weight: 700; color: var(--primary);">Ask: "${ins.command}" →</span>
+                        <span style="font-size: 10px; font-weight: 700; color: var(--primary);">Ask: "${ins.command}" &rarr;</span>
                     </div>
                 </div>
             </div>

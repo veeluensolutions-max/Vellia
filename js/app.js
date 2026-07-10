@@ -15,6 +15,7 @@ import { Team } from "./team.js";
 import { Performance } from "./performance.js";
 import { WhatsApp } from "./whatsapp.js";
 import { Pricing } from "./pricing.js";
+import { Integrations } from "./integrations.js";
 
 // Elementos Globais DOM
 const elements = {
@@ -107,8 +108,8 @@ function configureSidebarMenu(role) {
             // Gerente Comercial vê CRM, Kanban, Propostas, Metas, Serviços, Forecast, IA. Não vê logs.
             isVisible = viewName !== "logs";
         } else if (role === "seller") {
-            // Vendedor vê CRM, Kanban, Propostas, Metas, IA. Não vê Logs, Serviços e Forecast.
-            isVisible = !["logs", "services", "forecast"].includes(viewName);
+            // Vendedor vê CRM, Kanban, Propostas, Metas, IA. Não vê Logs, Serviços, Forecast e Integrações.
+            isVisible = !["logs", "services", "forecast", "integrations"].includes(viewName);
         }
 
         // Elementos HTML específicos
@@ -198,6 +199,10 @@ function navigateTo(viewName) {
         Forecast.init();
     } else if (viewName === "ai") {
         VelliaAI.init();
+    } else if (viewName === "pricing") {
+        Pricing.init();
+    } else if (viewName === "integrations") {
+        Integrations.init();
     }
 }
 

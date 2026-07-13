@@ -102,7 +102,7 @@ export const Notifications = {
     },
 
     togglePanel() {
-        const isHidden = this.panel.style.display === "none";
+        const isHidden = !this.panel.style.display || this.panel.style.display === "none";
         this.panel.style.display = isHidden ? "flex" : "none";
     },
 
@@ -113,6 +113,7 @@ export const Notifications = {
     generateContextualNotifications() {
         const ctx = analyzeContext();
         this.items = [];
+        const currentUser = Auth.getCurrentUser();
         const sentNotifications = JSON.parse(sessionStorage.getItem("sent_native_notifications") || "[]");
         let updated = false;
 
@@ -125,8 +126,19 @@ export const Notifications = {
             }
         };
 
-        if (ctx.atRiskProps && ctx.atRiskProps.length > 0) {
-            ctx.atRiskProps.forEach(p => {
+        // Filtrar contexto conforme permissão e responsabilidade do vendedor
+        let relevantRiskProps = ctx.atRiskProps || [];
+        let relevantExpiringProps = ctx.expiringProps || [];
+        let relevantColdLeads = ctx.coldLeads || [];
+
+        if (currentUser && currentUser.role === "seller") {
+            relevantRiskProps = relevantRiskProps.filter(p => p.createdBy === currentUser.email || p.ownerEmail === currentUser.email);
+            relevantExpiringProps = relevantExpiringProps.filter(p => p.createdBy === currentUser.email || p.ownerEmail === currentUser.email);
+            relevantColdLeads = relevantColdLeads.filter(l => l.owner === currentUser.email);
+        }
+
+        if (relevantRiskProps.length > 0) {
+            relevantRiskProps.forEach(p => {
                 addNotification({
                     id: 'risk_' + p.id,
                     title: "Risco de Churn Elevado ⚠️",
@@ -138,8 +150,8 @@ export const Notifications = {
             });
         }
 
-        if (ctx.expiringProps && ctx.expiringProps.length > 0) {
-            ctx.expiringProps.forEach(p => {
+        if (relevantExpiringProps.length > 0) {
+            relevantExpiringProps.forEach(p => {
                 if (!this.items.find(i => i.id === 'risk_' + p.id)) {
                     addNotification({
                         id: 'exp_' + p.id,
@@ -153,11 +165,13 @@ export const Notifications = {
             });
         }
 
-        if (ctx.coldLeads && ctx.coldLeads.length > 0) {
+        if (relevantColdLeads.length > 0) {
             addNotification({
                 id: 'cold_leads',
                 title: "Leads Esfriando ❄️",
-                message: `Você tem ${ctx.coldLeads.length} leads sem contato há mais de 14 dias.`,
+                message: currentUser && currentUser.role === "seller" 
+                    ? `Você tem ${relevantColdLeads.length} leads sem contato há mais de 14 dias.`
+                    : `Existem ${relevantColdLeads.length} leads esfriando na equipe comercial.`,
                 type: "info",
                 read: false,
                 timestamp: new Date()

@@ -547,6 +547,28 @@ export const Store = {
     },
 
     // ==========================================
+    // COMENTÁRIOS INTERNOS POR LEAD
+    // ==========================================
+    addLeadComment(leadId, userEmail, text) {
+        const leads = this.getLeads();
+        const index = leads.findIndex(l => l.id === leadId);
+        if (index === -1) return null;
+        const comments = leads[index].comments || [];
+        const newComment = {
+            id: `cmt_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+            userEmail,
+            text,
+            timestamp: new Date().toISOString(),
+            readBy: [userEmail]  // Author has already "read" it
+        };
+        comments.push(newComment);
+        leads[index].comments = comments;
+        localStorage.setItem("comercial_leads", JSON.stringify(leads));
+        upsertSupabase("comercial_leads", leads[index]);
+        return newComment;
+    },
+
+    // ==========================================
     // TAREFAS DOS VENDEDORES (TASKS)
     // ==========================================
     getTasks(email) {

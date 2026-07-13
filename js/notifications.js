@@ -27,6 +27,20 @@ export const Notifications = {
 
         // Verificar follow-ups a cada 60 segundos
         setInterval(() => this.checkFollowupReminders(), 60000);
+
+        // Ouvir novos comentários internos de outros usuários
+        window.addEventListener("vellia:newComment", (e) => {
+            const { company, commenter, commentId } = e.detail || {};
+            if (!company) return;
+            this.addItem({
+                id: `cmt_notif_${commentId}`,
+                title: `💬 Novo comentário em ${company}`,
+                message: `${commenter} deixou um comentário interno neste lead.`,
+                type: "info",
+                read: false,
+                timestamp: new Date()
+            });
+        });
     },
 
     requestNativePermission() {

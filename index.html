@@ -1472,7 +1472,27 @@
                 </div>
             </div>
 
-            <!-- Seção 5: Linha do Tempo -->
+            <!-- Seção 5: Comentários Internos -->
+            <div class="drawer-section" id="drawer-comments-section">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                    <span class="drawer-section-title" style="margin-bottom: 0;">💬 Comentários Internos</span>
+                    <span id="comments-unread-badge" style="display: none; background: #ef4444; color: #fff; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 20px;">0</span>
+                </div>
+                <!-- Lista de comentários -->
+                <div id="drawer-comments-list" style="max-height: 220px; overflow-y: auto; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Preenchido dinamicamente -->
+                </div>
+                <!-- Input de novo comentário -->
+                <div style="display: flex; gap: 8px; align-items: flex-end;">
+                    <textarea id="comment-text-input" class="form-control" placeholder="Escreva um comentário interno..." style="flex: 1; min-height: 56px; padding: 8px 12px; font-size: 13px; resize: none; border-radius: 8px;"></textarea>
+                    <button id="btn-send-comment" class="btn btn-primary" style="height: 40px; padding: 0 16px; font-size: 12px; white-space: nowrap; align-self: flex-end;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 5px;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        Enviar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Seção 6: Linha do Tempo -->
             <div class="drawer-section">
                 <span class="drawer-section-title">Linha do Tempo (Atividades)</span>
                 <div id="drawer-timeline" class="timeline">

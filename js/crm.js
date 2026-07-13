@@ -119,6 +119,20 @@ export const CRM = {
         // Follow-up save
         const btnSaveFollowup = document.getElementById("btn-save-followup");
         if (btnSaveFollowup) btnSaveFollowup.addEventListener("click", () => this.saveFollowup());
+
+        // Comentários internos — enviar
+        const btnSendComment = document.getElementById("btn-send-comment");
+        if (btnSendComment) btnSendComment.addEventListener("click", () => this.sendComment());
+        // Ctrl+Enter no textarea envia comentário
+        const commentInput = document.getElementById("comment-text-input");
+        if (commentInput) {
+            commentInput.addEventListener("keydown", (e) => {
+                if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    this.sendComment();
+                }
+            });
+        }
     },
 
     // ==========================================================================
@@ -487,6 +501,9 @@ export const CRM = {
         // Renderizar Follow-ups
         this.renderFollowups(lead);
 
+        // Renderizar Comentários
+        this.renderComments(lead);
+
         // Resetar form follow-up
         const ffContainer = document.getElementById("followup-form-container");
         const ffToggle = document.getElementById("btn-toggle-followup-form");
@@ -587,6 +604,118 @@ export const CRM = {
         window.CRMDeleteFollowup = (id) => this.deleteFollowup(id);
     },
 
+    // ==========================================================================
+    // COMENTÁRIOS INTERNOS
+    // ==========================================================================
+
+    sendComment() {
+        if (!activeLeadId) return;
+        const input = document.getElementById("comment-text-input");
+        const text = input?.value.trim();
+        if (!text) return;
+        const currentUser = Auth.getCurrentUser();
+        if (!currentUser) return;
+
+        const comment = Store.addLeadComment(activeLeadId, currentUser.email, text);
+        if (!comment) return;
+        input.value = "";
+
+        const lead = Store.getLeadById(activeLeadId);
+        this.renderComments(lead);
+
+        // Notificar outros usuários envolvidos no lead
+        const leadData = Store.getLeadById(activeLeadId);
+        if (leadData && leadData.owner && leadData.owner !== currentUser.email) {
+            // Se o comentário é do admin/gerente, notificar o vendedor dono do lead
+            window.dispatchEvent(new CustomEvent("vellia:newComment", {
+                detail: { leadId: activeLeadId, company: leadData.company, commenter: currentUser.name || currentUser.email, commentId: comment.id }
+            }));
+        }
+    },
+
+    renderComments(lead) {
+        const container = document.getElementById("drawer-comments-list");
+        const badge = document.getElementById("comments-unread-badge");
+        if (!container) return;
+
+        const comments = lead.comments || [];
+        const currentUser = Auth.getCurrentUser();
+        const currentEmail = currentUser?.email || "";
+
+        // Count unread
+        const unreadCount = comments.filter(c => !c.readBy || !c.readBy.includes(currentEmail)).length;
+        if (badge) {
+            badge.textContent = unreadCount;
+            badge.style.display = unreadCount > 0 ? "inline-block" : "none";
+        }
+
+        // Mark all as read for current user
+        let needsUpdate = false;
+        comments.forEach(c => {
+            if (!c.readBy) c.readBy = [];
+            if (!c.readBy.includes(currentEmail)) {
+                c.readBy.push(currentEmail);
+                needsUpdate = true;
+            }
+        });
+        if (needsUpdate && activeLeadId) {
+            Store.updateLead(activeLeadId, { comments }, currentEmail);
+        }
+
+        if (comments.length === 0) {
+            container.innerHTML = `<div style="font-size: 12px; color: var(--text-muted); padding: 8px 0; font-style: italic; text-align: center;">Nenhum comentário ainda. Seja o primeiro! 💬</div>`;
+            return;
+        }
+
+        // Role colors
+        const roleColor = { admin: "#7c3aed", manager: "#1d4ed8", seller: "#059669" };
+        const roleBg   = { admin: "rgba(124,58,237,0.08)", manager: "rgba(29,78,216,0.08)", seller: "rgba(5,150,105,0.08)" };
+        const users = Store.getUsers();
+
+        const sorted = [...comments].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        container.innerHTML = sorted.map(c => {
+            const isMine = c.userEmail === currentEmail;
+            const u = users.find(u => u.email === c.userEmail);
+            const roleKey = u?.role || "seller";
+            const color = roleColor[roleKey] || "#6b7280";
+            const bg = roleBg[roleKey] || "rgba(107,114,128,0.08)";
+            const avatarText = (u?.avatar || c.userEmail.substring(0, 2)).toUpperCase();
+            const displayName = u?.name || c.userEmail;
+            const roleName = { admin: "Admin", manager: "Gerente", seller: "Vendedor" }[roleKey] || roleKey;
+            const fmtDt = new Date(c.timestamp).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+
+            return `
+                <div style="display: flex; gap: 8px; ${isMine ? "flex-direction: row-reverse;" : ""}">
+                    <div style="
+                        width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+                        background: ${color}; display: flex; align-items: center; justify-content: center;
+                        font-size: 10px; font-weight: 800; color: #fff; margin-top: 4px;
+                    ">${avatarText}</div>
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="display: flex; gap: 6px; align-items: baseline; margin-bottom: 4px; ${isMine ? "justify-content: flex-end;" : ""}">
+                            <span style="font-size: 11px; font-weight: 700; color: ${color};">${displayName}</span>
+                            <span style="font-size: 10px; background: ${bg}; color: ${color}; padding: 1px 6px; border-radius: 10px; font-weight: 600;">${roleName}</span>
+                            <span style="font-size: 10px; color: var(--text-muted);">${fmtDt}</span>
+                        </div>
+                        <div style="
+                            background: ${isMine ? bg : "var(--bg-surface)"};
+                            border: 1px solid ${isMine ? color + "33" : "var(--border-color)"};
+                            border-radius: ${isMine ? "12px 4px 12px 12px" : "4px 12px 12px 12px"};
+                            padding: 8px 12px; font-size: 12.5px; color: var(--text-primary);
+                            line-height: 1.5; word-break: break-word;
+                        ">${c.text.replace(/\n/g, "<br>")}</div>
+                    </div>
+                </div>`;
+        }).join("");
+
+        // Auto-scroll to bottom
+        container.scrollTop = container.scrollHeight;
+    },
+
+
+    // ==========================================================================
+    // LINHA DO TEMPO (TIMELINE DE ATIVIDADES)
+    // ==========================================================================
 
     renderTimeline(lead) {
         const timelineContainer = document.getElementById("drawer-timeline");

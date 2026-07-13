@@ -1,4 +1,5 @@
 import { analyzeContext } from "./ai.js";
+import { Auth } from "./auth.js";
 
 export const Notifications = {
     panel: null,

@@ -18,8 +18,36 @@ export const Notifications = {
         if (!this.panel || !this.btn) return;
 
         this.bindEvents();
+        this.requestNativePermission();
         this.generateContextualNotifications();
         this.render();
+    },
+
+    requestNativePermission() {
+        if ("Notification" in window && Notification.permission === "default") {
+            this.btn.addEventListener("click", () => {
+                if (Notification.permission === "default") {
+                    Notification.requestPermission().then(permission => {
+                        if (permission === "granted") {
+                            this.sendNativeNotification("Vellia CRM 🔔", "Notificações de Área de Trabalho ativadas com sucesso!");
+                        }
+                    });
+                }
+            }, { once: true });
+        }
+    },
+
+    sendNativeNotification(title, message) {
+        if ("Notification" in window && Notification.permission === "granted") {
+            try {
+                new Notification(title, {
+                    body: message,
+                    icon: "https://velliacrm.vercel.app/favicon.ico"
+                });
+            } catch (err) {
+                console.error("Falha ao enviar notificação nativa:", err);
+            }
+        }
     },
 
     bindEvents() {
@@ -40,6 +68,37 @@ export const Notifications = {
                 this.render();
             });
         }
+
+        if (this.list) {
+            this.list.addEventListener("click", (e) => {
+                const itemEl = e.target.closest(".notif-item");
+                if (itemEl) {
+                    const id = itemEl.getAttribute("data-id");
+                    const item = this.items.find(i => i.id === id);
+                    if (item) {
+                        item.read = true;
+                        this.render();
+                        this.closePanel();
+                        
+                        // Redirecionamento inteligente
+                        if (id.startsWith("risk_") || id.startsWith("exp_")) {
+                            const propId = id.split("_")[1];
+                            window.location.hash = "#proposals";
+                            setTimeout(() => {
+                                const propEl = document.querySelector(`.proposal-row[data-id="${propId}"], .kanban-card[data-id="${propId}"]`);
+                                if (propEl) propEl.click();
+                            }, 300);
+                        } else if (id === "cold_leads") {
+                            window.location.hash = "#team";
+                            setTimeout(() => {
+                                const tabBtn = document.querySelector('.subtab-btn[data-subtab="team-forecast"]');
+                                if (tabBtn) tabBtn.click();
+                            }, 100);
+                        }
+                    }
+                }
+            });
+        }
     },
 
     togglePanel() {
@@ -54,12 +113,23 @@ export const Notifications = {
     generateContextualNotifications() {
         const ctx = analyzeContext();
         this.items = [];
+        const sentNotifications = JSON.parse(sessionStorage.getItem("sent_native_notifications") || "[]");
+        let updated = false;
+
+        const addNotification = (item) => {
+            this.items.push(item);
+            if (!sentNotifications.includes(item.id)) {
+                this.sendNativeNotification(item.title, item.message);
+                sentNotifications.push(item.id);
+                updated = true;
+            }
+        };
 
         if (ctx.atRiskProps && ctx.atRiskProps.length > 0) {
             ctx.atRiskProps.forEach(p => {
-                this.items.push({
+                addNotification({
                     id: 'risk_' + p.id,
-                    title: "Risco de Churn Elevado",
+                    title: "Risco de Churn Elevado ⚠️",
                     message: `A proposta da ${p.company} apresenta alto risco de perda.`,
                     type: "danger",
                     read: false,
@@ -71,9 +141,9 @@ export const Notifications = {
         if (ctx.expiringProps && ctx.expiringProps.length > 0) {
             ctx.expiringProps.forEach(p => {
                 if (!this.items.find(i => i.id === 'risk_' + p.id)) {
-                    this.items.push({
+                    addNotification({
                         id: 'exp_' + p.id,
-                        title: "Proposta Vencendo",
+                        title: "Proposta Vencendo ⏳",
                         message: `A proposta para ${p.company} vencerá em menos de 7 dias.`,
                         type: "warning",
                         read: false,
@@ -84,14 +154,18 @@ export const Notifications = {
         }
 
         if (ctx.coldLeads && ctx.coldLeads.length > 0) {
-            this.items.push({
+            addNotification({
                 id: 'cold_leads',
-                title: "Leads Esfriando",
+                title: "Leads Esfriando ❄️",
                 message: `Você tem ${ctx.coldLeads.length} leads sem contato há mais de 14 dias.`,
                 type: "info",
                 read: false,
                 timestamp: new Date()
             });
+        }
+
+        if (updated) {
+            sessionStorage.setItem("sent_native_notifications", JSON.stringify(sentNotifications));
         }
     },
 
@@ -113,7 +187,7 @@ export const Notifications = {
         }
 
         this.list.innerHTML = this.items.map(item => `
-            <div class="notif-item ${item.read ? '' : 'unread'}" data-id="${item.id}">
+            <div class="notif-item ${item.read ? '' : 'unread'}" data-id="${item.id}" style="cursor: pointer;">
                 <div class="notif-icon ${item.type}">
                     ${this.getIcon(item.type)}
                 </div>

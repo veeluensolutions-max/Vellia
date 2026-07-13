@@ -21,6 +21,25 @@ export const Forecast = {
     bindEvents() {
         const scenarioFilter = document.getElementById("forecast-scenario-filter");
         if (scenarioFilter) scenarioFilter.addEventListener("change", () => this.renderAll());
+
+        const simProb = document.getElementById("slider-sim-prob");
+        const simGrowth = document.getElementById("slider-sim-growth");
+        const simMult = document.getElementById("slider-sim-mult");
+
+        const updateLabels = () => {
+            if (simProb) document.getElementById("val-sim-prob").textContent = `${simProb.value}%`;
+            if (simGrowth) document.getElementById("val-sim-growth").textContent = `${simGrowth.value}%`;
+            if (simMult) document.getElementById("val-sim-mult").textContent = `${parseFloat(simMult.value).toFixed(1)}x`;
+        };
+
+        [simProb, simGrowth, simMult].forEach(slider => {
+            if (slider) {
+                slider.addEventListener("input", () => {
+                    updateLabels();
+                    this.renderAll();
+                });
+            }
+        });
     },
 
     renderAll() {
@@ -28,9 +47,21 @@ export const Forecast = {
         const leads = Store.getLeads();
         const scenario = document.getElementById("forecast-scenario-filter")?.value || "realistic";
 
+        const simProbVal = document.getElementById("slider-sim-prob") 
+            ? parseFloat(document.getElementById("slider-sim-prob").value) / 100 
+            : 0.50; // Probabilidade de conversão simulada
+
+        const simGrowthVal = document.getElementById("slider-sim-growth")
+            ? 1 + (parseFloat(document.getElementById("slider-sim-growth").value) / 100)
+            : 1.08; // Crescimento mensal base simulado
+
+        const simMultVal = document.getElementById("slider-sim-mult")
+            ? parseFloat(document.getElementById("slider-sim-mult").value)
+            : 1.0; // Multiplicador de volume simulado
+
         // Multiplicadores por cenário
         const multipliers = { pessimistic: 0.65, realistic: 1.0, optimistic: 1.35 };
-        const mult = multipliers[scenario] || 1.0;
+        const mult = (multipliers[scenario] || 1.0) * simMultVal;
         const scenarioLabels = { pessimistic: "Pessimista 🔻", realistic: "Realista ⚖️", optimistic: "Otimista 🚀" };
         this.setEl("forecast-scenario-label", scenarioLabels[scenario]);
 
@@ -54,7 +85,7 @@ export const Forecast = {
         const revenueLastMonth = wonLastMonth.reduce((s, p) => s + (p.value || 0), 0);
 
         // Weighted pipeline
-        const weightedPipeline = openProposals.reduce((s, p) => s + (p.value || 0) * 0.5, 0); // 50% de probabilidade média
+        const weightedPipeline = openProposals.reduce((s, p) => s + (p.value || 0) * simProbVal, 0); // Probabilidade simulada pelo slider
         const weightedLeads = leads
             .filter(l => !["Perdido", "Cliente Ativo"].includes(l.stage))
             .reduce((s, l) => {
@@ -84,7 +115,7 @@ export const Forecast = {
         if (growthEl) growthEl.style.color = parseFloat(growthPct) >= 0 ? "var(--success)" : "var(--danger)";
 
         // === PROJEÇÃO DOS PRÓXIMOS 3 MESES ===
-        this.renderProjection(revenueThisMonth, pipelineForecast, mult);
+        this.renderProjection(revenueThisMonth, pipelineForecast, mult, simGrowthVal);
 
         // === PIPELINE PONDERADO POR PROPOSTA ===
         this.renderPipelineBreakdown(openProposals, mult);
@@ -99,7 +130,7 @@ export const Forecast = {
     // ===========================================================================
     // PROJEÇÃO GRÁFICA — 3 MESES
     // ===========================================================================
-    renderProjection(currentRevenue, pipeline, mult) {
+    renderProjection(currentRevenue, pipeline, mult, simGrowthVal) {
         const container = document.getElementById("fc-projection-chart");
         if (!container) return;
 
@@ -117,7 +148,7 @@ export const Forecast = {
         months.push({ label: now.toLocaleDateString("pt-BR", { month: "short" }) + " (atual)", value: currentRevenue, type: "current" });
 
         // Próximos 3 meses (forecast)
-        const baseGrowth = 1.08; // 8% de crescimento esperado ao mês
+        const baseGrowth = simGrowthVal || 1.08; // Crescimento esperado ao mês simulado
         let forecastBase = Math.max(currentRevenue, pipeline * 0.4);
         for (let i = 1; i <= 3; i++) {
             const d = new Date(now.getFullYear(), now.getMonth() + i, 1);

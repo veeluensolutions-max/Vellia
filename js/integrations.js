@@ -101,6 +101,31 @@ export const Integrations = {
                     </div>
                 </div>
             </div>
+
+            <!-- AI AUTOPILOT CONSOLE -->
+            <div class="autopilot-container" id="ai-autopilot-panel">
+                <h3 style="font-size: 15px; font-weight: 800; color: var(--text-primary); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                    <span>🛰️</span> Painel do Piloto Automático SDR AI
+                </h3>
+                <div class="autopilot-grid">
+                    <div style="text-align: center;">
+                        <div class="radar-scanner" id="autopilot-radar"></div>
+                        <div style="font-size: 11px; font-weight: 700; color: var(--primary); margin-top: 10px;" id="autopilot-status-lbl">AGUARDANDO...</div>
+                    </div>
+                    <div>
+                        <div class="terminal-console" id="autopilot-terminal">
+                            <div class="terminal-line info">> Aguardando início da simulação de lead ou mensagem...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="autopilot-steps">
+                    <div class="autopilot-step" id="step-init">1. Conexão</div>
+                    <div class="autopilot-step" id="step-scanning">2. Varredura Ads</div>
+                    <div class="autopilot-step" id="step-dialogue">3. Triagem WhatsApp</div>
+                    <div class="autopilot-step" id="step-decision">4. Decisão Funil</div>
+                    <div class="autopilot-step" id="step-done">5. Concluído</div>
+                </div>
+            </div>
         `;
 
         this.bindEvents();
@@ -178,6 +203,78 @@ export const Integrations = {
                 });
             });
         }
+
+        // Ouvinte de atualização do SDR AI para o console do Piloto Automático
+        window.removeEventListener("vellia:sdrUpdate", window.handleSdrAutopilotUpdate);
+        window.handleSdrAutopilotUpdate = (e) => {
+            const panel = document.getElementById("ai-autopilot-panel");
+            const terminal = document.getElementById("autopilot-terminal");
+            const radar = document.getElementById("autopilot-radar");
+            const statusLabel = document.getElementById("autopilot-status-lbl");
+            
+            if (!panel || !terminal) return;
+
+            // Exibir o painel
+            panel.style.display = "block";
+
+            // Se for inicialização, limpa o terminal
+            if (e.detail.stage === "init") {
+                terminal.innerHTML = "";
+                radar.classList.add("active");
+                statusLabel.textContent = "CONECTANDO...";
+                statusLabel.style.color = "var(--primary)";
+                
+                // Resetar etapas
+                document.querySelectorAll(".autopilot-step").forEach(s => s.className = "autopilot-step");
+            }
+
+            // Atualizar classes das etapas
+            const currentStepEl = document.getElementById(`step-${e.detail.stage}`);
+            if (currentStepEl) {
+                currentStepEl.classList.add("active");
+                // Marcar anteriores como success
+                if (e.detail.stage === "scanning") {
+                    document.getElementById("step-init").className = "autopilot-step success";
+                    statusLabel.textContent = "VARRENDO ADS...";
+                } else if (e.detail.stage === "dialogue") {
+                    document.getElementById("step-init").className = "autopilot-step success";
+                    document.getElementById("step-scanning").className = "autopilot-step success";
+                    statusLabel.textContent = "TRIANDO NO WHATSAPP...";
+                } else if (e.detail.stage === "decision") {
+                    document.getElementById("step-init").className = "autopilot-step success";
+                    document.getElementById("step-scanning").className = "autopilot-step success";
+                    document.getElementById("step-dialogue").className = "autopilot-step success";
+                    statusLabel.textContent = "DECIDINDO ETAPA...";
+                } else if (e.detail.stage === "done") {
+                    document.querySelectorAll(".autopilot-step").forEach(s => s.className = "autopilot-step success");
+                    statusLabel.textContent = "FINALIZADO";
+                    statusLabel.style.color = "var(--success)";
+                    radar.classList.remove("active");
+                }
+            }
+
+            // Adicionar linha ao terminal com estilo retro/hacker
+            const line = document.createElement("div");
+            line.className = "terminal-line";
+            
+            // Colorir conforme o conteúdo
+            if (e.detail.text.includes("✅") || e.detail.text.includes("Sucesso") || e.detail.text.includes("done")) {
+                line.classList.add("success");
+            } else if (e.detail.text.includes("❌") || e.detail.text.includes("Falha") || e.detail.text.includes("Erro")) {
+                line.classList.add("error");
+            } else if (e.detail.text.includes("📡") || e.detail.text.includes("🧠") || e.detail.text.includes("Varrendo")) {
+                line.classList.add("warning");
+            } else {
+                line.classList.add("info");
+            }
+
+            line.textContent = e.detail.text;
+            terminal.appendChild(line);
+            
+            // Rolagem automática
+            terminal.scrollTop = terminal.scrollHeight;
+        };
+        window.addEventListener("vellia:sdrUpdate", window.handleSdrAutopilotUpdate);
     }
 };
 

@@ -7,11 +7,23 @@ export const SDR = {
         const lead = Store.getLeadById(leadId);
         if (!lead) return;
 
+        const getLogTime = () => `[${new Date().toLocaleTimeString("pt-BR")}]`;
+
         // 1. Registrar início do contato automático pelo SDR
         this.addSystemLog(lead, "SDR AI: Iniciando contato automático via WhatsApp...");
+        window.dispatchEvent(new CustomEvent("vellia:sdrUpdate", { 
+            detail: { leadId, stage: "init", text: `${getLogTime()} 🤖 SDR AI Conectado. Analisando lead de ${lead.company}...` } 
+        }));
 
         // 2. Chamar o Gemini para formular a primeira mensagem de contato e a simulação de triagem!
         try {
+            window.dispatchEvent(new CustomEvent("vellia:sdrUpdate", { 
+                detail: { leadId, stage: "scanning", text: `${getLogTime()} 📡 Varrendo segmento "${lead.segment || "Outros"}" via Meta Ads...` } 
+            }));
+            window.dispatchEvent(new CustomEvent("vellia:sdrUpdate", { 
+                detail: { leadId, stage: "scanning", text: `${getLogTime()} 🧠 Consultando modelo Gemini 2.5 Flash para abordagem personalizada...` } 
+            }));
+
             const prompt = `
 Você é o Vellia AI SDR (Assistente de Pré-vendas).
 Dados do Lead:
@@ -61,6 +73,16 @@ Retorne a resposta estritamente no seguinte formato JSON:
             const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
             const parsed = JSON.parse(resultText);
 
+            window.dispatchEvent(new CustomEvent("vellia:sdrUpdate", { 
+                detail: { leadId, stage: "dialogue", text: `${getLogTime()} 💬 Iniciando diálogo de triagem via WhatsApp...` } 
+            }));
+
+            parsed.dialogue.forEach(d => {
+                window.dispatchEvent(new CustomEvent("vellia:sdrUpdate", { 
+                    detail: { leadId, stage: "dialogue", text: `  -> [${d.from === "SDR" ? "🤖 SDR AI" : `👤 ${lead.contact}`}]: "${d.text}"` } 
+                }));
+            });
+
             // 3. Atualizar o estágio do lead no Funil/Store
             const oldStage = lead.stage;
             lead.stage = parsed.decision.stage;
@@ -100,6 +122,16 @@ Retorne a resposta estritamente no seguinte formato JSON:
                 Store.saveLeads(leads);
             }
 
+            window.dispatchEvent(new CustomEvent("vellia:sdrUpdate", { 
+                detail: { leadId, stage: "decision", text: `${getLogTime()} ⚖️ Análise de qualificação concluída.` } 
+            }));
+            window.dispatchEvent(new CustomEvent("vellia:sdrUpdate", { 
+                detail: { leadId, stage: "decision", text: `  -> Decisão: Mover lead para a etapa "${parsed.decision.stage}"` } 
+            }));
+            window.dispatchEvent(new CustomEvent("vellia:sdrUpdate", { 
+                detail: { leadId, stage: "decision", text: `  -> Motivo: ${parsed.decision.summary}` } 
+            }));
+
             // Registrar log de auditoria
             const logs = Store.getLogs();
             logs.unshift({
@@ -112,6 +144,10 @@ Retorne a resposta estritamente no seguinte formato JSON:
             });
             Store.saveLogs(logs);
 
+            window.dispatchEvent(new CustomEvent("vellia:sdrUpdate", { 
+                detail: { leadId, stage: "done", text: `${getLogTime()} ✅ Sincronização concluída. Autopilot encerrado.` } 
+            }));
+
             // Disparar evento para atualizar Kanban, Dash, etc.
             window.dispatchEvent(new CustomEvent("vellia:waSent"));
 
@@ -122,6 +158,9 @@ Retorne a resposta estritamente no seguinte formato JSON:
 
         } catch (error) {
             console.error("Erro na triagem SDR:", error);
+            window.dispatchEvent(new CustomEvent("vellia:sdrUpdate", { 
+                detail: { leadId, stage: "done", text: `${getLogTime()} ❌ Falha no processamento da IA. Usando fallback.` } 
+            }));
             this.runTriageFallback(lead);
         }
     },

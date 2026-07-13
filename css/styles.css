@@ -2224,25 +2224,33 @@ a {
 }
 
 .ai-bubble {
-    padding: 12px 16px;
-    border-radius: 16px;
+    padding: 14px 18px;
+    border-radius: 18px;
     font-size: 13.5px;
-    line-height: 1.5;
+    line-height: 1.6;
     position: relative;
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.04);
 }
 
 .ai-message--assistant .ai-bubble {
-    background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(99,102,241,0.02) 100%);
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     color: var(--text-primary);
-    border: 1px solid var(--border-color);
+    border: 1px solid rgba(99, 102, 241, 0.15);
     border-top-left-radius: 4px;
 }
 
+[data-theme="dark"] .ai-message--assistant .ai-bubble {
+    background: rgba(18, 20, 28, 0.5);
+    border-color: rgba(99, 102, 241, 0.25);
+}
+
 .ai-message--user .ai-bubble {
-    background-color: var(--primary);
+    background: linear-gradient(135deg, var(--primary) 0%, #6366f1 100%);
     color: #ffffff;
     border-top-right-radius: 4px;
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.2);
 }
 
 .ai-bubble-text strong {

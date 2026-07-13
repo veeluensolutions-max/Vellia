@@ -458,7 +458,7 @@ const chatHistory = [];
 function renderMessage(msg, container) {
     const isAI = msg.from === "ai";
     const div = document.createElement("div");
-    div.className = `ai-message ${isAI ? "ai-message--assistant" : "ai-message--user"}`;
+    div.className = `ai-message ${isAI ? "ai-message--assistant" : "ai-message--user"} animate-fade-in`;
 
     // Converter **bold** e quebras de linha em HTML
     const formatted = msg.text

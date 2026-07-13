@@ -186,15 +186,28 @@ export const Notifications = {
             return;
         }
 
+        const formatTime = (ts) => {
+            if (!ts) return "Agora";
+            const diff = Date.now() - new Date(ts).getTime();
+            const mins = Math.floor(diff / 60000);
+            if (mins < 1) return "Agora mesmo";
+            if (mins < 60) return `Há ${mins} min`;
+            const hours = Math.floor(mins / 60);
+            if (hours < 24) return `Há ${hours} h`;
+            return new Date(ts).toLocaleDateString("pt-BR");
+        };
+
         this.list.innerHTML = this.items.map(item => `
             <div class="notif-item ${item.read ? '' : 'unread'}" data-id="${item.id}" style="cursor: pointer;">
                 <div class="notif-icon ${item.type}">
                     ${this.getIcon(item.type)}
                 </div>
                 <div class="notif-content">
-                    <h4>${item.title}</h4>
-                    <p>${item.message}</p>
-                    <span class="notif-time">Agora mesmo</span>
+                    <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px;">
+                        <h4>${item.title}</h4>
+                        <span class="notif-time">${formatTime(item.timestamp)}</span>
+                    </div>
+                    <p style="margin-top: 3px;">${item.message}</p>
                 </div>
             </div>
         `).join("");

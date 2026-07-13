@@ -638,9 +638,6 @@ export const Dashboard = {
             viewSeller.value = targetSeller;
             renderAssignedTasks();
 
-            // Notificação visual rápida
-            alert(`Tarefa atribuída para ${selectSeller.options[selectSeller.selectedIndex].text}!`);
         };
     }
-};
 };

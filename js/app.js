@@ -521,9 +521,11 @@ function renderSellerDailyTasks(userEmail) {
                 ${t.assignedBy ? `<span style="background: rgba(99,102,241,0.1); color: var(--primary); padding: 1px 5px; border-radius: 4px; font-size: 9px; font-weight: 700; border: 1px solid rgba(99,102,241,0.25);">GESTOR</span>` : ""}
                 <label for="task-${i}" style="font-size: 13px; cursor: pointer; text-decoration: ${t.done ? "line-through" : "none"}; color: var(--text-primary);">${t.text}</label>
             </div>
+            ${!t.assignedBy ? `
             <button onclick="window.deleteDailyTask('${userEmail}', ${i})" style="background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 2px; display: flex;">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
+            ` : ""}
         </div>
     `).join("");
 }

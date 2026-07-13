@@ -800,36 +800,94 @@ function renderSellerActivities(activeLeads) {
 
 // Auxiliar: Configurar atalhos de ações rápidas
 function setupSellerQuickActions() {
-    const actions = {
-        btnQuickNewLead: document.getElementById("btn-quick-new-lead"),
-        btnQuickLogCall: document.getElementById("btn-quick-log-call"),
-        btnQuickLogMeeting: document.getElementById("btn-quick-log-meeting"),
-        btnQuickChangeStage: document.getElementById("btn-quick-change-stage"),
-        btnQuickCloseSale: document.getElementById("btn-quick-close-sale")
-    };
 
-    if (actions.btnQuickNewLead) {
-        actions.btnQuickNewLead.addEventListener("click", () => {
-            import('./crm.js').then(m => m.CRM.openNewLeadModal());
+    // ---- Ativar Cards KPI como botões clicáveis ----
+    const kpiCards = [
+        { ids: ["seller-leads-total"],           route: "crm",       title: "Contatos & Leads" },
+        { ids: ["seller-active-negotiations"],    route: "kanban",    title: "Funil Kanban" },
+        { ids: ["seller-closed-month"],          route: "proposals", title: "Propostas & Vendas" },
+        { ids: ["seller-revenue"],               route: "proposals", title: "Propostas & Vendas" },
+    ];
+
+    kpiCards.forEach(({ ids, route }) => {
+        ids.forEach(id => {
+            // Sobe até o card pai (div.card.stat-card)
+            const el = document.getElementById(id);
+            if (!el) return;
+            const card = el.closest(".card, .stat-card") || el.parentElement?.parentElement;
+            if (!card) return;
+
+            // Estilo de botão interativo
+            card.style.cursor = "pointer";
+            card.style.transition = "transform 0.18s ease, box-shadow 0.18s ease";
+            card.addEventListener("mouseenter", () => {
+                card.style.transform = "translateY(-3px)";
+                card.style.boxShadow = "0 8px 24px rgba(99,102,241,0.18)";
+            });
+            card.addEventListener("mouseleave", () => {
+                card.style.transform = "";
+                card.style.boxShadow = "";
+            });
+            card.addEventListener("click", () => {
+                window.location.hash = route;
+            });
+        });
+    });
+
+    // ---- Botão Novo Lead (saudação + barra de ações) ----
+    document.querySelectorAll("#btn-quick-new-lead").forEach(btn => {
+        // Remover listeners antigos clonando o elemento
+        const fresh = btn.cloneNode(true);
+        btn.parentNode.replaceChild(fresh, btn);
+        fresh.addEventListener("click", () => {
+            import('./crm.js').then(m => {
+                window.location.hash = "crm";
+                setTimeout(() => m.CRM.openNewLeadModal(), 250);
+            });
+        });
+    });
+
+    // ---- Registrar Ligação → vai para CRM e destaca a lista ----
+    const btnCall = document.getElementById("btn-quick-log-call");
+    if (btnCall) {
+        const fresh = btnCall.cloneNode(true);
+        btnCall.parentNode.replaceChild(fresh, btnCall);
+        fresh.addEventListener("click", () => {
+            window.location.hash = "crm";
         });
     }
 
-    const redirectToCRM = () => {
-        window.location.hash = "crm";
-        setTimeout(() => alert("Selecione o lead desejado na tabela abaixo para abrir os detalhes e efetuar a ação."), 300);
-    };
+    // ---- Registrar Reunião → vai para CRM ----
+    const btnMeeting = document.getElementById("btn-quick-log-meeting");
+    if (btnMeeting) {
+        const fresh = btnMeeting.cloneNode(true);
+        btnMeeting.parentNode.replaceChild(fresh, btnMeeting);
+        fresh.addEventListener("click", () => {
+            window.location.hash = "crm";
+        });
+    }
 
-    if (actions.btnQuickLogCall) actions.btnQuickLogCall.addEventListener("click", redirectToCRM);
-    if (actions.btnQuickLogMeeting) actions.btnQuickLogMeeting.addEventListener("click", redirectToCRM);
-    if (actions.btnQuickChangeStage) actions.btnQuickChangeStage.addEventListener("click", redirectToCRM);
-    
-    if (actions.btnQuickCloseSale) {
-        actions.btnQuickCloseSale.addEventListener("click", () => {
+    // ---- Atualizar Negociação → vai para Kanban ----
+    const btnStage = document.getElementById("btn-quick-change-stage");
+    if (btnStage) {
+        const fresh = btnStage.cloneNode(true);
+        btnStage.parentNode.replaceChild(fresh, btnStage);
+        fresh.addEventListener("click", () => {
             window.location.hash = "kanban";
-            setTimeout(() => alert("Arraste o lead desejado para a coluna 'Cliente Fechado' para consolidar a venda!"), 300);
+        });
+    }
+
+    // ---- Fechar Venda → vai para Kanban ----
+    const btnClose = document.getElementById("btn-quick-close-sale");
+    if (btnClose) {
+        const fresh = btnClose.cloneNode(true);
+        btnClose.parentNode.replaceChild(fresh, btnClose);
+        fresh.addEventListener("click", () => {
+            window.location.hash = "kanban";
         });
     }
 }
+
 
 
 

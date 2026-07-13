@@ -328,58 +328,54 @@ export const CRM = {
         btn.innerHTML = `<span style="animation: spin 1s linear infinite; display:inline-block;">⏳</span> Distribuindo...`;
 
         try {
+            // Pequeno delay para feedback visual premium
+            await new Promise(resolve => setTimeout(resolve, 800));
+
             const leads = Store.getLeads();
-            const sellers = Store.getUsers().filter(u => u.role === "seller" || u.role === "manager");
+            const sellers = Store.getUsers().filter(u => u.role === "seller");
 
             if (sellers.length === 0) {
                 alert("Nenhum vendedor cadastrado para distribuição.");
                 return;
             }
 
-            // Calcular atividade de cada vendedor (número de leads ativos)
-            const sellerActivity = sellers.map(s => ({
-                email: s.email,
-                name: s.name,
-                activeLeads: leads.filter(l => l.owner === s.email && l.stage !== "Cliente Fechado" && l.stage !== "Cliente Perdido").length
-            }));
+            // Leads não atribuídos
+            const unassignedLeads = leads.filter(l => !l.owner || l.owner === "sistema@vellia.com" || l.owner === "sdr-ai@vellia.com");
 
-            const prompt = `Você é um gerente comercial especialista em CRM.
-Distribua os leads não atribuídos entre os vendedores, priorizando quem tem MENOS leads ativos (mais disponível).
+            if (unassignedLeads.length === 0) {
+                alert("Todos os leads já estão atribuídos a um responsável!");
+                return;
+            }
 
-Leads sem dono (não atribuídos):
-${JSON.stringify(leads.filter(l => !l.owner || l.owner === "sistema@vellia.com" || l.owner === "sdr-ai@vellia.com").map(l => ({ id: l.id, company: l.company, segment: l.segment, stage: l.stage })), null, 2)}
-
-Vendedores e carga atual:
-${JSON.stringify(sellerActivity, null, 2)}
-
-Retorne SOMENTE um JSON com o array de distribuições:
-[{ "leadId": "...", "ownerEmail": "..." }]
-`;
-
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyBnEOB3E2JNL3u1Z6nxA1F8KMQfYvIqnLs`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: { responseMimeType: "application/json" }
-                })
+            // Contar leads ativos atuais por vendedor
+            const sellerLoads = sellers.map(s => {
+                const activeCount = leads.filter(l => l.owner === s.email && l.stage !== "Cliente Fechado" && l.stage !== "Cliente Perdido").length;
+                return {
+                    email: s.email,
+                    activeCount: activeCount
+                };
             });
 
-            if (!res.ok) throw new Error("Erro na API Gemini.");
-            const data = await res.json();
-            const assignments = JSON.parse(data.candidates?.[0]?.content?.parts?.[0]?.text || "[]");
-
             let count = 0;
-            assignments.forEach(({ leadId, ownerEmail }) => {
-                this.assignLeadOwner(leadId, ownerEmail);
+            // Distribuir de forma equilibrada (quem tiver menos leads ativos ganha o lead)
+            unassignedLeads.forEach(lead => {
+                // Ordenar vendedores por carga ativa de forma ascendente
+                sellerLoads.sort((a, b) => a.activeCount - b.activeCount);
+                
+                // Atribui o lead para o vendedor mais disponível (primeiro da lista)
+                const chosenSeller = sellerLoads[0];
+                this.assignLeadOwner(lead.id, chosenSeller.email);
+                
+                // Incrementa a carga simulada do vendedor para o próximo loop
+                chosenSeller.activeCount++;
                 count++;
             });
 
             this.renderLeadsTable();
-            alert(`✅ IA distribuiu ${count} lead(s) entre os vendedores com sucesso!`);
+            alert(`✅ Distribuição Inteligente concluída! ${count} lead(s) distribuído(s) de forma equilibrada entre os vendedores.`);
 
         } catch (err) {
-            console.error("Erro na distribuição IA:", err);
+            console.error("Erro na distribuição inteligente:", err);
             alert("❌ Erro ao executar distribuição inteligente. Tente novamente.");
         } finally {
             btn.disabled = false;

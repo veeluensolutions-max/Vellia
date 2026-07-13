@@ -181,6 +181,18 @@ export const Users = {
                             ">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                         </button>
+                        ${!isSelf ? `<button
+                            onclick="window.UsersModuleDelete('${user.id}', '${user.name.replace(/'/g, "\\'")}')"
+                            title="Excluir Usuário"
+                            class="user-action-btn user-action-danger"
+                            style="
+                                width: 32px; height: 32px; border-radius: 8px; border: 1px solid rgba(220, 38, 38, 0.3);
+                                background: rgba(220, 38, 38, 0.07); color: #dc2626;
+                                display: flex; align-items: center; justify-content: center;
+                                cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+                            ">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                        </button>` : ''}
                     </div>
                 </td>
             `;
@@ -207,6 +219,12 @@ export const Users = {
                     border-color: rgba(234, 179, 8, 0.5) !important;
                     color: #b45309 !important;
                 }
+                .user-action-danger:hover {
+                    background: rgba(220, 38, 38, 0.18) !important;
+                    border-color: rgba(220, 38, 38, 0.6) !important;
+                    color: #b91c1c !important;
+                    transform: scale(1.08);
+                }
                 #view-users tbody tr:hover {
                     background: var(--bg-hover);
                 }
@@ -218,6 +236,7 @@ export const Users = {
         window.UsersModuleToggleStatus = (id) => this.toggleStatus(id);
         window.UsersModuleEdit = (id) => this.openEditModal(id);
         window.UsersModuleResetPassword = (id) => this.resetPassword(id);
+        window.UsersModuleDelete = (id, name) => this.deleteUser(id, name);
     },
 
     setupModalEvents() {
@@ -423,5 +442,42 @@ export const Users = {
     openChangePasswordModal() {
         document.getElementById("change-password-modal-overlay").style.display = "block";
         document.getElementById("change-password-modal").classList.add("open");
+    },
+
+    deleteUser(id, name) {
+        const currentUser = Auth.getCurrentUser();
+
+        // Segurança: bloquear auto-exclusão
+        if (currentUser && currentUser.id === id) {
+            alert("Ação negada: Você não pode excluir sua própria conta!");
+            return;
+        }
+
+        const confirmed = confirm(`⚠️ Tem certeza que deseja EXCLUIR o usuário "${name}"?\n\nEsta ação é permanente e não pode ser desfeita.`);
+        if (!confirmed) return;
+
+        Store.deleteUser(id);
+        Store.addLog(
+            currentUser?.email || "admin@vellia.com",
+            "USER_DELETED",
+            `Usuário "${name}" excluído permanentemente pelo Administrador.`,
+            "SUCCESS"
+        );
+
+        this.renderUsers();
+        // Feedback visual temporário
+        const toast = document.createElement("div");
+        toast.textContent = `🗑️ Usuário "${name}" excluído com sucesso.`;
+        toast.style.cssText = `
+            position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+            background: #1e293b; color: #f1f5f9;
+            padding: 12px 20px; border-radius: 10px;
+            font-size: 13px; font-weight: 600;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            border-left: 4px solid #dc2626;
+            animation: fadeIn 0.2s ease;
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
     }
 };

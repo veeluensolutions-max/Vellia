@@ -265,6 +265,13 @@ export const Store = {
         upsertSupabase("comercial_users", users);
     },
 
+    deleteUser(userId) {
+        const users = this.getUsers().filter(u => u.id !== userId);
+        localStorage.setItem("comercial_users", JSON.stringify(users));
+        // Deletar no Supabase pelo id
+        deleteSupabase("comercial_users", `?id=eq.${userId}`);
+    },
+
     getUserByEmail(email) {
         return this.getUsers().find(u => u.email.toLowerCase() === email.toLowerCase());
     },

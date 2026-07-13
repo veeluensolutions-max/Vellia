@@ -1,5 +1,6 @@
 import { Store } from "./store.js";
 import { Auth } from "./auth.js";
+import { generatePerformancePDF } from "./report.js";
 
 // Paleta de cores premium para cada cargo
 const ROLE_STYLES = {
@@ -218,6 +219,25 @@ export const Users = {
             resetBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
             resetBtn.onclick = () => this.resetPassword(user.id);
             actionsDiv.appendChild(resetBtn);
+
+            // Botão Relatório PDF
+            const reportBtn = document.createElement("button");
+            reportBtn.title = "Gerar Relatório de Desempenho (PDF)";
+            reportBtn.className = "user-action-btn";
+            reportBtn.style.cssText = `
+                width: 32px; height: 32px; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.3);
+                background: rgba(59, 130, 246, 0.08); color: #2563eb;
+                display: flex; align-items: center; justify-content: center;
+                cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+            `;
+            reportBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`;
+            reportBtn.onclick = () => {
+                reportBtn.disabled = true;
+                reportBtn.style.opacity = "0.5";
+                try { generatePerformancePDF(user.email); } catch(e) { alert("Erro ao gerar PDF: " + e.message); }
+                setTimeout(() => { reportBtn.disabled = false; reportBtn.style.opacity = "1"; }, 1500);
+            };
+            actionsDiv.appendChild(reportBtn);
 
             // Botão Excluir (apenas se não for o próprio admin logado)
             if (!isSelf) {

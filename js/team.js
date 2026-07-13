@@ -118,6 +118,7 @@ export const Team = {
         // Ordenar por receita e conversão
         stats.sort((a, b) => b.revenue - a.revenue || b.conversion - a.conversion);
 
+        this.renderPodium(stats);
         this.renderTable(stats);
         this.renderPersonalProgress(stats);
         this.renderBonusCalculator();
@@ -142,6 +143,21 @@ export const Team = {
             if (stat.metaPct >= 100) metaColor = "var(--success)";
             else if (stat.metaPct >= 70) metaColor = "var(--warning)";
 
+            // Injetar medalhas baseadas em estatísticas comportamentais
+            let achievements = "";
+            if (index === 0 && stat.revenue > 0) {
+                achievements += `<span class="badge" style="background: rgba(251,191,36,0.12); color:#92400e; border: 1px solid rgba(251,191,36,0.2); margin-left: 6px; font-size:9px; padding: 2px 6px;">🥇 Lenda</span>`;
+            }
+            if (stat.conversion >= 30) {
+                achievements += `<span class="badge" style="background: rgba(99,102,241,0.12); color:#4f46e5; border: 1px solid rgba(99,102,241,0.2); margin-left: 6px; font-size:9px; padding: 2px 6px;">🎯 Sniper</span>`;
+            }
+            if (stat.contacts >= 15) {
+                achievements += `<span class="badge" style="background: rgba(16,185,129,0.12); color:#065f46; border: 1px solid rgba(16,185,129,0.2); margin-left: 6px; font-size:9px; padding: 2px 6px;">📞 Conectado</span>`;
+            }
+            if (stat.proposalsSent >= 8) {
+                achievements += `<span class="badge" style="background: rgba(245,158,11,0.12); color:#b45309; border: 1px solid rgba(245,158,11,0.2); margin-left: 6px; font-size:9px; padding: 2px 6px;">🚀 Máquina</span>`;
+            }
+
             tr.innerHTML = `
                 <td><strong>${posMedal}</strong></td>
                 <td>
@@ -150,7 +166,10 @@ export const Team = {
                             ${stat.avatar}
                         </div>
                         <div>
-                            <div style="font-weight: 600;">${stat.name}</div>
+                            <div style="display: flex; align-items: center; gap: 4px;">
+                                <span style="font-weight: 600;">${stat.name}</span>
+                                ${achievements}
+                            </div>
                             <div style="font-size: 11px; color: var(--text-muted);">${stat.role === "manager" ? "Gerente" : "Vendedor"}</div>
                         </div>
                     </div>
@@ -216,6 +235,80 @@ export const Team = {
                     <div style="height: 100%; width: ${propsPct}%; background: linear-gradient(90deg, var(--primary), #8b5cf6); border-radius: 6px;"></div>
                 </div>
                 <div style="text-align: right; font-size: 12px; color: var(--primary); font-weight: 700; margin-top: 4px;">${propsPct}% Concluído</div>
+            </div>
+        `;
+    },
+
+    renderPodium(stats) {
+        const container = document.getElementById("team-gamification-podium");
+        if (!container) return;
+
+        if (stats.length === 0) {
+            container.innerHTML = "";
+            return;
+        }
+
+        const fmt = v => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+
+        // Identificar posições
+        const first = stats[0];
+        const second = stats[1];
+        const third = stats[2];
+
+        let colsHtml = "";
+
+        // 2º Colocado
+        if (second) {
+            colsHtml += `
+                <div class="card" style="position: relative; border-top: 4px solid #cbd5e1; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 20px; order: 1;">
+                    <div style="position: absolute; top: -14px; background: #cbd5e1; color: #0f172a; font-weight: 800; font-size: 10px; padding: 4px 10px; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.5px; z-index: 1;">🥈 2º Colocado</div>
+                    <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--bg-surface-hover); border: 2.5px solid #cbd5e1; color: var(--text-primary); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; margin-bottom: 12px;">
+                        ${second.avatar}
+                    </div>
+                    <h4 style="font-size: 15px; font-weight: 700; margin: 0 0 4px 0; color: var(--text-primary);">${second.name}</h4>
+                    <span style="font-size: 11px; color: var(--text-muted);">${second.role === "manager" ? "Gerente" : "Vendedor"}</span>
+                    <div style="margin-top: 12px; font-size: 17px; font-weight: 800; color: var(--success);">${fmt(second.revenue)}</div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Conversão: ${second.conversion}% • ${second.proposalsWon} fechadas</div>
+                </div>
+            `;
+        }
+
+        // 1º Colocado (Vendedor do Mês)
+        if (first) {
+            colsHtml += `
+                <div class="card" style="position: relative; border: 2px solid #fbbf24; box-shadow: 0 0 20px rgba(251, 191, 36, 0.15); display: flex; flex-direction: column; align-items: center; text-align: center; padding: 24px; order: 2; transform: scale(1.02); z-index: 2;">
+                    <div style="position: absolute; top: -14px; background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #0f172a; font-weight: 900; font-size: 11px; padding: 5px 14px; border-radius: 99px; text-transform: uppercase; box-shadow: 0 4px 10px rgba(245, 158, 11, 0.25); letter-spacing: 0.5px; z-index: 3;">👑 Vendedor do Mês</div>
+                    <div style="width: 68px; height: 68px; border-radius: 50%; background: linear-gradient(135deg, #fef3c7, #fde68a); border: 3px solid #fbbf24; color: #92400e; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 800; margin-bottom: 12px; box-shadow: 0 0 15px rgba(251, 191, 36, 0.35);">
+                        ${first.avatar}
+                    </div>
+                    <h4 style="font-size: 17px; font-weight: 800; margin: 0 0 4px 0; color: var(--text-primary);">${first.name}</h4>
+                    <span style="font-size: 11px; color: var(--text-muted);">${first.role === "manager" ? "Gerente" : "Vendedor"}</span>
+                    <div style="margin-top: 12px; font-size: 20px; font-weight: 900; color: var(--success);">${fmt(first.revenue)}</div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Conversão: ${first.conversion}% • ${first.proposalsWon} fechadas</div>
+                    <span class="badge" style="background: rgba(251, 191, 36, 0.12); color: #92400e; border: 1px solid rgba(251, 191, 36, 0.3); margin-top: 10px; font-size: 10px; text-transform: uppercase; font-weight: 700;">🏆 Performance Lendária</span>
+                </div>
+            `;
+        }
+
+        // 3º Colocado
+        if (third) {
+            colsHtml += `
+                <div class="card" style="position: relative; border-top: 4px solid #b45309; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 20px; order: 3;">
+                    <div style="position: absolute; top: -14px; background: #b45309; color: white; font-weight: 800; font-size: 10px; padding: 4px 10px; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.5px; z-index: 1;">🥉 3º Colocado</div>
+                    <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--bg-surface-hover); border: 2.5px solid #b45309; color: var(--text-primary); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; margin-bottom: 12px;">
+                        ${third.avatar}
+                    </div>
+                    <h4 style="font-size: 15px; font-weight: 700; margin: 0 0 4px 0; color: var(--text-primary);">${third.name}</h4>
+                    <span style="font-size: 11px; color: var(--text-muted);">${third.role === "manager" ? "Gerente" : "Vendedor"}</span>
+                    <div style="margin-top: 12px; font-size: 17px; font-weight: 800; color: var(--success);">${fmt(third.revenue)}</div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Conversão: ${third.conversion}% • ${third.proposalsWon} fechadas</div>
+                </div>
+            `;
+        }
+
+        container.innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; align-items: stretch;">
+                ${colsHtml}
             </div>
         `;
     },

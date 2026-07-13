@@ -3,6 +3,7 @@ import { Auth } from "./auth.js";
 import { Performance } from "./performance.js";
 import { Forecast } from "./forecast.js";
 import { Services } from "./services.js";
+import { Goals } from "./goals.js";
 
 // Metas mensais padrão por vendedor
 const DEFAULT_GOALS = {
@@ -17,6 +18,7 @@ export const Team = {
     init() {
         this.renderAll();
         this.bindEvents();
+        Goals.bindEvents();
     },
 
     bindEvents() {
@@ -136,8 +138,9 @@ export const Team = {
             const proposalsWon = sellerProposals.filter(p => p.status === "Ganho").length;
             const revenue = sellerProposals.filter(p => p.status === "Ganho").reduce((s, p) => s + (p.value || 0), 0);
             
+            const goalsConfig = JSON.parse(localStorage.getItem("comercial_goals_config")) || DEFAULT_GOALS;
             const conversion = proposalsSent > 0 ? Math.round((proposalsWon / proposalsSent) * 100) : 0;
-            const metaPct = Math.min(Math.round((revenue / DEFAULT_GOALS.meta_revenue) * 100), 100);
+            const metaPct = Math.min(Math.round((revenue / goalsConfig.meta_revenue) * 100), 100);
 
             return {
                 ...seller,

@@ -504,6 +504,12 @@ export const Goals = {
         saveGoalsConfig(config);
         this.closeGoalsModal();
         this.renderAll();
+        
+        // Re-renderizar tela de equipe se estiver ativa
+        const teamView = document.getElementById("view-team");
+        if (teamView && teamView.style.display !== "none") {
+            import('./team.js').then(m => m.Team.renderAll());
+        }
     },
 
     setEl(id, val) {

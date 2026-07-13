@@ -347,6 +347,52 @@
                                 </h4>
                                 <div id="dash-activity-feed"><!-- Carregado via JS --></div>
                             </div>
+                        <!-- Linha 4: Painel de Gestão de Tarefas (Admin/Gerente) -->
+                        <div class="card" style="padding: 20px 24px; border-left: 4px solid var(--primary); background: linear-gradient(135deg, rgba(99,102,241,0.04) 0%, transparent 100%);">
+                            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
+                                <div>
+                                    <h4 style="font-weight: 700; font-size: 14px; color: var(--text-primary); margin: 0 0 4px 0; display: flex; align-items: center; gap: 8px;">
+                                        📋 Gestão de Tarefas dos Vendedores
+                                    </h4>
+                                    <p style="font-size: 12px; color: var(--text-muted); margin: 0;">Atribua roteiros diários para sua equipe de vendas.</p>
+                                </div>
+                                <select id="admin-task-view-seller" class="filter-control" style="height: 36px; font-size: 13px; min-width: 180px;">
+                                    <option value="">Ver tarefas de...</option>
+                                </select>
+                            </div>
+
+                            <!-- Formulário de nova tarefa -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 10px; align-items: end; margin-bottom: 16px;">
+                                <div>
+                                    <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px;">Vendedor</label>
+                                    <select id="admin-task-seller-select" class="filter-control" style="height: 38px; width: 100%; font-size: 13px;">
+                                        <option value="">Selecione o vendedor...</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px;">Tarefa / Instrução</label>
+                                    <input type="text" id="admin-task-input" placeholder="Ex: Ligar para os 5 leads prioritários..." class="filter-control" style="width: 100%; height: 38px; font-size: 13px;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px;">Prioridade</label>
+                                    <select id="admin-task-priority" class="filter-control" style="height: 38px; font-size: 13px;">
+                                        <option value="normal">🟡 Normal</option>
+                                        <option value="high">🔴 Alta</option>
+                                        <option value="low">🟢 Baixa</option>
+                                    </select>
+                                </div>
+                                <div style="padding-top: 18px;">
+                                    <button id="btn-admin-assign-task" class="btn btn-primary" style="height: 38px; white-space: nowrap; gap: 6px;">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        Atribuir
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Lista das tarefas já atribuídas -->
+                            <div id="admin-task-list" style="display: flex; flex-direction: column; gap: 8px; min-height: 40px;">
+                                <p style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 12px 0;">Selecione um vendedor acima para ver as tarefas atribuídas.</p>
+                            </div>
                         </div>
 
                     </div>

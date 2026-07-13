@@ -7,6 +7,7 @@ export const Dashboard = {
     init() {
         this.renderAll();
         this.bindEvents();
+        this.setupAdminTaskManager();
     },
 
     bindEvents() {
@@ -525,5 +526,121 @@ export const Dashboard = {
                 <div style="font-size: 10px; color: var(--text-muted); flex-shrink: 0; text-align: right; margin-top: 2px;">${fmtDate(ev.timestamp)}</div>
             </div>
         `).join("");
+    },
+
+    setupAdminTaskManager() {
+        const viewSeller = document.getElementById("admin-task-view-seller");
+        const selectSeller = document.getElementById("admin-task-seller-select");
+        const inputTask = document.getElementById("admin-task-input");
+        const prioritySelect = document.getElementById("admin-task-priority");
+        const btnAssign = document.getElementById("btn-admin-assign-task");
+        const adminTaskList = document.getElementById("admin-task-list");
+
+        if (!selectSeller || !viewSeller) return;
+
+        // Popular selects com vendedores ativos
+        const sellers = Store.getUsers().filter(u => u.role === "seller" || u.role === "manager");
+        
+        // Evitar repopular infinitamente
+        if (selectSeller.options.length <= 1) {
+            sellers.forEach(s => {
+                const opt1 = new Option(s.name, s.email);
+                const opt2 = new Option(s.name, s.email);
+                selectSeller.add(opt1);
+                viewSeller.add(opt2);
+            });
+        }
+
+        const renderAssignedTasks = () => {
+            const email = viewSeller.value;
+            if (!email) {
+                adminTaskList.innerHTML = `<p style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 12px 0;">Selecione um vendedor acima para ver as tarefas atribuídas.</p>`;
+                return;
+            }
+
+            const key = `seller_tasks_${email}`;
+            const today = new Date().toLocaleDateString("pt-BR");
+            const tasks = JSON.parse(localStorage.getItem(key) || "[]").filter(t => t.date === today);
+
+            if (tasks.length === 0) {
+                adminTaskList.innerHTML = `<p style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 12px 0;">Nenhuma tarefa atribuída hoje para este vendedor.</p>`;
+                return;
+            }
+
+            const priorityBadge = p => {
+                if (p === "high") return `<span style="background: rgba(220,38,38,0.1); color: #dc2626; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; margin-right: 6px;">ALTA</span>`;
+                if (p === "low") return `<span style="background: rgba(22,163,74,0.1); color: #16a34a; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; margin-right: 6px;">BAIXA</span>`;
+                return `<span style="background: rgba(234,179,8,0.1); color: #ca8a04; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; margin-right: 6px;">NORMAL</span>`;
+            };
+
+            adminTaskList.innerHTML = tasks.map((t, idx) => `
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-radius: 8px; background: var(--bg-surface); border: 1px solid var(--border-color); ${t.done ? 'opacity: 0.6;' : ''}">
+                    <div style="font-size: 13px; color: var(--text-primary);">
+                        ${priorityBadge(t.priority)}
+                        ${t.assignedBy ? `<span style="font-size: 10px; color: var(--primary); font-weight: 600; border: 1px solid var(--primary); padding: 1px 4px; border-radius: 4px; margin-right: 6px;">GESTOR</span> ` : ''}
+                        <span style="${t.done ? 'text-decoration: line-through;' : ''}">${t.text}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 11px; font-weight: 700; color: ${t.done ? 'var(--success)' : 'var(--text-muted)'}">${t.done ? 'Concluída ✅' : 'Pendente ⏳'}</span>
+                        <button class="delete-task-btn" data-email="${email}" data-idx="${idx}" style="background: none; border: none; cursor: pointer; color: #dc2626; padding: 4px; display: flex; align-items: center;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                        </button>
+                    </div>
+                </div>
+            `).join("");
+
+            // Evento excluir
+            adminTaskList.querySelectorAll(".delete-task-btn").forEach(btn => {
+                btn.onclick = () => {
+                    const mail = btn.getAttribute("data-email");
+                    const index = parseInt(btn.getAttribute("data-idx"));
+                    const k = `seller_tasks_${mail}`;
+                    const list = JSON.parse(localStorage.getItem(k) || "[]").filter(t => t.date === today);
+                    list.splice(index, 1);
+                    localStorage.setItem(k, JSON.stringify(list));
+                    renderAssignedTasks();
+                };
+            });
+        };
+
+        viewSeller.onchange = renderAssignedTasks;
+
+        btnAssign.onclick = () => {
+            const targetSeller = selectSeller.value;
+            const text = inputTask.value.trim();
+            const priority = prioritySelect.value;
+
+            if (!targetSeller) {
+                alert("Selecione o vendedor para atribuir a tarefa.");
+                return;
+            }
+            if (!text) {
+                alert("Escreva uma instrução/tarefa.");
+                return;
+            }
+
+            const key = `seller_tasks_${targetSeller}`;
+            const today = new Date().toLocaleDateString("pt-BR");
+            const tasks = JSON.parse(localStorage.getItem(key) || "[]").filter(t => t.date === today);
+            
+            tasks.push({
+                text,
+                done: false,
+                date: today,
+                priority,
+                assignedBy: Auth.getCurrentUser()?.email || "gestao@vellia.com"
+            });
+
+            localStorage.setItem(key, JSON.stringify(tasks));
+            inputTask.value = "";
+            
+            // Forçar visualização a selecionar o vendedor a quem foi atribuído
+            viewSeller.value = targetSeller;
+            renderAssignedTasks();
+
+            // Notificação visual rápida
+            alert(`Tarefa atribuída para ${selectSeller.options[selectSeller.selectedIndex].text}!`);
+        };
     }
+};
 };

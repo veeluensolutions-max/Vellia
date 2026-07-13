@@ -506,11 +506,21 @@ function renderSellerDailyTasks(userEmail) {
         return;
     }
 
+    const priorityBadge = p => {
+        if (p === "high") return `<span style="background: rgba(220,38,38,0.1); color: #dc2626; padding: 1px 5px; border-radius: 4px; font-size: 9px; font-weight: 700; margin-right: 4px;">ALTA</span>`;
+        if (p === "low") return `<span style="background: rgba(22,163,74,0.1); color: #16a34a; padding: 1px 5px; border-radius: 4px; font-size: 9px; font-weight: 700; margin-right: 4px;">BAIXA</span>`;
+        return "";
+    };
+
     container.innerHTML = tasks.map((t, i) => `
         <div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; background: var(--bg-surface); border: 1px solid var(--border-color); transition: all 0.2s; ${t.done ? "opacity: 0.5;" : ""}">
             <input type="checkbox" id="task-${i}" ${t.done ? "checked" : ""} onchange="window.toggleDailyTask('${userEmail}', ${i})"
                 style="width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; flex-shrink: 0;">
-            <label for="task-${i}" style="font-size: 13px; cursor: pointer; text-decoration: ${t.done ? "line-through" : "none"}; color: var(--text-primary); flex: 1;">${t.text}</label>
+            <div style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+                ${priorityBadge(t.priority)}
+                ${t.assignedBy ? `<span style="background: rgba(99,102,241,0.1); color: var(--primary); padding: 1px 5px; border-radius: 4px; font-size: 9px; font-weight: 700; border: 1px solid rgba(99,102,241,0.25);">GESTOR</span>` : ""}
+                <label for="task-${i}" style="font-size: 13px; cursor: pointer; text-decoration: ${t.done ? "line-through" : "none"}; color: var(--text-primary);">${t.text}</label>
+            </div>
             <button onclick="window.deleteDailyTask('${userEmail}', ${i})" style="background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 2px; display: flex;">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>

@@ -41,13 +41,22 @@ export const WhatsApp = {
         }
     },
 
-    openModalForLead(leadId) {
+    async openModalForLead(leadId) {
         this.activeLeadId = leadId;
         this.activeProposalId = null;
         this.populateContactInfo();
         
         const select = document.getElementById("wa-template-select");
-        if (select) select.value = "welcome";
+        if (select) {
+            try {
+                const { analyzeContext } = await import('./ai.js');
+                const ctx = analyzeContext();
+                const isCold = ctx.coldLeads.some(l => l.id === leadId);
+                select.value = isCold ? "reengage" : "welcome";
+            } catch (e) {
+                select.value = "welcome";
+            }
+        }
         this.updateTemplateMessage();
 
         this.showModal();
@@ -106,6 +115,8 @@ export const WhatsApp = {
             }
         } else if (templateType === "proposal") {
             message = `Olá ${lead.contact || lead.company}, tudo bem? Gostaria de saber se você conseguiu analisar a nossa proposta comercial enviada recentemente. Ficamos à disposição!`;
+        } else if (templateType === "reengage") {
+            message = `Olá ${lead.contact || lead.company}, como vai? Faz um tempo que não nos falamos! Gostaria de saber como estão os desafios de ${lead.segment || "negócios"} por aí e se ainda faz sentido analisarmos a solução inteligente da Vellia. Quando teria 5 minutos livres esta semana para batermos um papo rápido?`;
         }
 
         textEl.value = message;

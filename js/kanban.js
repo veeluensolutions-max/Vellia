@@ -1,5 +1,6 @@
 import { Store } from "./store.js";
 import { CRM } from "./crm.js";
+import { analyzeContext } from "./ai.js";
 
 let draggedLeadId = null;
 
@@ -9,6 +10,7 @@ export const Kanban = {
     },
 
     renderKanban() {
+        const ctx = analyzeContext();
         let leads = Store.getLeads();
         
         // Importar Auth se não estiver importado no topo, mas podemos usar localStorage direto para evitar dependência circular se preferirmos,
@@ -108,11 +110,28 @@ export const Kanban = {
                 priorityClass = "badge-warning";
             }
 
+            const scoredLead = ctx.scoredLeads.find(l => l.id === lead.id);
+            const score = scoredLead ? scoredLead._score : 0;
+
+            let tempBadge = "";
+            if (lead.stage !== "Cliente Fechado" && lead.stage !== "Cliente Perdido") {
+                if (score >= 70) {
+                    tempBadge = `<span class="badge" style="font-size: 9px; padding: 2px 6px; border-radius: 99px; background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);" title="Score: ${score} - Lead muito engajado!">🔥 Quente (${score})</span>`;
+                } else if (score >= 40) {
+                    tempBadge = `<span class="badge" style="font-size: 9px; padding: 2px 6px; border-radius: 99px; background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3);" title="Score: ${score} - Engajamento intermediário">⚡ Morno (${score})</span>`;
+                } else {
+                    tempBadge = `<span class="badge" style="font-size: 9px; padding: 2px 6px; border-radius: 99px; background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3);" title="Score: ${score} - Baixo engajamento ou inativo">🧊 Frio (${score})</span>`;
+                }
+            }
+
             const fmtVal = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(leadValue);
 
             card.innerHTML = `
                 <div class="kanban-card-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-                    <span class="badge ${priorityClass}" style="font-size: 9px; padding: 2px 6px; border-radius: 99px;">${priority}</span>
+                    <div style="display: flex; gap: 4px; align-items: center;">
+                        <span class="badge ${priorityClass}" style="font-size: 9px; padding: 2px 6px; border-radius: 99px;">${priority}</span>
+                        ${tempBadge}
+                    </div>
                     <div class="user-avatar" style="width: 22px; height: 22px; font-size: 9px; font-weight: 700; margin-left: auto;" title="Responsável: ${ownerName}">
                         ${avatar}
                     </div>

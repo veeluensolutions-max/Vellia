@@ -8,7 +8,7 @@ import { Dashboard } from "./dashboard.js";
 import { Goals } from "./goals.js";
 import { Services } from "./services.js";
 import { Forecast } from "./forecast.js";
-import { VelliaAI } from "./ai.js";
+import { VelliaAI, analyzeContext } from "./ai.js";
 import { Notifications } from "./notifications.js";
 import { DataExport } from "./export.js";
 import { Team } from "./team.js";
@@ -340,6 +340,9 @@ function updateDashboardCounters() {
             const sellerGoalCounter = document.getElementById("seller-goal-percentage");
             if (sellerGoalCounter) sellerGoalCounter.textContent = `${goalPct}%`;
 
+            // Carregar Recomendações da IA
+            renderSellerAIRecommendations();
+
             // Carregar Leads Sem Contato Recente
             renderSellerLeadsNoContact(activeNegotiations);
 
@@ -372,6 +375,84 @@ function updateDashboardCounters() {
     } catch (e) {
         console.error("Erro ao atualizar contadores do dashboard:", e);
     }
+}
+
+// Auxiliar: Renderizar recomendações inteligentes da IA
+function renderSellerAIRecommendations() {
+    const container = document.getElementById("seller-ai-recommendations");
+    const cardWrapper = document.getElementById("seller-ai-recommendations-card");
+    if (!container) return;
+
+    const ctx = analyzeContext();
+    const recommendations = [];
+
+    // 1. Propostas em Risco (Churn)
+    if (ctx.atRiskProps && ctx.atRiskProps.length > 0) {
+        ctx.atRiskProps.slice(0, 2).forEach(p => {
+            recommendations.push({
+                type: "danger",
+                icon: "⚠️",
+                title: "Proposta em Risco",
+                desc: `A proposta de <strong>${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(p.value || 0)}</strong> para a <strong>${p.company}</strong> está com risco de perda elevado.`,
+                actionText: "Ajustar Negociação",
+                onClick: `window.location.hash = '#proposals';`
+            });
+        });
+    }
+
+    // 2. Leads Frios (Sem contato há 14 dias ou mais)
+    if (ctx.coldLeads && ctx.coldLeads.length > 0) {
+        ctx.coldLeads.slice(0, 2).forEach(l => {
+            const hist = l.stageHistory || [];
+            const last = hist.length ? new Date(hist[hist.length - 1].timestamp) : new Date(0);
+            const days = Math.round((ctx.now - last.getTime()) / ctx.ONE_DAY);
+            recommendations.push({
+                type: "warning",
+                icon: "🧊",
+                title: "Reatar Contato",
+                desc: `A empresa <strong>${l.company}</strong> está sem contato há <strong>${days} dias</strong>. Envie um WhatsApp!`,
+                actionText: "Falar com Lead",
+                onClick: `window.location.hash = '#crm'; setTimeout(() => import('./crm.js').then(m => m.CRM.openLeadDrawer('${l.id}')), 100);`
+            });
+        });
+    }
+
+    // 3. Leads Quentes (Lead Scoring Alto)
+    if (ctx.scoredLeads && ctx.scoredLeads.length > 0) {
+        const topQuentes = ctx.scoredLeads.filter(l => l._score >= 70);
+        topQuentes.slice(0, 2).forEach(l => {
+            recommendations.push({
+                type: "success",
+                icon: "🔥",
+                title: "Oportunidade Quente",
+                desc: `<strong>${l.company}</strong> tem score de engajamento alto (<strong>${l._score} pts</strong>). Proponha fechamento!`,
+                actionText: "Tentar Fechar",
+                onClick: `window.location.hash = '#crm'; setTimeout(() => import('./crm.js').then(m => m.CRM.openLeadDrawer('${l.id}')), 100);`
+            });
+        });
+    }
+
+    if (recommendations.length === 0) {
+        if (cardWrapper) cardWrapper.style.display = "none";
+        return;
+    } else {
+        if (cardWrapper) cardWrapper.style.display = "block";
+    }
+
+    container.innerHTML = recommendations.map(rec => `
+        <div class="ai-recommendation-item type-${rec.type}" style="background: var(--bg-card); border: 1px solid var(--border-color); border-left: 4px solid var(--${rec.type === 'danger' ? 'danger' : rec.type === 'warning' ? 'warning' : 'success'}); border-radius: var(--radius-md); padding: 14px; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.05)';" onmouseout="this.style.transform='none'; this.style.boxShadow='none';">
+            <div style="display: flex; gap: 10px; align-items: flex-start; margin-bottom: 12px;">
+                <div style="font-size: 20px; padding: 6px; background: var(--bg-app); border-radius: var(--radius-sm);">${rec.icon}</div>
+                <div>
+                    <div style="font-weight: 700; font-size: 13px; color: var(--text-primary); margin-bottom: 3px;">${rec.title}</div>
+                    <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">${rec.desc}</div>
+                </div>
+            </div>
+            <button class="btn btn-outline" style="font-size: 11px; padding: 6px 12px; height: auto; align-self: flex-end;" onclick="${rec.onClick}">
+                ${rec.actionText} &rarr;
+            </button>
+        </div>
+    `).join("");
 }
 
 // Auxiliar: Renderizar leads sem contato recente

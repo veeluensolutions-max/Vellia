@@ -105,8 +105,8 @@ function configureSidebarMenu(role) {
             // Mas para testes, vamos permitir ver quase tudo. Ele vê obrigatoriamente Logs.
             isVisible = true;
         } else if (role === "manager") {
-            // Gerente Comercial vê CRM, Kanban, Propostas, Metas, Serviços, Forecast, IA. Não vê logs.
-            isVisible = viewName !== "logs" && viewName !== "users";
+            // Gerente Comercial vê CRM, Kanban, Propostas, Equipe Comercial, IA. Não vê logs, users e integrations.
+            isVisible = !["logs", "users", "integrations"].includes(viewName);
         } else if (role === "seller") {
             // Vendedor vê CRM, Kanban, Propostas e IA. Não vê Logs, Equipe, Serviços, Forecast, Integrações e Usuários.
             isVisible = !["logs", "team", "services", "forecast", "integrations", "users"].includes(viewName);

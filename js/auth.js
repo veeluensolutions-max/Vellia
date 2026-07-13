@@ -81,7 +81,7 @@ export const Auth = {
     canAccessRoute(role, route) {
         const permissions = {
             admin: ["*"], // Administrador acessa tudo
-            manager: ["dashboard", "crm", "kanban", "proposals", "goals", "services", "forecast", "ai", "integrations"],
+            manager: ["dashboard", "crm", "kanban", "proposals", "goals", "services", "forecast", "ai"],
             seller: ["dashboard", "crm", "kanban", "proposals", "goals", "ai"]
         };
 

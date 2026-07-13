@@ -80,122 +80,164 @@ export const Users = {
             const isActive = effectiveStatus === "active";
             const isSelf = Auth.getCurrentUser()?.id === user.id;
 
+            // Criar a linha (tr) e preencher os dados
             const tr = document.createElement("tr");
             tr.style.cssText = "transition: background var(--transition-fast);";
-            tr.innerHTML = `
-                <td style="padding: 14px 16px;">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <div style="
-                            width: 36px; height: 36px; border-radius: 10px;
-                            background: ${avatarGrad};
-                            display: flex; align-items: center; justify-content: center;
-                            font-size: 12px; font-weight: 800; color: #fff;
-                            flex-shrink: 0; letter-spacing: 0.5px;
-                            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-                        ">${avatarText}</div>
-                        <div>
-                            <span style="font-weight: 700; font-size: 13px; color: var(--text-primary); display: block;">${user.name}</span>
-                            ${isSelf ? '<span style="font-size: 10px; color: var(--primary); font-weight: 600; background: rgba(99,102,241,0.1); padding: 1px 6px; border-radius: 4px;">Você</span>' : ''}
-                        </div>
+            
+            // Coluna de Nome / Perfil
+            const tdProfile = document.createElement("td");
+            tdProfile.style.cssText = "padding: 14px 16px;";
+            tdProfile.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="
+                        width: 36px; height: 36px; border-radius: 10px;
+                        background: ${avatarGrad};
+                        display: flex; align-items: center; justify-content: center;
+                        font-size: 12px; font-weight: 800; color: #fff;
+                        flex-shrink: 0; letter-spacing: 0.5px;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                    ">${avatarText}</div>
+                    <div>
+                        <span style="font-weight: 700; font-size: 13px; color: var(--text-primary); display: block;">${user.name}</span>
+                        ${isSelf ? '<span style="font-size: 10px; color: var(--primary); font-weight: 600; background: rgba(99,102,241,0.1); padding: 1px 6px; border-radius: 4px;">Você</span>' : ''}
                     </div>
-                </td>
-                <td style="padding: 14px 16px;">
-                    <span style="font-size: 12.5px; color: var(--text-secondary); font-family: monospace;">${user.email}</span>
-                </td>
-                <td style="padding: 14px 16px;">
-                    <span style="
-                        display: inline-flex; align-items: center; gap: 5px;
-                        background: ${roleStyle.bg};
-                        color: ${roleStyle.color};
-                        border: 1px solid ${roleStyle.border};
-                        padding: 3px 10px; border-radius: 20px;
-                        font-size: 11px; font-weight: 700; letter-spacing: 0.3px;
-                        white-space: nowrap;
-                    ">${roleStyle.label}</span>
-                </td>
-                <td style="padding: 14px 16px;">
-                    <button
-                        onclick="window.UsersModuleToggleStatus('${user.id}')"
-                        title="${isActive ? "Clique para desativar" : "Clique para ativar"}"
-                        style="
-                            display: inline-flex; align-items: center; gap: 6px;
-                            background: ${isActive ? "rgba(22, 163, 74, 0.1)" : "rgba(220, 38, 38, 0.1)"};
-                            color: ${isActive ? "#15803d" : "#dc2626"};
-                            border: 1px solid ${isActive ? "rgba(22, 163, 74, 0.25)" : "rgba(220, 38, 38, 0.25)"};
-                            padding: 4px 10px; border-radius: 20px;
-                            font-size: 11.5px; font-weight: 700;
-                            cursor: ${isSelf ? "not-allowed" : "pointer"};
-                            transition: all 0.2s; white-space: nowrap;
-                            opacity: ${isSelf ? "0.5" : "1"};
-                            outline: none;
-                        "
-                        ${isSelf ? "disabled" : ""}>
-                        <span style="
-                            width: 7px; height: 7px; border-radius: 50%;
-                            background: ${isActive ? "#16a34a" : "#dc2626"};
-                            box-shadow: 0 0 0 2px ${isActive ? "rgba(22,163,74,0.3)" : "rgba(220,38,38,0.3)"};
-                            flex-shrink: 0;
-                            ${isActive ? "animation: pulse-status 2s infinite;" : ""}
-                        "></span>
-                        ${isActive ? "Ativo" : "Inativo"}
-                    </button>
-                </td>
-                <td style="padding: 14px 16px;">${lastLogin}</td>
-                <td style="padding: 14px 16px;">
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <span style="
-                            font-weight: 700; font-size: 15px; color: var(--text-primary);
-                        ">${workedLeads}</span>
-                        <span style="font-size: 11px; color: var(--text-muted);">lead${workedLeads !== 1 ? "s" : ""}</span>
-                        ${workedLeads > 0 ? `
-                        <div style="
-                            width: 50px; height: 4px; background: var(--bg-body); border-radius: 2px; overflow: hidden;
-                        ">
-                            <div style="height: 100%; width: ${Math.min(workedLeads * 10, 100)}%; background: var(--primary); border-radius: 2px;"></div>
-                        </div>` : ""}
-                    </div>
-                </td>
-                <td style="padding: 14px 16px; text-align: right;">
-                    <div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center;">
-                        <button
-                            onclick="window.UsersModuleEdit('${user.id}')"
-                            title="Editar Usuário"
-                            class="user-action-btn"
-                            style="
-                                width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border-color);
-                                background: var(--bg-card); color: var(--text-secondary);
-                                display: flex; align-items: center; justify-content: center;
-                                cursor: pointer; transition: all 0.2s; flex-shrink: 0;
-                            ">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                        </button>
-                        <button
-                            onclick="window.UsersModuleResetPassword('${user.id}')"
-                            title="Resetar Senha para padrão"
-                            class="user-action-btn user-action-warn"
-                            style="
-                                width: 32px; height: 32px; border-radius: 8px; border: 1px solid rgba(234, 179, 8, 0.3);
-                                background: rgba(234, 179, 8, 0.07); color: #ca8a04;
-                                display: flex; align-items: center; justify-content: center;
-                                cursor: pointer; transition: all 0.2s; flex-shrink: 0;
-                            ">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                        </button>
-                        ${!isSelf ? `<button
-                            onclick="window.UsersModuleDelete('${user.id}', '${user.name.replace(/'/g, "\\\\'")}')"
-                            title="Excluir Usuário"
-                            class="user-action-btn user-action-danger"
-                            style="
-                                width: 32px; height: 32px; border-radius: 8px; border: 1px solid rgba(220, 38, 38, 0.3);
-                                background: rgba(220, 38, 38, 0.07); color: #dc2626;
-                                display: flex; align-items: center; justify-content: center;
-                                cursor: pointer; transition: all 0.2s; flex-shrink: 0;
-                            ">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-                        </button>` : ''}
-                    </div>
-                </td>
+                </div>
             `;
+            tr.appendChild(tdProfile);
+
+            // Coluna de E-mail
+            const tdEmail = document.createElement("td");
+            tdEmail.style.cssText = "padding: 14px 16px;";
+            tdEmail.innerHTML = `<span style="font-size: 12.5px; color: var(--text-secondary); font-family: monospace;">${user.email}</span>`;
+            tr.appendChild(tdEmail);
+
+            // Coluna de Cargo
+            const tdRole = document.createElement("td");
+            tdRole.style.cssText = "padding: 14px 16px;";
+            tdRole.innerHTML = `
+                <span style="
+                    display: inline-flex; align-items: center; gap: 5px;
+                    background: ${roleStyle.bg};
+                    color: ${roleStyle.color};
+                    border: 1px solid ${roleStyle.border};
+                    padding: 3px 10px; border-radius: 20px;
+                    font-size: 11px; font-weight: 700; letter-spacing: 0.3px;
+                    white-space: nowrap;
+                ">${roleStyle.label}</span>
+            `;
+            tr.appendChild(tdRole);
+
+            // Coluna de Status
+            const tdStatus = document.createElement("td");
+            tdStatus.style.cssText = "padding: 14px 16px;";
+            const statusBtn = document.createElement("button");
+            statusBtn.title = isActive ? "Clique para desativar" : "Clique para ativar";
+            statusBtn.disabled = isSelf;
+            statusBtn.style.cssText = `
+                display: inline-flex; align-items: center; gap: 6px;
+                background: ${isActive ? "rgba(22, 163, 74, 0.1)" : "rgba(220, 38, 38, 0.1)"};
+                color: ${isActive ? "#15803d" : "#dc2626"};
+                border: 1px solid ${isActive ? "rgba(22, 163, 74, 0.25)" : "rgba(220, 38, 38, 0.25)"};
+                padding: 4px 10px; border-radius: 20px;
+                font-size: 11.5px; font-weight: 700;
+                cursor: ${isSelf ? "not-allowed" : "pointer"};
+                transition: all 0.2s; white-space: nowrap;
+                opacity: ${isSelf ? "0.5" : "1"};
+                outline: none;
+            `;
+            statusBtn.innerHTML = `
+                <span style="
+                    width: 7px; height: 7px; border-radius: 50%;
+                    background: ${isActive ? "#16a34a" : "#dc2626"};
+                    box-shadow: 0 0 0 2px ${isActive ? "rgba(22,163,74,0.3)" : "rgba(220,38,38,0.3)"};
+                    flex-shrink: 0;
+                    ${isActive ? "animation: pulse-status 2s infinite;" : ""}
+                "></span>
+                ${isActive ? "Ativo" : "Inativo"}
+            `;
+            statusBtn.onclick = () => this.toggleStatus(user.id);
+            tdStatus.appendChild(statusBtn);
+            tr.appendChild(tdStatus);
+
+            // Coluna de Último Login
+            const tdLastLogin = document.createElement("td");
+            tdLastLogin.style.cssText = "padding: 14px 16px;";
+            tdLastLogin.innerHTML = lastLogin;
+            tr.appendChild(tdLastLogin);
+
+            // Coluna de Leads Ativos
+            const tdLeads = document.createElement("td");
+            tdLeads.style.cssText = "padding: 14px 16px;";
+            tdLeads.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <span style="
+                        font-weight: 700; font-size: 15px; color: var(--text-primary);
+                    ">${workedLeads}</span>
+                    <span style="font-size: 11px; color: var(--text-muted);">lead${workedLeads !== 1 ? "s" : ""}</span>
+                    ${workedLeads > 0 ? `
+                    <div style="
+                        width: 50px; height: 4px; background: var(--bg-body); border-radius: 2px; overflow: hidden;
+                    ">
+                        <div style="height: 100%; width: ${Math.min(workedLeads * 10, 100)}%; background: var(--primary); border-radius: 2px;"></div>
+                    </div>` : ""}
+                </div>
+            `;
+            tr.appendChild(tdLeads);
+
+            // Coluna de Ações
+            const tdActions = document.createElement("td");
+            tdActions.style.cssText = "padding: 14px 16px; text-align: right;";
+            
+            const actionsDiv = document.createElement("div");
+            actionsDiv.style.cssText = "display: flex; gap: 6px; justify-content: flex-end; align-items: center;";
+
+            // Botão Editar
+            const editBtn = document.createElement("button");
+            editBtn.title = "Editar Usuário";
+            editBtn.className = "user-action-btn";
+            editBtn.style.cssText = `
+                width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border-color);
+                background: var(--bg-card); color: var(--text-secondary);
+                display: flex; align-items: center; justify-content: center;
+                cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+            `;
+            editBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+            editBtn.onclick = () => this.openEditModal(user.id);
+            actionsDiv.appendChild(editBtn);
+
+            // Botão Reset Senha
+            const resetBtn = document.createElement("button");
+            resetBtn.title = "Resetar Senha para padrão";
+            resetBtn.className = "user-action-btn user-action-warn";
+            resetBtn.style.cssText = `
+                width: 32px; height: 32px; border-radius: 8px; border: 1px solid rgba(234, 179, 8, 0.3);
+                background: rgba(234, 179, 8, 0.07); color: #ca8a04;
+                display: flex; align-items: center; justify-content: center;
+                cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+            `;
+            resetBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
+            resetBtn.onclick = () => this.resetPassword(user.id);
+            actionsDiv.appendChild(resetBtn);
+
+            // Botão Excluir (apenas se não for o próprio admin logado)
+            if (!isSelf) {
+                const deleteBtn = document.createElement("button");
+                deleteBtn.title = "Excluir Usuário";
+                deleteBtn.className = "user-action-btn user-action-danger";
+                deleteBtn.style.cssText = `
+                    width: 32px; height: 32px; border-radius: 8px; border: 1px solid rgba(220, 38, 38, 0.3);
+                    background: rgba(220, 38, 38, 0.07); color: #dc2626;
+                    display: flex; align-items: center; justify-content: center;
+                    cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+                `;
+                deleteBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+                deleteBtn.onclick = () => this.deleteUser(user.id, user.name);
+                actionsDiv.appendChild(deleteBtn);
+            }
+
+            tdActions.appendChild(actionsDiv);
+            tr.appendChild(tdActions);
+
             tableBody.appendChild(tr);
         });
 

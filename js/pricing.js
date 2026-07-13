@@ -5,6 +5,7 @@ export const Pricing = {
     chart: null,
 
     init() {
+        this.initModalSimulators();
         this.cacheElements();
         if (!this.els.service) return; // Se não existir na tela, não inicializa
         this.bindEvents();
@@ -202,6 +203,74 @@ export const Pricing = {
             
             Audit.log(`Simulação de Preços convertida em rascunho de Proposta: ${serviceName}`);
         }
+    },
+
+    initModalSimulators() {
+        const toggleButtons = document.querySelectorAll(".btn-toggle-pricing-sim");
+        toggleButtons.forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                e.preventDefault();
+                const target = btn.getAttribute("data-target");
+                const panel = document.getElementById(`pricing-sim-panel-${target}`);
+                if (panel) {
+                    const isHidden = panel.style.display === "none";
+                    panel.style.display = isHidden ? "block" : "none";
+                }
+            });
+        });
+
+        const calculatePanel = (target) => {
+            const costo = parseFloat(document.getElementById(`sim-${target}-custo`).value) || 0;
+            const despesa = parseFloat(document.getElementById(`sim-${target}-despesa`).value) || 0;
+            const margem = parseFloat(document.getElementById(`sim-${target}-margem`).value) || 0;
+            const impostos = parseFloat(document.getElementById(`sim-${target}-impostos`).value) || 0;
+
+            const baseCost = costo + despesa;
+            const divisor = 1 - (impostos / 100) - (margem / 100);
+
+            let price = 0;
+            if (divisor > 0) {
+                price = baseCost / divisor;
+            } else {
+                price = baseCost * 2;
+            }
+
+            const resultEl = document.getElementById(`sim-${target}-result`);
+            if (resultEl) {
+                resultEl.textContent = this.formatCurrency(price);
+            }
+        };
+
+        const targets = ["new", "edit"];
+        targets.forEach(target => {
+            const inputs = [
+                document.getElementById(`sim-${target}-custo`),
+                document.getElementById(`sim-${target}-despesa`),
+                document.getElementById(`sim-${target}-margem`),
+                document.getElementById(`sim-${target}-impostos`)
+            ];
+            inputs.forEach(input => {
+                if (input) {
+                    input.addEventListener("input", () => calculatePanel(target));
+                }
+            });
+
+            const applyBtn = document.querySelector(`.btn-apply-sim-val[data-target="${target}"]`);
+            if (applyBtn) {
+                applyBtn.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const resultEl = document.getElementById(`sim-${target}-result`);
+                    const val = parseFloat(resultEl.textContent.replace('R$', '').replace(/\s/g, '').replace('.', '').replace(',', '.'));
+                    
+                    const valueInput = document.getElementById(target === "new" ? "proposal-value" : "edit-prop-value");
+                    if (valueInput) {
+                        valueInput.value = val.toFixed(2);
+                    }
+                    const panel = document.getElementById(`pricing-sim-panel-${target}`);
+                    if (panel) panel.style.display = "none";
+                });
+            }
+        });
     },
 
     formatCurrency(value) {

@@ -1,5 +1,8 @@
 import { Store } from "./store.js";
 import { Auth } from "./auth.js";
+import { Performance } from "./performance.js";
+import { Forecast } from "./forecast.js";
+import { Services } from "./services.js";
 
 // Metas mensais padrão por vendedor
 const DEFAULT_GOALS = {
@@ -22,6 +25,40 @@ export const Team = {
         
         const searchInput = document.getElementById("team-search");
         if (searchInput) searchInput.addEventListener("input", () => this.renderAll());
+
+        const tabBtns = document.querySelectorAll(".subtab-btn");
+        tabBtns.forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                e.preventDefault();
+                const target = btn.getAttribute("data-subtab");
+                
+                // Toggle active class on buttons
+                tabBtns.forEach(b => {
+                    b.classList.remove("btn-primary");
+                    b.classList.add("btn-outline");
+                });
+                btn.classList.add("btn-primary");
+                btn.classList.remove("btn-outline");
+
+                // Toggle sub-tab content panels
+                document.querySelectorAll(".subtab-content-pane").forEach(pane => {
+                    pane.style.display = "none";
+                });
+                const targetPane = document.getElementById(`subtab-content-${target}`);
+                if (targetPane) {
+                    targetPane.style.display = "block";
+                }
+
+                // Initialize specific module for sub-tab
+                if (target === "team-graficos") {
+                    Performance.init();
+                } else if (target === "team-forecast") {
+                    Forecast.init();
+                } else if (target === "team-servicos") {
+                    Services.init();
+                }
+            });
+        });
     },
 
     getPeriodRange(period) {

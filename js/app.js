@@ -128,6 +128,36 @@ function navigateTo(viewName) {
     const user = Auth.getCurrentUser();
     if (!user) return showLoginScreen();
 
+    // Redirecionamentos de abas unificadas
+    if (viewName === "performance") {
+        window.location.hash = "#team";
+        setTimeout(() => {
+            const tabBtn = document.querySelector('.subtab-btn[data-subtab="team-graficos"]');
+            if (tabBtn) tabBtn.click();
+        }, 100);
+        return;
+    }
+    if (viewName === "forecast") {
+        window.location.hash = "#team";
+        setTimeout(() => {
+            const tabBtn = document.querySelector('.subtab-btn[data-subtab="team-forecast"]');
+            if (tabBtn) tabBtn.click();
+        }, 100);
+        return;
+    }
+    if (viewName === "services") {
+        window.location.hash = "#team";
+        setTimeout(() => {
+            const tabBtn = document.querySelector('.subtab-btn[data-subtab="team-servicos"]');
+            if (tabBtn) tabBtn.click();
+        }, 100);
+        return;
+    }
+    if (viewName === "pricing") {
+        window.location.hash = "#proposals";
+        return;
+    }
+
     // Validar se o perfil tem permissão
     if (!Auth.canAccessRoute(user.role, viewName)) {
         Audit.logAccessDenied(user.email, viewName);

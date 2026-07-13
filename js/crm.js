@@ -96,6 +96,29 @@ export const CRM = {
             e.preventDefault();
             this.confirmQualifyLead();
         });
+
+        // Follow-up toggle
+        const btnToggleFollowup = document.getElementById("btn-toggle-followup-form");
+        const followupFormContainer = document.getElementById("followup-form-container");
+        if (btnToggleFollowup && followupFormContainer) {
+            btnToggleFollowup.addEventListener("click", () => {
+                const visible = followupFormContainer.style.display !== "none";
+                followupFormContainer.style.display = visible ? "none" : "block";
+                btnToggleFollowup.textContent = visible ? "+ Novo" : "✕ Fechar";
+                if (!visible) {
+                    // Pre-fill datetime to 1 hour from now
+                    const dt = new Date(Date.now() + 3600000);
+                    const pad = n => String(n).padStart(2, "0");
+                    const local = `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+                    const inp = document.getElementById("followup-datetime");
+                    if (inp) inp.value = local;
+                }
+            });
+        }
+
+        // Follow-up save
+        const btnSaveFollowup = document.getElementById("btn-save-followup");
+        if (btnSaveFollowup) btnSaveFollowup.addEventListener("click", () => this.saveFollowup());
     },
 
     // ==========================================================================
@@ -461,6 +484,15 @@ export const CRM = {
         // Renderizar Linha do Tempo
         this.renderTimeline(lead);
 
+        // Renderizar Follow-ups
+        this.renderFollowups(lead);
+
+        // Resetar form follow-up
+        const ffContainer = document.getElementById("followup-form-container");
+        const ffToggle = document.getElementById("btn-toggle-followup-form");
+        if (ffContainer) ffContainer.style.display = "none";
+        if (ffToggle) ffToggle.textContent = "+ Novo";
+
         // Exibir Drawer e Overlay
         document.getElementById("lead-drawer").classList.add("open");
         document.getElementById("drawer-overlay").style.display = "block";
@@ -470,13 +502,92 @@ export const CRM = {
         activeLeadId = null;
         document.getElementById("lead-drawer").classList.remove("open");
         document.getElementById("drawer-overlay").style.display = "none";
-        this.renderLeadsTable(); // Atualizar tabela por segurança
+        this.renderLeadsTable();
     },
 
     // ==========================================================================
-    // LINHA DO TEMPO (TIMELINE DE ATIVIDADES)
+    // FOLLOW-UP LEMBRETES
     // ==========================================================================
-    
+
+    saveFollowup() {
+        if (!activeLeadId) return;
+        const dtInput = document.getElementById("followup-datetime");
+        const noteInput = document.getElementById("followup-note");
+        if (!dtInput || !dtInput.value) {
+            alert("Por favor, selecione a data e hora do follow-up.");
+            return;
+        }
+        const currentUser = Auth.getCurrentUser();
+        const lead = Store.getLeadById(activeLeadId);
+        if (!lead || !currentUser) return;
+
+        const followups = lead.followups || [];
+        const newFollowup = {
+            id: `fu_${Date.now()}`,
+            scheduledAt: new Date(dtInput.value).toISOString(),
+            note: noteInput?.value.trim() || "Follow-up agendado",
+            userEmail: currentUser.email,
+            done: false,
+            notified: false
+        };
+        followups.push(newFollowup);
+        Store.updateLead(activeLeadId, { followups }, currentUser.email);
+
+        // Reset form
+        dtInput.value = "";
+        if (noteInput) noteInput.value = "";
+        document.getElementById("followup-form-container").style.display = "none";
+        document.getElementById("btn-toggle-followup-form").textContent = "+ Novo";
+
+        const updatedLead = Store.getLeadById(activeLeadId);
+        this.renderFollowups(updatedLead);
+    },
+
+    deleteFollowup(followupId) {
+        if (!activeLeadId) return;
+        const lead = Store.getLeadById(activeLeadId);
+        if (!lead) return;
+        const currentUser = Auth.getCurrentUser();
+        const followups = (lead.followups || []).filter(f => f.id !== followupId);
+        Store.updateLead(activeLeadId, { followups }, currentUser?.email);
+        const updatedLead = Store.getLeadById(activeLeadId);
+        this.renderFollowups(updatedLead);
+    },
+
+    renderFollowups(lead) {
+        const container = document.getElementById("followup-list-container");
+        if (!container) return;
+        const followups = (lead.followups || []).filter(f => !f.done);
+        if (followups.length === 0) {
+            container.innerHTML = `<div style="font-size: 12px; color: var(--text-muted); padding: 6px 0; font-style: italic;">Nenhum follow-up agendado.</div>`;
+            return;
+        }
+        followups.sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
+        const now = Date.now();
+        container.innerHTML = followups.map(f => {
+            const dt = new Date(f.scheduledAt);
+            const isPast = dt.getTime() < now;
+            const isSoon = !isPast && (dt.getTime() - now) < 3600000; // within 1h
+            const fmtDt = dt.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+            const colorBar = isPast ? "#ef4444" : isSoon ? "#f59e0b" : "#3b82f6";
+            const statusLabel = isPast ? "⚠️ Atrasado" : isSoon ? "⏰ Em breve" : "📅 Agendado";
+            return `
+                <div style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 8px; background: var(--bg-surface); border-left: 3px solid ${colorBar}; margin-bottom: 6px;">
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px;">${f.note}</div>
+                        <div style="font-size: 11px; color: var(--text-secondary);">${fmtDt} &nbsp;•&nbsp; <span style="color:${colorBar}; font-weight:600;">${statusLabel}</span></div>
+                        <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">${f.userEmail}</div>
+                    </div>
+                    <button onclick="window.CRMDeleteFollowup('${f.id}')" title="Remover lembrete" style="background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 2px; flex-shrink: 0;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>`;
+        }).join("");
+
+        window.CRMDeleteFollowup = (id) => this.deleteFollowup(id);
+    },
+
+
     renderTimeline(lead) {
         const timelineContainer = document.getElementById("drawer-timeline");
         if (!timelineContainer) return;

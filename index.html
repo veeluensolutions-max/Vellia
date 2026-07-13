@@ -1451,7 +1451,28 @@
                 </form>
             </div>
 
-            <!-- Seção 4: Linha do Tempo -->
+            <!-- Seção 4: Agendamento de Follow-up -->
+            <div class="drawer-section" id="drawer-followup-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <span class="drawer-section-title" style="margin-bottom: 0;">⏰ Agendar Follow-up</span>
+                    <button id="btn-toggle-followup-form" style="font-size: 11px; font-weight: 700; color: var(--primary); background: none; border: none; cursor: pointer;">+ Novo</button>
+                </div>
+                <div id="followup-form-container" style="display: none;">
+                    <div style="display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;">
+                        <input type="datetime-local" id="followup-datetime" class="form-control" style="flex: 1; min-width: 180px; padding: 8px 12px; font-size: 13px;">
+                        <input type="text" id="followup-note" class="form-control" placeholder="Motivo do follow-up..." style="flex: 2; min-width: 160px; padding: 8px 12px; font-size: 13px;">
+                    </div>
+                    <button id="btn-save-followup" class="btn btn-primary" style="padding: 8px 16px; font-size: 12px;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:5px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        Agendar Lembrete
+                    </button>
+                </div>
+                <div id="followup-list-container" style="margin-top: 8px;">
+                    <!-- Preenchido dinamicamente -->
+                </div>
+            </div>
+
+            <!-- Seção 5: Linha do Tempo -->
             <div class="drawer-section">
                 <span class="drawer-section-title">Linha do Tempo (Atividades)</span>
                 <div id="drawer-timeline" class="timeline">

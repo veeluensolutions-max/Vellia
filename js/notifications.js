@@ -1,5 +1,6 @@
 import { analyzeContext } from "./ai.js";
 import { Auth } from "./auth.js";
+import { Store } from "./store.js";
 
 export const Notifications = {
     panel: null,
@@ -21,7 +22,11 @@ export const Notifications = {
         this.bindEvents();
         this.requestNativePermission();
         this.generateContextualNotifications();
+        this.checkFollowupReminders();
         this.render();
+
+        // Verificar follow-ups a cada 60 segundos
+        setInterval(() => this.checkFollowupReminders(), 60000);
     },
 
     requestNativePermission() {
@@ -241,6 +246,51 @@ export const Notifications = {
         if (this.items.find(i => i.id === item.id)) return;
         this.items.unshift({ ...item, read: false });
         this.render();
+    },
+
+    // Verificar follow-ups agendados e disparar notificações
+    checkFollowupReminders() {
+        const currentUser = Auth.getCurrentUser();
+        if (!currentUser) return;
+
+        const allLeads = Store.getLeads();
+        const now = Date.now();
+        const windowMs = 10 * 60 * 1000; // 10 minutos de tolerância
+        const notifiedKey = "vellia_followup_notified";
+        const notified = JSON.parse(sessionStorage.getItem(notifiedKey) || "[]");
+        let changed = false;
+
+        allLeads.forEach(lead => {
+            if (!lead.followups) return;
+            lead.followups.forEach(f => {
+                if (f.done || f.userEmail !== currentUser.email) return;
+                const scheduledMs = new Date(f.scheduledAt).getTime();
+                const diff = scheduledMs - now;
+                const isNearOrOverdue = diff <= windowMs && diff > -windowMs;
+                if (isNearOrOverdue && !notified.includes(f.id)) {
+                    const fmtDt = new Date(f.scheduledAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+                    const notifItem = {
+                        id: `followup_${f.id}`,
+                        title: `⏰ Follow-up: ${lead.company}`,
+                        message: `${f.note} — ${fmtDt}`,
+                        type: "warning",
+                        read: false,
+                        timestamp: new Date()
+                    };
+                    if (!this.items.find(i => i.id === notifItem.id)) {
+                        this.items.unshift(notifItem);
+                        this.sendNativeNotification(notifItem.title, notifItem.message);
+                    }
+                    notified.push(f.id);
+                    changed = true;
+                }
+            });
+        });
+
+        if (changed) {
+            sessionStorage.setItem(notifiedKey, JSON.stringify(notified));
+            this.render();
+        }
     }
 };
 

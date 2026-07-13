@@ -1990,9 +1990,12 @@
             </button>
         </div>
         <form id="goals-form" class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
-            <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
-                Configure as metas padrão esperadas para a equipe.
-            </p>
+            <div class="form-group">
+                <label for="goal-scope-selector">Selecione o Alvo da Meta *</label>
+                <select id="goal-scope-selector" class="filter-control" style="height: 42px; width: 100%;">
+                    <option value="global">Equipe Geral (Padrão)</option>
+                </select>
+            </div>
             <div class="form-group">
                 <label for="goal-revenue">Meta de Faturamento Mensal (R$) *</label>
                 <input type="number" id="goal-revenue" class="form-control" placeholder="Ex: 30000" min="0" required>

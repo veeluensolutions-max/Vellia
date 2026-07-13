@@ -139,8 +139,9 @@ export const Team = {
             const revenue = sellerProposals.filter(p => p.status === "Ganho").reduce((s, p) => s + (p.value || 0), 0);
             
             const goalsConfig = JSON.parse(localStorage.getItem("comercial_goals_config")) || DEFAULT_GOALS;
+            const sellerRevenueGoal = goalsConfig["meta_revenue_" + seller.email] !== undefined ? parseFloat(goalsConfig["meta_revenue_" + seller.email]) : parseFloat(goalsConfig.meta_revenue || DEFAULT_GOALS.meta_revenue);
             const conversion = proposalsSent > 0 ? Math.round((proposalsWon / proposalsSent) * 100) : 0;
-            const metaPct = Math.min(Math.round((revenue / goalsConfig.meta_revenue) * 100), 100);
+            const metaPct = Math.min(Math.round((revenue / sellerRevenueGoal) * 100), 100);
 
             return {
                 ...seller,

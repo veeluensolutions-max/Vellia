@@ -477,6 +477,37 @@ export const Goals = {
     openGoalsModal() {
         const goals = getGoalsConfig();
         const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+        
+        // Popular o seletor de vendedores
+        const selector = document.getElementById("goal-scope-selector");
+        if (selector) {
+            selector.innerHTML = `<option value="global">Equipe Geral (Padrão)</option>`;
+            const sellers = Store.getUsers().filter(u => u.role === "seller" || u.role === "manager");
+            sellers.forEach(s => {
+                selector.innerHTML += `<option value="${s.email}">${s.name} (${s.role === "manager" ? "Gerente" : "Vendedor"})</option>`;
+            });
+            
+            // Ouvinte de mudança para carregar metas correspondentes
+            selector.onchange = () => {
+                const scope = selector.value;
+                const activeGoals = getGoalsConfig();
+                if (scope === "global") {
+                    setVal("goal-revenue", activeGoals.meta_revenue);
+                    setVal("goal-proposals", activeGoals.meta_proposals);
+                    setVal("goal-leads", activeGoals.meta_leads);
+                    setVal("goal-calls", activeGoals.meta_calls);
+                    setVal("goal-meetings", activeGoals.meta_meetings);
+                } else {
+                    setVal("goal-revenue", activeGoals[`meta_revenue_${scope}`] !== undefined ? activeGoals[`meta_revenue_${scope}`] : activeGoals.meta_revenue);
+                    setVal("goal-proposals", activeGoals[`meta_proposals_${scope}`] !== undefined ? activeGoals[`meta_proposals_${scope}`] : activeGoals.meta_proposals);
+                    setVal("goal-leads", activeGoals[`meta_leads_${scope}`] !== undefined ? activeGoals[`meta_leads_${scope}`] : activeGoals.meta_leads);
+                    setVal("goal-calls", activeGoals[`meta_calls_${scope}`] !== undefined ? activeGoals[`meta_calls_${scope}`] : activeGoals.meta_calls);
+                    setVal("goal-meetings", activeGoals[`meta_meetings_${scope}`] !== undefined ? activeGoals[`meta_meetings_${scope}`] : activeGoals.meta_meetings);
+                }
+            };
+        }
+
+        // Carregar valores globais inicialmente
         setVal("goal-revenue", goals.meta_revenue);
         setVal("goal-proposals", goals.meta_proposals);
         setVal("goal-leads", goals.meta_leads);
@@ -494,13 +525,25 @@ export const Goals = {
 
     saveGoals() {
         const getVal = (id) => parseFloat(document.getElementById(id)?.value) || 0;
-        const config = {
-            meta_revenue: getVal("goal-revenue"),
-            meta_proposals: getVal("goal-proposals"),
-            meta_leads: getVal("goal-leads"),
-            meta_calls: getVal("goal-calls"),
-            meta_meetings: getVal("goal-meetings")
-        };
+        const selector = document.getElementById("goal-scope-selector");
+        const scope = selector ? selector.value : "global";
+        
+        const config = getGoalsConfig();
+        
+        if (scope === "global") {
+            config.meta_revenue = getVal("goal-revenue");
+            config.meta_proposals = getVal("goal-proposals");
+            config.meta_leads = getVal("goal-leads");
+            config.meta_calls = getVal("goal-calls");
+            config.meta_meetings = getVal("goal-meetings");
+        } else {
+            config[`meta_revenue_${scope}`] = getVal("goal-revenue");
+            config[`meta_proposals_${scope}`] = getVal("goal-proposals");
+            config[`meta_leads_${scope}`] = getVal("goal-leads");
+            config[`meta_calls_${scope}`] = getVal("goal-calls");
+            config[`meta_meetings_${scope}`] = getVal("goal-meetings");
+        }
+        
         saveGoalsConfig(config);
         this.closeGoalsModal();
         this.renderAll();

@@ -637,7 +637,6 @@ export const Dashboard = {
             // Forçar visualização a selecionar o vendedor a quem foi atribuído
             viewSeller.value = targetSeller;
             renderAssignedTasks();
-
         };
     }
 };

@@ -146,20 +146,28 @@ async function syncFromSupabase() {
         const remoteUsers = await supabaseFetch("comercial_users") || [];
         const localUsers = JSON.parse(localStorage.getItem("comercial_users")) || DEFAULT_USERS;
         
-        let mergedUsers = [...remoteUsers];
-        let needsUpsert = false;
+        // 1. Criar um mapa combinando os usuários remotos e locais, dando prioridade para as informações do banco remoto,
+        // mas garantindo que novos cadastros locais ou usuários padrão do script existam.
+        const userMap = new Map();
         
-        localUsers.forEach(localU => {
-            const exists = mergedUsers.some(u => u.email.toLowerCase() === localU.email.toLowerCase());
-            if (!exists) {
-                mergedUsers.push(localU);
-                needsUpsert = true;
-            }
-        });
+        // Adiciona locais primeiro
+        localUsers.forEach(u => userMap.set(u.email.toLowerCase(), u));
+        // Remotos sobrescrevem (sincronização do banco para o local)
+        remoteUsers.forEach(u => userMap.set(u.email.toLowerCase(), u));
         
+        const mergedUsers = Array.from(userMap.values());
         localStorage.setItem("comercial_users", JSON.stringify(mergedUsers));
-        if (needsUpsert) {
-            upsertSupabase("comercial_users", mergedUsers);
+        
+        // 2. Se houver usuários locais que não existem no Supabase, subir para garantir acesso em outros dispositivos
+        const missingOnRemote = mergedUsers.filter(mu => 
+            !remoteUsers.some(ru => ru.email.toLowerCase() === mu.email.toLowerCase())
+        );
+        
+        if (missingOnRemote.length > 0) {
+            // Upsert individual de cada usuário em falta
+            for (const user of missingOnRemote) {
+                await upsertSupabase("comercial_users", user);
+            }
         }
     } catch (e) { console.log("Users sync fallback:", e.message); }
 

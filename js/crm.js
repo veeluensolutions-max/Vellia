@@ -108,32 +108,56 @@ export const CRM = {
 
         let leads = Store.getLeads();
         const currentUser = Auth.getCurrentUser();
-        
-        // Vendedor vê apenas seus próprios leads
-        if (currentUser && currentUser.role === "seller") {
-            leads = leads.filter(l => l.owner === currentUser.email);
+        const isAdmin = currentUser && (currentUser.role === "admin" || currentUser.role === "manager");
+
+        // ---- Mostrar/ocultar UI exclusiva de Admin ----
+        const btnAiDistribute = document.getElementById("btn-ai-distribute");
+        const ownerFilterGroup = document.getElementById("crm-filter-owner-group");
+        const ownerFilter = document.getElementById("crm-filter-owner");
+
+        if (isAdmin) {
+            if (btnAiDistribute) btnAiDistribute.style.display = "inline-flex";
+            if (ownerFilterGroup) ownerFilterGroup.style.display = "block";
+
+            // Popular dropdown de vendedores
+            if (ownerFilter && ownerFilter.options.length <= 1) {
+                const sellers = Store.getUsers().filter(u => u.role === "seller" || u.role === "manager" || u.role === "admin");
+                sellers.forEach(u => {
+                    const opt = document.createElement("option");
+                    opt.value = u.email;
+                    opt.textContent = u.name;
+                    ownerFilter.appendChild(opt);
+                });
+            }
+        } else {
+            // Vendedor: filtra leads atribuídos a ele
+            leads = leads.filter(l => l.owner === currentUser?.email);
+            if (btnAiDistribute) btnAiDistribute.style.display = "none";
+            if (ownerFilterGroup) ownerFilterGroup.style.display = "none";
         }
 
         const searchQuery = document.getElementById("crm-search")?.value.toLowerCase().trim() || "";
         const stageFilter = document.getElementById("crm-filter-stage")?.value || "all";
+        const ownerFilterValue = ownerFilter?.value || "all";
 
         // Filtro de leads
         const filteredLeads = leads.filter(lead => {
-            const matchesSearch = 
-                lead.company.toLowerCase().includes(searchQuery) ||
-                lead.contact.toLowerCase().includes(searchQuery) ||
-                lead.segment.toLowerCase().includes(searchQuery) ||
-                lead.email.toLowerCase().includes(searchQuery);
+            const matchesSearch =
+                (lead.company || "").toLowerCase().includes(searchQuery) ||
+                (lead.contact || "").toLowerCase().includes(searchQuery) ||
+                (lead.segment || "").toLowerCase().includes(searchQuery) ||
+                (lead.email || "").toLowerCase().includes(searchQuery);
 
             const matchesStage = stageFilter === "all" || lead.stage === stageFilter;
+            const matchesOwner = !isAdmin || ownerFilterValue === "all" || lead.owner === ownerFilterValue;
 
-            return matchesSearch && matchesStage;
+            return matchesSearch && matchesStage && matchesOwner;
         });
 
         if (filteredLeads.length === 0) {
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px 20px;">
+                    <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 40px 20px;">
                         Nenhum lead ou contato encontrado para a pesquisa.
                     </td>
                 </tr>
@@ -141,34 +165,42 @@ export const CRM = {
             return;
         }
 
+        // Montar lista de vendedores para o select inline (admin)
+        const sellers = isAdmin ? Store.getUsers().filter(u => u.role === "seller" || u.role === "manager" || u.role === "admin") : [];
+        const sellerOptions = sellers.map(s => `<option value="${s.email}">${s.name}</option>`).join("");
+
         tableBody.innerHTML = filteredLeads.map(lead => {
             let stageBadgeClass = "badge-info";
             if (lead.stage === "Cliente Fechado") stageBadgeClass = "badge-success";
             else if (lead.stage === "Cliente Perdido") stageBadgeClass = "badge-danger";
             else if (lead.stage === "Negociação" || lead.stage === "Proposta Enviada") stageBadgeClass = "badge-warning";
 
-            // Formatar último contato
-            let lastContact = "Nenhuma interação registrada";
-            if (lead.interactions && lead.interactions.length > 0) {
-                // Ordenar por data mais recente
-                const sortedInts = [...lead.interactions].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
-                const latest = sortedInts[0];
-                lastContact = `${latest.type} em ${new Date(latest.timestamp).toLocaleDateString("pt-BR")}`;
-            }
-
             // Obter dados do responsável
-            let ownerName = "Sistema";
-            let ownerAvatar = "SI";
+            let ownerName = "Não atribuído";
+            let ownerAvatar = "—";
+            let ownerColor = "#94a3b8";
             if (lead.owner) {
                 const ownerUser = Store.getUserByEmail(lead.owner);
                 if (ownerUser) {
                     ownerName = ownerUser.name;
                     ownerAvatar = ownerUser.avatar;
+                    ownerColor = "var(--primary)";
                 } else {
                     ownerName = lead.owner.split("@")[0];
-                    ownerAvatar = ownerName.substring(0,2).toUpperCase();
+                    ownerAvatar = ownerName.substring(0, 2).toUpperCase();
                 }
             }
+
+            // Coluna de Responsável: admin vê dropdown, vendedor vê nome fixo
+            const ownerCell = isAdmin
+                ? `<select class="filter-control assign-owner-select" data-id="${lead.id}" style="height: 32px; font-size: 12px; min-width: 140px;" onclick="event.stopPropagation();">
+                    <option value="">— Não atribuído —</option>
+                    ${sellers.map(s => `<option value="${s.email}" ${lead.owner === s.email ? "selected" : ""}>${s.name}</option>`).join("")}
+                   </select>`
+                : `<div style="display:flex;align-items:center;gap:8px;">
+                     <div class="user-avatar" style="width:24px;height:24px;font-size:10px;flex-shrink:0;background:${ownerColor};">${ownerAvatar}</div>
+                     <span style="font-size:13px;font-weight:500;">${ownerName}</span>
+                   </div>`;
 
             return `
                 <tr class="clickable-row" data-id="${lead.id}">
@@ -188,11 +220,8 @@ export const CRM = {
                     <td>
                         <span class="badge ${stageBadgeClass}">${lead.stage}</span>
                     </td>
-                    <td>
-                        <div style="display: flex; align-items: center; gap: 8px;" title="${lead.owner || 'Sem Dono'}">
-                            <div class="user-avatar" style="width: 24px; height: 24px; font-size: 10px; flex-shrink: 0;">${ownerAvatar}</div>
-                            <span style="font-size: 13px; font-weight: 500;">${ownerName}</span>
-                        </div>
+                    <td onclick="event.stopPropagation();">
+                        ${ownerCell}
                     </td>
                     <td style="text-align: right;" onclick="event.stopPropagation();">
                         <button class="btn btn-outline btn-wa-lead" data-id="${lead.id}" style="padding: 6px; font-size: 12px; border-color: #25d366; color: #25d366; margin-right: 6px; display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; vertical-align: middle;" title="Enviar WhatsApp">
@@ -206,7 +235,7 @@ export const CRM = {
             `;
         }).join("");
 
-        // Adicionar eventos de clique para linha e botão de detalhes
+        // Eventos de clique para linha e botões
         tableBody.querySelectorAll("tr").forEach(row => {
             row.addEventListener("click", () => {
                 const id = row.getAttribute("data-id");
@@ -227,7 +256,133 @@ export const CRM = {
                 window.WhatsApp?.openModalForLead(id);
             });
         });
+
+        // Evento de atribuição manual de dono (admin)
+        tableBody.querySelectorAll(".assign-owner-select").forEach(sel => {
+            sel.addEventListener("change", () => {
+                const leadId = sel.getAttribute("data-id");
+                const newOwner = sel.value;
+                this.assignLeadOwner(leadId, newOwner);
+            });
+        });
+
+        // Evento do filtro de dono (admin)
+        if (ownerFilter) {
+            ownerFilter.removeEventListener("change", ownerFilter._handler);
+            ownerFilter._handler = () => this.renderLeadsTable();
+            ownerFilter.addEventListener("change", ownerFilter._handler);
+        }
+
+        // Botão Distribuição IA
+        if (btnAiDistribute) {
+            btnAiDistribute.removeEventListener("click", btnAiDistribute._handler);
+            btnAiDistribute._handler = () => this.runAiDistribution();
+            btnAiDistribute.addEventListener("click", btnAiDistribute._handler);
+        }
     },
+
+    assignLeadOwner(leadId, newOwnerEmail) {
+        const leads = Store.getLeads();
+        const idx = leads.findIndex(l => l.id === leadId);
+        if (idx === -1) return;
+
+        const lead = leads[idx];
+        const oldOwner = lead.owner || "Não atribuído";
+        lead.owner = newOwnerEmail || null;
+
+        // Registrar histórico
+        lead.interactions = lead.interactions || [];
+        lead.interactions.push({
+            id: "assign_" + Date.now(),
+            type: "Observação",
+            description: `👤 Lead redirecionado de "${oldOwner}" para "${newOwnerEmail || 'Não atribuído'}" pelo Administrador.`,
+            timestamp: new Date().toISOString(),
+            userEmail: Auth.getCurrentUser()?.email || "admin@vellia.com"
+        });
+
+        leads[idx] = lead;
+        Store.saveLeads(leads);
+        Store.addLog(Auth.getCurrentUser()?.email || "admin@vellia.com", "LEAD_ASSIGNED", `Lead "${lead.company}" atribuído a "${newOwnerEmail}".`, "SUCCESS");
+
+        // Feedback visual
+        const sel = document.querySelector(`.assign-owner-select[data-id="${leadId}"]`);
+        if (sel) {
+            sel.style.borderColor = "var(--success)";
+            sel.style.color = "var(--success)";
+            setTimeout(() => {
+                sel.style.borderColor = "";
+                sel.style.color = "";
+            }, 1500);
+        }
+    },
+
+    async runAiDistribution() {
+        const btn = document.getElementById("btn-ai-distribute");
+        if (!btn) return;
+        btn.disabled = true;
+        btn.innerHTML = `<span style="animation: spin 1s linear infinite; display:inline-block;">⏳</span> Distribuindo...`;
+
+        try {
+            const leads = Store.getLeads();
+            const sellers = Store.getUsers().filter(u => u.role === "seller" || u.role === "manager");
+
+            if (sellers.length === 0) {
+                alert("Nenhum vendedor cadastrado para distribuição.");
+                return;
+            }
+
+            // Calcular atividade de cada vendedor (número de leads ativos)
+            const sellerActivity = sellers.map(s => ({
+                email: s.email,
+                name: s.name,
+                activeLeads: leads.filter(l => l.owner === s.email && l.stage !== "Cliente Fechado" && l.stage !== "Cliente Perdido").length
+            }));
+
+            const prompt = `Você é um gerente comercial especialista em CRM.
+Distribua os leads não atribuídos entre os vendedores, priorizando quem tem MENOS leads ativos (mais disponível).
+
+Leads sem dono (não atribuídos):
+${JSON.stringify(leads.filter(l => !l.owner || l.owner === "sistema@vellia.com" || l.owner === "sdr-ai@vellia.com").map(l => ({ id: l.id, company: l.company, segment: l.segment, stage: l.stage })), null, 2)}
+
+Vendedores e carga atual:
+${JSON.stringify(sellerActivity, null, 2)}
+
+Retorne SOMENTE um JSON com o array de distribuições:
+[{ "leadId": "...", "ownerEmail": "..." }]
+`;
+
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyBnEOB3E2JNL3u1Z6nxA1F8KMQfYvIqnLs`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: { responseMimeType: "application/json" }
+                })
+            });
+
+            if (!res.ok) throw new Error("Erro na API Gemini.");
+            const data = await res.json();
+            const assignments = JSON.parse(data.candidates?.[0]?.content?.parts?.[0]?.text || "[]");
+
+            let count = 0;
+            assignments.forEach(({ leadId, ownerEmail }) => {
+                this.assignLeadOwner(leadId, ownerEmail);
+                count++;
+            });
+
+            this.renderLeadsTable();
+            alert(`✅ IA distribuiu ${count} lead(s) entre os vendedores com sucesso!`);
+
+        } catch (err) {
+            console.error("Erro na distribuição IA:", err);
+            alert("❌ Erro ao executar distribuição inteligente. Tente novamente.");
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg> 🤖 Distribuição IA`;
+        }
+    },
+
+
     // ==========================================================================
     // EDIÇÃO DE LEADS
     // ==========================================================================

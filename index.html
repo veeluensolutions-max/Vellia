@@ -507,10 +507,16 @@
                             <h3 style="font-weight: 700;">Gestão de Leads & Contatos</h3>
                             <p style="color: var(--text-secondary); font-size: 13px;">Cadastre e gerencie a jornada comercial dos seus leads.</p>
                         </div>
-                        <button id="btn-new-lead" class="btn btn-primary">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                            <span>Novo Lead</span>
-                        </button>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <button id="btn-ai-distribute" class="btn btn-outline" style="display:none; gap: 8px; align-items: center; border-color: var(--primary); color: var(--primary);" title="Distribuição inteligente de leads por IA">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+                                <span>🤖 Distribuição IA</span>
+                            </button>
+                            <button id="btn-new-lead" class="btn btn-primary">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                <span>Novo Lead</span>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Filtros Rápidos -->
@@ -534,6 +540,14 @@
                                 <option value="Negociação">5. Negociação</option>
                                 <option value="Cliente Fechado">6. Cliente Fechado</option>
                                 <option value="Cliente Perdido">7. Cliente Perdido</option>
+                            </select>
+                        </div>
+
+                        <!-- Filtro por Vendedor (apenas para Admin/Gerente) -->
+                        <div class="filter-group" id="crm-filter-owner-group" style="min-width: 180px; display: none;">
+                            <label for="crm-filter-owner">Vendedor Responsável</label>
+                            <select id="crm-filter-owner" class="filter-control" style="height: 38px;">
+                                <option value="all">Todos os Vendedores</option>
                             </select>
                         </div>
                     </div>

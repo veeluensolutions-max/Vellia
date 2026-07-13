@@ -609,7 +609,7 @@ export const VelliaAI = {
         });
     },
 
-    sendMessage(text, container, input) {
+    async sendMessage(text, container, input) {
         if (!text.trim()) return;
 
         // Mensagem do usuário
@@ -621,19 +621,67 @@ export const VelliaAI = {
         // Typing indicator
         const typingEl = showTyping(container);
 
-        // Resposta da IA com delay realista
-        const delay = 600 + Math.random() * 800;
-        setTimeout(() => {
-            typingEl.remove();
+        try {
             const ctx = analyzeContext();
-            const response = generateResponse(text, ctx);
-            const aiMsg = { from: "ai", ...response };
-            chatHistory.push(aiMsg);
-            renderMessage(aiMsg, container);
-            
+            const localResponse = generateResponse(text, ctx);
+
+            if (localResponse.type === "fallback") {
+                const crmSummaryPrompt = `
+Você é o Vellia AI, o assistente inteligente integrado do Vellia CRM. 
+Você tem acesso aos seguintes dados reais do negócio para responder às perguntas do usuário:
+- Propostas ativas: ${ctx.openProps.length} propostas.
+- Propostas ganhas: ${ctx.wonProps.length} propostas (Receita total realizada: ${formatCurrency(ctx.totalRevenue)}).
+- Propostas perdidas: ${ctx.lostProps.length} propostas.
+- Taxa de conversão: ${(ctx.convRate * 100).toFixed(1)}%.
+- Ticket Médio: ${formatCurrency(ctx.avgTicket)}.
+- Leads Frios (sem atividade há mais de 14 dias): ${ctx.coldLeads.length} leads.
+- Propostas vencendo em breve: ${ctx.expiringProps.map(p => `${p.company} (vence em ${p.validUntil})`).join(", ")}.
+- Principal concorrente: ${ctx.topCompetitor || "Nenhum registrado"}.
+- Leads ativos ordenados por score de engajamento (quentes): ${ctx.scoredLeads.slice(0, 3).map(l => `${l.company} (score: ${l._score})`).join(", ")}.
+
+Responda à pergunta do usuário de forma concisa, profissional e extremamente comercial, utilizando os dados fornecidos acima quando relevante.
+Escreva em formato Markdown limpo. Use emojis amigáveis no estilo do CRM.
+
+Pergunta do usuário: "${text}"
+`;
+
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyBnEOB3E2JNL3u1Z6nxA1F8KMQfYvIqnLs`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: crmSummaryPrompt }] }]
+                    })
+                });
+
+                if (!res.ok) {
+                    throw new Error(`HTTP error! status: ${res.status}`);
+                }
+
+                const data = await res.json();
+                const geminiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Desculpe, tive um problema ao me conectar com a inteligência do Gemini.";
+                
+                typingEl.remove();
+                const aiMsg = { from: "ai", text: geminiText, type: "gemini" };
+                chatHistory.push(aiMsg);
+                renderMessage(aiMsg, container);
+            } else {
+                setTimeout(() => {
+                    typingEl.remove();
+                    const aiMsg = { from: "ai", ...localResponse };
+                    chatHistory.push(aiMsg);
+                    renderMessage(aiMsg, container);
+                }, 500);
+            }
+
             // Re-renderizar os chips dinamicamente
             this.renderChips(ctx);
-        }, delay);
+        } catch (err) {
+            console.error("Erro no assistente de IA:", err);
+            typingEl.remove();
+            const errorMsg = { from: "ai", text: "Desculpe, ocorreu um erro ao processar sua solicitação no Gemini. Verifique a chave de API ou a conexão.", type: "danger" };
+            chatHistory.push(errorMsg);
+            renderMessage(errorMsg, container);
+        }
     },
 
     renderDailyInsights(chatContainer) {

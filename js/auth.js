@@ -82,7 +82,7 @@ export const Auth = {
         const permissions = {
             admin: ["*"], // Administrador acessa tudo
             manager: ["dashboard", "crm", "kanban", "proposals", "goals", "services", "forecast", "ai", "integrations"],
-            seller: ["crm", "kanban", "proposals", "goals", "ai"]
+            seller: ["dashboard", "crm", "kanban", "proposals", "goals", "ai"]
         };
 
         if (role === "admin") return true;

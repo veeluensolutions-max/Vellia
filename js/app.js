@@ -359,7 +359,7 @@ function updateDashboardCounters() {
 
         const execSection = document.getElementById("dashboard-exec");
         const sellerSection = document.getElementById("dashboard-seller");
-        
+
         const leads = Store.getLeads();
         const proposals = JSON.parse(localStorage.getItem("comercial_proposals")) || [];
 
@@ -367,49 +367,86 @@ function updateDashboardCounters() {
         const revenue = proposals
             .filter(p => p.status === "Ganho" || p.status === "Cliente Fechado")
             .reduce((acc, curr) => acc + (parseFloat(curr.value) || 0), 0);
-        
+
         const wins = proposals.filter(p => p.status === "Ganho" || p.status === "Cliente Fechado").length;
         const totalProposals = proposals.length;
         const conversion = totalProposals > 0 ? Math.round((wins / totalProposals) * 100) : 0;
 
-        // Alternar visualização por cargo
+        // =====================================================================
+        // DASHBOARD DO VENDEDOR (OPERACIONAL)
+        // =====================================================================
         if (currentUser.role === "seller") {
             if (execSection) execSection.style.display = "none";
             if (sellerSection) sellerSection.style.display = "block";
 
-            // Dashboard do Vendedor (Operacional)
-            const activeNegotiations = leads.filter(l => l.stage !== "Cliente Fechado" && l.stage !== "Cliente Perdido");
-            
-            const activeNegCounter = document.getElementById("seller-active-negotiations");
-            if (activeNegCounter) activeNegCounter.textContent = activeNegotiations.length;
+            // KPIs filtrados apenas pelos leads do vendedor logado
+            const myLeads = leads.filter(l => l.owner === currentUser.email);
+            const myActive = myLeads.filter(l => l.stage !== "Cliente Fechado" && l.stage !== "Cliente Perdido");
 
-            const sellerRevCounter = document.getElementById("seller-revenue");
-            if (sellerRevCounter) {
-                sellerRevCounter.textContent = new Intl.NumberFormat("pt-BR", {
-                    style: "currency",
-                    currency: "BRL"
-                }).format(revenue);
-            }
+            // Mês atual
+            const now = new Date();
+            const myClosedThisMonth = myLeads.filter(l => {
+                if (l.stage !== "Cliente Fechado") return false;
+                const hist = l.stageHistory || [];
+                return hist.some(h => {
+                    const d = new Date(h.timestamp);
+                    return h.stage === "Cliente Fechado" && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+                });
+            });
 
-            // Exemplo de meta (faturamento simulado, meta de R$ 30.000,00)
-            const goalPct = revenue >= 30000 ? 100 : Math.round((revenue / 30000) * 100);
-            const sellerGoalCounter = document.getElementById("seller-goal-percentage");
-            if (sellerGoalCounter) sellerGoalCounter.textContent = `${goalPct}%`;
+            const myRevenue = proposals
+                .filter(p => (p.status === "Ganho" || p.status === "Cliente Fechado") && p.ownerEmail === currentUser.email)
+                .reduce((acc, curr) => acc + (parseFloat(curr.value) || 0), 0);
 
-            // Carregar Recomendações da IA
+            // Preencher KPIs
+            const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+            setEl("seller-leads-total", myLeads.length);
+            setEl("seller-active-negotiations", myActive.length);
+            setEl("seller-closed-month", myClosedThisMonth.length);
+            setEl("seller-revenue", new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(myRevenue));
+
+            // Meta mensal — buscar meta do store ou usar R$ 30.000 padrão
+            const goals = JSON.parse(localStorage.getItem("comercial_goals")) || [];
+            const myGoal = goals.find(g => g.ownerEmail === currentUser.email && g.period === "monthly") || { target: 30000 };
+            const goalTarget = myGoal.target || 30000;
+            const goalPct = Math.min(100, Math.round((myRevenue / goalTarget) * 100));
+
+            const goalBar = document.getElementById("seller-goal-bar");
+            if (goalBar) setTimeout(() => { goalBar.style.width = `${goalPct}%`; }, 100);
+            setEl("seller-goal-label", `${goalPct}% atingido`);
+            const goalTargetEl = document.getElementById("seller-goal-target");
+            if (goalTargetEl) goalTargetEl.textContent = `Meta: ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(goalTarget)}`;
+
+            // Saudação personalizada
+            const hour = now.getHours();
+            const greet = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+            const firstName = currentUser.name.split(" ")[0];
+            setEl("seller-greeting-text", `${greet}, ${firstName}! 👋`);
+            setEl("seller-greeting-sub", `Você tem ${myActive.length} lead${myActive.length !== 1 ? "s" : ""} em aberto. Bora fechar negócio!`);
+
+            // Pipeline por etapa
+            renderSellerPipeline(myLeads);
+
+            // Tarefas do dia
+            renderSellerDailyTasks(currentUser.email);
+            setupDailyTaskEvents(currentUser.email);
+
+            // Leads sem contato
+            renderSellerLeadsNoContact(myActive);
+
+            // IA
             renderSellerAIRecommendations();
 
-            // Carregar Leads Sem Contato Recente
-            renderSellerLeadsNoContact(activeNegotiations);
-
-            // Carregar Atividades do Dia (Gargalos baseados nas etapas do Lead)
-            renderSellerActivities(activeNegotiations);
-            
-            // Configurar Ações Rápidas do Vendedor
+            // Ações rápidas
             setupSellerQuickActions();
 
+            // Notificações push de novos leads atribuídos
+            checkAndNotifyNewLeads(currentUser.email, myLeads);
+
         } else {
-            // Dashboard Gerente / Admin (Executivo)
+            // =====================================================================
+            // DASHBOARD GERENTE / ADMIN (EXECUTIVO)
+            // =====================================================================
             if (execSection) execSection.style.display = "block";
             if (sellerSection) sellerSection.style.display = "none";
 
@@ -418,20 +455,151 @@ function updateDashboardCounters() {
 
             const execRevCounter = document.getElementById("exec-revenue");
             if (execRevCounter) {
-                execRevCounter.textContent = new Intl.NumberFormat("pt-BR", {
-                    style: "currency",
-                    currency: "BRL"
-                }).format(revenue);
+                execRevCounter.textContent = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(revenue);
             }
 
             const execConvCounter = document.getElementById("exec-conversion");
             if (execConvCounter) execConvCounter.textContent = `${conversion}%`;
         }
-        
+
     } catch (e) {
         console.error("Erro ao atualizar contadores do dashboard:", e);
     }
 }
+
+// Pipeline mini-kanban por etapa
+function renderSellerPipeline(myLeads) {
+    const container = document.getElementById("seller-pipeline-stages");
+    if (!container) return;
+
+    const stages = ["Contato", "Lead Gerado", "Lead Qualificado", "Proposta Enviada", "Negociação", "Cliente Fechado"];
+    const stageColors = { "Contato": "#94a3b8", "Lead Gerado": "#6366f1", "Lead Qualificado": "#f59e0b", "Proposta Enviada": "#3b82f6", "Negociação": "#f97316", "Cliente Fechado": "#10b981" };
+
+    container.innerHTML = stages.map(stage => {
+        const count = myLeads.filter(l => l.stage === stage).length;
+        const color = stageColors[stage] || "var(--primary)";
+        return `
+            <div style="flex: 1; min-width: 110px; text-align: center; padding: 14px 10px; border-radius: 10px; background: var(--bg-surface); border: 1px solid var(--border-color);">
+                <div style="font-size: 22px; font-weight: 800; color: ${color}; margin-bottom: 4px;">${count}</div>
+                <div style="font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; line-height: 1.3;">${stage}</div>
+                <div style="margin-top: 8px; height: 3px; border-radius: 2px; background: ${color}; opacity: 0.35;"></div>
+            </div>
+        `;
+    }).join("");
+}
+
+// Tarefas diárias (armazenadas em localStorage por usuário)
+function renderSellerDailyTasks(userEmail) {
+    const container = document.getElementById("seller-daily-tasks");
+    if (!container) return;
+
+    const key = `seller_tasks_${userEmail}`;
+    const todayKey = new Date().toLocaleDateString("pt-BR");
+    let tasks = JSON.parse(localStorage.getItem(key) || "[]");
+
+    // Zerar tarefas de outro dia
+    tasks = tasks.filter(t => t.date === todayKey);
+    localStorage.setItem(key, JSON.stringify(tasks));
+
+    if (tasks.length === 0) {
+        container.innerHTML = `<p style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 16px 0;">Nenhuma tarefa para hoje. Adicione uma!</p>`;
+        return;
+    }
+
+    container.innerHTML = tasks.map((t, i) => `
+        <div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; background: var(--bg-surface); border: 1px solid var(--border-color); transition: all 0.2s; ${t.done ? "opacity: 0.5;" : ""}">
+            <input type="checkbox" id="task-${i}" ${t.done ? "checked" : ""} onchange="window.toggleDailyTask('${userEmail}', ${i})"
+                style="width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; flex-shrink: 0;">
+            <label for="task-${i}" style="font-size: 13px; cursor: pointer; text-decoration: ${t.done ? "line-through" : "none"}; color: var(--text-primary); flex: 1;">${t.text}</label>
+            <button onclick="window.deleteDailyTask('${userEmail}', ${i})" style="background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 2px; display: flex;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+    `).join("");
+}
+
+function setupDailyTaskEvents(userEmail) {
+    const addBtn = document.getElementById("btn-add-task");
+    const taskForm = document.getElementById("new-task-form");
+    const taskInput = document.getElementById("new-task-input");
+    const saveBtn = document.getElementById("btn-save-task");
+
+    if (addBtn && taskForm) {
+        addBtn.onclick = () => {
+            taskForm.style.display = taskForm.style.display === "none" ? "flex" : "none";
+            if (taskForm.style.display === "flex") taskInput?.focus();
+        };
+    }
+
+    if (saveBtn && taskInput) {
+        const save = () => {
+            const text = taskInput.value.trim();
+            if (!text) return;
+            const key = `seller_tasks_${userEmail}`;
+            const today = new Date().toLocaleDateString("pt-BR");
+            const tasks = JSON.parse(localStorage.getItem(key) || "[]").filter(t => t.date === today);
+            tasks.push({ text, done: false, date: today });
+            localStorage.setItem(key, JSON.stringify(tasks));
+            taskInput.value = "";
+            taskForm.style.display = "none";
+            renderSellerDailyTasks(userEmail);
+        };
+        saveBtn.onclick = save;
+        taskInput.onkeydown = (e) => { if (e.key === "Enter") save(); };
+    }
+
+    window.toggleDailyTask = (email, idx) => {
+        const key = `seller_tasks_${email}`;
+        const today = new Date().toLocaleDateString("pt-BR");
+        const tasks = JSON.parse(localStorage.getItem(key) || "[]").filter(t => t.date === today);
+        if (tasks[idx]) tasks[idx].done = !tasks[idx].done;
+        localStorage.setItem(key, JSON.stringify(tasks));
+        renderSellerDailyTasks(email);
+    };
+
+    window.deleteDailyTask = (email, idx) => {
+        const key = `seller_tasks_${email}`;
+        const today = new Date().toLocaleDateString("pt-BR");
+        const tasks = JSON.parse(localStorage.getItem(key) || "[]").filter(t => t.date === today);
+        tasks.splice(idx, 1);
+        localStorage.setItem(key, JSON.stringify(tasks));
+        renderSellerDailyTasks(email);
+    };
+}
+
+// Notificação push: detecta novos leads atribuídos desde o último check
+function checkAndNotifyNewLeads(userEmail, myLeads) {
+    const lastCheckKey = `seller_last_check_${userEmail}`;
+    const lastCheck = localStorage.getItem(lastCheckKey) ? new Date(localStorage.getItem(lastCheckKey)) : new Date(0);
+    const now = new Date();
+
+    const newLeads = myLeads.filter(l => {
+        const created = new Date(l.createdAt || 0);
+        return created > lastCheck;
+    });
+
+    if (newLeads.length > 0) {
+        // Notificação nativa do navegador
+        Notifications.sendNativeNotification(
+            `🎉 ${newLeads.length} novo${newLeads.length > 1 ? "s lead" : " lead"} atribuído!`,
+            `${newLeads.map(l => l.company).join(", ")} — Vellia CRM`
+        );
+        // Adicionar ao painel de notificações interno
+        newLeads.forEach(l => {
+            Notifications.addItem({
+                id: `new-lead-${l.id}`,
+                type: "lead",
+                title: "Novo Lead Atribuído!",
+                message: `${l.company} foi atribuído para você.`,
+                timestamp: new Date().toISOString()
+            });
+        });
+    }
+
+    localStorage.setItem(lastCheckKey, now.toISOString());
+}
+
+
 
 // Auxiliar: Renderizar recomendações inteligentes da IA
 function renderSellerAIRecommendations() {

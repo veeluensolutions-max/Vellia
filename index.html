@@ -354,90 +354,116 @@
 
                     <!-- Dashboard do Vendedor (Operacional) -->
                     <div id="dashboard-seller" style="display: none;">
-                        <!-- Resumo do Dia -->
-                        <div class="grid-cols-3">
-                            <div class="card stat-card">
+
+                        <!-- Saudação personalizada -->
+                        <div id="seller-greeting" style="margin-bottom: 24px; padding: 20px 24px; border-radius: 14px; background: linear-gradient(135deg, rgba(99,102,241,0.10) 0%, rgba(139,92,246,0.06) 100%); border: 1px solid rgba(99,102,241,0.15); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                            <div>
+                                <h3 id="seller-greeting-text" style="font-weight: 800; font-size: 18px; margin-bottom: 4px; color: var(--text-primary);">Bom dia! 👋</h3>
+                                <p style="color: var(--text-secondary); font-size: 13px; margin: 0;" id="seller-greeting-sub">Seus leads e tarefas de hoje estão prontos.</p>
+                            </div>
+                            <button class="btn btn-primary" id="btn-quick-new-lead" style="gap: 8px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                Novo Lead
+                            </button>
+                        </div>
+
+                        <!-- KPIs do vendedor — filtrados pelo owner -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                            <div class="card stat-card" style="border-left: 4px solid var(--primary);">
                                 <div class="stat-info">
-                                    <span class="stat-label">Minhas Negociações</span>
+                                    <span class="stat-label">Leads Recebidos</span>
+                                    <span class="stat-value" id="seller-leads-total">0</span>
+                                </div>
+                                <div class="stat-icon-box">📥</div>
+                            </div>
+                            <div class="card stat-card" style="border-left: 4px solid #f59e0b;">
+                                <div class="stat-info">
+                                    <span class="stat-label">Em Negociação</span>
                                     <span class="stat-value" id="seller-active-negotiations">0</span>
                                 </div>
-                                <div class="stat-icon-box">
-                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12H3M21 6H3M21 18H3"/></svg>
+                                <div class="stat-icon-box warning">🔥</div>
+                            </div>
+                            <div class="card stat-card" style="border-left: 4px solid #10b981;">
+                                <div class="stat-info">
+                                    <span class="stat-label">Fechados no Mês</span>
+                                    <span class="stat-value" id="seller-closed-month">0</span>
+                                </div>
+                                <div class="stat-icon-box success">🏆</div>
+                            </div>
+                            <div class="card stat-card" style="border-left: 4px solid #6366f1;">
+                                <div class="stat-info">
+                                    <span class="stat-label">Receita Gerada</span>
+                                    <span class="stat-value" id="seller-revenue" style="font-size: 18px;">R$ 0</span>
+                                </div>
+                                <div class="stat-icon-box">💰</div>
+                            </div>
+                        </div>
+
+                        <!-- Barra de meta mensal -->
+                        <div class="card" style="margin-bottom: 24px; padding: 20px 24px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                <h4 style="font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 8px; margin: 0; color: var(--text-primary);">
+                                    🎯 Meta Mensal
+                                </h4>
+                                <span id="seller-goal-label" style="font-size: 13px; font-weight: 700; color: var(--primary);">0% atingido</span>
+                            </div>
+                            <div style="background: var(--bg-body); border-radius: 8px; height: 12px; overflow: hidden; position: relative;">
+                                <div id="seller-goal-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #6366f1, #a855f7); border-radius: 8px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1);"></div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; color: var(--text-muted);">
+                                <span>R$ 0</span>
+                                <span id="seller-goal-target">Meta: R$ 30.000</span>
+                            </div>
+                        </div>
+
+                        <!-- Painel principal: Tarefas do dia + Leads prioritários -->
+                        <div class="grid-2col" style="margin-bottom: 24px;">
+
+                            <!-- Tarefas do Dia -->
+                            <div class="card" style="padding: 20px 24px;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                                    <h4 style="font-weight: 700; font-size: 14px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin: 0;">✅ Tarefas do Dia</h4>
+                                    <button id="btn-add-task" style="font-size: 11px; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-secondary); cursor: pointer;">+ Tarefa</button>
+                                </div>
+                                <div id="seller-daily-tasks" style="display: flex; flex-direction: column; gap: 8px;">
+                                    <!-- Carregado via JS -->
+                                </div>
+                                <!-- Input nova tarefa (oculto por padrão) -->
+                                <div id="new-task-form" style="display: none; margin-top: 12px; gap: 8px; align-items: center;">
+                                    <input type="text" id="new-task-input" placeholder="Descreva a tarefa..." style="flex: 1; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); font-size: 13px; outline: none;">
+                                    <button id="btn-save-task" class="btn btn-primary" style="padding: 8px 14px; font-size: 12px;">Salvar</button>
                                 </div>
                             </div>
 
-                            <div class="card stat-card">
-                                <div class="stat-info">
-                                    <span class="stat-label">Minha Receita Gerada</span>
-                                    <span class="stat-value" id="seller-revenue">R$ 0,00</span>
-                                </div>
-                                <div class="stat-icon-box success">
-                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                                </div>
-                            </div>
-
-                            <div class="card stat-card">
-                                <div class="stat-info">
-                                    <span class="stat-label">Meta Atingida</span>
-                                    <span class="stat-value" id="seller-goal-percentage">0%</span>
-                                </div>
-                                <div class="stat-icon-box warning">
-                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            <!-- Leads prioritários sem contato -->
+                            <div class="card" style="padding: 20px 24px;">
+                                <h4 style="font-weight: 700; margin-bottom: 16px; font-size: 14px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;">🔴 Leads Sem Contato Recente</h4>
+                                <div id="seller-leads-no-contact" style="display: flex; flex-direction: column; gap: 10px;">
+                                    <!-- Carregado via JS -->
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Recomendação IA (Action Center) -->
+                        <!-- Recomendação IA -->
                         <div class="card" id="seller-ai-recommendations-card" style="margin-bottom: 24px; padding: 20px 24px; background: linear-gradient(135deg, rgba(99,102,241,0.06) 0%, rgba(139,92,246,0.04) 100%); border-left: 4px solid var(--primary);">
-                            <h4 style="font-weight: 700; margin-bottom: 14px; font-size: 14px; text-transform: uppercase; color: var(--primary); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
-                                <span>🔮</span> Recomendações do Vellia AI (Hoje)
+                            <h4 style="font-weight: 700; margin-bottom: 14px; font-size: 14px; text-transform: uppercase; color: var(--primary); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px; margin: 0 0 14px 0;">
+                                🔮 Recomendações do Vellia AI (Hoje)
                             </h4>
                             <div id="seller-ai-recommendations" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px;">
                                 <!-- Carregado via JS -->
                             </div>
                         </div>
 
-                        <!-- Ações Rápidas -->
-                        <div class="card" style="margin-bottom: 24px; padding: 20px 24px;">
-                            <h4 style="font-weight: 700; margin-bottom: 14px; font-size: 14px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;">Ações Rápidas</h4>
-                            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                                <button class="btn btn-primary" id="btn-quick-new-lead">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                    <span>Novo Lead</span>
-                                </button>
-                                <button class="btn btn-outline" id="btn-quick-log-call" style="gap: 6px;">
-                                    📞 <span>Registrar Ligação</span>
-                                </button>
-                                <button class="btn btn-outline" id="btn-quick-log-meeting" style="gap: 6px;">
-                                    👥 <span>Registrar Reunião</span>
-                                </button>
-                                <button class="btn btn-outline" id="btn-quick-change-stage" style="gap: 6px;">
-                                    🔄 <span>Atualizar Negociação</span>
-                                </button>
-                                <button class="btn btn-outline" id="btn-quick-close-sale" style="gap: 6px; border-color: rgba(16, 185, 129, 0.3); color: var(--success);">
-                                    🤝 <span>Fechar Venda</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Painel de Prioridades -->
-                        <div class="grid-2col">
-                            <div class="card" style="padding: 20px;">
-                                <h4 style="font-weight: 700; margin-bottom: 14px; font-size: 14px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;">Leads Sem Contato Recente</h4>
-                                <div id="seller-leads-no-contact" style="display: flex; flex-direction: column; gap: 10px;">
-                                    <!-- Carregado via JS -->
-                                </div>
-                            </div>
-                            
-                            <div class="card" style="padding: 20px;">
-                                <h4 style="font-weight: 700; margin-bottom: 14px; font-size: 14px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;">Atividades & Próximas Ações</h4>
-                                <div id="seller-upcoming-activities" style="display: flex; flex-direction: column; gap: 10px;">
-                                    <!-- Carregado via JS -->
-                                </div>
+                        <!-- Pipeline do vendedor: mini-kanban por estágio -->
+                        <div class="card" style="padding: 20px 24px;">
+                            <h4 style="font-weight: 700; margin-bottom: 16px; font-size: 14px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;">📊 Meu Pipeline por Etapa</h4>
+                            <div id="seller-pipeline-stages" style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px;">
+                                <!-- Carregado via JS -->
                             </div>
                         </div>
                     </div>
                 </div>
+
 
                 <!-- ==========================================================
                      VIEW: LOGS DE AUDITORIA (RESTRITO AO ADMIN)

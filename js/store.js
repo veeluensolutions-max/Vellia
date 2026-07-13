@@ -263,6 +263,94 @@ const INITIAL_GOALS = [
     }
 ];
 
+// Credenciais e API REST do Supabase
+const SUPABASE_URL = "https://ogrbsonpkiamoytxjshg.supabase.co";
+const SUPABASE_KEY = "sb_publishable_Wi3eKJi5uyEzqihEDF6Eaw_-i0zcHe7";
+
+async function supabaseFetch(table) {
+    const url = `${SUPABASE_URL}/rest/v1/${table}?select=*`;
+    const response = await fetch(url, {
+        headers: {
+            "apikey": SUPABASE_KEY,
+            "Authorization": `Bearer ${SUPABASE_KEY}`
+        }
+    });
+    if (!response.ok) throw new Error(`Supabase query failed: ${response.statusText}`);
+    return await response.json();
+}
+
+async function upsertSupabase(table, data) {
+    const url = `${SUPABASE_URL}/rest/v1/${table}`;
+    try {
+        await fetch(url, {
+            method: "POST",
+            headers: {
+                "apikey": SUPABASE_KEY,
+                "Authorization": `Bearer ${SUPABASE_KEY}`,
+                "Content-Type": "application/json",
+                "Prefer": "resolution=merge-duplicates"
+            },
+            body: JSON.stringify(data)
+        });
+    } catch (e) {
+        console.warn(`Supabase Sync Error for ${table}:`, e);
+    }
+}
+
+async function deleteSupabase(table, filter = "") {
+    const url = `${SUPABASE_URL}/rest/v1/${table}${filter}`;
+    try {
+        await fetch(url, {
+            method: "DELETE",
+            headers: {
+                "apikey": SUPABASE_KEY,
+                "Authorization": `Bearer ${SUPABASE_KEY}`
+            }
+        });
+    } catch (e) {
+        console.warn(`Supabase Delete Error for ${table}:`, e);
+    }
+}
+
+// Sincronização em background no início da aplicação
+async function syncFromSupabase() {
+    try {
+        const users = await supabaseFetch("comercial_users");
+        if (users && users.length > 0) localStorage.setItem("comercial_users", JSON.stringify(users));
+    } catch (e) { console.log("Users sync fallback:", e.message); }
+
+    try {
+        const leads = await supabaseFetch("comercial_leads");
+        if (leads && leads.length > 0) localStorage.setItem("comercial_leads", JSON.stringify(leads));
+    } catch (e) { console.log("Leads sync fallback:", e.message); }
+
+    try {
+        const proposals = await supabaseFetch("comercial_proposals");
+        if (proposals && proposals.length > 0) localStorage.setItem("comercial_proposals", JSON.stringify(proposals));
+    } catch (e) { console.log("Proposals sync fallback:", e.message); }
+
+    try {
+        const logs = await supabaseFetch("comercial_logs");
+        if (logs && logs.length > 0) {
+            const sortedLogs = logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            localStorage.setItem("comercial_logs", JSON.stringify(sortedLogs));
+        }
+    } catch (e) { console.log("Logs sync fallback:", e.message); }
+
+    try {
+        const services = await supabaseFetch("comercial_services");
+        if (services && services.length > 0) localStorage.setItem("comercial_services", JSON.stringify(services));
+    } catch (e) { console.log("Services sync fallback:", e.message); }
+
+    try {
+        const goals = await supabaseFetch("comercial_goals");
+        if (goals && goals.length > 0) localStorage.setItem("comercial_goals", JSON.stringify(goals));
+    } catch (e) { console.log("Goals sync fallback:", e.message); }
+
+    // Disparar evento global para atualizar a UI do app após puxar dados do Supabase
+    window.dispatchEvent(new CustomEvent("vellia:waSent"));
+}
+
 // Inicialização segura do localStorage
 function initStorage() {
     if (!localStorage.getItem("comercial_users")) {
@@ -286,8 +374,9 @@ function initStorage() {
     }
 }
 
-// Inicializar imediatamente
+// Inicializar local storage e sincronizar
 initStorage();
+syncFromSupabase();
 
 export const Store = {
     // USUÁRIOS
@@ -297,6 +386,7 @@ export const Store = {
 
     saveUsers(users) {
         localStorage.setItem("comercial_users", JSON.stringify(users));
+        upsertSupabase("comercial_users", users);
     },
 
     getUserByEmail(email) {
@@ -340,6 +430,7 @@ export const Store = {
         };
         leads.push(newLead);
         localStorage.setItem("comercial_leads", JSON.stringify(leads));
+        upsertSupabase("comercial_leads", newLead);
         return newLead;
     },
 
@@ -349,6 +440,7 @@ export const Store = {
         if (index !== -1) {
             leads[index] = { ...leads[index], ...updatedData };
             localStorage.setItem("comercial_leads", JSON.stringify(leads));
+            upsertSupabase("comercial_leads", leads[index]);
             this.addLog(userEmail, "LEAD_UPDATED", `Lead ${leads[index].company} atualizado.`);
             return leads[index];
         }
@@ -368,6 +460,7 @@ export const Store = {
             };
             leads[index].interactions.push(newInteraction);
             localStorage.setItem("comercial_leads", JSON.stringify(leads));
+            upsertSupabase("comercial_leads", leads[index]);
             return newInteraction;
         }
         return null;
@@ -389,6 +482,7 @@ export const Store = {
             });
 
             localStorage.setItem("comercial_leads", JSON.stringify(leads));
+            upsertSupabase("comercial_leads", leads[index]);
             return { success: true, oldStage, newStage };
         }
         return { success: false };
@@ -429,6 +523,7 @@ export const Store = {
         };
         proposals.push(newProposal);
         localStorage.setItem("comercial_proposals", JSON.stringify(proposals));
+        upsertSupabase("comercial_proposals", newProposal);
         return newProposal;
     },
 
@@ -438,6 +533,7 @@ export const Store = {
         if (index !== -1) {
             proposals[index] = { ...proposals[index], ...updates };
             localStorage.setItem("comercial_proposals", JSON.stringify(proposals));
+            upsertSupabase("comercial_proposals", proposals[index]);
             this.addLog(userEmail, "PROPOSAL_UPDATED", `Proposta ${proposals[index].title} atualizada.`);
             return proposals[index];
         }
@@ -463,11 +559,13 @@ export const Store = {
         };
         logs.unshift(newLog);
         localStorage.setItem("comercial_logs", JSON.stringify(logs));
+        upsertSupabase("comercial_logs", newLog);
         return newLog;
     },
 
     clearLogs() {
         localStorage.setItem("comercial_logs", JSON.stringify([]));
+        deleteSupabase("comercial_logs");
         this.addLog("sistema@vellia.com", "LOGS_CLEARED", "Os logs de auditoria foram limpos.", "WARN");
     },
 
@@ -491,6 +589,7 @@ export const Store = {
         };
         services.push(newService);
         localStorage.setItem("comercial_services", JSON.stringify(services));
+        upsertSupabase("comercial_services", newService);
         return newService;
     },
 
@@ -500,6 +599,7 @@ export const Store = {
         if (idx !== -1) {
             services[idx] = { ...services[idx], ...data };
             localStorage.setItem("comercial_services", JSON.stringify(services));
+            upsertSupabase("comercial_services", services[idx]);
             return true;
         }
         return false;
@@ -515,6 +615,7 @@ export const Store = {
 
     saveGoals(goalsData) {
         localStorage.setItem("comercial_goals", JSON.stringify(goalsData));
+        upsertSupabase("comercial_goals", goalsData);
     },
 
     getGoalByUserAndPeriod(email, period) {

@@ -23,10 +23,13 @@ export const Notifications = {
         this.requestNativePermission();
         this.generateContextualNotifications();
         this.checkFollowupReminders();
+        this.checkOverdueTasks();
         this.render();
 
         // Verificar follow-ups a cada 60 segundos
         setInterval(() => this.checkFollowupReminders(), 60000);
+        // Verificar tarefas pendentes a cada 5 minutos
+        setInterval(() => this.checkOverdueTasks(), 300000);
 
         // Ouvir novos comentários internos de outros usuários
         window.addEventListener("vellia:newComment", (e) => {
@@ -305,6 +308,47 @@ export const Notifications = {
             sessionStorage.setItem(notifiedKey, JSON.stringify(notified));
             this.render();
         }
+    },
+
+    // Verificar tarefas do dia atribuídas pelo gestor ainda pendentes
+    checkOverdueTasks() {
+        const currentUser = Auth.getCurrentUser();
+        if (!currentUser) return;
+
+        const today = new Date().toLocaleDateString("pt-BR");
+        const storageKey = `seller_tasks_${currentUser.email}`;
+        const allTasks = JSON.parse(localStorage.getItem(storageKey) || "[]");
+        const notifiedKey = "vellia_task_overdue_notified";
+        const notified = JSON.parse(sessionStorage.getItem(notifiedKey) || "[]");
+
+        const managerTasks = allTasks.filter(t =>
+            t.date === today &&
+            !t.done &&
+            t.assignedBy &&
+            t.assignedBy !== currentUser.email
+        );
+
+        if (managerTasks.length === 0) return;
+
+        const notifId = `overdue_tasks_${today}`;
+        if (notified.includes(notifId)) return;
+
+        this.addItem({
+            id: notifId,
+            title: `🔔 ${managerTasks.length} tarefa${managerTasks.length > 1 ? "s" : ""} pendente${managerTasks.length > 1 ? "s" : ""} hoje`,
+            message: `Você ainda tem ${managerTasks.length} tarefa${managerTasks.length > 1 ? "s" : ""} atribuída${managerTasks.length > 1 ? "s" : ""} pelo gestor para concluir hoje.`,
+            type: "danger",
+            read: false,
+            timestamp: new Date()
+        });
+
+        this.sendNativeNotification(
+            `🔔 Tarefas Pendentes`,
+            `Você tem ${managerTasks.length} tarefa(s) do gestor para concluir hoje!`
+        );
+
+        notified.push(notifId);
+        sessionStorage.setItem(notifiedKey, JSON.stringify(notified));
     }
 };
 

@@ -74,6 +74,7 @@ export const Dashboard = {
         this.renderSegmentBreakdown(leads);
         this.renderVendorRanking(proposals);
         this.renderRecentActivity(leads, proposals);
+        this.renderTasksWeekChart();
     },
 
     // ===========================================================================
@@ -526,6 +527,115 @@ export const Dashboard = {
                 <div style="font-size: 10px; color: var(--text-muted); flex-shrink: 0; text-align: right; margin-top: 2px;">${fmtDate(ev.timestamp)}</div>
             </div>
         `).join("");
+    },
+
+    // ===========================================================================
+    // CHART: EVOLUÇÃO DE TAREFAS DA SEMANA (SELLER DASHBOARD)
+    // ===========================================================================
+    renderTasksWeekChart() {
+        const weekCanvas = document.getElementById("chart-tasks-week");
+        const donutCanvas = document.getElementById("chart-tasks-donut");
+        const pctLabel  = document.getElementById("task-pct-value");
+        if (!weekCanvas) return;
+
+        const session = JSON.parse(localStorage.getItem("comercial_session"));
+        if (!session) return;
+
+        const userEmail = session.email;
+        const storageKey = `seller_tasks_${userEmail}`;
+        const allTasks = JSON.parse(localStorage.getItem(storageKey) || "[]");
+
+        // Build last 7 days data
+        const days = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const label = d.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit" });
+            const dateStr = d.toLocaleDateString("pt-BR");
+            const dayTasks = allTasks.filter(t => t.date === dateStr);
+            days.push({
+                label,
+                total: dayTasks.length,
+                done: dayTasks.filter(t => t.done).length,
+                isToday: i === 0
+            });
+        }
+
+        // Week bar chart
+        if (charts.tasksWeek) charts.tasksWeek.destroy();
+        charts.tasksWeek = new Chart(weekCanvas, {
+            type: "bar",
+            data: {
+                labels: days.map(d => d.label),
+                datasets: [
+                    {
+                        label: "Concluídas",
+                        data: days.map(d => d.done),
+                        backgroundColor: days.map(d => d.isToday ? "#10b981" : "rgba(16,185,129,0.6)"),
+                        borderRadius: 5,
+                        borderSkipped: false,
+                        order: 1
+                    },
+                    {
+                        label: "Pendentes",
+                        data: days.map(d => Math.max(0, d.total - d.done)),
+                        backgroundColor: days.map(d => d.isToday ? "#e2e8f0" : "rgba(226,232,240,0.5)"),
+                        borderRadius: 5,
+                        borderSkipped: false,
+                        order: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => `${ctx.dataset.label}: ${ctx.raw}`
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        grid: { display: false },
+                        ticks: { color: "#64748b", font: { size: 11 } }
+                    },
+                    y: {
+                        stacked: true,
+                        display: false,
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        // Today's donut
+        const today = days[days.length - 1];
+        const donePct = today.total > 0 ? Math.round((today.done / today.total) * 100) : 0;
+        if (pctLabel) pctLabel.textContent = `${donePct}%`;
+
+        if (donutCanvas) {
+            if (charts.tasksDonut) charts.tasksDonut.destroy();
+            charts.tasksDonut = new Chart(donutCanvas, {
+                type: "doughnut",
+                data: {
+                    datasets: [{
+                        data: [today.done, Math.max(0, today.total - today.done)],
+                        backgroundColor: ["#10b981", "#e2e8f0"],
+                        borderWidth: 0,
+                        hoverOffset: 2
+                    }]
+                },
+                options: {
+                    responsive: false,
+                    cutout: "72%",
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } }
+                }
+            });
+        }
     },
 
     setupAdminTaskManager() {

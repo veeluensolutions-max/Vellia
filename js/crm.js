@@ -584,10 +584,18 @@ export const CRM = {
         container.innerHTML = followups.map(f => {
             const dt = new Date(f.scheduledAt);
             const isPast = dt.getTime() < now;
-            const isSoon = !isPast && (dt.getTime() - now) < 3600000; // within 1h
+            const isSoon = !isPast && (dt.getTime() - now) < 3600000;
             const fmtDt = dt.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
             const colorBar = isPast ? "#ef4444" : isSoon ? "#f59e0b" : "#3b82f6";
             const statusLabel = isPast ? "⚠️ Atrasado" : isSoon ? "⏰ Em breve" : "📅 Agendado";
+
+            // Google Calendar URL builder
+            const gcalStart = dt.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+            const gcalEnd = new Date(dt.getTime() + 30 * 60000).toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+            const gcalTitle = encodeURIComponent(`Follow-up: ${lead.company} — ${f.note}`);
+            const gcalDetails = encodeURIComponent(`Lead: ${lead.company}\nContato: ${lead.contact || ""}\nObservação: ${f.note}`);
+            const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${gcalTitle}&dates=${gcalStart}/${gcalEnd}&details=${gcalDetails}`;
+
             return `
                 <div style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 8px; background: var(--bg-surface); border-left: 3px solid ${colorBar}; margin-bottom: 6px;">
                     <div style="flex: 1; min-width: 0;">
@@ -595,9 +603,17 @@ export const CRM = {
                         <div style="font-size: 11px; color: var(--text-secondary);">${fmtDt} &nbsp;•&nbsp; <span style="color:${colorBar}; font-weight:600;">${statusLabel}</span></div>
                         <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">${f.userEmail}</div>
                     </div>
-                    <button onclick="window.CRMDeleteFollowup('${f.id}')" title="Remover lembrete" style="background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 2px; flex-shrink: 0;">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    </button>
+                    <div style="display: flex; gap: 4px; flex-shrink: 0; align-items: center;">
+                        <a href="${gcalUrl}" target="_blank" rel="noopener" title="Exportar para Google Calendar"
+                           style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 6px; border: 1px solid rgba(59,130,246,0.3); background: rgba(59,130,246,0.07); color: #2563eb; text-decoration: none; transition: all 0.2s;"
+                           onmouseover="this.style.background='rgba(59,130,246,0.15)'" onmouseout="this.style.background='rgba(59,130,246,0.07)'">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        </a>
+                        <button onclick="window.CRMDeleteFollowup('${f.id}')" title="Remover lembrete" style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 6px; background: none; border: none; cursor: pointer; color: var(--text-muted); transition: all 0.2s;"
+                            onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--text-muted)'">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                    </div>
                 </div>`;
         }).join("");
 

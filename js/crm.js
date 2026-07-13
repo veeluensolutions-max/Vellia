@@ -282,29 +282,34 @@ export const CRM = {
     },
 
     assignLeadOwner(leadId, newOwnerEmail) {
-        const leads = Store.getLeads();
-        const idx = leads.findIndex(l => l.id === leadId);
-        if (idx === -1) return;
+        const lead = Store.getLeadById(leadId);
+        if (!lead) return;
 
-        const lead = leads[idx];
         const oldOwner = lead.owner || "Não atribuído";
-        lead.owner = newOwnerEmail || null;
 
-        // Registrar histórico
-        lead.interactions = lead.interactions || [];
-        lead.interactions.push({
+        // Registrar na timeline do lead
+        const updatedInteractions = [...(lead.interactions || []), {
             id: "assign_" + Date.now(),
             type: "Observação",
             description: `👤 Lead redirecionado de "${oldOwner}" para "${newOwnerEmail || 'Não atribuído'}" pelo Administrador.`,
             timestamp: new Date().toISOString(),
             userEmail: Auth.getCurrentUser()?.email || "admin@vellia.com"
-        });
+        }];
 
-        leads[idx] = lead;
-        Store.saveLeads(leads);
-        Store.addLog(Auth.getCurrentUser()?.email || "admin@vellia.com", "LEAD_ASSIGNED", `Lead "${lead.company}" atribuído a "${newOwnerEmail}".`, "SUCCESS");
+        // Usar Store.updateLead para persistir localmente E no Supabase
+        Store.updateLead(leadId, {
+            owner: newOwnerEmail || null,
+            interactions: updatedInteractions
+        }, Auth.getCurrentUser()?.email || "admin@vellia.com");
 
-        // Feedback visual
+        Store.addLog(
+            Auth.getCurrentUser()?.email || "admin@vellia.com",
+            "LEAD_ASSIGNED",
+            `Lead "${lead.company}" atribuído a "${newOwnerEmail}".`,
+            "SUCCESS"
+        );
+
+        // Feedback visual no select
         const sel = document.querySelector(`.assign-owner-select[data-id="${leadId}"]`);
         if (sel) {
             sel.style.borderColor = "var(--success)";

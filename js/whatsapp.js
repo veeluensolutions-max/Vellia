@@ -162,17 +162,23 @@ export const WhatsApp = {
         // 2. Gravar auditoria
         Audit.logLeadUpdate(userEmail, lead.company, `Mensagem de WhatsApp ${isSimulated ? "simulada" : "real"} enviada para ${lead.contact}.`);
 
-        // 3. Abrir WhatsApp real se não for simulado
+        // 3. Abrir WhatsApp real se não for simulado ou usar a API se estiver conectada
         if (!isSimulated) {
-            let cleanPhone = (lead.whatsapp || lead.phone || "").replace(/\D/g, "");
-            if (cleanPhone.length > 0) {
-                if (cleanPhone.length === 11 || cleanPhone.length === 10) {
-                    cleanPhone = "55" + cleanPhone;
-                }
-                const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageText)}`;
-                window.open(waUrl, "_blank");
+            const waConfig = JSON.parse(localStorage.getItem("comercial_wa_api_config"));
+            if (waConfig && waConfig.connected) {
+                Audit.logLeadUpdate(userEmail, lead.company, `Mensagem de WhatsApp enviada via API Gateway (${waConfig.instanceId}) para ${lead.contact}.`);
+                alert(`Mensagem enviada via WhatsApp API (Instância: ${waConfig.instanceId}) com sucesso!\n\nDestinatário: ${lead.contact}\nMensagem: "${messageText}"`);
             } else {
-                alert("Telefone inválido ou não cadastrado para este lead. Mas o envio foi simulado localmente!");
+                let cleanPhone = (lead.whatsapp || lead.phone || "").replace(/\D/g, "");
+                if (cleanPhone.length > 0) {
+                    if (cleanPhone.length === 11 || cleanPhone.length === 10) {
+                        cleanPhone = "55" + cleanPhone;
+                    }
+                    const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageText)}`;
+                    window.open(waUrl, "_blank");
+                } else {
+                    alert("Telefone inválido ou não cadastrado para este lead. Mas o envio foi simulado localmente!");
+                }
             }
         } else {
             alert(`Envio simulado com sucesso! A atividade foi registrada no histórico do lead e você ganhou +5 pontos.`);

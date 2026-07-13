@@ -28,6 +28,14 @@ export const Team = {
         const searchInput = document.getElementById("team-search");
         if (searchInput) searchInput.addEventListener("input", () => this.renderAll());
 
+        // Atualização automática ao disparar mensagem de Whatsapp
+        window.addEventListener("vellia:waSent", () => {
+            const teamView = document.getElementById("view-team");
+            if (teamView && teamView.style.display !== "none") {
+                this.renderAll();
+            }
+        });
+
         const tabBtns = document.querySelectorAll(".subtab-btn");
         tabBtns.forEach(btn => {
             btn.addEventListener("click", (e) => {

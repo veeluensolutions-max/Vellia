@@ -2097,14 +2097,39 @@ a {
     /* Main Layout */
     .app-sidebar {
         transform: translateX(-100%);
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        z-index: 1050;
+        transition: transform var(--transition-normal);
     }
     
-    .app-wrapper.sidebar-open .app-sidebar {
-        transform: translateX(0);
+    .app-sidebar.open {
+        transform: translateX(0) !important;
+    }
+    
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1040;
+        opacity: 0;
+        transition: opacity var(--transition-normal);
+    }
+    
+    .sidebar-overlay.open {
+        display: block !important;
+        opacity: 1 !important;
     }
     
     .main-panel {
         margin-left: 0 !important;
+        width: 100% !important;
     }
     
     .app-header {

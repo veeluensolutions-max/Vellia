@@ -594,11 +594,12 @@ export const Dashboard = {
                 btn.onclick = () => {
                     const mail = btn.getAttribute("data-email");
                     const index = parseInt(btn.getAttribute("data-idx"));
-                    const k = `seller_tasks_${mail}`;
-                    const list = JSON.parse(localStorage.getItem(k) || "[]").filter(t => t.date === today);
+                    const list = Store.getTasks(mail);
                     list.splice(index, 1);
-                    localStorage.setItem(k, JSON.stringify(list));
-                    renderAssignedTasks();
+                    Store.saveTasks(mail, list).then(() => {
+                        renderAssignedTasks();
+                        window.dispatchEvent(new Event("storage"));
+                    });
                 };
             });
         };
@@ -619,9 +620,8 @@ export const Dashboard = {
                 return;
             }
 
-            const key = `seller_tasks_${targetSeller}`;
             const today = new Date().toLocaleDateString("pt-BR");
-            const tasks = JSON.parse(localStorage.getItem(key) || "[]").filter(t => t.date === today);
+            const tasks = Store.getTasks(targetSeller);
             
             tasks.push({
                 text,
@@ -631,12 +631,16 @@ export const Dashboard = {
                 assignedBy: Auth.getCurrentUser()?.email || "gestao@vellia.com"
             });
 
-            localStorage.setItem(key, JSON.stringify(tasks));
-            inputTask.value = "";
-            
-            // Forçar visualização a selecionar o vendedor a quem foi atribuído
-            viewSeller.value = targetSeller;
-            renderAssignedTasks();
+            Store.saveTasks(targetSeller, tasks).then(() => {
+                inputTask.value = "";
+                
+                // Disparar evento para atualizar a listagem local imediatamente (útil se estiver no mesmo navegador)
+                window.dispatchEvent(new Event("storage"));
+                
+                // Forçar visualização a selecionar o vendedor a quem foi atribuído
+                viewSeller.value = targetSeller;
+                renderAssignedTasks();
+            });
         };
     }
 };

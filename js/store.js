@@ -231,8 +231,30 @@ async function syncFromSupabase() {
         }
     } catch (e) { console.log("Goals sync fallback:", e.message); }
 
+    // Sincronizar Tarefas dos Vendedores
+    try {
+        const users = JSON.parse(localStorage.getItem("comercial_users")) || [];
+        const sellers = users.filter(u => u.role === "seller" || u.role === "manager");
+        for (const s of sellers) {
+            const key = `seller_tasks_${s.email}`;
+            const remoteTasks = await supabaseFetch(`comercial_tasks?owner=eq.${s.email}`) || [];
+            if (remoteTasks && remoteTasks.length > 0) {
+                // Mapeia de volta para o formato de array simples esperado pelo frontend
+                const formattedTasks = remoteTasks.map(t => ({
+                    text: t.text,
+                    done: t.done,
+                    date: t.date,
+                    priority: t.priority,
+                    assignedBy: t.assignedBy
+                }));
+                localStorage.setItem(key, JSON.stringify(formattedTasks));
+            }
+        }
+    } catch (e) { console.log("Tasks sync fallback:", e.message); }
+
     // Disparar evento global para atualizar a UI do app após puxar dados do Supabase
     window.dispatchEvent(new CustomEvent("vellia:waSent"));
+    window.dispatchEvent(new Event("storage"));
 }
 
 // Inicialização segura do localStorage
@@ -522,6 +544,42 @@ export const Store = {
             goals.push({ userEmail: email, period, targets });
         }
         this.saveGoals(goals);
+    },
+
+    // ==========================================
+    // TAREFAS DOS VENDEDORES (TASKS)
+    // ==========================================
+    getTasks(email) {
+        const key = `seller_tasks_${email}`;
+        const today = new Date().toLocaleDateString("pt-BR");
+        return JSON.parse(localStorage.getItem(key) || "[]").filter(t => t.date === today);
+    },
+
+    async saveTasks(email, tasks) {
+        const key = `seller_tasks_${email}`;
+        localStorage.setItem(key, JSON.stringify(tasks));
+        
+        // Sincronizar com Supabase: primeiro removemos as tarefas antigas do dia e inserimos as novas
+        try {
+            await deleteSupabase("comercial_tasks", `?owner=eq.${email}`);
+            
+            // Subir novas
+            for (let i = 0; i < tasks.length; i++) {
+                const t = tasks[i];
+                const dbTask = {
+                    id: `task_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 4)}`,
+                    owner: email,
+                    text: t.text,
+                    done: t.done,
+                    date: t.date,
+                    priority: t.priority || "normal",
+                    assignedBy: t.assignedBy || "sistema@vellia.com"
+                };
+                await upsertSupabase("comercial_tasks", dbTask);
+            }
+        } catch (e) {
+            console.warn("Erro ao sincronizar tarefas no Supabase:", e);
+        }
     },
 
     // Métodos utilitários para resetar banco se necessário

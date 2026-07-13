@@ -545,36 +545,42 @@ function setupDailyTaskEvents(userEmail) {
         const save = () => {
             const text = taskInput.value.trim();
             if (!text) return;
-            const key = `seller_tasks_${userEmail}`;
             const today = new Date().toLocaleDateString("pt-BR");
-            const tasks = JSON.parse(localStorage.getItem(key) || "[]").filter(t => t.date === today);
+            const tasks = Store.getTasks(userEmail);
             tasks.push({ text, done: false, date: today });
-            localStorage.setItem(key, JSON.stringify(tasks));
-            taskInput.value = "";
-            taskForm.style.display = "none";
-            renderSellerDailyTasks(userEmail);
+            Store.saveTasks(userEmail, tasks).then(() => {
+                taskInput.value = "";
+                taskForm.style.display = "none";
+                renderSellerDailyTasks(userEmail);
+            });
         };
         saveBtn.onclick = save;
         taskInput.onkeydown = (e) => { if (e.key === "Enter") save(); };
     }
 
     window.toggleDailyTask = (email, idx) => {
-        const key = `seller_tasks_${email}`;
-        const today = new Date().toLocaleDateString("pt-BR");
-        const tasks = JSON.parse(localStorage.getItem(key) || "[]").filter(t => t.date === today);
+        const tasks = Store.getTasks(email);
         if (tasks[idx]) tasks[idx].done = !tasks[idx].done;
-        localStorage.setItem(key, JSON.stringify(tasks));
-        renderSellerDailyTasks(email);
+        Store.saveTasks(email, tasks).then(() => {
+            renderSellerDailyTasks(email);
+        });
     };
 
     window.deleteDailyTask = (email, idx) => {
-        const key = `seller_tasks_${email}`;
-        const today = new Date().toLocaleDateString("pt-BR");
-        const tasks = JSON.parse(localStorage.getItem(key) || "[]").filter(t => t.date === today);
+        const tasks = Store.getTasks(email);
         tasks.splice(idx, 1);
-        localStorage.setItem(key, JSON.stringify(tasks));
-        renderSellerDailyTasks(email);
+        Store.saveTasks(email, tasks).then(() => {
+            renderSellerDailyTasks(email);
+        });
     };
+    
+    // Ouvir alterações de localStorage vindas de outras abas ou da própria página
+    window.addEventListener("storage", () => {
+        const user = Auth.getCurrentUser();
+        if (user && user.role === "seller") {
+            renderSellerDailyTasks(user.email);
+        }
+    });
 }
 
 // Notificação push: detecta novos leads atribuídos desde o último check

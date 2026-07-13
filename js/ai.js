@@ -225,7 +225,7 @@ function generateResponse(userInput, ctx) {
     }
 
     // ── META DO MÊS ───────────────────────────────────────────────────────────
-    if (/meta|objetivo|target|goal/.test(input)) {
+    if (/meta|objetivo|target|goal/.test(input) && !/previsão|previsao|estimativa|fechamento/.test(input)) {
         const metaRevenue = ctx.goals.meta_revenue || 30000;
         const now2 = new Date();
         const monthRevenue = ctx.wonProps.filter(p => {
@@ -245,6 +245,85 @@ function generateResponse(userInput, ctx) {
         return {
             text: `🎯 **Sua Meta de Faturamento — Mês Atual**\n\n• Meta: **${formatCurrency(metaRevenue)}**\n• Realizado: **${formatCurrency(monthRevenue)}** (${pct}%)\n• Restante: **${formatCurrency(remaining)}**\n• Dias restantes: **${daysLeft} dias**\n• Precisa gerar por dia: **${formatCurrency(dailyNeeded)}/dia**\n\n${status}\n\n💡 Foco nas propostas abertas pode fechar ${formatCurrency(ctx.openProps.reduce((s, p) => s + (p.value || 0) * 0.5, 0))} estimados!`,
             type: pct >= 75 ? "success" : "analysis"
+        };
+    }
+
+    // ── PREVISÃO DE BATIMENTO DE META / FORECAST ──────────────────────────────
+    if (/previsão|previsao|estimativa|fechamento|bater a meta/.test(input)) {
+        const metaRevenue = ctx.goals.meta_revenue || 30000;
+        const now2 = new Date();
+        const monthRevenue = ctx.wonProps.filter(p => {
+            const d = new Date(p.closedAt || p.sentAt);
+            return d.getMonth() === now2.getMonth() && d.getFullYear() === now2.getFullYear();
+        }).reduce((s, p) => s + (p.value || 0), 0);
+
+        const openWeightedVal = ctx.openProps.reduce((sum, p) => {
+            const prob = p.status === "Em Negociação" ? 0.7 : 0.5;
+            return sum + (p.value || 0) * prob;
+        }, 0);
+
+        const totalProjected = monthRevenue + openWeightedVal;
+        const pct = metaRevenue > 0 ? Math.round((totalProjected / metaRevenue) * 100) : 0;
+        
+        let likelihood = "🔴 **Crítica (abaixo de 40%)**";
+        if (pct >= 95) likelihood = "🟢 **Altíssima (acima de 95%)**";
+        else if (pct >= 75) likelihood = "🟡 **Alta (entre 75% e 95%)**";
+        else if (pct >= 50) likelihood = "🟠 **Média (entre 50% e 75%)**";
+
+        const remaining = Math.max(metaRevenue - monthRevenue, 0);
+
+        return {
+            text: `🔮 **Previsão e Probabilidade de Fechamento**\n\n` +
+                `• Meta do mês: **${formatCurrency(metaRevenue)}**\n` +
+                `• Faturamento realizado: **${formatCurrency(monthRevenue)}**\n` +
+                `• Pipeline ativo ponderado: **${formatCurrency(openWeightedVal)}** (c/ probabilidade)\n` +
+                `• Total projetado: **${formatCurrency(totalProjected)}** (${pct}% da meta)\n` +
+                `• Probabilidade de atingir a meta: ${likelihood}\n\n` +
+                (remaining > 0 
+                  ? `💡 **Recomendação:** Faltam **${formatCurrency(remaining)}** para bater a meta física. Concentre-se nas propostas comerciais ativas com maior probabilidade de conversão para consolidar a meta!`
+                  : `🏆 **Meta batida!** O faturamento atual de **${formatCurrency(monthRevenue)}** já superou a meta de **${formatCurrency(metaRevenue)}**. Parabéns ao time comercial!`),
+            type: "analysis",
+            action: { label: "Ver Previsões Completas", route: "forecast" }
+        };
+    }
+
+    // ── SEGMENTOS LUCRATIVOS ──────────────────────────────────────────────────
+    if (/segmento|setor|lucrativo|mercado/.test(input)) {
+        const segmentData = {};
+        ctx.wonProps.forEach(p => {
+            const lead = ctx.leads.find(l => l.company?.toLowerCase() === p.company?.toLowerCase() || l.id === p.leadId);
+            const segment = lead ? lead.segment : "Outros";
+            if (!segmentData[segment]) {
+                segmentData[segment] = { revenue: 0, count: 0 };
+            }
+            segmentData[segment].revenue += (p.value || 0);
+            segmentData[segment].count += 1;
+        });
+
+        const segmentsList = Object.keys(segmentData).map(seg => ({
+            name: seg,
+            revenue: segmentData[seg].revenue,
+            count: segmentData[seg].count,
+            avg: Math.round(segmentData[seg].revenue / segmentData[seg].count)
+        })).sort((a, b) => b.revenue - a.revenue);
+
+        if (segmentsList.length === 0) {
+            return {
+                text: `📊 **Análise de Segmentos Lucrativos**\n\nNenhuma proposta ganha registrada ainda para segmentação. Prossiga no fechamento de propostas para popular este relatório!`,
+                type: "analysis"
+            };
+        }
+
+        const totalRevenue = segmentsList.reduce((s, x) => s + x.revenue, 0);
+
+        const list = segmentsList.map((s, i) => {
+            const pct = totalRevenue > 0 ? Math.round((s.revenue / totalRevenue) * 100) : 0;
+            return `**${i + 1}. ${s.name}**\n• Receita: **${formatCurrency(s.revenue)}** (${pct}%)\n• Ticket Médio: **${formatCurrency(s.avg)}** (${s.count} vendas)`;
+        }).join("\n\n");
+
+        return {
+            text: `📊 **Ranking de Segmentos mais Lucrativos**\n\nReceita total gerada: **${formatCurrency(totalRevenue)}**\n\n${list}\n\n💡 **Insight:** O segmento de **${segmentsList[0].name}** é o seu principal gerador de receita. Foque novas prospecções outbound neste setor!`,
+            type: "analysis"
         };
     }
 
@@ -289,17 +368,32 @@ function generateResponse(userInput, ctx) {
         };
     }
 
-    // ── CONCORRÊNCIA ──────────────────────────────────────────────────────────
+    // ── CONCORRÊNCIA E PERDAS ──────────────────────────────────────────────────
     if (/concorrente|concorrência|concorrencia|perdeu|perda|motivo/.test(input)) {
         if (ctx.lostProps.length === 0) {
             return { text: `✅ Nenhuma proposta perdida registrada até o momento! Continue assim.`, type: "success" };
         }
+        
         const reasons = {};
-        ctx.lostProps.forEach(p => { if (p.lossReason) reasons[p.lossReason] = (reasons[p.lossReason] || 0) + 1; });
-        const topReason = Object.keys(reasons).sort((a, b) => reasons[b] - reasons[a])[0];
+        const competitors = {};
+        
+        ctx.lostProps.forEach(p => { 
+            if (p.lossReason) reasons[p.lossReason] = (reasons[p.lossReason] || 0) + 1; 
+            if (p.competitor) competitors[p.competitor] = (competitors[p.competitor] || 0) + 1; 
+        });
+
+        const topReason = Object.keys(reasons).sort((a, b) => reasons[b] - reasons[a])[0] || "Não especificado";
+        const competitorList = Object.keys(competitors).map(c => `• **${c}**: ${competitors[c]} venda(s)`).join("\n") || "Nenhum concorrente cadastrado.";
 
         return {
-            text: `🏆 **Análise de Concorrência e Perdas**\n\n• Total de perdas: **${ctx.lostProps.length} proposta(s)**\n• Principal motivo: **"${topReason || "Não especificado"}"**\n${ctx.topCompetitor ? `• Concorrente que mais venceu: **${ctx.topCompetitor}**\n` : ""}\n💡 **Estratégia sugerida:** ${topReason?.includes("Preço") ? "Considere criar pacotes com mais valor percebido ou oferecer condições especiais para competir em preço." : "Acompanhe de perto os concorrentes citados e identifique diferenciais do seu serviço para destacar nas propostas."}`,
+            text: `🏆 **Diagnóstico de Concorrência e Perdas**\n\n` +
+                `• Total de propostas perdidas: **${ctx.lostProps.length}**\n` +
+                `• Principal motivo de perda: **"${topReason}"**\n\n` +
+                `📈 **Ranking de Concorrência:**\n${competitorList}\n\n` +
+                `💡 **Estratégia sugerida:** ` +
+                (topReason.includes("Preço") 
+                  ? "Identificamos que o fator preço é a maior objeção. Considere flexibilizar planos comerciais, ou agregar mais valor percebido (ex: suporte VIP, prazo de setup reduzido) antes do envio da proposta."
+                  : "Considere fazer um alinhamento técnico prévio e revisar o escopo com o cliente para garantir que a proposta atenda 100% das expectativas técnicas."),
             type: "analysis"
         };
     }
@@ -474,6 +568,9 @@ export const VelliaAI = {
         const chips = [
             { icon: "📊", label: "Resumo", query: "resumo" },
             { icon: "🧊", label: "Leads Frios", query: "leads frios" },
+            { icon: "📈", label: "Setores Lucrativos", query: "segmentos lucrativos" },
+            { icon: "🔮", label: "Bateremos a Meta?", query: "previsão de fechamento" },
+            { icon: "🏆", label: "Concorrência", query: "concorrência" },
             { icon: "🚨", label: "Alertas", query: "alertas" }
         ];
 

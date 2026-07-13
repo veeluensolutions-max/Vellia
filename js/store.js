@@ -143,8 +143,24 @@ async function deleteSupabase(table, filter = "") {
 // Sincronização em background no início da aplicação
 async function syncFromSupabase() {
     try {
-        const users = await supabaseFetch("comercial_users");
-        if (users && users.length > 0) localStorage.setItem("comercial_users", JSON.stringify(users));
+        const remoteUsers = await supabaseFetch("comercial_users") || [];
+        const localUsers = JSON.parse(localStorage.getItem("comercial_users")) || DEFAULT_USERS;
+        
+        let mergedUsers = [...remoteUsers];
+        let needsUpsert = false;
+        
+        localUsers.forEach(localU => {
+            const exists = mergedUsers.some(u => u.email.toLowerCase() === localU.email.toLowerCase());
+            if (!exists) {
+                mergedUsers.push(localU);
+                needsUpsert = true;
+            }
+        });
+        
+        localStorage.setItem("comercial_users", JSON.stringify(mergedUsers));
+        if (needsUpsert) {
+            upsertSupabase("comercial_users", mergedUsers);
+        }
     } catch (e) { console.log("Users sync fallback:", e.message); }
 
     try {
@@ -166,13 +182,45 @@ async function syncFromSupabase() {
     } catch (e) { console.log("Logs sync fallback:", e.message); }
 
     try {
-        const services = await supabaseFetch("comercial_services");
-        if (services && services.length > 0) localStorage.setItem("comercial_services", JSON.stringify(services));
+        const remoteServices = await supabaseFetch("comercial_services") || [];
+        const localServices = JSON.parse(localStorage.getItem("comercial_services")) || INITIAL_SERVICES;
+        
+        let mergedServices = [...remoteServices];
+        let needsUpsert = false;
+        
+        localServices.forEach(localS => {
+            const exists = mergedServices.some(s => s.id === localS.id);
+            if (!exists) {
+                mergedServices.push(localS);
+                needsUpsert = true;
+            }
+        });
+        
+        localStorage.setItem("comercial_services", JSON.stringify(mergedServices));
+        if (needsUpsert) {
+            upsertSupabase("comercial_services", mergedServices);
+        }
     } catch (e) { console.log("Services sync fallback:", e.message); }
 
     try {
-        const goals = await supabaseFetch("comercial_goals");
-        if (goals && goals.length > 0) localStorage.setItem("comercial_goals", JSON.stringify(goals));
+        const remoteGoals = await supabaseFetch("comercial_goals") || [];
+        const localGoals = JSON.parse(localStorage.getItem("comercial_goals")) || INITIAL_GOALS;
+        
+        let mergedGoals = [...remoteGoals];
+        let needsUpsert = false;
+        
+        localGoals.forEach(localG => {
+            const exists = mergedGoals.some(g => g.userEmail.toLowerCase() === localG.userEmail.toLowerCase() && g.period === localG.period);
+            if (!exists) {
+                mergedGoals.push(localG);
+                needsUpsert = true;
+            }
+        });
+        
+        localStorage.setItem("comercial_goals", JSON.stringify(mergedGoals));
+        if (needsUpsert) {
+            upsertSupabase("comercial_goals", mergedGoals);
+        }
     } catch (e) { console.log("Goals sync fallback:", e.message); }
 
     // Disparar evento global para atualizar a UI do app após puxar dados do Supabase

@@ -108,8 +108,8 @@ function configureSidebarMenu(role) {
             // Gerente Comercial vê CRM, Kanban, Propostas, Metas, Serviços, Forecast, IA. Não vê logs.
             isVisible = viewName !== "logs" && viewName !== "users";
         } else if (role === "seller") {
-            // Vendedor vê CRM, Kanban, Propostas, Metas, IA. Não vê Logs, Serviços, Forecast, Integrações e Usuários.
-            isVisible = !["logs", "services", "forecast", "integrations", "users"].includes(viewName);
+            // Vendedor vê CRM, Kanban, Propostas e IA. Não vê Logs, Equipe, Serviços, Forecast, Integrações e Usuários.
+            isVisible = !["logs", "team", "services", "forecast", "integrations", "users"].includes(viewName);
         }
 
         // Elementos HTML específicos

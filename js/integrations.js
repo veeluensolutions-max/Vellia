@@ -8,7 +8,8 @@ export const Integrations = {
             connected: false,
             apiUrl: "https://api.z-api.io",
             instanceId: "",
-            token: ""
+            token: "",
+            sdrActive: true
         };
 
         const statusBadge = config.connected 
@@ -43,6 +44,10 @@ export const Integrations = {
                         <div style="display: flex; justify-content: space-between;">
                             <span>Status da Conexão</span>
                             <span class="badge badge-success" style="background: #dcfce7; color: #16a34a;">🟢 Conectado</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                            <span>🤖 SDR AI Automático</span>
+                            <input type="checkbox" id="toggle-sdr-ai" ${config.sdrActive !== false ? "checked" : ""} style="cursor: pointer; width: 16px; height: 16px;">
                         </div>
                         <div style="display: flex; justify-content: space-between;">
                             <span>Leads Recebidos (Hoje)</span>
@@ -111,7 +116,8 @@ export const Integrations = {
                     connected: false,
                     apiUrl: "https://api.z-api.io",
                     instanceId: "",
-                    token: ""
+                    token: "",
+                    sdrActive: true
                 };
 
                 if (config.connected) {
@@ -152,6 +158,24 @@ export const Integrations = {
         if (btnSimulate) {
             btnSimulate.addEventListener("click", () => {
                 window.simulateWhatsAppIncoming();
+            });
+        }
+
+        const toggleSdr = document.getElementById("toggle-sdr-ai");
+        if (toggleSdr) {
+            toggleSdr.addEventListener("change", () => {
+                const config = JSON.parse(localStorage.getItem("comercial_wa_api_config")) || {
+                    connected: false,
+                    apiUrl: "https://api.z-api.io",
+                    instanceId: "",
+                    token: "",
+                    sdrActive: true
+                };
+                config.sdrActive = toggleSdr.checked;
+                localStorage.setItem("comercial_wa_api_config", JSON.stringify(config));
+                import('./audit.js').then(module => {
+                    module.Audit.logConfigChange("sistema@vellia.com", "SDR_AI_TOGGLE", `SDR AI automático alterado para ${toggleSdr.checked ? "ATIVO" : "INATIVO"}.`);
+                });
             });
         }
     }
@@ -217,10 +241,19 @@ window.simulateWhatsAppIncoming = function() {
         });
         Store.saveLogs(logs);
 
-        // Disparar atualização do Dashboard e tabelas se aplicável
+        // Disparar atualização das tabelas
         window.dispatchEvent(new CustomEvent("vellia:waSent"));
 
-        alert(`Mensagem simulada recebida de ${newLead.contact} (${newLead.company})! Um novo lead foi inserido na etapa 'Contato'.`);
+        // Se a automação SDR estiver ativa, inicia a triagem após 1.5s
+        const waConfig = JSON.parse(localStorage.getItem("comercial_wa_api_config")) || { sdrActive: true };
+        if (waConfig.sdrActive !== false) {
+            setTimeout(() => {
+                import('./sdr.js').then(m => m.SDR.runTriage(newLead.id));
+            }, 1500);
+            alert(`Mensagem simulada de ${newLead.contact} (${newLead.company})! O SDR AI iniciou a triagem automática via WhatsApp.`);
+        } else {
+            alert(`Mensagem simulada recebida de ${newLead.contact} (${newLead.company})! Um novo lead foi inserido na etapa 'Contato'.`);
+        }
     });
 };
 
@@ -265,6 +298,15 @@ window.simulateMetaLead = function() {
         // Disparar evento para atualizar visões
         window.dispatchEvent(new CustomEvent("vellia:waSent"));
 
-        alert('Lead simulado recebido com sucesso! Vá para a tela de Contatos para visualizá-lo.');
+        // Se a automação SDR estiver ativa, inicia a triagem após 1.5s
+        const waConfig = JSON.parse(localStorage.getItem("comercial_wa_api_config")) || { sdrActive: true };
+        if (waConfig.sdrActive !== false) {
+            setTimeout(() => {
+                import('./sdr.js').then(m => m.SDR.runTriage(newLead.id));
+            }, 1500);
+            alert(`Lead simulado do Meta Ads (${newLead.company}) recebido! O SDR AI iniciou a triagem automática.`);
+        } else {
+            alert('Lead simulado recebido com sucesso! Vá para a tela de Contatos para visualizá-lo.');
+        }
     });
 };

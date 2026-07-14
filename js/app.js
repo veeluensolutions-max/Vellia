@@ -234,6 +234,8 @@ function navigateTo(viewName) {
         Integrations.init();
     } else if (viewName === "users") {
         import('./users.js').then(m => m.Users.init());
+    } else if (viewName === "ai-agents") {
+        import('./ai-agents.js').then(m => m.AIAgents.init());
     }
 }
 

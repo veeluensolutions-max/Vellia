@@ -2669,6 +2669,26 @@ a {
     transform: translateY(-1px);
 }
 
+/* AI Agents Switch Slider Styling */
+.switch-slider::before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    border-radius: 50%;
+    transition: .4s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+input:checked + .switch-slider {
+    background-color: #25d366 !important;
+}
+input:checked + .switch-slider::before {
+    transform: translateX(20px);
+}
+
 
 
 

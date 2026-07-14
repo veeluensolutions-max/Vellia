@@ -988,19 +988,28 @@
 
                     <!-- Análise de Perdas -->
                     <div class="card" style="padding: 20px 24px;">
-                        <h4 style="font-weight: 700; margin-bottom: 20px; font-size: 14px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-                            Análise de Perdas e Concorrência
-                        </h4>
-                        <div class="grid-2col">
-                            <div>
-                                <h5 style="text-align: center; font-size: 13px; font-weight: 600; margin-bottom: 12px; color: var(--text-muted);">Motivos de Perda</h5>
-                                <canvas id="chart-loss-reasons" height="250"></canvas>
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                            <h4 style="font-weight: 700; font-size: 14px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px; margin: 0;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                                Análise de Perdas e Concorrência
+                            </h4>
+                            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                                <div style="padding: 6px 14px; background: rgba(239,68,68,0.08); border-radius: 8px; text-align: center;">
+                                    <span style="font-size: 10px; color: var(--text-muted); display: block; text-transform: uppercase; letter-spacing: 0.5px;">Total Perdido</span>
+                                    <span id="loss-total-value" style="font-size: 16px; font-weight: 800; color: var(--danger);">R$ 0</span>
+                                </div>
+                                <div style="padding: 6px 14px; background: rgba(99,102,241,0.08); border-radius: 8px; text-align: center;">
+                                    <span style="font-size: 10px; color: var(--text-muted); display: block; text-transform: uppercase; letter-spacing: 0.5px;">Negócios Perdidos</span>
+                                    <span id="loss-total-count" style="font-size: 16px; font-weight: 800; color: var(--primary);">0</span>
+                                </div>
+                                <div style="padding: 6px 14px; background: rgba(234,179,8,0.08); border-radius: 8px; text-align: center;">
+                                    <span style="font-size: 10px; color: var(--text-muted); display: block; text-transform: uppercase; letter-spacing: 0.5px;">Principal Motivo</span>
+                                    <span id="loss-top-reason" style="font-size: 13px; font-weight: 700; color: #ca8a04;">—</span>
+                                </div>
                             </div>
-                            <div>
-                                <h5 style="text-align: center; font-size: 13px; font-weight: 600; margin-bottom: 12px; color: var(--text-muted);">Concorrentes Frequentes</h5>
-                                <canvas id="chart-loss-competitors" height="250"></canvas>
-                            </div>
+                        </div>
+                        <div id="loss-analysis-container">
+                            <p style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 32px 0;">Nenhuma perda registrada ainda.</p>
                         </div>
                     </div>
                 </div>

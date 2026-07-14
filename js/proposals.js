@@ -261,8 +261,19 @@ export const Proposals = {
         const container = document.getElementById("loss-analysis-container");
         if (!container) return;
 
+        const fmt = (v) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(v);
+        const totalLostValue = lost.reduce((s, p) => s + (p.value || 0), 0);
+
+        // Atualizar KPIs do header
+        const kpiValue = document.getElementById("loss-total-value");
+        const kpiCount = document.getElementById("loss-total-count");
+        if (kpiValue) kpiValue.textContent = fmt(totalLostValue);
+        if (kpiCount) kpiCount.textContent = lost.length;
+
         if (lost.length === 0) {
-            container.innerHTML = `<p style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px 0;">Nenhuma perda registrada ainda.</p>`;
+            container.innerHTML = `<p style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 40px 0;">Nenhuma perda registrada ainda. Registre a primeira perda para visualizar insights.</p>`;
+            const kpiReason = document.getElementById("loss-top-reason");
+            if (kpiReason) kpiReason.textContent = "—";
             return;
         }
 
@@ -282,54 +293,113 @@ export const Proposals = {
             competitorMap[p.competitor]++;
         });
 
-        const fmt = (v) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
-        const totalLostValue = lost.reduce((s, p) => s + (p.value || 0), 0);
+        // Top reason KPI
+        const sortedReasons = Object.entries(reasonMap).sort((a, b) => b[1].count - a[1].count);
+        const kpiReason = document.getElementById("loss-top-reason");
+        if (kpiReason && sortedReasons.length > 0) {
+            kpiReason.textContent = sortedReasons[0][0];
+        }
 
-        const reasonsHtml = Object.entries(reasonMap)
-            .sort((a, b) => b[1].count - a[1].count)
-            .map(([reason, data]) => {
-                const pct = Math.round((data.count / lost.length) * 100);
-                return `
-                    <div style="margin-bottom: 14px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                            <span style="font-size: 13px; color: var(--text-primary); font-weight: 500;">${reason}</span>
-                            <span style="font-size: 12px; color: var(--text-muted);">${data.count}x · ${fmt(data.value)}</span>
-                        </div>
-                        <div style="height: 6px; background: var(--bg-app); border-radius: 99px; overflow: hidden;">
-                            <div style="height: 100%; width: ${pct}%; background: var(--danger); border-radius: 99px; transition: width 0.5s ease;"></div>
-                        </div>
-                    </div>
-                `;
-            }).join("");
-
-        const competitorsHtml = Object.keys(competitorMap).length === 0
-            ? `<p style="color: var(--text-muted); font-size: 12px;">Nenhum concorrente mapeado.</p>`
-            : Object.entries(competitorMap)
-                .sort((a, b) => b[1] - a[1])
-                .map(([comp, count]) => `
-                    <div class="priorities-list-item" style="margin-bottom: 8px;">
-                        <span style="font-weight: 600; color: var(--text-primary);">${comp}</span>
-                        <span class="badge badge-danger">${count}x</span>
-                    </div>
-                `).join("");
+        // ── Gerar HTML com canvas + listagem de detalhes ───────────────────────
+        const hasCompetitors = Object.keys(competitorMap).length > 0;
 
         container.innerHTML = `
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                <!-- Gráfico Doughnut: Motivos -->
                 <div>
                     <h4 style="font-size: 13px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 16px;">Motivos de Perda</h4>
-                    ${reasonsHtml}
-                    <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between;">
-                        <span style="font-size: 12px; color: var(--text-muted);">Total perdido</span>
-                        <span style="font-size: 14px; font-weight: 700; color: var(--danger);">${fmt(totalLostValue)}</span>
+                    <div style="position: relative; height: 220px;">
+                        <canvas id="chart-loss-reasons-doughnut"></canvas>
                     </div>
                 </div>
+                <!-- Gráfico Bar: Concorrentes -->
                 <div>
                     <h4 style="font-size: 13px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 16px;">Concorrentes Vencedores</h4>
-                    ${competitorsHtml}
+                    <div style="position: relative; height: 220px;">
+                        <canvas id="chart-loss-competitors-bar" ${!hasCompetitors ? 'style="display:none;"' : ''}></canvas>
+                        ${!hasCompetitors ? `<p style="color: var(--text-muted); font-size: 13px; padding: 60px 0; text-align: center;">Nenhum concorrente mapeado ainda.</p>` : ''}
+                    </div>
                 </div>
             </div>
+
+            <!-- Listagem detalhada por motivo -->
+            <div>
+                <h4 style="font-size: 13px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 14px;">Detalhamento por Motivo</h4>
+                ${sortedReasons.map(([reason, data]) => {
+                    const pct = Math.round((data.count / lost.length) * 100);
+                    return `
+                        <div style="margin-bottom: 14px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span style="font-size: 13px; color: var(--text-primary); font-weight: 600;">${reason}</span>
+                                <span style="font-size: 12px; color: var(--text-muted);">${data.count} negócio(s) · ${fmt(data.value)} · ${pct}%</span>
+                            </div>
+                            <div style="height: 7px; background: var(--bg-app); border-radius: 99px; overflow: hidden;">
+                                <div style="height: 100%; width: ${pct}%; background: linear-gradient(90deg, #ef4444, #f97316); border-radius: 99px; transition: width 0.6s ease;"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join("")}
+            </div>
         `;
+
+        // ── Renderizar Chart.js: Doughnut de motivos ───────────────────────────
+        requestAnimationFrame(() => {
+            const ctxD = document.getElementById("chart-loss-reasons-doughnut")?.getContext("2d");
+            if (ctxD) {
+                const colors = ["#ef4444","#f97316","#eab308","#8b5cf6","#06b6d4","#10b981","#ec4899"];
+                new Chart(ctxD, {
+                    type: "doughnut",
+                    data: {
+                        labels: sortedReasons.map(([r]) => r),
+                        datasets: [{
+                            data: sortedReasons.map(([, d]) => d.count),
+                            backgroundColor: colors.slice(0, sortedReasons.length),
+                            borderWidth: 2,
+                            borderColor: "var(--bg-surface)"
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11 } } }
+                        },
+                        cutout: "60%"
+                    }
+                });
+            }
+
+            // ── Renderizar Chart.js: Horizontal bar de concorrentes ────────────
+            if (hasCompetitors) {
+                const ctxB = document.getElementById("chart-loss-competitors-bar")?.getContext("2d");
+                if (ctxB) {
+                    const compEntries = Object.entries(competitorMap).sort((a, b) => b[1] - a[1]);
+                    new Chart(ctxB, {
+                        type: "bar",
+                        data: {
+                            labels: compEntries.map(([c]) => c),
+                            datasets: [{
+                                label: "Negócios Perdidos",
+                                data: compEntries.map(([, n]) => n),
+                                backgroundColor: "#6366f1",
+                                borderRadius: 4
+                            }]
+                        },
+                        options: {
+                            indexAxis: "y",
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                x: { beginAtZero: true, ticks: { precision: 0 } }
+                            }
+                        }
+                    });
+                }
+            }
+        });
     },
+
 
     // ==========================================================================
     // MODAL DE NOVA PROPOSTA

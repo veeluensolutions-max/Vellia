@@ -66,6 +66,8 @@ export const Team = {
                     Forecast.init();
                 } else if (target === "team-servicos") {
                     Services.init();
+                } else if (target === "team-metas-adv") {
+                    Team.renderMetasAdv();
                 }
             });
         });
@@ -407,5 +409,202 @@ export const Team = {
                 setTimeout(() => { valDiv.style.transform = "scale(1)"; }, 200);
             });
         }
+    },
+
+    renderMetasAdv() {
+        const users = Store.getUsers();
+        const sellers = users.filter(u => u.role === "seller" || u.role === "manager");
+        const proposals = Store.getProposals();
+
+        // 1. Obter metas configuradas no localstorage ou padrão
+        const storedGoals = localStorage.getItem("comercial_goals_config");
+        const goalsConfig = storedGoals ? JSON.parse(storedGoals) : { meta_revenue: 30000 };
+        const monthlyTarget = goalsConfig.meta_revenue || 30000;
+        const weeklyTarget = Math.round(monthlyTarget / 4);
+
+        // Intervalos de data para esta semana e este mês
+        const now = new Date();
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+        // Início da semana (Segunda-feira)
+        const currentDay = now.getDay() || 7;
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - (currentDay - 1));
+        weekStart.setHours(0, 0, 0, 0);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        weekEnd.setHours(23, 59, 59);
+
+        const sellerData = sellers.map(seller => {
+            // Propostas ganhas deste vendedor
+            const sellerProps = proposals.filter(p => p.createdBy === seller.email && p.status === "Ganho");
+
+            // Faturamento do mês
+            const monthlyRevenue = sellerProps
+                .filter(p => {
+                    const d = new Date(p.sentAt);
+                    return d >= monthStart && d <= monthEnd;
+                })
+                .reduce((sum, p) => sum + (p.value || 0), 0);
+
+            // Faturamento da semana
+            const weeklyRevenue = sellerProps
+                .filter(p => {
+                    const d = new Date(p.sentAt);
+                    return d >= weekStart && d <= weekEnd;
+                })
+                .reduce((sum, p) => sum + (p.value || 0), 0);
+
+            return {
+                name: seller.name,
+                email: seller.email,
+                monthlyRevenue,
+                weeklyRevenue,
+                monthlyTarget,
+                weeklyTarget
+            };
+        });
+
+        // 2. Renderizar Gráfico comparativo Realizado vs. Meta da semana
+        const ctx = document.getElementById("chart-weekly-goals-progress")?.getContext("2d");
+        if (ctx) {
+            // Destruir gráfico existente se houver
+            if (this.weeklyGoalsChart) this.weeklyGoalsChart.destroy();
+
+            this.weeklyGoalsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sellerData.map(s => s.name.split(" ")[0]),
+                    datasets: [
+                        {
+                            label: 'Realizado Semana (R$)',
+                            data: sellerData.map(s => s.weeklyRevenue),
+                            backgroundColor: '#6366f1',
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Meta Semana (R$)',
+                            data: sellerData.map(s => s.weeklyTarget),
+                            backgroundColor: 'rgba(226, 232, 240, 0.6)',
+                            borderColor: '#cbd5e1',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: value => 'R$ ' + value.toLocaleString('pt-BR')
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 3. Renderizar listagem detalhada por vendedor
+        const listContainer = document.getElementById("seller-goals-detail-list");
+        if (listContainer) {
+            const fmt = v => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(v);
+
+            listContainer.innerHTML = sellerData.map(s => {
+                const pctWeek = Math.min(100, Math.round((s.weeklyRevenue / s.weeklyTarget) * 100)) || 0;
+                const pctMonth = Math.min(100, Math.round((s.monthlyRevenue / s.monthlyTarget) * 100)) || 0;
+
+                let statusText = "⚠️ Abaixo do Esperado";
+                let statusColor = "var(--danger)";
+                let statusBg = "rgba(239, 68, 68, 0.1)";
+
+                if (pctWeek >= 100) {
+                    statusText = "🏆 Superou a Meta!";
+                    statusColor = "var(--success)";
+                    statusBg = "rgba(16, 185, 129, 0.1)";
+                } else if (pctWeek >= 70) {
+                    statusText = "🚀 No Caminho";
+                    statusColor = "var(--primary)";
+                    statusBg = "var(--primary-glow)";
+                } else if (pctWeek >= 40) {
+                    statusText = "📊 Em Progresso";
+                    statusColor = "#ca8a04";
+                    statusBg = "rgba(234, 179, 8, 0.1)";
+                }
+
+                return `
+                    <div style="border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 18px; background: var(--bg-surface);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="user-avatar" style="width: 34px; height: 34px; font-size: 12px;">${s.name.substring(0, 2).toUpperCase()}</div>
+                                <div>
+                                    <div style="font-weight: 700; font-size: 14px; color: var(--text-primary);">${s.name}</div>
+                                    <div style="font-size: 11px; color: var(--text-muted);">${s.email}</div>
+                                </div>
+                            </div>
+                            <span style="font-size: 11px; font-weight: 700; color: ${statusColor}; background: ${statusBg}; padding: 4px 10px; border-radius: 99px;">${statusText}</span>
+                        </div>
+                        <div class="grid-2col" style="gap: 20px;">
+                            <!-- Meta da Semana -->
+                            <div>
+                                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px;">
+                                    <span style="color: var(--text-secondary);">Progresso Semanal</span>
+                                    <span style="font-weight: 700; color: var(--text-primary);">${pctWeek}% (${fmt(s.weeklyRevenue)} / ${fmt(s.weeklyTarget)})</span>
+                                </div>
+                                <div style="background: var(--bg-body); border-radius: 6px; height: 8px; overflow: hidden;">
+                                    <div style="width: ${pctWeek}%; background: ${pctWeek >= 100 ? 'var(--success)' : 'var(--primary)'}; height: 100%; border-radius: 6px;"></div>
+                                </div>
+                            </div>
+                            <!-- Meta do Mês -->
+                            <div>
+                                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px;">
+                                    <span style="color: var(--text-secondary);">Progresso Mensal</span>
+                                    <span style="font-weight: 700; color: var(--text-primary);">${pctMonth}% (${fmt(s.monthlyRevenue)} / ${fmt(s.monthlyTarget)})</span>
+                                </div>
+                                <div style="background: var(--bg-body); border-radius: 6px; height: 8px; overflow: hidden;">
+                                    <div style="width: ${pctMonth}%; background: ${pctMonth >= 100 ? 'var(--success)' : '#a855f7'}; height: 100%; border-radius: 6px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        // 4. Calcular metas coletivas
+        const totalCollectiveTarget = sellerData.reduce((sum, s) => sum + s.monthlyTarget, 0);
+        const totalCollectiveActual = sellerData.reduce((sum, s) => sum + s.monthlyRevenue, 0);
+
+        const collectiveGoalVal = document.getElementById("collective-goal-val");
+        const collectiveActualVal = document.getElementById("collective-actual-val");
+
+        if (collectiveGoalVal) collectiveGoalVal.textContent = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(totalCollectiveTarget);
+        if (collectiveActualVal) collectiveActualVal.textContent = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(totalCollectiveActual);
+
+        // 5. Insights proativos
+        const insightText = document.getElementById("team-goals-insight-text");
+        if (insightText) {
+            const topSeller = [...sellerData].sort((a, b) => b.weeklyRevenue - a.weeklyRevenue)[0];
+            const lowSeller = [...sellerData].sort((a, b) => a.weeklyRevenue - b.weeklyRevenue)[0];
+
+            let insight = "";
+            if (topSeller && topSeller.weeklyRevenue > 0) {
+                insight += `🔥 <strong>${topSeller.name.split(" ")[0]}</strong> é o destaque da semana com faturamento de <strong>${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(topSeller.weeklyRevenue)}</strong>.<br>`;
+            }
+            if (lowSeller && lowSeller.weeklyRevenue < lowSeller.weeklyTarget) {
+                const gap = lowSeller.weeklyTarget - lowSeller.weeklyRevenue;
+                insight += `⚠️ <strong>${lowSeller.name.split(" ")[0]}</strong> precisa de suporte para atingir a meta semanal. Falta <strong>${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(gap)}</strong>. Sugira follow-up em propostas ativas.<br>`;
+            }
+            const pctCollective = Math.round((totalCollectiveActual / totalCollectiveTarget) * 100) || 0;
+            insight += `🎯 Meta coletiva do mês está em <strong>${pctCollective}%</strong> do objetivo total.`;
+
+            insightText.innerHTML = insight;
+        }
     }
-};
+}

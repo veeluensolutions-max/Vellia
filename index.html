@@ -1124,6 +1124,7 @@
                     <!-- Sub-abas da Equipe Comercial -->
                     <div class="subtabs-container" style="display: flex; gap: 8px; border-bottom: 1px solid var(--border-color); margin-bottom: 24px; padding-bottom: 8px; flex-wrap: wrap;">
                         <button class="btn btn-primary subtab-btn active" data-subtab="team-metas" style="padding: 8px 16px; font-size: 13px;">👥 Membros & Metas</button>
+                        <button class="btn btn-outline subtab-btn" data-subtab="team-metas-adv" style="padding: 8px 16px; font-size: 13px;">🎯 Painel de Metas</button>
                         <button class="btn btn-outline subtab-btn" data-subtab="team-graficos" style="padding: 8px 16px; font-size: 13px;">📊 Gráficos de Performance</button>
                         <button class="btn btn-outline subtab-btn" data-subtab="team-forecast" style="padding: 8px 16px; font-size: 13px;">🔮 Projeções & Forecast</button>
                         <button class="btn btn-outline subtab-btn" data-subtab="team-servicos" style="padding: 8px 16px; font-size: 13px;">📦 Matriz de Serviços</button>
@@ -1172,6 +1173,55 @@
                             <div class="card" style="padding: 20px 24px;">
                                 <h4 style="font-weight: 700; margin-bottom: 20px; font-size: 13px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;">💎 Calculadora de Bonificação</h4>
                                 <div id="team-bonus-section"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Conteúdo: Sub-aba Nova (Painel de Metas Avançado) -->
+                    <div id="subtab-content-team-metas-adv" class="subtab-content-pane" style="display: none;">
+                        <div class="grid-2col" style="margin-bottom: 24px;">
+                            <!-- Gráfico de Metas Semanais -->
+                            <div class="card" style="padding: 24px;">
+                                <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                                    <span>📊</span> Metas Semanais — Realizado vs. Meta
+                                </h3>
+                                <div style="position: relative; height: 300px; width: 100%;">
+                                    <canvas id="chart-weekly-goals-progress"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Insight de Metas -->
+                            <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+                                <div>
+                                    <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                                        <span>🔮</span> Insights Proativos de Metas
+                                    </h3>
+                                    <div style="background: var(--bg-app); border-radius: 8px; border: 1px solid var(--border-color); padding: 16px; margin-bottom: 16px;">
+                                        <p id="team-goals-insight-text" style="font-size: 13px; line-height: 1.6; color: var(--text-secondary); margin: 0;">
+                                            Carregando insights das metas comerciais...
+                                        </p>
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 12px;">
+                                    <div style="flex: 1; padding: 12px; background: rgba(16,185,129,0.08); border-radius: 8px; text-align: center;">
+                                        <span style="font-size: 11px; color: var(--text-muted); display: block;">Meta Coletiva</span>
+                                        <span id="collective-goal-val" style="font-size: 18px; font-weight: 800; color: var(--success);">R$ 0</span>
+                                    </div>
+                                    <div style="flex: 1; padding: 12px; background: rgba(99,102,241,0.08); border-radius: 8px; text-align: center;">
+                                        <span style="font-size: 11px; color: var(--text-muted); display: block;">Realizado Total</span>
+                                        <span id="collective-actual-val" style="font-size: 18px; font-weight: 800; color: var(--primary);">R$ 0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Detalhamento de Faturamento por Vendedor -->
+                        <div class="card" style="padding: 24px;">
+                            <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 18px; display: flex; align-items: center; gap: 8px;">
+                                <span>🎯</span> Detalhamento do Progresso por Vendedor
+                            </h3>
+                            <div id="seller-goals-detail-list" style="display: flex; flex-direction: column; gap: 16px;">
+                                <!-- Carregado via JS -->
                             </div>
                         </div>
                     </div>

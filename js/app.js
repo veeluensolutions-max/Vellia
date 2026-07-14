@@ -1053,7 +1053,9 @@ function setupEventListeners() {
     });
 }
 
-// Iniciar a aplicação quando o DOM estiver pronto
-document.addEventListener("DOMContentLoaded", initApp);
-// Se o script for carregado de forma assíncrona ou em módulo, pode rodar logo:
-initApp();
+// Iniciar a aplicação quando o DOM estiver pronto de forma segura (única execução)
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initApp);
+} else {
+    initApp();
+}

@@ -80,7 +80,7 @@ export const Notifications = {
         });
 
         document.addEventListener("click", (e) => {
-            if (this.panel.style.display === "flex" && !this.panel.contains(e.target) && e.target !== this.btn) {
+            if (this.panel.style.display === "flex" && !this.panel.contains(e.target) && !this.btn.contains(e.target)) {
                 this.closePanel();
             }
         });

@@ -72,6 +72,7 @@ export const Dashboard = {
         this.renderRevenueChart(proposals);
         this.renderConversionDonut(proposals);
         this.renderSegmentBreakdown(leads);
+        this.renderSourcesChart(leads);
         this.renderVendorRanking(proposals);
         this.renderRecentActivity(leads, proposals);
         this.renderTasksWeekChart();
@@ -147,7 +148,14 @@ export const Dashboard = {
 
         const labels = stages.map(s => s.label);
         const data = stages.map(s => leads.filter(l => l.stage === s.label).length);
-        const bgColors = stages.map(s => s.color);
+
+        const ctx = canvas.getContext('2d');
+        const bgColors = stages.map(s => {
+            const grad = ctx.createLinearGradient(0, 0, canvas.width || 300, 0);
+            grad.addColorStop(0, s.color);
+            grad.addColorStop(1, s.color + '44');
+            return grad;
+        });
 
         charts.funnel = new Chart(canvas, {
             type: 'bar',
@@ -289,9 +297,18 @@ export const Dashboard = {
         const lost = proposals.filter(p => p.status === "Perdido").length;
         const pending = total - won - lost;
 
-        if (total === 0) {
-            // Render an empty gray donut or text if preferred, but for now just empty chart
-        }
+        const ctx = canvas.getContext('2d');
+        const gradWon = ctx.createLinearGradient(0, 0, 0, 200);
+        gradWon.addColorStop(0, '#10b981');
+        gradWon.addColorStop(1, '#059669');
+
+        const gradLost = ctx.createLinearGradient(0, 0, 0, 200);
+        gradLost.addColorStop(0, '#ef4444');
+        gradLost.addColorStop(1, '#b91c1c');
+
+        const gradPending = ctx.createLinearGradient(0, 0, 0, 200);
+        gradPending.addColorStop(0, '#f59e0b');
+        gradPending.addColorStop(1, '#d97706');
 
         charts.conversion = new Chart(canvas, {
             type: 'doughnut',
@@ -299,7 +316,7 @@ export const Dashboard = {
                 labels: ['Ganhos', 'Perdidos', 'Em Aberto'],
                 datasets: [{
                     data: [won, lost, pending],
-                    backgroundColor: ['#10b981', '#ef4444', '#f59e0b'],
+                    backgroundColor: [gradWon, gradLost, gradPending],
                     borderWidth: 0,
                     hoverOffset: 4
                 }]
@@ -332,7 +349,10 @@ export const Dashboard = {
                     var fontSize = (height / 114).toFixed(2);
                     ctx.font = "800 " + fontSize + "em Inter, sans-serif";
                     ctx.textBaseline = "middle";
-                    ctx.fillStyle = "#1e293b";
+                    
+                    const isDark = document.body.classList.contains("dark") || 
+                                   document.documentElement.getAttribute("data-theme") === "dark";
+                    ctx.fillStyle = isDark ? "#f8fafc" : "#1e293b";
             
                     var convRate = Math.round((won / total) * 100);
                     var text = convRate + "%",
@@ -402,6 +422,73 @@ export const Dashboard = {
                     r: {
                         ticks: { display: false },
                         grid: { color: 'rgba(0,0,0,0.05)' }
+                    }
+                }
+            }
+        });
+    },
+
+    // ===========================================================================
+    // ORIGEM DOS LEADS (CHART.JS DOUGHNUT)
+    // ===========================================================================
+    renderSourcesChart(leads) {
+        const canvas = document.getElementById("chart-sources");
+        if (!canvas) return;
+
+        if (charts.sources) {
+            charts.sources.destroy();
+        }
+
+        const srcMap = {};
+        leads.forEach(l => {
+            const src = l.source || "Outbound";
+            if (!srcMap[src]) srcMap[src] = 0;
+            srcMap[src]++;
+        });
+
+        const labels = Object.keys(srcMap);
+        const data = Object.values(srcMap);
+
+        const ctx = canvas.getContext('2d');
+        const colors = [
+            '#6366f1',
+            '#8b5cf6',
+            '#06b6d4',
+            '#10b981',
+            '#f59e0b',
+            '#ef4444'
+        ];
+
+        const gradients = colors.map((col, idx) => {
+            const grad = ctx.createLinearGradient(0, 0, 0, 200);
+            grad.addColorStop(0, col);
+            grad.addColorStop(1, col + '66');
+            return grad;
+        });
+
+        charts.sources = new Chart(canvas, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: gradients,
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            color: '#64748b',
+                            font: { family: 'Inter, sans-serif', size: 11 },
+                            usePointStyle: true
+                        }
                     }
                 }
             }

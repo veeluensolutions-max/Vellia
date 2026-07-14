@@ -39,6 +39,11 @@ export const WhatsApp = {
                 this.handleSend(false);
             });
         }
+
+        const btnGenAI = document.getElementById("btn-generate-wa-ai");
+        if (btnGenAI) {
+            btnGenAI.addEventListener("click", () => this.generateMessageAI());
+        }
     },
 
     async openModalForLead(leadId) {
@@ -202,6 +207,72 @@ export const WhatsApp = {
 
         // Disparar evento para atualizar outros componentes (ex: ranking)
         window.dispatchEvent(new CustomEvent("vellia:waSent"));
+    },
+
+    async generateMessageAI() {
+        const lead = Store.getLeadById(this.activeLeadId);
+        if (!lead) return;
+
+        const select = document.getElementById("wa-template-select");
+        const textEl = document.getElementById("wa-message-text");
+        const btn = document.getElementById("btn-generate-wa-ai");
+        if (!select || !textEl || !btn) return;
+
+        const templateType = select.value;
+        const currentUser = Auth.getCurrentUser();
+        const sellerName = currentUser ? currentUser.name : "Consultor Vellia";
+
+        let proposal = null;
+        if (this.activeProposalId) {
+            proposal = Store.getProposalById(this.activeProposalId);
+        }
+
+        const originalBtnText = btn.innerHTML;
+        btn.innerHTML = `<span style="font-size: 11px;">Processando...</span>`;
+        btn.disabled = true;
+
+        try {
+            const prompt = `Escreva uma mensagem comercial curta, amigável e extremamente persuasiva para enviar no WhatsApp para o lead de vendas.
+- Nome do Vendedor: ${sellerName}
+- Empresa do Lead: ${lead.company}
+- Contato do Lead: ${lead.contact || lead.company}
+- Tipo de abordagem: ${
+    templateType === 'welcome' ? 'Apresentação / Boas-vindas inicial' :
+    templateType === 'followup' ? 'Follow-up de proposta/negócio em andamento' :
+    templateType === 'proposal' ? 'Cobrança amigável de proposta comercial enviada' :
+    templateType === 'reengage' ? 'Reengajamento de lead que parou de responder' :
+    'Mensagem comercial livre'
+}
+- Segmento de atuação: ${lead.segment || 'Serviços'}
+${proposal ? `- Serviço proposto: ${proposal.service} (Valor da Proposta: R$ ${proposal.value})` : ''}
+
+Diretrizes:
+1. Seja pessoal, dinâmico e direto ao ponto.
+2. Use quebras de linha para facilitar a leitura no celular.
+3. Termine com uma chamada de ação amigável (pergunta para abrir diálogo).
+4. Retorne APENAS o texto da mensagem comercial, sem introduções explicativas de IA nem aspas no início e fim.`;
+
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyBnEOB3E2JNL3u1Z6nxA1F8KMQfYvIqnLs`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }]
+                })
+            });
+
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+
+            const data = await res.json();
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Erro ao gerar mensagem.";
+            
+            textEl.value = text;
+        } catch (err) {
+            console.error("Erro ao gerar mensagem com IA:", err);
+            alert("Não foi possível gerar a mensagem com a IA. Tente novamente.");
+        } finally {
+            btn.innerHTML = originalBtnText;
+            btn.disabled = false;
+        }
     }
 };
 

@@ -344,8 +344,13 @@ export const Store = {
         leads.push(newLead);
         localStorage.setItem("comercial_leads", JSON.stringify(leads));
         upsertSupabase("comercial_leads", newLead);
+
+        // Notificar agentes de IA sobre o novo lead
+        window.dispatchEvent(new CustomEvent("vellia:leadAdded", { detail: newLead }));
+
         return newLead;
     },
+
 
     updateLead(leadId, updatedData, userEmail = "sistema@vellia.com") {
         const leads = this.getLeads();

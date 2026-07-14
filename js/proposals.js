@@ -18,6 +18,19 @@ export const Proposals = {
         const btnNew = document.getElementById("btn-new-proposal");
         if (btnNew) btnNew.addEventListener("click", () => this.openModal());
 
+        // Botão Exportar PDF
+        const btnExportPDF = document.getElementById("btn-export-pdf-report");
+        if (btnExportPDF) {
+            btnExportPDF.addEventListener("click", () => {
+                const currentUser = Auth.getCurrentUser();
+                if (currentUser) {
+                    import("./report.js").then(m => {
+                        m.generatePerformancePDF(currentUser.email);
+                    });
+                }
+            });
+        }
+
         // Fechar modal
         const btnClose = document.getElementById("btn-close-proposal-modal");
         if (btnClose) btnClose.addEventListener("click", () => this.closeModal());

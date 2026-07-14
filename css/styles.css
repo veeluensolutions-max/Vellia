@@ -189,8 +189,10 @@ a {
 
 /* Lado Esquerdo: Hero */
 .login-hero-side {
-    flex: 1;
-    background-color: #0f172a;
+    flex: 1.2;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 27, 75, 0.75) 100%), url('../login_background.png');
+    background-size: cover;
+    background-position: center;
     position: relative;
     display: flex;
     align-items: center;
@@ -292,6 +294,16 @@ a {
     box-shadow: 0 20px 40px rgba(0,0,0,0.2);
     transform: perspective(1000px) rotateY(-5deg) rotateX(5deg);
     transition: transform 0.5s ease;
+    animation: floatCard 6s ease-in-out infinite alternate;
+}
+
+@keyframes floatCard {
+    0% {
+        transform: perspective(1000px) rotateY(-5deg) rotateX(5deg) translateY(0);
+    }
+    100% {
+        transform: perspective(1000px) rotateY(-2deg) rotateX(2deg) translateY(-8px);
+    }
 }
 
 .hero-glass-card:hover {

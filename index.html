@@ -437,20 +437,40 @@
                             </div>
                         </div>
 
-                        <!-- Barra de meta mensal -->
-                        <div class="card" style="margin-bottom: 24px; padding: 20px 24px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                                <h4 style="font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 8px; margin: 0; color: var(--text-primary);">
-                                    🎯 Meta Mensal
-                                </h4>
-                                <span id="seller-goal-label" style="font-size: 13px; font-weight: 700; color: var(--primary);">0% atingido</span>
+                        <!-- Linha: Meta Mensal & Forecast IA -->
+                        <div class="grid-2col" style="margin-bottom: 24px;">
+                            <!-- Barra de meta mensal -->
+                            <div class="card" style="padding: 20px 24px; display: flex; flex-direction: column; justify-content: space-between; min-height: 110px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                    <h4 style="font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 8px; margin: 0; color: var(--text-primary);">
+                                        🎯 Meta Mensal
+                                    </h4>
+                                    <span id="seller-goal-label" style="font-size: 13px; font-weight: 700; color: var(--primary);">0% atingido</span>
+                                </div>
+                                <div style="background: var(--bg-body); border-radius: 8px; height: 12px; overflow: hidden; position: relative;">
+                                    <div id="seller-goal-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #6366f1, #a855f7); border-radius: 8px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1);"></div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; color: var(--text-muted);">
+                                    <span>R$ 0</span>
+                                    <span id="seller-goal-target">Meta: R$ 30.000</span>
+                                </div>
                             </div>
-                            <div style="background: var(--bg-body); border-radius: 8px; height: 12px; overflow: hidden; position: relative;">
-                                <div id="seller-goal-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #6366f1, #a855f7); border-radius: 8px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1);"></div>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; color: var(--text-muted);">
-                                <span>R$ 0</span>
-                                <span id="seller-goal-target">Meta: R$ 30.000</span>
+
+                            <!-- Previsão de Fechamento (Forecast IA) -->
+                            <div class="card" style="padding: 20px 24px; display: flex; flex-direction: column; justify-content: space-between; min-height: 110px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                    <h4 style="font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 8px; margin: 0; color: var(--text-primary);">
+                                        🔮 Previsão de Fechamento (Forecast IA)
+                                    </h4>
+                                    <span id="seller-forecast-status" style="font-size: 11px; font-weight: 700; color: var(--success); padding: 2px 6px; border-radius: 6px; background: rgba(16,185,129,0.1);">Cálculo Confiável</span>
+                                </div>
+                                <div style="display: flex; align-items: baseline; gap: 8px;">
+                                    <span id="seller-forecast-value" style="font-size: 24px; font-weight: 800; color: var(--text-primary);">R$ 0</span>
+                                    <span style="font-size: 12px; color: var(--text-muted);">esperados este mês</span>
+                                </div>
+                                <div style="font-size: 11px; line-height: 1.4; color: var(--text-secondary); margin-top: 6px;" id="seller-forecast-insight">
+                                    Aguardando análise do funil para gerar insight...
+                                </div>
                             </div>
                         </div>
 

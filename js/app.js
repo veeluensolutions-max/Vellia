@@ -416,6 +416,50 @@ function updateDashboardCounters() {
             const goalTargetEl = document.getElementById("seller-goal-target");
             if (goalTargetEl) goalTargetEl.textContent = `Meta: ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(goalTarget)}`;
 
+            // === CÁLCULO DE FORECAST PREDITIVO (IA) DO VENDEDOR ===
+            const allProposals = Store.getProposals();
+            const myOpenProposals = allProposals.filter(p => {
+                if (!["Enviada", "Em Negociação"].includes(p.status)) return false;
+                const lead = myLeads.find(l => l.company.toLowerCase() === p.company.toLowerCase());
+                return !!lead;
+            });
+
+            const STAGE_PROBABILITY = {
+                "Lead Gerado":      5,
+                "Contato":         15,
+                "Qualificação":    30,
+                "Proposta Enviada":50,
+                "Negociação":      70,
+                "Fechamento":      90,
+                "Cliente Ativo":  100,
+                "Perdido":          0
+            };
+
+            const weightedProps = myOpenProposals.reduce((sum, p) => sum + (p.value || 0) * 0.70, 0); // 70% chance para propostas ativas
+            const weightedLeads = myLeads
+                .filter(l => !["Perdido", "Cliente Ativo"].includes(l.stage))
+                .filter(l => !myOpenProposals.some(p => p.company.toLowerCase() === l.company.toLowerCase()))
+                .reduce((sum, l) => {
+                    const prob = (STAGE_PROBABILITY[l.stage] || 10) / 100;
+                    const avgVal = 8000; // Valor de ticket médio estimado
+                    return sum + (avgVal * prob * 0.40); // 40% chance de virar proposta
+                }, 0);
+
+            const forecastTotal = Math.round(myRevenue + weightedProps + weightedLeads);
+            setEl("seller-forecast-value", new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(forecastTotal));
+
+            const forecastInsightEl = document.getElementById("seller-forecast-insight");
+            if (forecastInsightEl) {
+                const gap = goalTarget - forecastTotal;
+                let insight = "";
+                if (forecastTotal >= goalTarget) {
+                    insight = `🔥 **Previsão excelente!** A projeção indica que você atingirá a meta comercial de R$ ${new Intl.NumberFormat("pt-BR").format(goalTarget)} este mês.`;
+                } else {
+                    insight = `🔮 Projeção de **R$ ${new Intl.NumberFormat("pt-BR").format(forecastTotal)}**. Faltam **R$ ${new Intl.NumberFormat("pt-BR").format(gap)}** para a meta. Dica: ative follow-ups em seus leads mais quentes.`;
+                }
+                forecastInsightEl.innerHTML = insight.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+            }
+
             // Saudação personalizada
             const hour = now.getHours();
             const greet = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";

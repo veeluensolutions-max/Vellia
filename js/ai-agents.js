@@ -29,6 +29,98 @@ export const AIAgents = {
             };
             analystToggle.checked = localStorage.getItem("agent_analyst_active") !== "false";
         }
+
+        // Botões de configuração individual
+        const btnSdr = document.getElementById("btn-config-agent-sdr");
+        const btnCopy = document.getElementById("btn-config-agent-copy");
+        const btnAnalyst = document.getElementById("btn-config-agent-analyst");
+
+        const modalOverlay = document.getElementById("agent-config-overlay");
+        const modal = document.getElementById("agent-config-modal");
+        const form = document.getElementById("agent-config-form");
+        const titleEl = document.getElementById("agent-config-title");
+        const agentIdInput = document.getElementById("agent-config-id");
+
+        const closeBtn = document.getElementById("btn-close-agent-config-modal");
+        const cancelBtn = document.getElementById("btn-cancel-agent-config");
+
+        const closeModal = () => {
+            modalOverlay.style.display = "none";
+            modal.classList.remove("open");
+        };
+
+        if (closeBtn) closeBtn.onclick = closeModal;
+        if (cancelBtn) cancelBtn.onclick = closeModal;
+
+        const showConfigModal = (agentId) => {
+            agentIdInput.value = agentId;
+            document.querySelectorAll(".config-fields-group").forEach(el => el.style.display = "none");
+
+            if (agentId === "sdr") {
+                titleEl.innerHTML = "<span>🤖</span> Configurar SDR Agent (Vellin)";
+                document.getElementById("config-fields-sdr").style.display = "block";
+                const sdrConfig = JSON.parse(localStorage.getItem("agent_sdr_config") || '{"approach":"quick","tone":"formal","delay":"1"}');
+                document.getElementById("sdr-approach").value = sdrConfig.approach;
+                document.getElementById("sdr-tone").value = sdrConfig.tone;
+                document.getElementById("sdr-delay").value = sdrConfig.delay;
+            } else if (agentId === "copy") {
+                titleEl.innerHTML = "<span>✍️</span> Configurar Copywriter Agent";
+                document.getElementById("config-fields-copy").style.display = "block";
+                const copyConfig = JSON.parse(localStorage.getItem("agent_copy_config") || '{"style":"persuasive","length":"medium"}');
+                document.getElementById("copy-style").value = copyConfig.style;
+                document.getElementById("copy-length").value = copyConfig.length;
+            } else if (agentId === "analyst") {
+                titleEl.innerHTML = "<span>📈</span> Configurar Analyst Agent";
+                document.getElementById("config-fields-analyst").style.display = "block";
+                const analystConfig = JSON.parse(localStorage.getItem("agent_analyst_config") || '{"frequency":"daily","forecast":"realistic"}');
+                document.getElementById("analyst-frequency").value = analystConfig.frequency;
+                document.getElementById("analyst-forecast-type").value = analystConfig.forecast;
+            }
+
+            modalOverlay.style.display = "block";
+            modal.classList.add("open");
+        };
+
+        if (btnSdr) btnSdr.onclick = () => showConfigModal("sdr");
+        if (btnCopy) btnCopy.onclick = () => showConfigModal("copy");
+        if (btnAnalyst) btnAnalyst.onclick = () => showConfigModal("analyst");
+
+        if (form) {
+            form.onsubmit = (e) => {
+                e.preventDefault();
+                const agentId = agentIdInput.value;
+
+                if (agentId === "sdr") {
+                    const config = {
+                        approach: document.getElementById("sdr-approach").value,
+                        tone: document.getElementById("sdr-tone").value,
+                        delay: document.getElementById("sdr-delay").value
+                    };
+                    localStorage.setItem("agent_sdr_config", JSON.stringify(config));
+                    const approachMap = { quick: "Qualificação Rápida", consultative: "Consultiva", direct: "Direta" };
+                    this.addAgentLog("SDR Agent", `Configurações salvas: Abordagem definida para '${approachMap[config.approach]}'.`, "success");
+                } else if (agentId === "copy") {
+                    const config = {
+                        style: document.getElementById("copy-style").value,
+                        length: document.getElementById("copy-length").value
+                    };
+                    localStorage.setItem("agent_copy_config", JSON.stringify(config));
+                    const styleMap = { persuasive: "Persuasivo", technical: "Técnico", concise: "Direto ao Ponto" };
+                    this.addAgentLog("Copywriter Agent", `Configurações salvas: Estilo de redação alterado para '${styleMap[config.style]}'.`, "success");
+                } else if (agentId === "analyst") {
+                    const config = {
+                        frequency: document.getElementById("analyst-frequency").value,
+                        forecast: document.getElementById("analyst-forecast-type").value
+                    };
+                    localStorage.setItem("agent_analyst_config", JSON.stringify(config));
+                    const freqMap = { hourly: "Tempo Real", daily: "Diário", weekly: "Semanal" };
+                    this.addAgentLog("Analyst Agent", `Configurações salvas: Frequência de auditoria definida para '${freqMap[config.frequency]}'.`, "success");
+                }
+
+                alert("Configurações do agente salvas com sucesso!");
+                closeModal();
+            };
+        }
     },
 
     addAgentLog(agentName, text, status = "info") {

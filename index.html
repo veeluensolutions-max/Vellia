@@ -593,7 +593,7 @@
                                     <strong>Última ação:</strong> <span id="agent-sdr-last-action">Triagem ativada para novos leads</span>
                                 </div>
                             </div>
-                            <button class="btn btn-outline" onclick="alert('Abordagem e tom configurados!')" style="width: 100%; border-color: #25d366; color: #25d366; font-size: 12px; height: 36px; display: flex; align-items: center; justify-content: center;">Configurar Abordagem</button>
+                            <button class="btn btn-outline" id="btn-config-agent-sdr" style="width: 100%; border-color: #25d366; color: #25d366; font-size: 12px; height: 36px; display: flex; align-items: center; justify-content: center;">Configurar Abordagem</button>
                         </div>
 
                         <!-- Agente 2: Copywriter AI -->
@@ -614,7 +614,7 @@
                                     <strong>Última ação:</strong> <span id="agent-copy-last-action">Proposta de Consultoria Técnica gerada</span>
                                 </div>
                             </div>
-                            <button class="btn btn-outline" onclick="alert('Estilo de escrita atualizado!')" style="width: 100%; border-color: var(--primary); color: var(--primary); font-size: 12px; height: 36px; display: flex; align-items: center; justify-content: center;">Configurar Tom da Escrita</button>
+                            <button class="btn btn-outline" id="btn-config-agent-copy" style="width: 100%; border-color: var(--primary); color: var(--primary); font-size: 12px; height: 36px; display: flex; align-items: center; justify-content: center;">Configurar Tom da Escrita</button>
                         </div>
 
                         <!-- Agente 3: Analyst Agent -->
@@ -635,7 +635,7 @@
                                     <strong>Última ação:</strong> <span id="agent-analyst-last-action">Meta mensal recalculada</span>
                                 </div>
                             </div>
-                            <button class="btn btn-outline" onclick="alert('Frequência de auditoria definida!')" style="width: 100%; border-color: #ca8a04; color: #ca8a04; font-size: 12px; height: 36px; display: flex; align-items: center; justify-content: center;">Configurar Frequência</button>
+                            <button class="btn btn-outline" id="btn-config-agent-analyst" style="width: 100%; border-color: #ca8a04; color: #ca8a04; font-size: 12px; height: 36px; display: flex; align-items: center; justify-content: center;">Configurar Frequência</button>
                         </div>
                     </div>
 
@@ -2393,6 +2393,97 @@
             <div class="modal-footer" style="padding: 0; border: none; margin-top: 4px;">
                 <button type="button" id="btn-cancel-change-pwd" class="btn btn-outline">Cancelar</button>
                 <button type="submit" class="btn btn-primary">Salvar Senha</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Modal: Configuração Dinâmica de Agente de IA -->
+    <div id="agent-config-overlay" class="modal-overlay" style="z-index: 1200;"></div>
+    <div id="agent-config-modal" class="modal" style="z-index: 1201; max-width: 500px;">
+        <div class="modal-header">
+            <h3 class="modal-title" id="agent-config-title" style="display: flex; align-items: center; gap: 8px;">
+                🤖 Configurar Agente
+            </h3>
+            <button id="btn-close-agent-config-modal" class="btn-icon-close" aria-label="Fechar">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <form id="agent-config-form">
+            <input type="hidden" id="agent-config-id">
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px; padding: 20px;">
+                
+                <!-- Campos SDR -->
+                <div id="config-fields-sdr" class="config-fields-group" style="display: none;">
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label for="sdr-approach">Abordagem do SDR</label>
+                        <select id="sdr-approach" class="form-control" style="height: 42px;">
+                            <option value="quick">Qualificação Rápida (Foco em agendamento)</option>
+                            <option value="consultative">Consultiva (Foco em entendimento de dores)</option>
+                            <option value="direct">Direta/Agressiva (Foco em proposta/preço)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label for="sdr-tone">Tom da Conversa</label>
+                        <select id="sdr-tone" class="form-control" style="height: 42px;">
+                            <option value="formal">Corporativo/Formal</option>
+                            <option value="casual">Amigável/Casual</option>
+                            <option value="enthusiastic">Entusiasmado/Energético</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="sdr-delay">Tempo de Resposta Simulada</label>
+                        <select id="sdr-delay" class="form-control" style="height: 42px;">
+                            <option value="1">Imediato (1 minuto)</option>
+                            <option value="5">Rápido (5 minutos)</option>
+                            <option value="15">Humanizado (15 minutos)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Campos Copywriter -->
+                <div id="config-fields-copy" class="config-fields-group" style="display: none;">
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label for="copy-style">Estilo de Escrita Otimizado</label>
+                        <select id="copy-style" class="form-control" style="height: 42px;">
+                            <option value="persuasive">Persuasivo (Foco em valor e gatilhos)</option>
+                            <option value="technical">Técnico & Detalhado (Foco em escopo e especificações)</option>
+                            <option value="concise">Direto ao Ponto (Foco em concisão)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="copy-length">Extensão dos Textos Gerados</label>
+                        <select id="copy-length" class="form-control" style="height: 42px;">
+                            <option value="short">Curto (Resumo/Tópicos)</option>
+                            <option value="medium">Médio (Padrão comercial)</option>
+                            <option value="long">Longo (Escopo completo detalhado)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Campos Analyst -->
+                <div id="config-fields-analyst" class="config-fields-group" style="display: none;">
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label for="analyst-frequency">Frequência da Auditoria do Funil</label>
+                        <select id="analyst-frequency" class="form-control" style="height: 42px;">
+                            <option value="hourly">A cada hora (Tempo Real)</option>
+                            <option value="daily">Diariamente (Fechamento do dia)</option>
+                            <option value="weekly">Semanalmente (Foco em metas semanais)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="analyst-forecast-type">Cenário de Forecast Padrão</label>
+                        <select id="analyst-forecast-type" class="form-control" style="height: 42px;">
+                            <option value="realistic">Realista (Média ponderada)</option>
+                            <option value="optimist">Otimista (+35% de conversão)</option>
+                            <option value="pessimist">Conservador (-35% de conversão)</option>
+                        </select>
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px;">
+                <button type="button" id="btn-cancel-agent-config" class="btn btn-outline">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar Configurações</button>
             </div>
         </form>
     </div>

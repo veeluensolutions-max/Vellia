@@ -111,6 +111,13 @@ export const Proposals = {
 
         const editPropForm = document.getElementById("edit-proposal-form");
         if (editPropForm) editPropForm.addEventListener("submit", (e) => { e.preventDefault(); this.saveEditProposal(); });
+
+        // Botões de Geração de Proposta por IA
+        const btnGenAI = document.getElementById("btn-generate-proposal-notes-ai");
+        if (btnGenAI) btnGenAI.addEventListener("click", () => this.generateProposalNotesAI("new"));
+
+        const btnGenEditAI = document.getElementById("btn-generate-edit-notes-ai");
+        if (btnGenEditAI) btnGenEditAI.addEventListener("click", () => this.generateProposalNotesAI("edit"));
     },
 
     // ==========================================================================
@@ -594,5 +601,80 @@ export const Proposals = {
         this.renderLossAnalysis();
 
         window.dispatchEvent(new CustomEvent("vellia:proposalUpdated"));
+    },
+
+    async generateProposalNotesAI(target) {
+        const isEdit = target === "edit";
+        let company = "";
+        let contact = "";
+        let service = "";
+        let value = "";
+        let notesTextarea = null;
+        let btn = null;
+
+        if (isEdit) {
+            if (!activeProposalId) return;
+            const proposal = Store.getProposalById(activeProposalId);
+            if (!proposal) return;
+            company = proposal.company;
+            contact = proposal.contact;
+            service = document.getElementById("edit-prop-service").value;
+            value = document.getElementById("edit-prop-value").value;
+            notesTextarea = document.getElementById("edit-prop-notes");
+            btn = document.getElementById("btn-generate-edit-notes-ai");
+        } else {
+            company = document.getElementById("proposal-company").value.trim();
+            contact = document.getElementById("proposal-contact").value.trim();
+            service = document.getElementById("proposal-service").value;
+            value = document.getElementById("proposal-value").value;
+            notesTextarea = document.getElementById("proposal-notes");
+            btn = document.getElementById("btn-generate-proposal-notes-ai");
+        }
+
+        if (!company || !service) {
+            alert("Por favor, preencha a Empresa e o Serviço antes de gerar o escopo.");
+            return;
+        }
+
+        const originalBtnText = btn.innerHTML;
+        btn.innerHTML = `<span style="font-size: 11px;">Gerando...</span>`;
+        btn.disabled = true;
+
+        try {
+            const prompt = `Escreva uma proposta comercial formal e persuasiva de venda de serviço para o cliente.
+- Empresa do Cliente: ${company}
+- Contato do Cliente: ${contact || 'Responsável'}
+- Serviço a ser prestado: ${service}
+- Valor sugerido: ${value ? 'R$ ' + value : 'A combinar'}
+
+Estruture a proposta em tópicos curtos e objetivos:
+1. Introdução / Boas-vindas
+2. Desafios comuns e solução proposta
+3. Escopo do serviço e entregáveis principais
+4. Condições comerciais e próximos passos
+
+Seja profissional, direto e use uma linguagem persuasiva focada em fechamento comercial. Retorne APENAS o texto da proposta em formato limpo, sem cabeçalhos do tipo "Aqui está a proposta..." ou rodapés de IA.`;
+
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyBnEOB3E2JNL3u1Z6nxA1F8KMQfYvIqnLs`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }]
+                })
+            });
+
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+
+            const data = await res.json();
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Erro ao gerar proposta.";
+            
+            notesTextarea.value = text;
+        } catch (err) {
+            console.error("Erro ao gerar proposta com IA:", err);
+            alert("Não foi possível gerar a proposta com a IA. Tente novamente.");
+        } finally {
+            btn.innerHTML = originalBtnText;
+            btn.disabled = false;
+        }
     }
 };

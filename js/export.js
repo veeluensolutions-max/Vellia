@@ -24,7 +24,7 @@ export const DataExport = {
         });
 
         document.addEventListener("click", (e) => {
-            if (this.panel.style.display === "flex" && !this.panel.contains(e.target) && e.target !== this.btnToggle) {
+            if (this.panel.style.display === "flex" && !this.panel.contains(e.target) && !this.btnToggle.contains(e.target)) {
                 this.closePanel();
             }
         });
@@ -45,7 +45,7 @@ export const DataExport = {
     },
 
     togglePanel() {
-        const isHidden = this.panel.style.display === "none";
+        const isHidden = !this.panel.style.display || this.panel.style.display === "none";
         this.panel.style.display = isHidden ? "flex" : "none";
         this.panel.style.flexDirection = "column"; // Ensure it behaves like notifications panel
     },

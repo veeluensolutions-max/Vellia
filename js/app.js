@@ -39,7 +39,6 @@ const elements = {
     logSearch: document.getElementById("log-search"),
     btnRefreshLogs: document.getElementById("btn-refresh-logs"),
     btnClearLogs: document.getElementById("btn-clear-logs"),
-    presetBtns: document.querySelectorAll(".preset-btn-new"),
     menuItems: document.querySelectorAll(".sidebar-menu .menu-item")
 };
 
@@ -968,15 +967,7 @@ function setupEventListeners() {
         closeMobileMenu();
     });
 
-    // Configurar Cliques de Acesso Rápido na tela de login
-    elements.presetBtns.forEach(btn => {
-        btn.addEventListener("click", (e) => {
-            const email = e.currentTarget.getAttribute("data-email");
-            elements.loginEmail.value = email;
-            elements.loginPassword.value = "123456"; // Senha padrão das sementes
-            elements.loginForm.dispatchEvent(new Event("submit"));
-        });
-    });
+
 
     // Roteamento SPA ao clicar na Sidebar
     elements.menuItems.forEach(item => {

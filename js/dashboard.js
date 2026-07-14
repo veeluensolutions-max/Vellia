@@ -755,9 +755,9 @@ export const Dashboard = {
                 return;
             }
 
-            const key = `seller_tasks_${email}`;
             const today = new Date().toLocaleDateString("pt-BR");
-            const tasks = JSON.parse(localStorage.getItem(key) || "[]").filter(t => t.date === today);
+            const allTasks = Store.getTasks(email);
+            const tasks = allTasks.filter(t => t.date === today);
 
             if (tasks.length === 0) {
                 adminTaskList.innerHTML = `<p style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 12px 0;">Nenhuma tarefa atribuída hoje para este vendedor.</p>`;
@@ -770,16 +770,16 @@ export const Dashboard = {
                 return `<span style="background: rgba(234,179,8,0.1); color: #ca8a04; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; margin-right: 6px;">NORMAL</span>`;
             };
 
-            adminTaskList.innerHTML = tasks.map((t, idx) => `
+            adminTaskList.innerHTML = tasks.map((t) => `
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-radius: 8px; background: var(--bg-surface); border: 1px solid var(--border-color); ${t.done ? 'opacity: 0.6;' : ''}">
                     <div style="font-size: 13px; color: var(--text-primary);">
                         ${priorityBadge(t.priority)}
-                        ${t.assignedBy ? `<span style="font-size: 10px; color: var(--primary); font-weight: 600; border: 1px solid var(--primary); padding: 1px 4px; border-radius: 4px; margin-right: 6px;">GESTOR</span> ` : ''}
+                        ${t.assignedBy && t.assignedBy !== email ? `<span style="font-size: 10px; color: var(--primary); font-weight: 600; border: 1px solid var(--primary); padding: 1px 4px; border-radius: 4px; margin-right: 6px;">GESTOR</span> ` : ''}
                         <span style="${t.done ? 'text-decoration: line-through;' : ''}">${t.text}</span>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span style="font-size: 11px; font-weight: 700; color: ${t.done ? 'var(--success)' : 'var(--text-muted)'}">${t.done ? 'Concluída ✅' : 'Pendente ⏳'}</span>
-                        <button class="delete-task-btn" data-email="${email}" data-idx="${idx}" style="background: none; border: none; cursor: pointer; color: #dc2626; padding: 4px; display: flex; align-items: center;">
+                        <button class="delete-task-btn" data-email="${email}" data-id="${t.id || t.text}" style="background: none; border: none; cursor: pointer; color: #dc2626; padding: 4px; display: flex; align-items: center;">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
                         </button>
                     </div>
@@ -790,9 +790,9 @@ export const Dashboard = {
             adminTaskList.querySelectorAll(".delete-task-btn").forEach(btn => {
                 btn.onclick = () => {
                     const mail = btn.getAttribute("data-email");
-                    const index = parseInt(btn.getAttribute("data-idx"));
-                    const list = Store.getTasks(mail);
-                    list.splice(index, 1);
+                    const taskId = btn.getAttribute("data-id");
+                    let list = Store.getTasks(mail);
+                    list = list.filter(t => (t.id !== taskId && t.text !== taskId));
                     Store.saveTasks(mail, list).then(() => {
                         renderAssignedTasks();
                         window.dispatchEvent(new Event("storage"));
@@ -821,6 +821,7 @@ export const Dashboard = {
             const tasks = Store.getTasks(targetSeller);
             
             tasks.push({
+                id: `task_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
                 text,
                 done: false,
                 date: today,

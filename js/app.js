@@ -492,13 +492,9 @@ function renderSellerDailyTasks(userEmail) {
     const container = document.getElementById("seller-daily-tasks");
     if (!container) return;
 
-    const key = `seller_tasks_${userEmail}`;
     const todayKey = new Date().toLocaleDateString("pt-BR");
-    let tasks = JSON.parse(localStorage.getItem(key) || "[]");
-
-    // Zerar tarefas de outro dia
-    tasks = tasks.filter(t => t.date === todayKey);
-    localStorage.setItem(key, JSON.stringify(tasks));
+    const allTasks = Store.getTasks(userEmail);
+    const tasks = allTasks.filter(t => t.date === todayKey);
 
     if (tasks.length === 0) {
         container.innerHTML = `<p style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 16px 0;">Nenhuma tarefa para hoje. Adicione uma!</p>`;
@@ -511,17 +507,17 @@ function renderSellerDailyTasks(userEmail) {
         return "";
     };
 
-    container.innerHTML = tasks.map((t, i) => `
+    container.innerHTML = tasks.map((t) => `
         <div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; background: var(--bg-surface); border: 1px solid var(--border-color); transition: all 0.2s; ${t.done ? "opacity: 0.5;" : ""}">
-            <input type="checkbox" id="task-${i}" ${t.done ? "checked" : ""} onchange="window.toggleDailyTask('${userEmail}', ${i})"
+            <input type="checkbox" id="task-${t.id || t.text}" ${t.done ? "checked" : ""} onchange="window.toggleDailyTask('${userEmail}', '${t.id || t.text}')"
                 style="width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; flex-shrink: 0;">
             <div style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
                 ${priorityBadge(t.priority)}
-                ${t.assignedBy ? `<span style="background: rgba(99,102,241,0.1); color: var(--primary); padding: 1px 5px; border-radius: 4px; font-size: 9px; font-weight: 700; border: 1px solid rgba(99,102,241,0.25);">GESTOR</span>` : ""}
-                <label for="task-${i}" style="font-size: 13px; cursor: pointer; text-decoration: ${t.done ? "line-through" : "none"}; color: var(--text-primary);">${t.text}</label>
+                ${t.assignedBy && t.assignedBy !== userEmail ? `<span style="background: rgba(99,102,241,0.1); color: var(--primary); padding: 1px 5px; border-radius: 4px; font-size: 9px; font-weight: 700; border: 1px solid rgba(99,102,241,0.25);">GESTOR</span>` : ""}
+                <label for="task-${t.id || t.text}" style="font-size: 13px; cursor: pointer; text-decoration: ${t.done ? "line-through" : "none"}; color: var(--text-primary);">${t.text}</label>
             </div>
-            ${!t.assignedBy ? `
-            <button onclick="window.deleteDailyTask('${userEmail}', ${i})" style="background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 2px; display: flex;">
+            ${(!t.assignedBy || t.assignedBy === userEmail) ? `
+            <button onclick="window.deleteDailyTask('${userEmail}', '${t.id || t.text}')" style="background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 2px; display: flex;">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
             ` : ""}
@@ -548,30 +544,64 @@ function setupDailyTaskEvents(userEmail) {
             if (!text) return;
             const today = new Date().toLocaleDateString("pt-BR");
             const tasks = Store.getTasks(userEmail);
-            tasks.push({ text, done: false, date: today });
+            const newTask = {
+                id: `task_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+                text,
+                done: false,
+                date: today,
+                priority: "normal",
+                assignedBy: userEmail
+            };
+            tasks.push(newTask);
             Store.saveTasks(userEmail, tasks).then(() => {
                 taskInput.value = "";
                 taskForm.style.display = "none";
                 renderSellerDailyTasks(userEmail);
+                
+                // Atualizar painéis
+                import("./dashboard.js").then(m => {
+                    if (m.Dashboard && typeof m.Dashboard.renderTasksWeekChart === "function") {
+                        m.Dashboard.renderTasksWeekChart();
+                    }
+                });
             });
         };
         saveBtn.onclick = save;
         taskInput.onkeydown = (e) => { if (e.key === "Enter") save(); };
     }
 
-    window.toggleDailyTask = (email, idx) => {
+    window.toggleDailyTask = (email, taskId) => {
         const tasks = Store.getTasks(email);
-        if (tasks[idx]) tasks[idx].done = !tasks[idx].done;
-        Store.saveTasks(email, tasks).then(() => {
-            renderSellerDailyTasks(email);
-        });
+        const task = tasks.find(t => (t.id === taskId || t.text === taskId));
+        if (task) {
+            task.done = !task.done;
+            // Se a tarefa não tem ID ainda, gera um
+            if (!task.id) task.id = `task_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+            Store.saveTasks(email, tasks).then(() => {
+                renderSellerDailyTasks(email);
+                
+                // Atualizar gráfico se estiver ativo
+                import("./dashboard.js").then(m => {
+                    if (m.Dashboard && typeof m.Dashboard.renderTasksWeekChart === "function") {
+                        m.Dashboard.renderTasksWeekChart();
+                    }
+                });
+            });
+        }
     };
 
-    window.deleteDailyTask = (email, idx) => {
-        const tasks = Store.getTasks(email);
-        tasks.splice(idx, 1);
+    window.deleteDailyTask = (email, taskId) => {
+        let tasks = Store.getTasks(email);
+        tasks = tasks.filter(t => (t.id !== taskId && t.text !== taskId));
         Store.saveTasks(email, tasks).then(() => {
             renderSellerDailyTasks(email);
+            
+            // Atualizar gráfico se estiver ativo
+            import("./dashboard.js").then(m => {
+                if (m.Dashboard && typeof m.Dashboard.renderTasksWeekChart === "function") {
+                    m.Dashboard.renderTasksWeekChart();
+                }
+            });
         });
     };
     

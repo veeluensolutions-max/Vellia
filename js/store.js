@@ -573,8 +573,7 @@ export const Store = {
     // ==========================================
     getTasks(email) {
         const key = `seller_tasks_${email}`;
-        const today = new Date().toLocaleDateString("pt-BR");
-        return JSON.parse(localStorage.getItem(key) || "[]").filter(t => t.date === today);
+        return JSON.parse(localStorage.getItem(key) || "[]");
     },
 
     async saveTasks(email, tasks) {

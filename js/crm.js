@@ -193,8 +193,8 @@ export const CRM = {
 
         if (filteredLeads.length === 0) {
             tableBody.innerHTML = `
-                <tr>
-                    <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 40px 20px;">
+                            <tr>
+                    <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 40px 20px;">
                         Nenhum lead ou contato encontrado para a pesquisa.
                     </td>
                 </tr>
@@ -206,11 +206,35 @@ export const CRM = {
         const sellers = isAdmin ? Store.getUsers().filter(u => u.role === "seller" || u.role === "manager" || u.role === "admin") : [];
         const sellerOptions = sellers.map(s => `<option value="${s.email}">${s.name}</option>`).join("");
 
+        // Rerrenderizar quando SDR Agent atualizar scores
+        if (!this._scoreListenerBound) {
+            window.addEventListener("vellia:agentScoreUpdated", () => this.renderLeadsTable());
+            this._scoreListenerBound = true;
+        }
+
         tableBody.innerHTML = filteredLeads.map(lead => {
             let stageBadgeClass = "badge-info";
             if (lead.stage === "Cliente Fechado") stageBadgeClass = "badge-success";
             else if (lead.stage === "Cliente Perdido") stageBadgeClass = "badge-danger";
             else if (lead.stage === "Negociação" || lead.stage === "Proposta Enviada") stageBadgeClass = "badge-warning";
+
+            // Badge de Score IA (SDR Agent)
+            const aiScore = lead.aiScore != null ? lead.aiScore : null;
+            let scoreBadge = `<span style="font-size: 11px; color: var(--text-muted);">—</span>`;
+            if (aiScore !== null) {
+                let icon, color, bg;
+                if (aiScore >= 75)      { icon = "🔥"; color = "#ef4444"; bg = "rgba(239,68,68,0.1)"; }
+                else if (aiScore >= 45) { icon = "⚡"; color = "#f59e0b"; bg = "rgba(245,158,11,0.1)"; }
+                else                   { icon = "❄️"; color = "#6366f1"; bg = "rgba(99,102,241,0.1)"; }
+                scoreBadge = `
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+                        <span style="font-size:9px;font-weight:700;background:${bg};color:${color};border:1px solid ${color}40;padding:2px 8px;border-radius:99px;">${icon} ${aiScore}/100</span>
+                        <div style="width:50px;height:4px;background:var(--bg-app);border-radius:99px;overflow:hidden;">
+                            <div style="width:${aiScore}%;height:100%;background:${color};border-radius:99px;"></div>
+                        </div>
+                    </div>
+                `;
+            }
 
             // Obter dados do responsável
             let ownerName = "Não atribuído";
@@ -232,7 +256,7 @@ export const CRM = {
             const ownerCell = isAdmin
                 ? `<select class="filter-control assign-owner-select" data-id="${lead.id}" style="height: 32px; font-size: 12px; min-width: 140px;" onclick="event.stopPropagation();">
                     <option value="">— Não atribuído —</option>
-                    ${sellers.map(s => `<option value="${s.email}" ${lead.owner === s.email ? "selected" : ""}>${s.name}</option>`).join("")}
+                    ${Store.getUsers().filter(u => u.role === "seller" || u.role === "manager" || u.role === "admin").map(s => `<option value="${s.email}" ${lead.owner === s.email ? "selected" : ""}>${s.name}</option>`).join("")}
                    </select>`
                 : `<div style="display:flex;align-items:center;gap:8px;">
                      <div class="user-avatar" style="width:24px;height:24px;font-size:10px;flex-shrink:0;background:${ownerColor};">${ownerAvatar}</div>
@@ -257,6 +281,7 @@ export const CRM = {
                     <td>
                         <span class="badge ${stageBadgeClass}">${lead.stage}</span>
                     </td>
+                    <td style="text-align:center;">${scoreBadge}</td>
                     <td onclick="event.stopPropagation();">
                         ${ownerCell}
                     </td>

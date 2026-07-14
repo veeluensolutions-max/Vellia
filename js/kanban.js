@@ -47,6 +47,12 @@ export const Kanban = {
             if (counters[stage]) counters[stage].textContent = "0";
         });
 
+        // Rerrenderizar ao receber update de score dos agentes
+        if (!this._scoreListenerBound) {
+            window.addEventListener("vellia:agentScoreUpdated", () => this.renderKanban());
+            this._scoreListenerBound = true;
+        }
+
         // Contadores locais
         const stageCounts = {
             "Contato": 0,
@@ -110,18 +116,23 @@ export const Kanban = {
                 priorityClass = "badge-warning";
             }
 
-            const scoredLead = ctx.scoredLeads.find(l => l.id === lead.id);
-            const score = scoredLead ? scoredLead._score : 0;
+            // Usar aiScore do SDR Agent (Store) com fallback para ctx
+            const aiScore = lead.aiScore != null ? lead.aiScore : (ctx.scoredLeads.find(l => l.id === lead.id)?._score || 0);
 
             let tempBadge = "";
             if (lead.stage !== "Cliente Fechado" && lead.stage !== "Cliente Perdido") {
-                if (score >= 70) {
-                    tempBadge = `<span class="badge" style="font-size: 9px; padding: 2px 6px; border-radius: 99px; background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);" title="Score: ${score} - Lead muito engajado!">🔥 Quente (${score})</span>`;
-                } else if (score >= 40) {
-                    tempBadge = `<span class="badge" style="font-size: 9px; padding: 2px 6px; border-radius: 99px; background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3);" title="Score: ${score} - Engajamento intermediário">⚡ Morno (${score})</span>`;
+                let scoreIcon, scoreColor, scoreBg, scoreBorder, scoreLabel;
+                if (aiScore >= 75) {
+                    scoreIcon = "🔥"; scoreLabel = "Alta"; scoreColor = "#ef4444";
+                    scoreBg = "rgba(239, 68, 68, 0.12)"; scoreBorder = "rgba(239, 68, 68, 0.3)";
+                } else if (aiScore >= 45) {
+                    scoreIcon = "⚡"; scoreLabel = "Média"; scoreColor = "#f59e0b";
+                    scoreBg = "rgba(245, 158, 11, 0.12)"; scoreBorder = "rgba(245, 158, 11, 0.3)";
                 } else {
-                    tempBadge = `<span class="badge" style="font-size: 9px; padding: 2px 6px; border-radius: 99px; background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3);" title="Score: ${score} - Baixo engajamento ou inativo">🧊 Frio (${score})</span>`;
+                    scoreIcon = "❄️"; scoreLabel = "Baixa"; scoreColor = "#6366f1";
+                    scoreBg = "rgba(99, 102, 241, 0.12)"; scoreBorder = "rgba(99, 102, 241, 0.3)";
                 }
+                tempBadge = `<span class="badge ai-score-badge" data-lead-id="${lead.id}" style="font-size: 9px; padding: 2px 7px; border-radius: 99px; background: ${scoreBg}; color: ${scoreColor}; border: 1px solid ${scoreBorder}; display: inline-flex; align-items: center; gap: 3px;" title="Score SDR Agent: ${aiScore}/100 — Prioridade ${scoreLabel}">${scoreIcon} <strong style='font-size:9px;'>${aiScore}</strong></span>`;
             }
 
             const fmtVal = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(leadValue);

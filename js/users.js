@@ -390,57 +390,8 @@ export const Users = {
             this.renderUsers();
         });
 
-        // Formulário de alteração de senha própria
-        const changePwdOverlay = document.getElementById("change-password-modal-overlay");
-        const changePwdModal = document.getElementById("change-password-modal");
-        const changePwdForm = document.getElementById("change-password-form");
-        const btnCancelChangePwd = document.getElementById("btn-cancel-change-pwd");
-        const btnCloseChangePwd = document.getElementById("btn-close-change-pwd-modal");
-
-        const closeChangePwdModal = () => {
-            changePwdOverlay.style.display = "none";
-            changePwdModal.classList.remove("open");
-            changePwdForm.reset();
-        };
-
-        if (btnCloseChangePwd) btnCloseChangePwd.addEventListener("click", closeChangePwdModal);
-        if (btnCancelChangePwd) btnCancelChangePwd.addEventListener("click", closeChangePwdModal);
-
-        changePwdForm.addEventListener("submit", (e) => {
-            e.preventDefault();
-
-            const currentPwd = document.getElementById("current-pwd").value;
-            const newPwd = document.getElementById("new-pwd").value;
-            const confirmNewPwd = document.getElementById("confirm-new-pwd").value;
-
-            const currentUser = Auth.getCurrentUser();
-            if (!currentUser) return;
-
-            const users = Store.getUsers();
-            const idx = users.findIndex(u => u.id === currentUser.id);
-
-            if (idx === -1) {
-                alert("Erro ao identificar usuário da sessão.");
-                return;
-            }
-
-            if (users[idx].password !== currentPwd) {
-                alert("Senha atual incorreta!");
-                return;
-            }
-
-            if (newPwd !== confirmNewPwd) {
-                alert("A nova senha e a confirmação não conferem!");
-                return;
-            }
-
-            users[idx].password = newPwd;
-            Store.saveUsers(users);
-            Store.addLog(currentUser.email, "PASSWORD_CHANGE", "Própria senha redefinida com sucesso.", "SUCCESS");
-
-            alert("Senha alterada com sucesso!");
-            closeChangePwdModal();
-        });
+        // Inicializar listeners de alteração de senha
+        this.initChangePassword();
     },
 
     openEditModal(id) {
@@ -502,8 +453,67 @@ export const Users = {
     },
 
     openChangePasswordModal() {
+        this.initChangePassword();
         document.getElementById("change-password-modal-overlay").style.display = "block";
         document.getElementById("change-password-modal").classList.add("open");
+    },
+
+    initChangePassword() {
+        if (this.changePasswordInitialized) return;
+        this.changePasswordInitialized = true;
+
+        const changePwdOverlay = document.getElementById("change-password-modal-overlay");
+        const changePwdModal = document.getElementById("change-password-modal");
+        const changePwdForm = document.getElementById("change-password-form");
+        const btnCancelChangePwd = document.getElementById("btn-cancel-change-pwd");
+        const btnCloseChangePwd = document.getElementById("btn-close-change-pwd-modal");
+
+        if (!changePwdForm) return;
+
+        const closeChangePwdModal = () => {
+            changePwdOverlay.style.display = "none";
+            changePwdModal.classList.remove("open");
+            changePwdForm.reset();
+        };
+
+        if (btnCloseChangePwd) btnCloseChangePwd.addEventListener("click", closeChangePwdModal);
+        if (btnCancelChangePwd) btnCancelChangePwd.addEventListener("click", closeChangePwdModal);
+
+        changePwdForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+
+            const currentPwd = document.getElementById("current-pwd").value;
+            const newPwd = document.getElementById("new-pwd").value;
+            const confirmNewPwd = document.getElementById("confirm-new-pwd").value;
+
+            const currentUser = Auth.getCurrentUser();
+            if (!currentUser) return;
+
+            const users = Store.getUsers();
+            const idx = users.findIndex(u => u.id === currentUser.id);
+
+            if (idx === -1) {
+                alert("Erro ao identificar usuário da sessão.");
+                return;
+            }
+
+            if (users[idx].password !== currentPwd) {
+                alert("Senha atual incorreta!");
+                return;
+            }
+
+            if (newPwd !== confirmNewPwd) {
+                alert("A nova senha e a confirmação não conferem!");
+                return;
+            }
+
+            users[idx].password = newPwd;
+            Store.saveUsers(users);
+            Store.addLog(currentUser.email, "PASSWORD_CHANGE", "Própria senha redefinida com sucesso.", "SUCCESS");
+
+            alert("Senha alterada com sucesso!");
+            closeChangePwdModal();
+        });
     },
 
     deleteUser(id, name) {

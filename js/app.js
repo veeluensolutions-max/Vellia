@@ -16,6 +16,7 @@ import { Performance } from "./performance.js";
 import { WhatsApp } from "./whatsapp.js";
 import { Pricing } from "./pricing.js";
 import { Integrations } from "./integrations.js";
+import { connectRealtime, disconnectRealtime } from "./realtime.js";
 
 // Elementos Globais DOM
 const elements = {
@@ -89,6 +90,9 @@ function showAppShell(user) {
     // Inicializar Notificações e Exportação
     Notifications.init();
     DataExport.init();
+
+    // Iniciar Supabase Realtime (WebSocket)
+    connectRealtime();
 }
 
 // Configura quais botões do menu lateral aparecem baseado nas regras do perfil

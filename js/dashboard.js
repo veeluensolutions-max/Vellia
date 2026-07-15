@@ -8,6 +8,11 @@ export const Dashboard = {
         this.renderAll();
         this.bindEvents();
         this.setupAdminTaskManager();
+
+        // Atualizar painel Meta Ads automaticamente quando chegar lead novo via webhook
+        window.addEventListener("vellia:leadAdded", () => {
+            this.renderMetaAdsPanel();
+        });
     },
 
     bindEvents() {
@@ -76,6 +81,7 @@ export const Dashboard = {
         this.renderVendorRanking(proposals);
         this.renderRecentActivity(leads, proposals);
         this.renderTasksWeekChart();
+        this.renderMetaAdsPanel();
     },
 
     // ===========================================================================
@@ -840,5 +846,166 @@ export const Dashboard = {
                 renderAssignedTasks();
             });
         };
+    },
+
+    // ===========================================================================
+    // PAINEL META ADS PERFORMANCE
+    // ===========================================================================
+    renderMetaAdsPanel() {
+        const allLeads = Store.getLeads();
+
+        // Todos os leads capturados pelo Meta Ads
+        const metaLeads = allLeads.filter(l =>
+            l.source === "Meta Ads" || l.source === "Facebook" || l.source === "Instagram"
+        );
+
+        const totalLeads = metaLeads.length;
+        const converted = metaLeads.filter(l => l.stage === "Cliente Fechado").length;
+        const convRate = totalLeads > 0 ? Math.round((converted / totalLeads) * 100) : 0;
+
+        // Receita gerada pelos leads Meta que viraram clientes
+        const proposals = Store.getProposals();
+        const metaRevenue = proposals
+            .filter(p => p.status === "Ganho" && metaLeads.some(l => l.id === p.leadId))
+            .reduce((sum, p) => sum + (p.value || 0), 0);
+
+        const fmt = v => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+
+        // Preencher KPIs
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        set("meta-kpi-total-leads", totalLeads);
+        set("meta-kpi-converted", converted);
+        set("meta-kpi-conv-rate", convRate + "%");
+        set("meta-kpi-revenue", fmt(metaRevenue));
+
+        // Timestamp da última atualização
+        const lastUpdate = document.getElementById("meta-ads-last-update");
+        if (lastUpdate) {
+            lastUpdate.textContent = "Atualizado: " + new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+        }
+
+        // Funil de etapas
+        const stages = [
+            { label: "Leads Captados",    color: "#1877F2" },
+            { label: "Lead Gerado",        color: "#6366f1" },
+            { label: "Lead Qualificado",   color: "#8b5cf6" },
+            { label: "Proposta Enviada",   color: "#f59e0b" },
+            { label: "Negociação",         color: "#06b6d4" },
+            { label: "Cliente Fechado",    color: "#10b981" },
+        ];
+
+        const stageCounts = [
+            totalLeads,
+            metaLeads.filter(l => l.stage === "Lead Gerado").length,
+            metaLeads.filter(l => l.stage === "Lead Qualificado").length,
+            metaLeads.filter(l => l.stage === "Proposta Enviada").length,
+            metaLeads.filter(l => l.stage === "Negociação").length,
+            converted,
+        ];
+
+        const funnelContainer = document.getElementById("meta-funnel-bars");
+        if (funnelContainer) {
+            funnelContainer.innerHTML = "";
+            const maxCount = stageCounts[0] || 1;
+            stages.forEach((stage, i) => {
+                const count = stageCounts[i];
+                const pct = Math.round((count / maxCount) * 100);
+                const pctOfTotal = totalLeads > 0 ? Math.round((count / totalLeads) * 100) : 0;
+
+                const row = document.createElement("div");
+                row.style.cssText = "display: flex; align-items: center; gap: 10px;";
+
+                const labelEl = document.createElement("span");
+                labelEl.style.cssText = "font-size: 11px; color: var(--text-muted); width: 130px; flex-shrink: 0; font-weight: 600;";
+                labelEl.textContent = stage.label;
+
+                const barWrap = document.createElement("div");
+                barWrap.style.cssText = "flex: 1; background: var(--bg-app); border-radius: 4px; height: 8px; overflow: hidden;";
+
+                const bar = document.createElement("div");
+                bar.style.cssText = `height: 100%; width: 0%; background: ${stage.color}; border-radius: 4px; transition: width 0.9s cubic-bezier(0.4,0,0.2,1);`;
+                barWrap.appendChild(bar);
+
+                const countEl = document.createElement("span");
+                countEl.style.cssText = "font-size: 11px; font-weight: 800; color: var(--text-primary); min-width: 30px; text-align: right;";
+                countEl.textContent = count;
+
+                const pctEl = document.createElement("span");
+                pctEl.style.cssText = "font-size: 10px; color: var(--text-muted); min-width: 32px;";
+                pctEl.textContent = pctOfTotal + "%";
+
+                row.appendChild(labelEl);
+                row.appendChild(barWrap);
+                row.appendChild(countEl);
+                row.appendChild(pctEl);
+                funnelContainer.appendChild(row);
+
+                // Animar barra após render
+                setTimeout(() => { bar.style.width = pct + "%"; }, 100 + i * 60);
+            });
+        }
+
+        // Gráfico doughnut: leads Meta por segmento
+        const segMap = {};
+        metaLeads.forEach(l => {
+            const seg = l.segment || "Outros";
+            segMap[seg] = (segMap[seg] || 0) + 1;
+        });
+        const segLabels = Object.keys(segMap);
+        const segData   = Object.values(segMap);
+
+        const canvas = document.getElementById("chart-meta-segments");
+        if (canvas) {
+            if (charts.metaSegments) charts.metaSegments.destroy();
+            if (segLabels.length === 0) {
+                canvas.style.display = "none";
+                const parent = canvas.parentElement;
+                if (parent && !parent.querySelector(".meta-empty-note")) {
+                    const note = document.createElement("p");
+                    note.className = "meta-empty-note";
+                    note.style.cssText = "text-align: center; color: var(--text-muted); font-size: 12px; margin-top: 60px;";
+                    note.textContent = "Nenhum lead Meta Ads registrado ainda.";
+                    parent.appendChild(note);
+                }
+            } else {
+                canvas.style.display = "block";
+                const parent = canvas.parentElement;
+                const note = parent ? parent.querySelector(".meta-empty-note") : null;
+                if (note) note.remove();
+
+                const palette = ["#1877F2","#6366f1","#8b5cf6","#10b981","#f59e0b","#ef4444","#06b6d4"];
+                charts.metaSegments = new Chart(canvas, {
+                    type: "doughnut",
+                    data: {
+                        labels: segLabels,
+                        datasets: [{
+                            data: segData,
+                            backgroundColor: palette.slice(0, segLabels.length),
+                            borderWidth: 0,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: "65%",
+                        plugins: {
+                            legend: {
+                                position: "right",
+                                labels: {
+                                    color: "#64748b",
+                                    font: { family: "Inter, sans-serif", size: 10 },
+                                    usePointStyle: true,
+                                    boxWidth: 8
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
     }
 };
+
+// Expor globalmente para o botão de refresh no HTML
+window.refreshMetaAdsPanel = () => Dashboard.renderMetaAdsPanel();

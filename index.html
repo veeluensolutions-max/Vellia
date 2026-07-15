@@ -212,6 +212,19 @@
                 </div>
 
                 <div class="header-actions">
+                    <!-- Badge de Status do Realtime -->
+                    <span id="realtime-status-badge" style="
+                        display: inline-flex; align-items: center; gap: 5px;
+                        font-size: 11px; font-weight: 600;
+                        padding: 4px 10px; border-radius: 20px;
+                        background: rgba(245,158,11,0.15);
+                        color: #f59e0b;
+                        border: 1px solid rgba(245,158,11,0.3);
+                        transition: all 0.5s ease;
+                        cursor: default;
+                        white-space: nowrap;
+                    " title="Status da conexão Realtime com Supabase">🔄 Conectando...</span>
+
                     <!-- Botão Exportação -->
                     <div class="export-wrapper" style="position: relative;">
                         <button id="btn-export-menu" class="action-btn" title="Exportar Dados">
@@ -395,6 +408,65 @@
 
                     </div>
 
+                    <!-- 🟦 Painel de Performance Meta Ads -->
+                    <div id="meta-ads-performance-panel" class="card" style="padding: 24px; margin-top: 24px; border-left: 4px solid #1877F2; background: linear-gradient(135deg, rgba(24,119,242,0.04) 0%, transparent 100%);">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 40px; height: 40px; border-radius: 10px; background: #1877F2; display: flex; align-items: center; justify-content: center;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                                </div>
+                                <div>
+                                    <h4 style="font-weight: 800; font-size: 15px; color: var(--text-primary); margin: 0 0 2px 0;">Performance Meta Ads</h4>
+                                    <span style="font-size: 11px; color: var(--text-muted);">Métricas de ROI e Conversão de Campanhas</span>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <span id="meta-ads-last-update" style="font-size: 11px; color: var(--text-muted);"></span>
+                                <button id="btn-refresh-meta-stats" onclick="window.refreshMetaAdsPanel()" class="btn btn-outline" style="padding: 6px 12px; font-size: 12px; display: flex; align-items: center; gap: 5px;">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                                    Atualizar
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- KPIs Meta Ads -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; margin-bottom: 20px;">
+                            <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; text-align: center;">
+                                <div style="font-size: 22px; font-weight: 800; color: #1877F2; margin-bottom: 4px;" id="meta-kpi-total-leads">0</div>
+                                <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Leads Captados</div>
+                            </div>
+                            <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; text-align: center;">
+                                <div style="font-size: 22px; font-weight: 800; color: #10b981; margin-bottom: 4px;" id="meta-kpi-converted">0</div>
+                                <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Clientes Fechados</div>
+                            </div>
+                            <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; text-align: center;">
+                                <div style="font-size: 22px; font-weight: 800; color: #8b5cf6; margin-bottom: 4px;" id="meta-kpi-conv-rate">0%</div>
+                                <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Taxa de Conversão</div>
+                            </div>
+                            <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; text-align: center;">
+                                <div style="font-size: 18px; font-weight: 800; color: #f59e0b; margin-bottom: 4px;" id="meta-kpi-revenue">R$ 0</div>
+                                <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Receita Gerada</div>
+                            </div>
+                        </div>
+
+                        <!-- Funil Meta Ads + Gráfico de barras -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                            <!-- Funil visual -->
+                            <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px;">
+                                <h5 style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin: 0 0 14px 0;">🔻 Funil Meta Ads → Venda</h5>
+                                <div id="meta-funnel-bars" style="display: flex; flex-direction: column; gap: 10px;">
+                                    <!-- Preenchido via JS -->
+                                </div>
+                            </div>
+                            <!-- Gráfico de segmentos captados -->
+                            <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px;">
+                                <h5 style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin: 0 0 14px 0;">📊 Leads Meta por Segmento</h5>
+                                <div style="position: relative; height: 180px;">
+                                    <canvas id="chart-meta-segments"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- Dashboard do Vendedor (Operacional) -->
                     <div id="dashboard-seller" style="display: none;">
@@ -1625,6 +1697,35 @@
                         <option value="Cliente Fechado">6. Cliente Fechado</option>
                         <option value="Cliente Perdido">7. Cliente Perdido</option>
                     </select>
+                </div>
+            </div>
+            
+            <!-- Seção: Conversa WhatsApp / SDR AI -->
+            <div class="drawer-section" id="drawer-whatsapp-chat-section" style="display: none; border-top: 1px solid var(--border-color); padding-top: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                    <span class="drawer-section-title" style="margin-bottom: 0; display: flex; align-items: center; gap: 6px;">💬 Conversa WhatsApp / SDR AI</span>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <span id="chat-sdr-status-badge" class="badge" style="background: #e0f2fe; color: #0284c7; font-size: 11px; padding: 2px 8px; border-radius: var(--radius-sm); font-weight: 600;">SDR AI Ativo</span>
+                        <button id="btn-takeover-chat" class="btn" style="padding: 4px 8px; font-size: 11px; font-weight: 700; border-radius: 4px; border: 1px solid var(--primary); background: transparent; color: var(--primary); cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s;">
+                            🤝 Assumir
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Chat transcript box -->
+                <div id="chat-message-history" style="max-height: 250px; min-height: 150px; overflow-y: auto; background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; font-size: 13px; scroll-behavior: smooth;">
+                    <!-- Mensagens renderizadas dinamicamente -->
+                </div>
+
+                <!-- Live Chat message input -->
+                <div id="chat-input-container" style="display: none; gap: 8px; align-items: center; margin-top: 8px;">
+                    <input type="text" id="chat-text-input" class="form-control" placeholder="Digite uma resposta..." style="flex: 1; height: 36px; padding: 6px 12px; font-size: 13px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary);">
+                    <button id="btn-send-chat-msg" class="btn btn-primary" style="height: 36px; padding: 0 14px; font-size: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer; border: none;">
+                        <span>✈️</span> Enviar
+                    </button>
+                </div>
+                <div id="chat-sdr-active-alert" style="font-size: 11px; color: var(--text-muted); text-align: center; background: rgba(99,102,241,0.05); padding: 8px; border-radius: 6px; border: 1px solid rgba(99,102,241,0.1); margin-top: 6px;">
+                    🤖 O <b>SDR AI</b> está controlando esta conversa. Clique em "Assumir" para pausar a IA e responder manualmente.
                 </div>
             </div>
 

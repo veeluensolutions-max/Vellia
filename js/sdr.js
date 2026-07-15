@@ -7,6 +7,12 @@ export const SDR = {
         const lead = Store.getLeadById(leadId);
         if (!lead) return;
 
+        // Se a automação SDR estiver pausada pelo vendedor (Takeover), abortar triagem
+        if (lead.sdrPaused) {
+            console.log(`[SDR AI] Triagem ignorada para o lead ${leadId} (Controle Humano ativado).`);
+            return;
+        }
+
         const getLogTime = () => `[${new Date().toLocaleTimeString("pt-BR")}]`;
 
         // 1. Registrar início do contato automático pelo SDR

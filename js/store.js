@@ -280,9 +280,54 @@ function initStorage() {
     }
 }
 
+// Polling de fallback (60s) — o Supabase Realtime (WebSocket) é o mecanismo primário.
+// Este polling entra em ação caso o WebSocket caia ou não consiga conectar.
+function startSyncPolling() {
+    setInterval(async () => {
+        if (document.hidden) return;
+        try {
+            const remoteLeads = await supabaseFetch("comercial_leads") || [];
+            const localLeads = JSON.parse(localStorage.getItem("comercial_leads")) || [];
+            
+            // Identificar novos leads que estão no Supabase mas não localmente
+            const newLeads = remoteLeads.filter(rl => !localLeads.some(ll => ll.id === rl.id));
+            
+            if (newLeads.length > 0 || JSON.stringify(remoteLeads) !== JSON.stringify(localLeads)) {
+                console.log("🔄 [Fallback Polling] Detectou novos leads ou atualizações no Supabase. Sincronizando...");
+                localStorage.setItem("comercial_leads", JSON.stringify(remoteLeads));
+                
+                // Também sincronizar os logs de auditoria
+                const remoteLogs = await supabaseFetch("comercial_logs") || [];
+                localStorage.setItem("comercial_logs", JSON.stringify(remoteLogs));
+                
+                // Disparar eventos para novos leads
+                newLeads.forEach(newLead => {
+                    console.log(`📡 [Fallback Polling] Disparando vellia:leadAdded para ${newLead.company}`);
+                    window.dispatchEvent(new CustomEvent("vellia:leadAdded", { detail: newLead }));
+                    
+                    // Se for do Meta Ads e SDR automático ativo, iniciar triagem
+                    const waConfig = JSON.parse(localStorage.getItem("comercial_wa_api_config")) || { sdrActive: true };
+                    if (newLead.source === "Meta Ads" && waConfig.sdrActive !== false) {
+                        setTimeout(() => {
+                            import('./sdr.js').then(m => m.SDR.runTriage(newLead.id));
+                        }, 1500);
+                    }
+                });
+                
+                // Forçar atualização do CRM/Kanban/Dashboard
+                window.dispatchEvent(new CustomEvent("vellia:waSent"));
+                window.dispatchEvent(new Event("storage"));
+            }
+        } catch (e) {
+            console.log("Erro no polling de fallback do Supabase:", e.message);
+        }
+    }, 60000); // 60s — Realtime WebSocket é primário
+}
+
 // Inicializar local storage e sincronizar
 initStorage();
 syncFromSupabase();
+startSyncPolling();
 
 export const Store = {
     // USUÁRIOS
@@ -606,6 +651,10 @@ export const Store = {
         } catch (e) {
             console.warn("Erro ao sincronizar tarefas no Supabase:", e);
         }
+    },
+
+    async syncFromSupabase() {
+        return await syncFromSupabase();
     },
 
     // Métodos utilitários para resetar banco se necessário

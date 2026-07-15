@@ -62,6 +62,22 @@ export const CRM = {
         if (elements.btnCloseDrawer) elements.btnCloseDrawer.addEventListener("click", () => this.closeLeadDrawer());
         if (elements.drawerOverlay) elements.drawerOverlay.addEventListener("click", () => this.closeLeadDrawer());
 
+        // Ouvintes de evento do Chat WhatsApp / SDR Takeover
+        const btnTakeover = document.getElementById("btn-takeover-chat");
+        if (btnTakeover) {
+            btnTakeover.addEventListener("click", () => this.handleChatTakeover());
+        }
+        const btnSendChat = document.getElementById("btn-send-chat-msg");
+        const inputChat = document.getElementById("chat-text-input");
+        if (btnSendChat && inputChat) {
+            btnSendChat.addEventListener("click", () => this.sendChatWhatsAppMessage());
+            inputChat.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    this.sendChatWhatsAppMessage();
+                }
+            });
+        }
+
         // Submissão de Interações
         if (elements.drawerInteractionForm) {
             elements.drawerInteractionForm.addEventListener("submit", (e) => {
@@ -528,6 +544,17 @@ export const CRM = {
 
         // Renderizar Comentários
         this.renderComments(lead);
+
+        // Exibir e Renderizar Chat Integrado se aplicável
+        const hasWa = lead.whatsapp || lead.phone || lead.source === "Meta Ads" || lead.source === "WhatsApp";
+        const chatSection = document.getElementById("drawer-whatsapp-chat-section");
+        if (chatSection) {
+            chatSection.style.display = hasWa ? "block" : "none";
+            if (hasWa) {
+                this.renderWhatsAppChat(lead);
+                this.updateChatUIState(lead);
+            }
+        }
 
         // Resetar form follow-up
         const ffContainer = document.getElementById("followup-form-container");
@@ -1104,5 +1131,205 @@ export const CRM = {
         }
 
         this.isSaving = false;
+    },
+
+    renderWhatsAppChat(lead) {
+        const chatContainer = document.getElementById("chat-message-history");
+        if (!chatContainer) return;
+        
+        chatContainer.innerHTML = "";
+        
+        const interactions = lead.interactions || [];
+        
+        // Filtrar e parsear interações de WhatsApp
+        const waInteractions = interactions.filter(i => i.type === "WhatsApp");
+        
+        if (waInteractions.length === 0) {
+            chatContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 11px; margin-top: 40px;">Nenhuma mensagem trocada via WhatsApp ainda.</div>`;
+            return;
+        }
+        
+        const appendBubble = (sender, text, type, timestamp) => {
+            const bubbleWrapper = document.createElement("div");
+            bubbleWrapper.style.display = "flex";
+            bubbleWrapper.style.flexDirection = "column";
+            bubbleWrapper.style.alignItems = type === "outgoing" ? "flex-end" : "flex-start";
+            bubbleWrapper.style.width = "100%";
+            bubbleWrapper.style.marginBottom = "4px";
+            
+            const nameEl = document.createElement("span");
+            nameEl.style.fontSize = "10px";
+            nameEl.style.fontWeight = "600";
+            nameEl.style.color = "var(--text-muted)";
+            nameEl.style.marginBottom = "2px";
+            nameEl.textContent = sender;
+            
+            const bubble = document.createElement("div");
+            bubble.style.maxWidth = "80%";
+            bubble.style.padding = "8px 12px";
+            bubble.style.borderRadius = "12px";
+            bubble.style.lineHeight = "1.4";
+            bubble.style.wordBreak = "break-word";
+            bubble.style.fontSize = "13px";
+            
+            if (type === "outgoing") {
+                bubble.style.background = "var(--primary)";
+                bubble.style.color = "#ffffff";
+                bubble.style.borderBottomRightRadius = "2px";
+            } else {
+                bubble.style.background = "var(--bg-app)";
+                bubble.style.color = "var(--text-primary)";
+                bubble.style.borderBottomLeftRadius = "2px";
+                bubble.style.border = "1px solid var(--border-color)";
+            }
+            
+            bubble.textContent = text;
+            
+            const timeEl = document.createElement("span");
+            timeEl.style.fontSize = "9px";
+            timeEl.style.color = "var(--text-muted)";
+            timeEl.style.marginTop = "2px";
+            timeEl.textContent = timestamp ? new Date(timestamp).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "";
+            
+            bubbleWrapper.appendChild(nameEl);
+            bubbleWrapper.appendChild(bubble);
+            bubbleWrapper.appendChild(timeEl);
+            
+            chatContainer.appendChild(bubbleWrapper);
+        };
+        
+        waInteractions.forEach(interaction => {
+            const desc = interaction.description;
+            
+            if (desc.includes("Conversa de Triagem SDR AI:")) {
+                const lines = desc.split("\n\n");
+                lines.forEach(line => {
+                    if (line.includes("SDR AI*:")) {
+                        const text = line.substring(line.indexOf("SDR AI*:") + 8).trim().replace(/^\*/, "").replace(/\*$/, "");
+                        appendBubble("SDR AI (🤖)", text, "outgoing", interaction.timestamp);
+                    } else if (line.includes("*:")) {
+                        const sender = line.substring(line.indexOf("*") + 1, line.indexOf("*:", line.indexOf("*") + 1));
+                        const text = line.substring(line.indexOf("*:") + 2).trim();
+                        appendBubble(sender, text, "incoming", interaction.timestamp);
+                    }
+                });
+            } else if (desc.includes("Mensagem enviada via WhatsApp:")) {
+                const text = desc.replace("💬 **Mensagem enviada via WhatsApp:**", "").trim();
+                appendBubble("Você (Humano)", text, "outgoing", interaction.timestamp);
+            } else if (desc.includes("Mensagem recebida via WhatsApp:")) {
+                const text = desc.replace("💬 **Mensagem recebida via WhatsApp:**", "").trim();
+                appendBubble(lead.contact || "Lead", text, "incoming", interaction.timestamp);
+            } else if (desc.includes("Mensagem recebida via WhatsApp API:")) {
+                const text = desc.replace("Mensagem recebida via WhatsApp API:", "").trim().replace(/^"/, "").replace(/"$/, "");
+                appendBubble(lead.contact || "Lead", text, "incoming", interaction.timestamp);
+            } else if (desc.startsWith("💬")) {
+                const text = desc.replace(/^💬\s*/, "").trim();
+                appendBubble(lead.contact || "Lead", text, "incoming", interaction.timestamp);
+            } else {
+                appendBubble("Sistema", desc, "incoming", interaction.timestamp);
+            }
+        });
+        
+        // Rolar até o fim
+        setTimeout(() => {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }, 50);
+    },
+
+    updateChatUIState(lead) {
+        const badge = document.getElementById("chat-sdr-status-badge");
+        const btnTakeover = document.getElementById("btn-takeover-chat");
+        const inputContainer = document.getElementById("chat-input-container");
+        const activeAlert = document.getElementById("chat-sdr-active-alert");
+        
+        if (!badge || !btnTakeover || !inputContainer || !activeAlert) return;
+        
+        if (lead.sdrPaused) {
+            badge.textContent = "SDR AI Pausado";
+            badge.style.background = "#fee2e2";
+            badge.style.color = "#dc2626";
+            
+            btnTakeover.innerHTML = "🤖 Devolver p/ AI";
+            btnTakeover.style.borderColor = "var(--success)";
+            btnTakeover.style.color = "var(--success)";
+            
+            inputContainer.style.display = "flex";
+            activeAlert.style.display = "none";
+        } else {
+            badge.textContent = "SDR AI Ativo";
+            badge.style.background = "#e0f2fe";
+            badge.style.color = "#0284c7";
+            
+            btnTakeover.innerHTML = "🤝 Assumir";
+            btnTakeover.style.borderColor = "var(--primary)";
+            btnTakeover.style.color = "var(--primary)";
+            
+            inputContainer.style.display = "none";
+            activeAlert.style.display = "block";
+        }
+    },
+
+    handleChatTakeover() {
+        const lead = Store.getLeadById(activeLeadId);
+        if (!lead) return;
+        
+        const isPaused = !lead.sdrPaused;
+        lead.sdrPaused = isPaused;
+        
+        Store.updateLead(lead.id, { sdrPaused: isPaused });
+        
+        const user = Auth.getCurrentUser();
+        Audit.logConfigChange(user?.email || "sistema@vellia.com", "SDR_TAKEOVER_TOGGLE", `Vendedor ${user?.name} alterou controle do lead ${lead.company} para ${isPaused ? "HUMANO" : "SDR AI"}.`);
+        
+        this.updateChatUIState(lead);
+        this.renderTimeline(lead);
+    },
+
+    sendChatWhatsAppMessage() {
+        const input = document.getElementById("chat-text-input");
+        if (!input) return;
+        
+        const text = input.value.trim();
+        if (!text) return;
+        
+        const lead = Store.getLeadById(activeLeadId);
+        if (!lead) return;
+        
+        const user = Auth.getCurrentUser();
+        const userEmail = user?.email || "sistema@vellia.com";
+        
+        Store.addLeadInteraction(lead.id, userEmail, {
+            type: "WhatsApp",
+            description: `💬 **Mensagem enviada via WhatsApp:** ${text}`
+        });
+        
+        input.value = "";
+        
+        const updatedLead = Store.getLeadById(activeLeadId);
+        this.renderWhatsAppChat(updatedLead);
+        this.renderTimeline(updatedLead);
+        
+        if (updatedLead.sdrPaused) {
+            setTimeout(() => {
+                if (activeLeadId !== updatedLead.id) return;
+                
+                const replies = [
+                    "Perfeito! Obrigado pelas informações. Vou analisar e te retorno.",
+                    "Opa! Ótimo, muito obrigado pelo retorno rápido.",
+                    "Entendido, faz todo sentido. Poderia me enviar a proposta por e-mail também?",
+                    "Certo. Vocês têm algum caso de sucesso no meu segmento para eu dar uma olhada?"
+                ];
+                const randomReply = replies[Math.floor(Math.random() * replies.length)];
+                
+                Store.addLeadInteraction(updatedLead.id, "sistema@vellia.com", {
+                    type: "WhatsApp",
+                    description: `💬 **Mensagem recebida via WhatsApp:** ${randomReply}`
+                });
+                
+                const refreshedLead = Store.getLeadById(activeLeadId);
+                this.renderWhatsAppChat(refreshedLead);
+                this.renderTimeline(refreshedLead);
+            }, 2000);
+        }
     }
 };

@@ -57,7 +57,7 @@ export const Integrations = {
 
                     <div style="margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border-color); display: flex; gap: 10px;">
                         <button class="btn btn-primary" style="flex: 1;" onclick="window.simulateMetaLead()">Simular Lead</button>
-                        <button class="btn btn-outline" style="flex: 1;" onclick="alert('Configurações avançadas do Webhook.')">Configurar</button>
+                        <button class="btn btn-outline" style="flex: 1;" onclick="window.openMetaConfigModal()">Configurar</button>
                     </div>
                 </div>
 
@@ -407,3 +407,285 @@ window.simulateMetaLead = function() {
         }
     });
 };
+
+window.openMetaConfigModal = function() {
+    // Garantir que o modal seja criado e inserido no DOM se não existir
+    let configModal = document.getElementById("meta-config-modal");
+    if (!configModal) {
+        configModal = document.createElement("div");
+        configModal.id = "meta-config-modal";
+        configModal.className = "modal";
+        configModal.style.maxWidth = "550px";
+        configModal.style.position = "fixed";
+        configModal.style.top = "50%";
+        configModal.style.left = "50%";
+        configModal.style.transform = "translate(-50%, -50%)";
+        configModal.style.zIndex = "1100";
+        configModal.style.background = "var(--bg-card)";
+        configModal.style.border = "1px solid var(--border-color)";
+        configModal.style.borderRadius = "var(--radius-lg)";
+        configModal.style.boxShadow = "var(--shadow-lg)";
+        configModal.style.display = "none";
+        
+        configModal.innerHTML = `
+            <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;">
+                <h3 style="font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <span>⚙️</span> Configurações Meta Ads
+                </h3>
+                <button class="drawer-close" id="btn-close-meta-modal" style="background: none; border: none; cursor: pointer; color: var(--text-primary); font-size: 20px; display: flex; align-items: center; justify-content: center; padding: 4px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="modal-body" style="padding: 20px; display: flex; flex-direction: column; gap: 16px; max-height: 60vh; overflow-y: auto;">
+                <!-- Webhook Info (Read-Only) -->
+                <div style="background: var(--bg-body); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-color); font-size: 13px;">
+                    <p style="margin: 0 0 6px 0; font-weight: 600; color: var(--text-primary);">Configuração no Meta Developer Portal:</p>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div>
+                            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 2px;">URL de Retorno (Callback URL)</span>
+                            <input type="text" class="form-control" value="https://velliacrm.vercel.app/api/meta-webhook" readonly style="font-size: 12px; height: 32px; background: var(--bg-app); width: 100%; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0 8px;" id="meta-callback-url">
+                        </div>
+                        <div>
+                            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 2px;">Token de Verificação (Verify Token)</span>
+                            <input type="text" id="meta-verify-token-input" class="form-control" style="font-size: 12px; height: 32px; width: 100%; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0 8px;" value="vellia-crm-token-123">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Graph API Credentials -->
+                <div class="form-group" style="display: flex; flex-direction: column; gap: 4px;">
+                    <label style="font-size: 12px; font-weight: 600; color: var(--text-primary); display: block;">Page Access Token (Token de Acesso)</label>
+                    <input type="password" id="meta-access-token-input" class="form-control" placeholder="Inserir Page Access Token do Facebook" style="font-size: 12px; height: 36px; width: 100%; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0 8px;">
+                    <span style="font-size: 11px; color: var(--text-muted); display: block;">Token requerido para que o backend consulte dados do formulário a partir do leadgen_id.</span>
+                </div>
+
+                <!-- Mapeamento de Campos -->
+                <div style="border-top: 1px solid var(--border-color); padding-top: 14px;">
+                    <h4 style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin: 0 0 10px 0;">Mapeamento de Campos do Formulário</h4>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 10px; font-size: 12px;">
+                        <div style="display: flex; flex-direction: column; justify-content: space-around; gap: 8px;">
+                            <div style="font-weight: 600; color: var(--text-muted); height: 32px; display: flex; align-items: center;">Campo Vellia CRM</div>
+                            <div style="height: 32px; display: flex; align-items: center; font-weight: 500;">Nome Completo</div>
+                            <div style="height: 32px; display: flex; align-items: center; font-weight: 500;">E-mail</div>
+                            <div style="height: 32px; display: flex; align-items: center; font-weight: 500;">Telefone</div>
+                            <div style="height: 32px; display: flex; align-items: center; font-weight: 500;">Empresa</div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <div style="font-weight: 600; color: var(--text-muted); height: 32px; display: flex; align-items: center;">ID do Campo no Meta</div>
+                            <input type="text" id="map-name" class="form-control" style="font-size: 12px; height: 32px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0 8px;" value="full_name" placeholder="Ex: full_name">
+                            <input type="text" id="map-email" class="form-control" style="font-size: 12px; height: 32px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0 8px;" value="email" placeholder="Ex: email">
+                            <input type="text" id="map-phone" class="form-control" style="font-size: 12px; height: 32px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0 8px;" value="phone_number" placeholder="Ex: phone_number">
+                            <input type="text" id="map-company" class="form-control" style="font-size: 12px; height: 32px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0 8px;" value="company_name" placeholder="Ex: company_name">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sandbox -->
+                <div style="border-top: 1px solid var(--border-color); padding-top: 14px; background: rgba(99,102,241,0.03); padding: 12px; border-radius: var(--radius-md); border: 1px dashed var(--primary); margin-top: 8px;">
+                    <h4 style="font-size: 13px; font-weight: 700; color: var(--primary); margin: 0 0 6px 0; display: flex; align-items: center; gap: 6px;">
+                        <span>🚀</span> Sandbox do Desenvolvedor (Simulador Webhook)
+                    </h4>
+                    <p style="font-size: 11px; color: var(--text-muted); margin: 0 0 10px 0;">Envie um POST contendo o payload de webhook simulado para o endpoint backend do VelliaCRM.</p>
+                    
+                    <textarea id="meta-sandbox-payload" class="form-control" style="font-family: monospace; font-size: 11px; height: 80px; width: 100%; margin-bottom: 10px; background: var(--bg-app); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 6px; resize: vertical;"></textarea>
+                    
+                    <button class="btn btn-outline" id="btn-fire-sandbox-webhook" style="width: 100%; font-size: 12px; height: 32px; display: flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--primary); color: var(--primary); background: transparent; cursor: pointer;">
+                        Enviar Webhook de Teste (POST /api/meta-webhook)
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 16px 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 10px; background: var(--bg-card); border-bottom-left-radius: var(--radius-lg); border-bottom-right-radius: var(--radius-lg);">
+                <button class="btn btn-outline" id="btn-close-meta-modal-footer" style="cursor: pointer; padding: 8px 16px;">Fechar</button>
+                <button class="btn btn-primary" id="btn-save-meta-config" style="cursor: pointer; padding: 8px 16px;">Salvar Configurações</button>
+            </div>
+        `;
+        document.body.appendChild(configModal);
+
+        // Registrar eventos do modal
+        document.getElementById("btn-close-meta-modal").addEventListener("click", () => window.closeMetaConfigModal());
+        document.getElementById("btn-close-meta-modal-footer").addEventListener("click", () => window.closeMetaConfigModal());
+        
+        document.getElementById("btn-save-meta-config").addEventListener("click", async () => {
+            const verifyToken = document.getElementById("meta-verify-token-input").value.trim();
+            const accessToken = document.getElementById("meta-access-token-input").value.trim();
+            const mapName = document.getElementById("map-name").value.trim();
+            const mapEmail = document.getElementById("map-email").value.trim();
+            const mapPhone = document.getElementById("map-phone").value.trim();
+            const mapCompany = document.getElementById("map-company").value.trim();
+
+            const config = {
+                verifyToken,
+                accessToken,
+                fields: {
+                    name: mapName,
+                    email: mapEmail,
+                    phone: mapPhone,
+                    company: mapCompany
+                }
+            };
+
+            localStorage.setItem("comercial_meta_config", JSON.stringify(config));
+
+            const saveBtn = document.getElementById("btn-save-meta-config");
+            saveBtn.disabled = true;
+            saveBtn.textContent = "Salvando...";
+
+            await saveMetaConfigToSupabase(config);
+
+            saveBtn.disabled = false;
+            saveBtn.textContent = "Salvar Configurações";
+            alert("Configurações salvas e sincronizadas com sucesso!");
+            window.closeMetaConfigModal();
+        });
+
+        document.getElementById("btn-fire-sandbox-webhook").addEventListener("click", async () => {
+            const fireBtn = document.getElementById("btn-fire-sandbox-webhook");
+            const rawPayload = document.getElementById("meta-sandbox-payload").value;
+            let payload;
+            try {
+                payload = JSON.parse(rawPayload);
+            } catch (err) {
+                alert("Erro de sintaxe JSON no Payload!");
+                return;
+            }
+
+            fireBtn.disabled = true;
+            fireBtn.textContent = "Enviando...";
+
+            try {
+                const response = await fetch("/api/meta-webhook", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    alert("Webhook enviado e processado com sucesso! Sincronizando leads...");
+                    // Forçar atualização do localStorage sincronizando do Supabase
+                    if (window.Store && typeof window.Store.syncFromSupabase === 'function') {
+                        await window.Store.syncFromSupabase();
+                    } else if (typeof syncFromSupabase === 'function') {
+                        await syncFromSupabase();
+                    }
+                    window.dispatchEvent(new CustomEvent("vellia:waSent"));
+                } else {
+                    const text = await response.text();
+                    alert(`Falha ao processar webhook: ${response.status} - ${text}`);
+                }
+            } catch (err) {
+                console.error(err);
+                alert(`Erro de conexão ao enviar webhook: ${err.message}`);
+            } finally {
+                fireBtn.disabled = false;
+                fireBtn.textContent = "Enviar Webhook de Teste (POST /api/meta-webhook)";
+            }
+        });
+    }
+
+    // Carregar configurações existentes
+    const config = JSON.parse(localStorage.getItem("comercial_meta_config")) || {
+        verifyToken: "vellia-crm-token-123",
+        accessToken: "",
+        fields: {
+            name: "full_name",
+            email: "email",
+            phone: "phone_number",
+            company: "company_name"
+        }
+    };
+
+    document.getElementById("meta-verify-token-input").value = config.verifyToken || "vellia-crm-token-123";
+    document.getElementById("meta-access-token-input").value = config.accessToken || "";
+    document.getElementById("map-name").value = config.fields?.name || "full_name";
+    document.getElementById("map-email").value = config.fields?.email || "email";
+    document.getElementById("map-phone").value = config.fields?.phone || "phone_number";
+    document.getElementById("map-company").value = config.fields?.company || "company_name";
+
+    // Payload de exemplo atualizado
+    const mockPayload = {
+      "object": "page",
+      "entry": [
+        {
+          "id": "109283749283749",
+          "time": Math.floor(Date.now() / 1000),
+          "changes": [
+            {
+              "field": "leadgen",
+              "value": {
+                "ad_id": "83749283749",
+                "adgroup_id": "28374982374",
+                "campaign_id": "19283749283",
+                "form_id": "form_simulado_" + Math.floor(100 + Math.random() * 900),
+                "leadgen_id": "leadgen_" + Date.now(),
+                "page_id": "109283749283749",
+                "created_time": Math.floor(Date.now() / 1000)
+              }
+            }
+          ]
+        }
+      ]
+    };
+    document.getElementById("meta-sandbox-payload").value = JSON.stringify(mockPayload, null, 2);
+
+    // Abrir modal
+    document.getElementById("meta-config-modal").style.display = "block";
+    document.getElementById("meta-config-modal").classList.add("open");
+    document.getElementById("modal-overlay").style.display = "block";
+};
+
+window.closeMetaConfigModal = function() {
+    const modal = document.getElementById("meta-config-modal");
+    if (modal) {
+        modal.style.display = "none";
+        modal.classList.remove("open");
+    }
+    
+    const newLeadModal = document.getElementById("new-lead-modal");
+    const editLeadModal = document.getElementById("edit-lead-modal");
+    const stageReasonModal = document.getElementById("stage-reason-modal");
+    
+    const anyOpen = (newLeadModal && newLeadModal.classList.contains("open")) ||
+                    (editLeadModal && editLeadModal.classList.contains("open")) ||
+                    (stageReasonModal && stageReasonModal.classList.contains("open"));
+                    
+    if (!anyOpen) {
+        const overlay = document.getElementById("modal-overlay");
+        if (overlay) overlay.style.display = "none";
+    }
+};
+
+async function saveMetaConfigToSupabase(config) {
+    const configRecord = {
+        id: "usr_meta_config",
+        name: JSON.stringify(config),
+        email: "meta_config@vellia.com",
+        password: "system_internal_config",
+        role: "system",
+        avatar: "MC",
+        status: "active",
+        lastLoginAt: null
+    };
+
+    const url = "https://ogrbsonpkiamoytxjshg.supabase.co/rest/v1/comercial_users";
+    const key = "sb_publishable_Wi3eKJi5uyEzqihEDF6Eaw_-i0zcHe7";
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "apikey": key,
+                "Authorization": `Bearer ${key}`,
+                "Content-Type": "application/json",
+                "Prefer": "resolution=merge-duplicates"
+            },
+            body: JSON.stringify(configRecord)
+        });
+        if (!response.ok) {
+            throw new Error(`Supabase upsert failed with status ${response.status}`);
+        }
+    } catch (e) {
+        console.warn("Erro ao salvar configuração no Supabase:", e);
+    }
+}

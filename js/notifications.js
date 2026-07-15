@@ -44,6 +44,21 @@ export const Notifications = {
                 timestamp: new Date()
             });
         });
+
+        // Ouvir notificações originadas pelos Agentes de IA
+        window.addEventListener("vellia:aiNotification", (e) => {
+            const { id, title, message, type } = e.detail || {};
+            if (!id || !title) return;
+            this.addItem({
+                id,
+                title,
+                message,
+                type: type || "info",
+                read: false,
+                timestamp: new Date()
+            });
+            this.sendNativeNotification(title, message);
+        });
     },
 
     requestNativePermission() {

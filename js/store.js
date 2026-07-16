@@ -111,7 +111,7 @@ async function supabaseFetch(table) {
 async function upsertSupabase(table, data) {
     const url = `${SUPABASE_URL}/rest/v1/${table}`;
     try {
-        await fetch(url, {
+        const response = await fetch(url, {
             method: "POST",
             headers: {
                 "apikey": SUPABASE_KEY,
@@ -121,6 +121,10 @@ async function upsertSupabase(table, data) {
             },
             body: JSON.stringify(data)
         });
+        if (!response.ok) {
+            const errBody = await response.text();
+            console.warn(`Supabase Sync Error for ${table}: [Status ${response.status}]`, errBody);
+        }
     } catch (e) {
         console.warn(`Supabase Sync Error for ${table}:`, e);
     }
@@ -129,13 +133,17 @@ async function upsertSupabase(table, data) {
 async function deleteSupabase(table, filter = "") {
     const url = `${SUPABASE_URL}/rest/v1/${table}${filter}`;
     try {
-        await fetch(url, {
+        const response = await fetch(url, {
             method: "DELETE",
             headers: {
                 "apikey": SUPABASE_KEY,
                 "Authorization": `Bearer ${SUPABASE_KEY}`
             }
         });
+        if (!response.ok) {
+            const errBody = await response.text();
+            console.warn(`Supabase Delete Error for ${table}: [Status ${response.status}]`, errBody);
+        }
     } catch (e) {
         console.warn(`Supabase Delete Error for ${table}:`, e);
     }
@@ -239,18 +247,16 @@ async function syncFromSupabase() {
         for (const s of sellers) {
             const key = `seller_tasks_${s.email}`;
             const remoteTasks = await supabaseFetch(`comercial_tasks?owner=eq.${s.email}`) || [];
-            if (remoteTasks && remoteTasks.length > 0) {
-                // Mapeia de volta para o formato de array simples esperado pelo frontend
-                const formattedTasks = remoteTasks.map(t => ({
-                    id: t.id,
-                    text: t.text,
-                    done: t.done,
-                    date: t.date,
-                    priority: t.priority,
-                    assignedBy: t.assignedBy
-                }));
-                localStorage.setItem(key, JSON.stringify(formattedTasks));
-            }
+            // Mapeia de volta para o formato de array simples esperado pelo frontend
+            const formattedTasks = remoteTasks.map(t => ({
+                id: t.id,
+                text: t.text,
+                done: t.done === true || t.done === "true" || t.done === 1 || t.done === "1",
+                date: t.date,
+                priority: t.priority || "normal",
+                assignedBy: t.assignedBy
+            }));
+            localStorage.setItem(key, JSON.stringify(formattedTasks));
         }
     } catch (e) { console.log("Tasks sync fallback:", e.message); }
 

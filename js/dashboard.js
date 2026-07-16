@@ -846,6 +846,23 @@ export const Dashboard = {
                 renderAssignedTasks();
             });
         };
+
+        if (!window._adminTasksListenerBound) {
+            const handleAdminTasksUpdate = () => {
+                const viewSel = document.getElementById("admin-task-view-seller");
+                if (viewSel && viewSel.value) {
+                    renderAssignedTasks();
+                }
+                import('./dashboard.js').then(m => {
+                    if (m.Dashboard && typeof m.Dashboard.renderTasksWeekChart === 'function') {
+                        m.Dashboard.renderTasksWeekChart();
+                    }
+                });
+            };
+            window.addEventListener("storage", handleAdminTasksUpdate);
+            window.addEventListener("vellia:tasksChanged", handleAdminTasksUpdate);
+            window._adminTasksListenerBound = true;
+        }
     },
 
     // ===========================================================================

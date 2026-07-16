@@ -147,6 +147,87 @@ function processIncomingLead(lead) {
     }
 }
 
+// ─── Processar nova tarefa ou alteração de tarefa recebida via WS ──────
+function processIncomingTask(type, record, oldRecord) {
+    const task = record || oldRecord;
+    if (!task || !task.owner) return;
+
+    const ownerEmail = task.owner;
+    const localKey = `seller_tasks_${ownerEmail}`;
+    let localTasks = [];
+    try {
+        localTasks = JSON.parse(localStorage.getItem(localKey)) || [];
+    } catch (e) {
+        localTasks = [];
+    }
+
+    const taskId = task.id;
+    const taskText = task.text;
+
+    // Localizar a tarefa local correspondente
+    const existingIndex = localTasks.findIndex(t => t.id === taskId || (t.text === taskText && t.date === task.date));
+
+    if (type === "INSERT" || type === "UPDATE") {
+        const formattedTask = {
+            id: task.id,
+            text: task.text,
+            done: task.done === true || task.done === "true" || task.done === 1 || task.done === "1",
+            date: task.date,
+            priority: task.priority || "normal",
+            assignedBy: task.assignedBy
+        };
+
+        if (existingIndex !== -1) {
+            // Verificar se houve alteração real para evitar loops/re-renderizações desnecessárias
+            const existing = localTasks[existingIndex];
+            if (
+                existing.done === formattedTask.done &&
+                existing.text === formattedTask.text &&
+                existing.priority === formattedTask.priority
+            ) {
+                return; // Nenhuma mudança real
+            }
+            localTasks[existingIndex] = formattedTask;
+        } else {
+            localTasks.push(formattedTask);
+        }
+    } else if (type === "DELETE" || type === "DELETE_ROW") {
+        if (existingIndex === -1) return; // Não encontrada localmente, nada a fazer
+        localTasks.splice(existingIndex, 1);
+    } else {
+        return; // Evento desconhecido
+    }
+
+    // Salvar localmente
+    localStorage.setItem(localKey, JSON.stringify(localTasks));
+
+    // Obter o usuário logado atualmente para decidir se notifica
+    let currentUser = null;
+    try {
+        currentUser = JSON.parse(localStorage.getItem("comercial_session"));
+    } catch (e) {}
+
+    // Notificar visualmente o vendedor se for uma nova tarefa atribuída por outra pessoa
+    if (currentUser && ownerEmail.toLowerCase() === currentUser.email.toLowerCase()) {
+        if (type === "INSERT" && task.assignedBy && task.assignedBy.toLowerCase() !== currentUser.email.toLowerCase()) {
+            window.dispatchEvent(new CustomEvent("vellia:aiNotification", {
+                detail: {
+                    id: `task_assigned_${task.id || Date.now()}`,
+                    title: `📋 Nova Tarefa Atribuída!`,
+                    message: `O gestor atribuiu a você a tarefa: "${task.text}" (Prioridade: ${task.priority || "normal"})`,
+                    type: task.priority === "high" ? "danger" : "info"
+                }
+            }));
+        }
+    }
+
+    // Disparar eventos para atualizar a UI
+    window.dispatchEvent(new CustomEvent("vellia:tasksChanged", {
+        detail: { owner: ownerEmail, type, task }
+    }));
+    window.dispatchEvent(new Event("storage"));
+}
+
 // ─── Heartbeat para manter WS vivo ───────────────────────────────────
 function startHeartbeat() {
     clearInterval(heartbeatTimer);
@@ -196,6 +277,20 @@ export function connectRealtime() {
             ref: String(joinRef++),
             join_ref: String(joinRef)
         }));
+
+        // Entrar no canal da tabela comercial_tasks
+        ws.send(JSON.stringify({
+            topic: "realtime:public:comercial_tasks",
+            event: "phx_join",
+            payload: {
+                config: {
+                    broadcast: { self: false },
+                    presence: { key: "" }
+                }
+            },
+            ref: String(joinRef++),
+            join_ref: String(joinRef)
+        }));
     };
 
     ws.onmessage = (event) => {
@@ -204,11 +299,11 @@ export function connectRealtime() {
 
             // Confirmar join bem-sucedido
             if (msg.event === "phx_reply" && msg.payload?.status === "ok") {
-                console.log("📡 [Realtime] Canal comercial_leads inscrito.");
+                console.log("📡 [Realtime] Canal inscrito:", msg.topic);
                 return;
             }
 
-            // Evento de INSERT na tabela
+            // Evento de INSERT na tabela comercial_leads
             if (
                 msg.topic === "realtime:public:comercial_leads" &&
                 msg.event === "INSERT"
@@ -217,11 +312,29 @@ export function connectRealtime() {
                 if (lead) processIncomingLead(lead);
             }
 
+            // Evento na tabela comercial_tasks
+            if (msg.topic === "realtime:public:comercial_tasks") {
+                const type = msg.event; // "INSERT", "UPDATE", "DELETE"
+                const record = msg.payload?.record || msg.payload?.new_record || msg.payload?.data?.record;
+                const oldRecord = msg.payload?.old_record || msg.payload?.data?.old_record;
+                processIncomingTask(type, record, oldRecord);
+            }
+
             // Supabase Realtime v2: eventos aninhados em postgres_changes
             if (msg.event === "broadcast" || msg.event === "postgres_changes") {
                 const changes = msg.payload?.data || msg.payload;
-                if (changes?.type === "INSERT" && changes?.record) {
-                    processIncomingLead(changes.record);
+                if (changes) {
+                    if (changes.table === "comercial_leads") {
+                        if (changes.type === "INSERT" || changes.type === "UPDATE") {
+                            const lead = changes.record || changes.new_record;
+                            if (lead) processIncomingLead(lead);
+                        }
+                    } else if (changes.table === "comercial_tasks") {
+                        const type = changes.type;
+                        const record = changes.record || changes.new_record;
+                        const oldRecord = changes.old_record;
+                        processIncomingTask(type, record, oldRecord);
+                    }
                 }
             }
 

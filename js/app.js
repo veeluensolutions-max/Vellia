@@ -655,13 +655,15 @@ function setupDailyTaskEvents(userEmail) {
         });
     };
     
-    // Ouvir alterações de localStorage vindas de outras abas ou da própria página
-    window.addEventListener("storage", () => {
+    // Ouvir alterações de localStorage vindas de outras abas ou eventos real-time
+    const handleTasksUpdate = () => {
         const user = Auth.getCurrentUser();
         if (user && user.role === "seller") {
             renderSellerDailyTasks(user.email);
         }
-    });
+    };
+    window.addEventListener("storage", handleTasksUpdate);
+    window.addEventListener("vellia:tasksChanged", handleTasksUpdate);
 }
 
 // Notificação push: detecta novos leads atribuídos desde o último check

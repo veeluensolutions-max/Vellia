@@ -96,7 +96,8 @@ const SUPABASE_URL = "https://ogrbsonpkiamoytxjshg.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Wi3eKJi5uyEzqihEDF6Eaw_-i0zcHe7";
 
 async function supabaseFetch(table) {
-    const url = `${SUPABASE_URL}/rest/v1/${table}?select=*`;
+    const separator = table.includes('?') ? '&' : '?';
+    const url = `${SUPABASE_URL}/rest/v1/${table}${separator}select=*`;
     const response = await fetch(url, {
         headers: {
             "apikey": SUPABASE_KEY,
@@ -241,6 +242,7 @@ async function syncFromSupabase() {
             if (remoteTasks && remoteTasks.length > 0) {
                 // Mapeia de volta para o formato de array simples esperado pelo frontend
                 const formattedTasks = remoteTasks.map(t => ({
+                    id: t.id,
                     text: t.text,
                     done: t.done,
                     date: t.date,
@@ -638,7 +640,7 @@ export const Store = {
             for (let i = 0; i < tasks.length; i++) {
                 const t = tasks[i];
                 const dbTask = {
-                    id: `task_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 4)}`,
+                    id: t.id || `task_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 4)}`,
                     owner: email,
                     text: t.text,
                     done: t.done,

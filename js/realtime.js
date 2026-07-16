@@ -15,6 +15,7 @@ let reconnectDelay = 3000;
 let heartbeatTimer = null;
 let joinRef    = 1;
 let msgRef     = 1;
+let pingStartTimes = {};
 
 // ─── Toast de notificação ──────────────────────────────────────────────
 function showRealtimeToast(lead) {
@@ -234,11 +235,13 @@ function startHeartbeat() {
     clearInterval(heartbeatTimer);
     heartbeatTimer = setInterval(() => {
         if (ws && ws.readyState === WebSocket.OPEN) {
+            const ref = String(msgRef++);
+            pingStartTimes[ref] = Date.now();
             ws.send(JSON.stringify({
                 topic: "phoenix",
                 event: "heartbeat",
                 payload: {},
-                ref: String(msgRef++)
+                ref: ref
             }));
         }
     }, 25000);
@@ -264,6 +267,18 @@ export function connectRealtime() {
         console.log("✅ [Realtime] WebSocket conectado ao Supabase.");
         updateStatusBadge(true);
         startHeartbeat();
+
+        // Configurar popover interativo ao clicar no badge
+        const badge = document.getElementById("realtime-status-badge");
+        if (badge && !badge.dataset.listenerBound) {
+            badge.dataset.listenerBound = "true";
+            badge.style.cursor = "pointer";
+            badge.title = "Clique para ver detalhes da conexão";
+            badge.addEventListener("click", (e) => {
+                e.stopPropagation();
+                toggleRealtimePopover(badge);
+            });
+        }
 
         // Entrar no canal da tabela comercial_leads
         ws.send(JSON.stringify({
@@ -298,10 +313,19 @@ export function connectRealtime() {
         try {
             const msg = JSON.parse(event.data);
 
-            // Confirmar join bem-sucedido
-            if (msg.event === "phx_reply" && msg.payload?.status === "ok") {
-                console.log("📡 [Realtime] Canal inscrito:", msg.topic);
-                return;
+            // Resposta de heartbeat/ping ou confirmação de join
+            if (msg.event === "phx_reply") {
+                if (pingStartTimes[msg.ref]) {
+                    const latency = Date.now() - pingStartTimes[msg.ref];
+                    window.realtimeLatency = latency;
+                    delete pingStartTimes[msg.ref];
+                    const pingEl = document.getElementById("realtime-ping");
+                    if (pingEl) pingEl.textContent = `${latency} ms`;
+                }
+                if (msg.payload?.status === "ok") {
+                    console.log("📡 [Realtime] Canal inscrito:", msg.topic);
+                    return;
+                }
             }
 
             // Evento de INSERT na tabela comercial_leads
@@ -409,3 +433,153 @@ window.addEventListener("vellia:localTasksMutated", (e) => {
         broadcastTaskChange(owner);
     }
 });
+
+// Popover interativo com estatísticas da conexão realtime
+function toggleRealtimePopover(badge) {
+    const existing = document.getElementById("realtime-status-popover");
+    if (existing) {
+        existing.remove();
+        return;
+    }
+
+    const rect = badge.getBoundingClientRect();
+    const popover = document.createElement("div");
+    popover.id = "realtime-status-popover";
+    popover.style.cssText = `
+        position: fixed;
+        top: ${rect.bottom + window.scrollY + 8}px;
+        right: ${window.innerWidth - rect.right}px;
+        width: 290px;
+        background: var(--bg-card, #1e293b);
+        border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+        border-radius: 14px;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+        padding: 16px;
+        z-index: 99999;
+        font-family: inherit;
+        animation: slideDownFade 0.2s ease;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        color: var(--text-primary, #f1f5f9);
+    `;
+
+    // Obter estatísticas locais de leads e tasks
+    let leadsCount = 0;
+    let tasksCount = 0;
+    try {
+        leadsCount = (JSON.parse(localStorage.getItem("comercial_leads")) || []).length;
+    } catch(e){}
+    try {
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.startsWith("seller_tasks_")) {
+                tasksCount += (JSON.parse(localStorage.getItem(key)) || []).length;
+            }
+        }
+    } catch(e){}
+
+    const latency = window.realtimeLatency ? `${window.realtimeLatency} ms` : "Calculando...";
+
+    popover.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1)); padding-bottom: 8px;">
+            <span style="font-size: 14px;">⚡</span>
+            <strong style="font-size: 13.5px; font-weight: 700; color: var(--text-primary);">Conexão Supabase Realtime</strong>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12px; color: var(--text-secondary, #94a3b8); margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between;">
+                <span>Status da Sessão:</span>
+                <strong style="color: #10b981;">Ativa</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span>Latência (Ping):</span>
+                <strong id="realtime-ping" style="color: var(--text-primary);">${latency}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span>Leads na Cache:</span>
+                <strong style="color: var(--text-primary);">${leadsCount} registros</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span>Tarefas na Cache:</span>
+                <strong style="color: var(--text-primary);">${tasksCount} registradas</strong>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 2px; margin-top: 4px;">
+                <span style="font-size: 10px; color: var(--text-muted);">Canais WebSocket Inscritos:</span>
+                <code style="font-size: 9.5px; background: rgba(0,0,0,0.2); padding: 2px 4px; border-radius: 4px; color: var(--primary); font-family: monospace;">comercial_leads (Replication)</code>
+                <code style="font-size: 9.5px; background: rgba(0,0,0,0.2); padding: 2px 4px; border-radius: 4px; color: var(--primary); font-family: monospace;">comercial_tasks (Hybrid Sync)</code>
+            </div>
+        </div>
+        <button id="btn-force-sync-realtime" style="
+            width: 100%; padding: 8px 12px; border-radius: 8px;
+            background: var(--primary, #6366f1); color: #fff;
+            border: none; font-size: 12px; font-weight: 700;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+            transition: all 0.2s; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.2);
+        ">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="sync-icon" style="transition: transform 1s ease;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            <span>Forçar Sincronização</span>
+        </button>
+    `;
+
+    document.body.appendChild(popover);
+
+    if (!document.getElementById("style-popover-animation")) {
+        const style = document.createElement("style");
+        style.id = "style-popover-animation";
+        style.textContent = `
+            @keyframes slideDownFade {
+                from { opacity: 0; transform: translateY(-8px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            @keyframes spin {
+                100% { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    const syncBtn = popover.querySelector("#btn-force-sync-realtime");
+    syncBtn.addEventListener("click", async () => {
+        syncBtn.disabled = true;
+        syncBtn.style.opacity = "0.7";
+        syncBtn.style.cursor = "not-allowed";
+        const icon = syncBtn.querySelector(".sync-icon");
+        if (icon) icon.style.animation = "spin 1s linear infinite";
+        syncBtn.querySelector("span").textContent = "Sincronizando...";
+
+        try {
+            await Store.syncFromSupabase();
+            
+            syncBtn.querySelector("span").textContent = "Sincronizado! 🎉";
+            if (icon) icon.style.animation = "";
+            syncBtn.style.background = "#10b981";
+            syncBtn.style.boxShadow = "0 4px 10px rgba(16, 185, 129, 0.2)";
+            
+            if (window.dispatchEvent) {
+                window.dispatchEvent(new Event("storage"));
+            }
+
+            setTimeout(() => {
+                popover.remove();
+            }, 1200);
+        } catch(err) {
+            syncBtn.querySelector("span").textContent = "Erro na sincronização";
+            if (icon) icon.style.animation = "";
+            syncBtn.style.background = "#dc2626";
+            setTimeout(() => {
+                syncBtn.disabled = false;
+                syncBtn.style.opacity = "1";
+                syncBtn.style.cursor = "pointer";
+                syncBtn.querySelector("span").textContent = "Forçar Sincronização";
+                syncBtn.style.background = "var(--primary, #6366f1)";
+            }, 2000);
+        }
+    });
+
+    const clickOutside = (event) => {
+        if (!popover.contains(event.target) && event.target !== badge) {
+            popover.remove();
+            document.removeEventListener("click", clickOutside);
+        }
+    };
+    document.addEventListener("click", clickOutside);
+}

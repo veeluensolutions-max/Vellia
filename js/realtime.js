@@ -3,6 +3,7 @@
  * Substitui o polling de 15s por eventos instantâneos via WebSocket.
  * Fallback automático: se o WS cair, o polling continua como seguro de rede.
  */
+import { Store } from "./store.js";
 
 const SUPABASE_URL     = "https://ogrbsonpkiamoytxjshg.supabase.co";
 const SUPABASE_KEY     = "sb_publishable_Wi3eKJi5uyEzqihEDF6Eaw_-i0zcHe7";
@@ -320,11 +321,18 @@ export function connectRealtime() {
                 processIncomingTask(type, record, oldRecord);
             }
 
-            // Supabase Realtime v2: eventos aninhados em postgres_changes
+            // Supabase Realtime v2: eventos aninhados em postgres_changes ou broadcast
             if (msg.event === "broadcast" || msg.event === "postgres_changes") {
                 const changes = msg.payload?.data || msg.payload;
                 if (changes) {
-                    if (changes.table === "comercial_leads") {
+                    if (changes.event === "tasks_changed" || (msg.payload && msg.payload.event === "tasks_changed")) {
+                        const payloadData = changes.payload || msg.payload.payload;
+                        const ownerEmail = payloadData?.owner;
+                        if (ownerEmail) {
+                            console.log("⚡ [Realtime] Broadcast de tarefas recebido para:", ownerEmail);
+                            Store.syncTasksForUser(ownerEmail);
+                        }
+                    } else if (changes.table === "comercial_leads") {
                         if (changes.type === "INSERT" || changes.type === "UPDATE") {
                             const lead = changes.record || changes.new_record;
                             if (lead) processIncomingLead(lead);
@@ -377,3 +385,27 @@ export function disconnectRealtime() {
 }
 
 export const isRealtimeActive = () => wsActive;
+
+export function broadcastTaskChange(ownerEmail) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+            topic: "realtime:public:comercial_tasks",
+            event: "broadcast",
+            payload: {
+                type: "broadcast",
+                event: "tasks_changed",
+                payload: { owner: ownerEmail }
+            },
+            ref: String(msgRef++)
+        }));
+        console.log("⚡ [Realtime] Enviou broadcast de alteração de tarefas para:", ownerEmail);
+    }
+}
+
+// Escutar alterações locais de tarefas para realizar o broadcast
+window.addEventListener("vellia:localTasksMutated", (e) => {
+    const { owner } = e.detail || {};
+    if (owner) {
+        broadcastTaskChange(owner);
+    }
+});

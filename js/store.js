@@ -650,8 +650,65 @@ export const Store = {
                 };
                 await upsertSupabase("comercial_tasks", dbTask);
             }
+
+            // Disparar evento local de que as tarefas foram alteradas para fazer o broadcast via WebSocket
+            window.dispatchEvent(new CustomEvent("vellia:localTasksMutated", {
+                detail: { owner: email }
+            }));
         } catch (e) {
             console.warn("Erro ao sincronizar tarefas no Supabase:", e);
+        }
+    },
+
+    async syncTasksForUser(email) {
+        try {
+            const key = `seller_tasks_${email}`;
+            const remoteTasks = await supabaseFetch(`comercial_tasks?owner=eq.${email}`) || [];
+            const formattedTasks = remoteTasks.map(t => ({
+                id: t.id,
+                text: t.text,
+                done: t.done === true || t.done === "true" || t.done === 1 || t.done === "1",
+                date: t.date,
+                priority: t.priority || "normal",
+                assignedBy: t.assignedBy
+            }));
+            localStorage.setItem(key, JSON.stringify(formattedTasks));
+
+            // Obter o usuário logado atualmente para decidir se notifica de novas tarefas
+            let currentUser = null;
+            try {
+                currentUser = JSON.parse(localStorage.getItem("comercial_session"));
+            } catch (e) {}
+
+            // Notificar se novas tarefas foram atribuídas por outra pessoa
+            if (currentUser && email.toLowerCase() === currentUser.email.toLowerCase()) {
+                const oldTasks = JSON.parse(localStorage.getItem(`seller_tasks_old_${email}`) || "[]");
+                const newAssignedTasks = formattedTasks.filter(t => 
+                    t.assignedBy && 
+                    t.assignedBy.toLowerCase() !== currentUser.email.toLowerCase() && 
+                    !oldTasks.some(old => old.id === t.id)
+                );
+                
+                newAssignedTasks.forEach(t => {
+                    window.dispatchEvent(new CustomEvent("vellia:aiNotification", {
+                        detail: {
+                            id: `task_assigned_${t.id || Date.now()}`,
+                            title: `📋 Nova Tarefa Atribuída!`,
+                            message: `O gestor atribuiu a você a tarefa: "${t.text}" (Prioridade: ${t.priority || "normal"})`,
+                            type: t.priority === "high" ? "danger" : "info"
+                        }
+                    }));
+                });
+                localStorage.setItem(`seller_tasks_old_${email}`, JSON.stringify(formattedTasks));
+            }
+
+            window.dispatchEvent(new CustomEvent("vellia:tasksChanged", {
+                detail: { owner: email, type: "SYNC", tasks: formattedTasks }
+            }));
+            window.dispatchEvent(new Event("storage"));
+            return formattedTasks;
+        } catch (e) {
+            console.warn(`Erro ao sincronizar tarefas de ${email}:`, e);
         }
     },
 

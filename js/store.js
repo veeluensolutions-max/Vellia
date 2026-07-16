@@ -182,17 +182,17 @@ async function syncFromSupabase() {
 
     try {
         const leads = await supabaseFetch("comercial_leads");
-        if (leads && leads.length > 0) localStorage.setItem("comercial_leads", JSON.stringify(leads));
+        if (Array.isArray(leads)) localStorage.setItem("comercial_leads", JSON.stringify(leads));
     } catch (e) { console.log("Leads sync fallback:", e.message); }
 
     try {
         const proposals = await supabaseFetch("comercial_proposals");
-        if (proposals && proposals.length > 0) localStorage.setItem("comercial_proposals", JSON.stringify(proposals));
+        if (Array.isArray(proposals)) localStorage.setItem("comercial_proposals", JSON.stringify(proposals));
     } catch (e) { console.log("Proposals sync fallback:", e.message); }
 
     try {
         const logs = await supabaseFetch("comercial_logs");
-        if (logs && logs.length > 0) {
+        if (Array.isArray(logs)) {
             const sortedLogs = logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
             localStorage.setItem("comercial_logs", JSON.stringify(sortedLogs));
         }

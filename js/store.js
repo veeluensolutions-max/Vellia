@@ -632,24 +632,47 @@ export const Store = {
         const key = `seller_tasks_${email}`;
         localStorage.setItem(key, JSON.stringify(tasks));
         
-        // Sincronizar com Supabase: primeiro removemos as tarefas antigas do dia e inserimos as novas
+        // Sincronizar com Supabase utilizando comparação de listas (diff sync)
         try {
-            await deleteSupabase("comercial_tasks", `?owner=eq.${email}`);
+            const remoteTasks = await supabaseFetch(`comercial_tasks?owner=eq.${email}`) || [];
             
-            // Subir novas
+            // 1. Identificar tarefas a deletar (existem no remoto mas não localmente)
+            const localIds = tasks.map(t => t.id).filter(Boolean);
+            const toDelete = remoteTasks.filter(rt => rt.id && !localIds.includes(rt.id));
+            for (const rt of toDelete) {
+                await deleteSupabase("comercial_tasks", `?id=eq.${rt.id}`);
+            }
+            
+            // 2. Inserir ou atualizar tarefas locais
             for (let i = 0; i < tasks.length; i++) {
                 const t = tasks[i];
+                if (!t.id) {
+                    t.id = `task_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 4)}`;
+                }
+                
+                // Verificar se houve alteração em relação ao banco remoto
+                const remoteMatch = remoteTasks.find(rt => rt.id === t.id);
+                if (remoteMatch) {
+                    const doneMatch = remoteMatch.done === t.done || (remoteMatch.done === "true" && t.done) || (remoteMatch.done === "false" && !t.done);
+                    if (remoteMatch.text === t.text && doneMatch && remoteMatch.priority === t.priority) {
+                        continue; // Nenhuma modificação, pula o POST de upsert
+                    }
+                }
+                
                 const dbTask = {
-                    id: t.id || `task_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 4)}`,
+                    id: t.id,
                     owner: email,
                     text: t.text,
-                    done: t.done,
+                    done: t.done === true || t.done === "true" || t.done === 1 || t.done === "1",
                     date: t.date,
                     priority: t.priority || "normal",
                     assignedBy: t.assignedBy || "sistema@vellia.com"
                 };
                 await upsertSupabase("comercial_tasks", dbTask);
             }
+
+            // Atualizar localStorage com os IDs possivelmente gerados
+            localStorage.setItem(key, JSON.stringify(tasks));
 
             // Disparar evento local de que as tarefas foram alteradas para fazer o broadcast via WebSocket
             window.dispatchEvent(new CustomEvent("vellia:localTasksMutated", {

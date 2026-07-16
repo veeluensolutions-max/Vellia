@@ -99,7 +99,7 @@ export const Users = {
                         box-shadow: 0 2px 8px rgba(0,0,0,0.15);
                     ">${avatarText}</div>
                     <div>
-                        <span style="font-weight: 700; font-size: 13px; color: var(--text-primary); display: block;">${user.name}</span>
+                        <span style="font-weight: 700; font-size: 13px; color: var(--text-primary); display: block; max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${user.name}">${user.name}</span>
                         ${isSelf ? '<span style="font-size: 10px; color: var(--primary); font-weight: 600; background: rgba(99,102,241,0.1); padding: 1px 6px; border-radius: 4px;">Você</span>' : ''}
                     </div>
                 </div>
@@ -109,7 +109,7 @@ export const Users = {
             // Coluna de E-mail
             const tdEmail = document.createElement("td");
             tdEmail.style.cssText = "padding: 14px 16px;";
-            tdEmail.innerHTML = `<span style="font-size: 12.5px; color: var(--text-secondary); font-family: monospace;">${user.email}</span>`;
+            tdEmail.innerHTML = `<span style="font-size: 12.5px; color: var(--text-secondary); font-family: monospace; display: block; max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${user.email}">${user.email}</span>`;
             tr.appendChild(tdEmail);
 
             // Coluna de Cargo

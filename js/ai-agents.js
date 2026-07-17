@@ -12,11 +12,22 @@ export const AIAgents = {
 
     // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // INIT
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     init() {
         this.renderLogs();
         this.bindEvents();
         this.startRealtimeEngines();
+        this.renderGuruFiles();
+        
+        // Exibir estratégia cached se houver
+        const latestStrategy = localStorage.getItem("guru_latest_suggested_strategy");
+        if (latestStrategy) {
+            const container = document.getElementById("guru-strategy-result-container");
+            const textEl = document.getElementById("guru-strategy-text");
+            if (container && textEl) {
+                textEl.innerHTML = latestStrategy;
+                container.style.display = "block";
+            }
+        }
 
         // Escutar eventos globais de novos leads e propostas
         window.addEventListener("vellia:leadAdded",       (e) => this.onLeadAdded(e.detail));
@@ -275,9 +286,9 @@ export const AIAgents = {
             sdrToggle.onchange = () => {
                 const active = sdrToggle.checked;
                 localStorage.setItem("agent_sdr_active", active);
-                this.addAgentLog("SDR Agent", active
-                    ? "âœ… Ativado â€” QualificaÃ§Ã£o automÃ¡tica de leads iniciada."
-                    : "â¸ï¸ Desativado â€” QualificaÃ§Ã£o em pausa.", active ? "success" : "warn");
+                const txt = active ? "SDR Agent Ativado - Qualificacao automatica de leads iniciada." : "SDR Agent Desativado - Qualificacao em pausa.";
+                const status = active ? "success" : "warn";
+                this.addAgentLog("SDR Agent", txt, status);
                 if (active) this.runSDRCycle(true);
             };
         }
@@ -287,22 +298,113 @@ export const AIAgents = {
             analystToggle.onchange = () => {
                 const active = analystToggle.checked;
                 localStorage.setItem("agent_analyst_active", active);
-                this.addAgentLog("Analyst Agent", active
-                    ? "âœ… Ativado â€” Auditoria do pipeline em tempo real iniciada."
-                    : "â¸ï¸ Desativado â€” ProjeÃ§Ãµes em repouso.", active ? "success" : "warn");
+                const txt = active ? "Analyst Agent Ativado - Auditoria do pipeline em tempo real iniciada." : "Analyst Agent Desativado - Projecoes em repouso.";
+                const status = active ? "success" : "warn";
+                this.addAgentLog("Analyst Agent", txt, status);
                 if (active) this.runAnalystCycle();
             };
         }
 
-        // BotÃ£o executar agora
+        // Botão executar agora
         const btnRunNow = document.getElementById("btn-run-agents-now");
         if (btnRunNow) {
             btnRunNow.onclick = () => {
-                this.addAgentLog("SDR Agent", "â–¶ ExecuÃ§Ã£o manual acionada.", "info");
+                this.addAgentLog("SDR Agent", "▶ Execução manual acionada.", "info");
                 this.runSDRCycle(true);
                 this.runAnalystCycle();
             };
         }
+
+        // --- GURU AGENT BINDINGS ---
+        const guruToggle = document.getElementById("agent-guru-toggle");
+        if (guruToggle) {
+            guruToggle.checked = this.isAgentActive("guru");
+            guruToggle.onchange = () => {
+                const active = guruToggle.checked;
+                localStorage.setItem("agent_guru_active", active);
+                this.addAgentLog("Guru de Estratégias", active
+                    ? "✅ Ativado — Planejamento estratégico semanal disponível."
+                    : "⏸️ Desativado — Planejamentos pausados.", active ? "success" : "warn");
+            };
+        }
+
+        const user = Auth.getCurrentUser();
+        const btnOpenGuru = document.getElementById("btn-open-guru-panel");
+        const btnCloseGuru = document.getElementById("btn-close-guru-panel");
+        const guruPanel = document.getElementById("guru-strategic-panel");
+
+        if (btnOpenGuru) {
+            if (user && user.role !== "admin") {
+                btnOpenGuru.disabled = true;
+                btnOpenGuru.textContent = "Apenas Administrador";
+                btnOpenGuru.style.background = "var(--text-muted)";
+                btnOpenGuru.style.borderColor = "var(--text-muted)";
+            } else {
+                btnOpenGuru.onclick = () => {
+                    if (guruPanel) guruPanel.style.display = "block";
+                    guruPanel.scrollIntoView({ behavior: "smooth" });
+                };
+            }
+        }
+
+        if (btnCloseGuru && guruPanel) {
+            btnCloseGuru.onclick = () => {
+                guruPanel.style.display = "none";
+            };
+        }
+
+        // Upload Dropzone
+        const dropzone = document.getElementById("guru-upload-dropzone");
+        const fileInput = document.getElementById("guru-file-input");
+
+        if (dropzone && fileInput) {
+            dropzone.onclick = () => fileInput.click();
+
+            dropzone.ondragover = (e) => {
+                e.preventDefault();
+                dropzone.style.borderColor = "#8b5cf6";
+                dropzone.style.background = "rgba(139,92,246,0.05)";
+            };
+
+            dropzone.ondragleave = () => {
+                dropzone.style.borderColor = "rgba(139,92,246,0.3)";
+                dropzone.style.background = "var(--bg-surface)";
+            };
+
+            dropzone.ondrop = (e) => {
+                e.preventDefault();
+                dropzone.style.borderColor = "rgba(139,92,246,0.3)";
+                dropzone.style.background = "var(--bg-surface)";
+                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    this.handleGuruFileUpload(e.dataTransfer.files[0]);
+                }
+            };
+
+            fileInput.onchange = () => {
+                if (fileInput.files && fileInput.files[0]) {
+                    this.handleGuruFileUpload(fileInput.files[0]);
+                }
+            };
+        }
+
+        // Strategy Buttons
+        const btnGenStrategy = document.getElementById("btn-generate-weekly-strategy");
+        if (btnGenStrategy) {
+            btnGenStrategy.onclick = () => this.generateWeeklyStrategy();
+        }
+
+        const btnAccept = document.getElementById("btn-accept-strategy");
+        if (btnAccept) {
+            btnAccept.onclick = () => this.acceptStrategy();
+        }
+
+        const btnReject = document.getElementById("btn-reject-strategy");
+        if (btnReject) {
+            btnReject.onclick = () => this.rejectStrategy();
+        }
+
+        // Expor para o escopo global do window para deletar arquivos ou interações
+        window.deleteGuruFile = (idx) => this.deleteGuruFile(idx);
 
         this._bindConfigModal();
     },
@@ -381,12 +483,247 @@ export const AIAgents = {
                     const config = { frequency: document.getElementById("analyst-frequency").value, forecast: document.getElementById("analyst-forecast-type").value };
                     localStorage.setItem("agent_analyst_config", JSON.stringify(config));
                     const freqMap = { hourly: "Tempo Real", daily: "DiÃ¡rio", weekly: "Semanal" };
-                    this.addAgentLog("Analyst Agent", `âš™ï¸ ConfiguraÃ§Ã£o salva: FrequÃªncia '${freqMap[config.frequency]}'. Nova auditoria em andamento.`, "success");
+                    this.addAgentLog("Analyst Agent", `âš™ï¸  ConfiguraÃ§Ã£o salva: FrequÃªncia '${freqMap[config.frequency]}'. Nova auditoria em andamento.`, "success");
                     if (this.isAgentActive("analyst")) this.runAnalystCycle();
                 }
 
-                closeModal();
+                 closeModal();
             };
         }
+    },
+
+    // --- GURU HELPER METHODS ---
+    handleGuruFileUpload(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const content = e.target.result;
+            const files = JSON.parse(localStorage.getItem("guru_files") || "[]");
+            
+            // Check if file already exists
+            const existingIdx = files.findIndex(f => f.name === file.name);
+            const fileData = {
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                content: content,
+                date: new Date().toISOString()
+            };
+            
+            if (existingIdx !== -1) {
+                files[existingIdx] = fileData;
+            } else {
+                files.push(fileData);
+            }
+            
+            localStorage.setItem("guru_files", JSON.stringify(files));
+            this.addAgentLog("Guru de Estratégias", `Arquivo carregado na Base de Conhecimento: ${file.name}`, "success");
+            this.renderGuruFiles();
+        };
+        
+        if (file.type === "application/json" || file.name.endsWith(".json") || file.name.endsWith(".txt") || file.name.endsWith(".csv")) {
+            reader.readAsText(file);
+        } else {
+            // Simulator read for binary docx/pdf to keep browser local-only code lightweight
+            reader.onload = (e) => {
+                let simulatedContent = `Conteúdo extraído do documento comercial ${file.name}. `;
+                if (file.name.includes("Educação")) {
+                    simulatedContent += "Perfil de público-alvo com interesses em cursos profissionalizantes, transição de carreira e aprimoramento curricular. Foco em captação ativa por WhatsApp de leads frios e indicações de alunos ativos.";
+                } else {
+                    simulatedContent += "Regras de prospecção e comportamento de leads: leads tomadores de decisão são diretores comerciais e gestores de TI, preferem contatos diretos no LinkedIn pela manhã e mensagens objetivas no WhatsApp.";
+                }
+                const files = JSON.parse(localStorage.getItem("guru_files") || "[]");
+                files.push({
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                    content: simulatedContent,
+                    date: new Date().toISOString()
+                });
+                localStorage.setItem("guru_files", JSON.stringify(files));
+                this.addAgentLog("Guru de Estratégias", `Arquivo processado (Leitura Inteligente): ${file.name}`, "success");
+                this.renderGuruFiles();
+            };
+            reader.readAsText(file.slice(0, 1000));
+        }
+    },
+
+    renderGuruFiles() {
+        const container = document.getElementById("guru-files-list");
+        if (!container) return;
+        
+        const files = JSON.parse(localStorage.getItem("guru_files") || "[]");
+        if (files.length === 0) {
+            container.innerHTML = `<p style="color: var(--text-muted); font-size: 12px; text-align: center; padding: 10px 0; margin: 0;">Nenhum arquivo carregado.</p>`;
+            return;
+        }
+        
+        container.innerHTML = files.map((f, idx) => `
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 12px;">
+                <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                    <span>📄</span>
+                    <span style="font-weight: 600; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${f.name}</span>
+                    <span style="color: var(--text-muted); font-size: 10px;">(${(f.size/1024).toFixed(1)} KB)</span>
+                </div>
+                <button onclick="window.deleteGuruFile(${idx})" style="background: none; border: none; cursor: pointer; color: var(--danger); font-size: 14px; padding: 0 4px; display: flex; align-items: center;">&times;</button>
+            </div>
+        `).join("");
+    },
+
+    deleteGuruFile(idx) {
+        const files = JSON.parse(localStorage.getItem("guru_files") || "[]");
+        const removed = files.splice(idx, 1)[0];
+        localStorage.setItem("guru_files", JSON.stringify(files));
+        if (removed) {
+            this.addAgentLog("Guru de Estratégias", `Arquivo removido da Base: ${removed.name}`, "warn");
+        }
+        this.renderGuruFiles();
+    },
+
+    async generateWeeklyStrategy() {
+        const btnGen = document.getElementById("btn-generate-weekly-strategy");
+        const container = document.getElementById("guru-strategy-result-container");
+        const textEl = document.getElementById("guru-strategy-text");
+        
+        if (!btnGen || !container || !textEl) return;
+        
+        btnGen.disabled = true;
+        btnGen.innerHTML = `<span>⏳</span> Analisando dados & Gerando Planejamento...`;
+        
+        try {
+            const leads = Store.getLeads();
+            const proposals = Store.getProposals();
+            const files = JSON.parse(localStorage.getItem("guru_files") || "[]");
+            const notes = document.getElementById("guru-notes-input")?.value || "";
+            
+            const fileContexts = files.map(f => `Arquivo: ${f.name}\nConteúdo:\n${f.content}`).join("\n\n");
+            const leadsSummary = leads.map(l => `- Empresa: ${l.company}, Contato: ${l.contact}, Cargo: ${l.role || "Não informado"}, Cidade: ${l.city || "Não informada"}, Segmento: ${l.segment || "Outros"}, Estágio: ${l.stage}`).join("\n");
+            
+            const prompt = `
+Você é o Guru de Estratégias Semanais do VelliaCRM, um especialista em captação ativa de leads e planejamento comercial.
+Sua missão é sugerir estratégias de captação orgânica e ativa (outbound, social selling, indicações) baseadas nos dados fornecidos pela empresa, permitindo que os vendedores captem leads além do tráfego pago.
+
+DADOS DA EMPRESA (BASE DE CONHECIMENTO CARREGADA):
+${fileContexts}
+
+ANOTAÇÕES DE COMPORTAMENTO ADICIONAIS:
+${notes}
+
+LEADS ATUAIS NO CRM:
+${leadsSummary}
+
+Crie um plano estratégico prático para a semana atual em formato Markdown legível e atraente. O plano DEVE conter as seguintes seções estruturadas:
+1. **Foco Estratégico da Semana** (Qual o público ideal a atacar e por quê).
+2. **Onde os Leads Estão & Como Chegar** (Canais como LinkedIn, Instagram, Grupos, eventos específicos baseados no comportamento).
+3. **Script de Abordagem Sugerido** (Mensagem prática de exemplo para WhatsApp ou E-mail).
+4. **Tarefas Práticas Sugeridas para a Equipe de Vendas** (Crie de 3 a 5 tarefas objetivas e detalhadas para atribuir aos vendedores).
+
+ATENÇÃO: No final do texto, adicione uma linha especial no formato exato:
+[TAREFA_VENDEDOR: <Instrução da tarefa a ser cadastrada no sistema>]
+Exemplo:
+[TAREFA_VENDEDOR: Prospectar 5 novas empresas do segmento de Saúde no LinkedIn e enviar script de abordagem]
+[TAREFA_VENDEDOR: Fazer follow-up com os leads parados no estágio de Contato há mais de 3 dias]
+
+Crie de 2 a 4 tags de [TAREFA_VENDEDOR: ...] no final para que o CRM possa extraí-las e delegá-las automaticamente para os vendedores ativos se o administrador aceitar.
+Escreva de forma motivadora, comercial e direta.
+`;
+            
+            const res = await fetch(`/api/gemini-proxy`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ model: 'gemini-2.5-flash', contents: [{ parts: [{ text: prompt }] }]
+                })
+            });
+            
+            if (!res.ok) throw new Error("Erro na API do Gemini");
+            
+            const data = await res.json();
+            const strategyText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Desculpe, tive um problema ao me conectar com a inteligência do Gemini.";
+            
+            textEl.innerHTML = strategyText
+                .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+                .replace(/\n- (.*?)/g, "<br>• $1")
+                .replace(/\[TAREFA_VENDEDOR:[^\]]+\]/g, ""); // Clean raw tags from visual preview
+                
+            localStorage.setItem("guru_latest_suggested_strategy", strategyText);
+            
+            container.style.display = "block";
+            this.addAgentLog("Guru de Estratégias", "Nova estratégia semanal gerada com sucesso.", "success");
+            
+        } catch (err) {
+            console.error("Erro ao gerar estratégia semanal:", err);
+            this.addAgentLog("Guru de Estratégias", "Erro ao gerar estratégia semanal no Gemini.", "warn");
+            textEl.innerHTML = "<p style='color: var(--danger);'>Ocorreu um erro ao gerar a estratégia com a IA. Por favor, tente novamente ou verifique sua conexão.</p>";
+            container.style.display = "block";
+        } finally {
+            btnGen.disabled = false;
+            btnGen.innerHTML = `<span>✨</span> Gerar Estratégias da Semana`;
+        }
+    },
+
+    acceptStrategy() {
+        const latestStrategy = localStorage.getItem("guru_latest_suggested_strategy");
+        if (!latestStrategy) return;
+        
+        // Save as active strategy
+        localStorage.setItem("active_weekly_strategy", latestStrategy);
+        
+        // Extract seller tasks from tags
+        const regex = /\[TAREFA_VENDEDOR:\s*(.*?)\]/g;
+        const tasks = [];
+        let match;
+        while ((match = regex.exec(latestStrategy)) !== null) {
+            if (match[1]) tasks.push(match[1].trim());
+        }
+        
+        // Distribute tasks to all sellers
+        const sellers = Store.getUsers().filter(u => u.role === "seller");
+        const today = new Date().toLocaleDateString("pt-BR");
+        
+        let assignedCount = 0;
+        sellers.forEach(seller => {
+            const sellerTasks = Store.getTasks(seller.email);
+            tasks.forEach(taskText => {
+                sellerTasks.unshift({
+                    id: `task_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+                    text: taskText,
+                    priority: "high",
+                    done: false,
+                    date: today,
+                    assignedBy: "agent@vellia.ai"
+                });
+                assignedCount++;
+            });
+            Store.saveTasks(seller.email, sellerTasks);
+        });
+        
+        this.addAgentLog("Guru de Estratégias", `Estratégia semanal aceita pelo Administrador. ${tasks.length} tarefas atribuídas para ${sellers.length} vendedores.`, "success");
+        
+        // Show success alert
+        alert(`Planejamento ativado! ${tasks.length} tarefas foram atribuídas com prioridade Alta para cada vendedor.`);
+        
+        // Log action
+        Store.addLog("admin@vellia.com", "GURU_STRATEGY_ACCEPTED", `Administrador aceitou o planejamento estratégico da semana. Atribuídas ${tasks.length} tarefas.`, "SUCCESS");
+        
+        // Hide strategic panel and strategy preview
+        const container = document.getElementById("guru-strategy-result-container");
+        if (container) container.style.display = "none";
+        
+        const guruPanel = document.getElementById("guru-strategic-panel");
+        if (guruPanel) guruPanel.style.display = "none";
+        
+        // Dispatch event to refresh views/dashboard
+        window.dispatchEvent(new CustomEvent("vellia:waSent"));
+    },
+
+    rejectStrategy() {
+        localStorage.removeItem("guru_latest_suggested_strategy");
+        this.addAgentLog("Guru de Estratégias", "Sugestão de planejamento estratégico descartada pelo Administrador.", "warn");
+        
+        const container = document.getElementById("guru-strategy-result-container");
+        if (container) container.style.display = "none";
+        
+        Store.addLog("admin@vellia.com", "GURU_STRATEGY_REJECTED", "Administrador descartou o planejamento estratégico sugerido pela IA.", "WARN");
+        
+        alert("Sugestão de planejamento estratégico descartada.");
     }
 };

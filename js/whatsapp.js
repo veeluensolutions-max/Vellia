@@ -1,4 +1,4 @@
-import { Store } from "./store.js";
+﻿import { Store } from "./store.js";
 import { Auth } from "./auth.js";
 import { Audit } from "./audit.js";
 
@@ -252,11 +252,10 @@ Diretrizes:
 3. Termine com uma chamada de ação amigável (pergunta para abrir diálogo).
 4. Retorne APENAS o texto da mensagem comercial, sem introduções explicativas de IA nem aspas no início e fim.`;
 
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyBnEOB3E2JNL3u1Z6nxA1F8KMQfYvIqnLs`, {
+            const res = await fetch(`/api/gemini-proxy`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }]
+                body: JSON.stringify({ model: 'gemini-2.5-flash', contents: [{ parts: [{ text: prompt }] }]
                 })
             });
 

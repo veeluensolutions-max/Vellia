@@ -1,4 +1,4 @@
-import { Store } from "./store.js";
+﻿import { Store } from "./store.js";
 import { Auth } from "./auth.js";
 
 // =============================================================================
@@ -645,11 +645,10 @@ Escreva em formato Markdown limpo. Use emojis amigáveis no estilo do CRM.
 Pergunta do usuário: "${text}"
 `;
 
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyBnEOB3E2JNL3u1Z6nxA1F8KMQfYvIqnLs`, {
+                const res = await fetch(`/api/gemini-proxy`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: crmSummaryPrompt }] }]
+                    body: JSON.stringify({ model: 'gemini-2.5-flash', contents: [{ parts: [{ text: crmSummaryPrompt }] }]
                     })
                 });
 

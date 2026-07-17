@@ -580,6 +580,16 @@
                             </div>
                         </div>
 
+                        <!-- Planejamento da Semana (Guru de Estratégias) -->
+                        <div class="card" id="seller-weekly-strategy-card" style="display: none; margin-bottom: 24px; padding: 20px 24px; background: linear-gradient(135deg, rgba(139,92,246,0.08) 0%, rgba(99,102,241,0.04) 100%); border-left: 4px solid #8b5cf6;">
+                            <h4 style="font-weight: 700; font-size: 14px; text-transform: uppercase; color: #8b5cf6; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px; margin: 0 0 10px 0;">
+                                🔮 Guru de Estratégias: Planejamento Ativo da Semana
+                            </h4>
+                            <div id="seller-weekly-strategy-text" style="font-size: 13px; line-height: 1.6; color: var(--text-primary); white-space: pre-wrap;">
+                                <!-- Preenchido via JS -->
+                            </div>
+                        </div>
+
                         <!-- Recomendação IA -->
                         <div class="card" id="seller-ai-recommendations-card" style="margin-bottom: 24px; padding: 20px 24px; background: linear-gradient(135deg, rgba(99,102,241,0.06) 0%, rgba(139,92,246,0.04) 100%); border-left: 4px solid var(--primary);">
                             <h4 style="font-weight: 700; margin-bottom: 14px; font-size: 14px; text-transform: uppercase; color: var(--primary); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px; margin: 0 0 14px 0;">
@@ -708,6 +718,107 @@
                                 </div>
                             </div>
                             <button class="btn btn-outline" id="btn-config-agent-analyst" style="width: 100%; border-color: #ca8a04; color: #ca8a04; font-size: 12px; height: 36px; display: flex; align-items: center; justify-content: center;">Configurar Frequência</button>
+                        </div>
+
+                        <!-- Agente 4: Guru de Estratégias -->
+                        <div class="card" id="agent-guru-card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between; border-top: 4px solid #8b5cf6;">
+                            <div>
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                                    <div>
+                                        <span style="font-size: 10px; font-weight: 700; color: #8b5cf6; background: rgba(139,92,246,0.1); padding: 3px 8px; border-radius: 99px; text-transform: uppercase;">Planejamento Semanal</span>
+                                        <h3 style="font-size: 18px; font-weight: 800; margin-top: 8px; color: var(--text-primary);">Guru de Estratégias</h3>
+                                    </div>
+                                    <label class="switch-container" style="position: relative; display: inline-block; width: 44px; height: 24px;">
+                                        <input type="checkbox" id="agent-guru-toggle" checked style="opacity: 0; width: 0; height: 0;">
+                                        <span class="switch-slider" style="position: absolute; cursor: pointer; inset: 0; background-color: #cbd5e1; border-radius: 24px; transition: .4s;"></span>
+                                    </label>
+                                </div>
+                                <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px;">Gera táticas e planejamentos semanais de captação de leads ativos baseados em dados de comportamento.</p>
+                                <div style="font-size: 11px; color: var(--text-muted); background: var(--bg-app); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 12px;">
+                                    <strong>Última ação:</strong> <span id="agent-guru-last-action">Aguardando ativação</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-primary" id="btn-open-guru-panel" style="width: 100%; font-size: 12px; height: 36px; display: flex; align-items: center; justify-content: center; gap: 6px; background: #8b5cf6; border-color: #8b5cf6; color: white;">
+                                <span>🎯</span> Acessar Painel Estratégico
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Painel Estratégico do Guru (Oculto por padrão, visível apenas para admin) -->
+                    <div id="guru-strategic-panel" class="card" style="display: none; padding: 24px; margin-bottom: 28px; border-left: 4px solid #8b5cf6; background: linear-gradient(135deg, rgba(139,92,246,0.04) 0%, transparent 100%);">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                            <div>
+                                <h3 style="font-weight: 800; font-size: 18px; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 8px;">
+                                    <span>🔮</span> Painel do Guru de Estratégias
+                                </h3>
+                                <p style="font-size: 13px; color: var(--text-secondary); margin: 4px 0 0 0;">Alimente a IA com novos dados da empresa e planeje a semana comercial.</p>
+                            </div>
+                            <button class="btn btn-outline" id="btn-close-guru-panel" style="font-size: 12px; padding: 6px 12px;">Fechar Painel</button>
+                        </div>
+
+                        <div class="grid-2col" style="margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <!-- Lado Esquerdo: Base de Conhecimento -->
+                            <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 18px;">
+                                <h4 style="font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                    📁 Base de Conhecimento (Arquivos de Aprendizado)
+                                </h4>
+                                
+                                <!-- File Dropzone -->
+                                <div id="guru-upload-dropzone" style="border: 2px dashed rgba(139,92,246,0.3); border-radius: var(--radius-md); padding: 20px; text-align: center; cursor: pointer; background: var(--bg-surface); transition: all 0.2s; margin-bottom: 12px;">
+                                    <span style="font-size: 28px; display: block; margin-bottom: 8px;">📤</span>
+                                    <span style="font-size: 13px; font-weight: 600; color: var(--text-primary); display: block;">Arraste arquivos ou clique para fazer upload</span>
+                                    <span style="font-size: 11px; color: var(--text-muted);">Suporta .txt, .csv, .json (Até 5MB)</span>
+                                    <input type="file" id="guru-file-input" accept=".txt,.csv,.json,.pdf,.docx" style="display: none;">
+                                </div>
+
+                                <!-- Textarea base de conhecimento alternativa -->
+                                <div class="form-group" style="margin-bottom: 16px;">
+                                    <label for="guru-notes-input" style="font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; display: block;">Instruções ou Dados de Comportamento Adicionais:</label>
+                                    <textarea id="guru-notes-input" class="form-control" placeholder="Cole aqui anotações sobre o comportamento dos leads, onde eles se encontram ou regras específicas de captação..." style="min-height: 80px; font-size: 12px;"></textarea>
+                                </div>
+
+                                <!-- Arquivos Carregados -->
+                                <div style="font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Arquivos na Base:</div>
+                                <div id="guru-files-list" style="display: flex; flex-direction: column; gap: 6px; max-height: 150px; overflow-y: auto;">
+                                    <p style="color: var(--text-muted); font-size: 12px; text-align: center; padding: 10px 0; margin: 0;">Nenhum arquivo carregado.</p>
+                                </div>
+                            </div>
+
+                            <!-- Lado Direito: Ações e Geração -->
+                            <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
+                                <div>
+                                    <h4 style="font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                        ⚡ Planejamento da Campanha da Semana
+                                    </h4>
+                                    <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px;">
+                                        O Guru de IA irá cruzar os dados de comportamento fornecidos com as métricas e leads atuais do CRM para gerar um planejamento outbound específico para a sua equipe de vendas.
+                                    </p>
+                                </div>
+
+                                <div style="display: flex; flex-direction: column; gap: 10px;">
+                                    <button class="btn btn-primary" id="btn-generate-weekly-strategy" style="background: #8b5cf6; border-color: #8b5cf6; width: 100%; height: 42px; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700;">
+                                        <span>✨</span> Gerar Estratégias da Semana
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Área de Resultado do Planejamento -->
+                        <div id="guru-strategy-result-container" style="display: none; border-top: 1px solid var(--border-color); padding-top: 20px; margin-top: 20px;">
+                            <h4 style="font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                📝 Estratégias Sugeridas pela IA:
+                            </h4>
+                            <div id="guru-strategy-text" style="font-size: 13px; line-height: 1.6; color: var(--text-primary); background: var(--bg-surface); border: 1px solid var(--border-color); padding: 16px; border-radius: var(--radius-md); max-height: 350px; overflow-y: auto; margin-bottom: 16px; white-space: pre-wrap;">
+                                <!-- Gerado via JS -->
+                            </div>
+                            
+                            <!-- Opções de Seguir ou Descartar -->
+                            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                                <button class="btn btn-outline" id="btn-reject-strategy" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.3);">Descartar Sugestão</button>
+                                <button class="btn btn-primary" id="btn-accept-strategy" style="background: var(--success); border-color: var(--success); gap: 6px;">
+                                    <span>✅</span> Seguir Sugestão (Atribuir Tarefas)
+                                </button>
+                            </div>
                         </div>
                     </div>
 

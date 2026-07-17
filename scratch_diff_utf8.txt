@@ -1,0 +1,140 @@
+﻿diff --git a/js/ai-agents.js b/js/ai-agents.js
+index dc7c82d..225b3fe 100644
+--- a/js/ai-agents.js
++++ b/js/ai-agents.js
+@@ -1,4 +1,4 @@
+-´╗┐import { Store } from "./store.js";
++import { Store } from "./store.js";
+ import { Auth } from "./auth.js";
+ 
+ // ===========================================================================
+@@ -48,24 +48,36 @@ export const AIAgents = {
+ 
+     // ├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼
+     // REAGIR A NOVO LEAD
+-    // ├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼
++    // ÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇö
+     onLeadAdded(lead) {
+         if (!this.isAgentActive("sdr")) return;
+         const score = this.scoreLead(lead);
+         Store.updateLead(lead.id, { aiScore: score }, this._agentEmail);
+ 
+-        const priority = score >= 75 ? "├░┼©ÔÇØ┬Ñ ALTA" : score >= 45 ? "├ó┼í┬í M├âÔÇ░DIA" : "├ó┬ØÔÇ×├»┬©┬Å BAIXA";
++        const priority = score >= 75 ? "­ƒöÑ ALTA" : score >= 45 ? "ÔÜí M├ëDIA" : "ÔØä´©Å BAIXA";
++        const messageText = `Novo lead detectado: ${lead.company} ÔÇö Score ${score}/100 (Prioridade ${priority}). ${this.sdrRecommendation(score, lead)}`;
++        
+         this.addAgentLog(
+             "SDR Agent",
+-            `Novo lead detectado: ${lead.company} ├óÔé¼ÔÇØ Score ${score}/100 (Prioridade ${priority}). ${this.sdrRecommendation(score, lead)}`,
++            messageText,
+             score >= 75 ? "success" : score >= 45 ? "info" : "warn"
+         );
+ 
++        // Disparar notifica├º├úo no sino se for prioridade alta/m├®dia
++        if (score >= 45) {
++            window.dispatchEvent(new CustomEvent("vellia:aiNotification", {
++                detail: {
++                    id: `ai_sdr_added_${lead.id}`,
++                    title: `­ƒñû SDR: Lead Qualificado (${score} pts)`,
++                    message: `O lead ${lead.company} foi qualificado com score ${score}. Recomenda├º├úo: ${this.sdrRecommendation(score, lead)}`,
++                    type: score >= 75 ? "lead" : "info"
++                }
++            }));
++        }
++
+         window.dispatchEvent(new CustomEvent("vellia:agentScoreUpdated", { detail: { leadId: lead.id, score } }));
+     },
+ 
+-    // ├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼
+-    // CICLO SDR ├óÔé¼ÔÇØ Qualifica├â┬º├â┬úo de Todos os Leads
+     // ├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼
+     runSDRCycle(verbose = true) {
+         const leads = Store.getLeads();
+@@ -88,32 +100,67 @@ export const AIAgents = {
+ 
+             // Detectar leads sem contato
+             const lastInteraction = lead.interactions?.slice(-1)[0];
+-            if (lastInteraction) {
+-                const daysSince = (now - new Date(lastInteraction.timestamp)) / (1000 * 60 * 60 * 24);
+-                if (daysSince >= 5) coldLeads.push(lead);
+-            } else {
+-                coldLeads.push(lead);
+-            }
++            if (lastInterac    runAnalystCycle() {
++        const proposals = Store.getProposals();
++        if (proposals.length === 0) {
++            this.addAgentLog("Analyst Agent", "Nenhuma proposta no pipeline para analisar.", "info");
++            return;
++        }
++
++        const fmt  = v => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(v);
++        const now  = new Date();
++        const open = proposals.filter(p => ["Enviada", "Em Negocia├º├úo"].includes(p.status));
++        const won  = proposals.filter(p => p.status === "Ganho");
++        const totalOpen = open.reduce((s, p) => s + (p.value || 0), 0);
++        const totalWon  = won.reduce((s, p) => s + (p.value || 0), 0);
++        const convRate  = proposals.length > 0 ? Math.round((won.length / proposals.length) * 100) : 0;
++
++        const expiringSoon = open.filter(p => {
++            if (!p.validUntil) return false;
++            const diff = (new Date(p.validUntil) - now) / (1000 * 60 * 60 * 24);
++            return diff >= 0 && diff <= 7;
+         });
+ 
+-        this.addAgentLog("SDR Agent", `Ciclo completo: ${scored} lead(s) qualificado(s). ${highPriority.length} de alta prioridade.`, "success");
++        this.addAgentLog(
++            "Analyst Agent",
++            `Pipeline auditado: ${open.length} abertas (${fmt(totalOpen)}), taxa de convers├úo ${convRate}%, ${won.length} ganhas (${fmt(totalWon)}).`,
++            "success"
++        );
+ 
+-        if (highPriority.length > 0) {
+-            const top = highPriority.sort((a, b) => b.aiScore - a.aiScore)[0];
+-            this.addAgentLog("SDR Agent", `├░┼©ÔÇØ┬Ñ Lead priorit├â┬írio: ${top.company} (Score ${top.aiScore}/100) ├óÔé¼ÔÇØ ${this.sdrRecommendation(top.aiScore, top)}`, "success");
++        if (expiringSoon.length > 0) {
++            const valueRisk = expiringSoon.reduce((s, p) => s + (p.value || 0), 0);
++            const names = expiringSoon.slice(0, 2).map(p => p.company).join(", ");
++            this.addAgentLog("Analyst Agent", `ÔÜá´©Å ${expiringSoon.length} proposta(s) vence(m) em 7 dias ÔÇö ${fmt(valueRisk)} em risco: ${names}${expiringSoon.length > 2 ? ` e +${expiringSoon.length - 2}` : ""}. Priorize o fechamento!`, "warn");
++
++            // Notificar sobre propostas expirando
++            window.dispatchEvent(new CustomEvent("vellia:aiNotification", {
++                detail: {
++                    id: `ai_analyst_exp_${new Date().toISOString().slice(0, 10)}`,
++                    title: `ÔÅ│ Analista: Propostas Vencendo`,
++                    message: `${expiringSoon.length} proposta(s) vencendo esta semana (${fmt(valueRisk)} em risco).`,
++                    type: "danger"
++                }
++            }));
+         }
+ 
+-        if (coldLeads.length > 0) {
+-            const names = coldLeads.slice(0, 3).map(l => l.company).join(", ");
+-            this.addAgentLog("SDR Agent", `├ó┬ØÔÇ×├»┬©┬Å ${coldLeads.length} lead(s) sem contato recente: ${names}${coldLeads.length > 3 ? ` e +${coldLeads.length - 3}` : ""}. Recomendado reengajamento.`, "warn");
++        if (convRate < 30 && proposals.length >= 3) {
++            this.addAgentLog("Analyst Agent", `­ƒôë Taxa de convers├úo em ${convRate}% ÔÇö abaixo do esperado. Revise abordagens e motivos de perda.`, "warn");
++
++            // Notificar convers├úo baixa
++            window.dispatchEvent(new CustomEvent("vellia:aiNotification", {
++                detail: {
++                    id: `ai_analyst_conv_${new Date().toISOString().slice(0, 10)}`,
++                    title: `­ƒôë Analista: Convers├úo Baixa`,
++                    message: `A taxa de convers├úo atual est├í em ${convRate}%, abaixo da meta recomendada (30%).`,
++                    type: "warning"
++                }
++            }));
++        } else if (convRate >= 60) {
++            this.addAgentLog("Analyst Agent", `­ƒÅå Taxa de convers├úo excelente: ${convRate}%! Padr├úo acima da m├®dia de mercado.`, "success");
+         }
+-
+-        window.dispatchEvent(new CustomEvent("vellia:agentScoreUpdated", { detail: { all: true } }));
+-    },
+-
+-    // ├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼
+-    // CICLO ANALYST ├óÔé¼ÔÇØ Auditoria do Pipeline
+-    // ├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼├óÔÇØÔé¼
++    },ÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇö
++    // CICLO ANALYST ÔÇö Auditoria do Pipeline
++    // ÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇöÔÇö
+     runAnalystCycle() {
+         const proposals = Store.getProposals();
+         if (proposals.length === 0) {

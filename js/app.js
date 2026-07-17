@@ -484,6 +484,7 @@ function updateDashboardCounters() {
             renderSellerLeadsNoContact(myActive);
 
             // IA
+            renderSellerWeeklyStrategy();
             renderSellerAIRecommendations();
 
             // Ações rápidas
@@ -776,6 +777,32 @@ function renderSellerAIRecommendations() {
             </button>
         </div>
     `).join("");
+}
+
+// Auxiliar: Renderizar o planejamento da semana ativo (Guru de Estratégias)
+function renderSellerWeeklyStrategy() {
+    const cardWrapper = document.getElementById("seller-weekly-strategy-card");
+    const textEl = document.getElementById("seller-weekly-strategy-text");
+    if (!cardWrapper || !textEl) return;
+    
+    // Check if there is an active weekly strategy approved by the administrator
+    const activeStrategy = localStorage.getItem("active_weekly_strategy");
+    const isGuruActive = localStorage.getItem("agent_guru_active") !== "false";
+    
+    if (activeStrategy && isGuruActive) {
+        // Clean tasks tags [TAREFA_VENDEDOR: ...] from presentation text
+        const cleanText = activeStrategy.replace(/\[TAREFA_VENDEDOR:[^\]]+\]/g, "").trim();
+        
+        // Simple basic markdown bold/list representation
+        let htmlText = cleanText
+            .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+            .replace(/\n- (.*?)/g, "<br>• $1");
+            
+        textEl.innerHTML = htmlText;
+        cardWrapper.style.display = "block";
+    } else {
+        cardWrapper.style.display = "none";
+    }
 }
 
 // Auxiliar: Renderizar leads sem contato recente

@@ -11,6 +11,8 @@
     <!-- jsPDF (Geração de PDF) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <!-- PDF.js (Leitura de PDFs para a Base de Conhecimento do Guru) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body>
 
@@ -751,74 +753,181 @@
                                 <h3 style="font-weight: 800; font-size: 18px; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 8px;">
                                     <span>🔮</span> Painel do Guru de Estratégias
                                 </h3>
-                                <p style="font-size: 13px; color: var(--text-secondary); margin: 4px 0 0 0;">Alimente a IA com novos dados da empresa e planeje a semana comercial.</p>
+                                <p style="font-size: 13px; color: var(--text-secondary); margin: 4px 0 0 0;">Defina o perfil do cliente ideal, envie documentos e gere o planejamento semanal com IA.</p>
                             </div>
                             <button class="btn btn-outline" id="btn-close-guru-panel" style="font-size: 12px; padding: 6px 12px;">Fechar Painel</button>
                         </div>
 
-                        <div class="grid-2col" style="margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                            <!-- Lado Esquerdo: Base de Conhecimento -->
+                        <!-- Grade de 3 colunas -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; margin-bottom: 20px;">
+
+                            <!-- Coluna 1: Base de Conhecimento (PDFs) -->
                             <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 18px;">
-                                <h4 style="font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                                    📁 Base de Conhecimento (Arquivos de Aprendizado)
+                                <h4 style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                    📁 Base de Conhecimento
                                 </h4>
-                                
+                                <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.5;">Envie PDFs, planilhas e documentos. O Guru lê o conteúdo real e aprende com ele.</p>
+
                                 <!-- File Dropzone -->
-                                <div id="guru-upload-dropzone" style="border: 2px dashed rgba(139,92,246,0.3); border-radius: var(--radius-md); padding: 20px; text-align: center; cursor: pointer; background: var(--bg-surface); transition: all 0.2s; margin-bottom: 12px;">
-                                    <span style="font-size: 28px; display: block; margin-bottom: 8px;">📤</span>
-                                    <span style="font-size: 13px; font-weight: 600; color: var(--text-primary); display: block;">Arraste arquivos ou clique para fazer upload</span>
-                                    <span style="font-size: 11px; color: var(--text-muted);">Suporta .txt, .csv, .json (Até 5MB)</span>
-                                    <input type="file" id="guru-file-input" accept=".txt,.csv,.json,.pdf,.docx" style="display: none;">
+                                <div id="guru-upload-dropzone" style="border: 2px dashed rgba(139,92,246,0.35); border-radius: var(--radius-md); padding: 16px; text-align: center; cursor: pointer; background: var(--bg-surface); transition: all 0.2s; margin-bottom: 10px;">
+                                    <span style="font-size: 24px; display: block; margin-bottom: 6px;">📤</span>
+                                    <span style="font-size: 12px; font-weight: 600; color: var(--text-primary); display: block;">Arraste ou clique para enviar</span>
+                                    <span style="font-size: 10px; color: var(--text-muted);">.pdf, .txt, .csv, .json</span>
+                                    <input type="file" id="guru-file-input" accept=".txt,.csv,.json,.pdf,.docx" multiple style="display: none;">
                                 </div>
 
-                                <!-- Textarea base de conhecimento alternativa -->
-                                <div class="form-group" style="margin-bottom: 16px;">
-                                    <label for="guru-notes-input" style="font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; display: block;">Instruções ou Dados de Comportamento Adicionais:</label>
-                                    <textarea id="guru-notes-input" class="form-control" placeholder="Cole aqui anotações sobre o comportamento dos leads, onde eles se encontram ou regras específicas de captação..." style="min-height: 80px; font-size: 12px;"></textarea>
+                                <!-- Barra de progresso de extração de PDF -->
+                                <div id="guru-pdf-progress" style="display: none; margin-bottom: 10px;">
+                                    <div style="font-size: 11px; color: #8b5cf6; margin-bottom: 4px; font-weight: 600;" id="guru-pdf-progress-label">Extraindo texto do PDF...</div>
+                                    <div style="background: var(--border-color); border-radius: 99px; height: 6px; overflow: hidden;">
+                                        <div id="guru-pdf-progress-bar" style="background: linear-gradient(90deg, #8b5cf6, #a78bfa); height: 100%; width: 0%; border-radius: 99px; transition: width 0.3s;"></div>
+                                    </div>
                                 </div>
 
-                                <!-- Arquivos Carregados -->
-                                <div style="font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Arquivos na Base:</div>
-                                <div id="guru-files-list" style="display: flex; flex-direction: column; gap: 6px; max-height: 150px; overflow-y: auto;">
-                                    <p style="color: var(--text-muted); font-size: 12px; text-align: center; padding: 10px 0; margin: 0;">Nenhum arquivo carregado.</p>
+                                <!-- Lista de arquivos -->
+                                <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Documentos na Base:</div>
+                                <div id="guru-files-list" style="display: flex; flex-direction: column; gap: 5px; max-height: 160px; overflow-y: auto;">
+                                    <p style="color: var(--text-muted); font-size: 11px; text-align: center; padding: 10px 0; margin: 0;">Nenhum arquivo carregado.</p>
+                                </div>
+
+                                <!-- Notas adicionais -->
+                                <div class="form-group" style="margin-top: 12px;">
+                                    <label for="guru-notes-input" style="font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; display: block;">📝 Anotações Adicionais:</label>
+                                    <textarea id="guru-notes-input" class="form-control" placeholder="Cole aqui informações extras sobre comportamento dos leads, restrições ou contexto adicional..." style="min-height: 60px; font-size: 12px;"></textarea>
                                 </div>
                             </div>
 
-                            <!-- Lado Direito: Ações e Geração -->
+                            <!-- Coluna 2: Perfil do Cliente Ideal (ICP) -->
+                            <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 18px;">
+                                <h4 style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+                                    🎯 Perfil do Cliente Ideal (ICP)
+                                </h4>
+                                <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.5;">Defina quem é o cliente que você quer captar. A IA usará isso como base para cada estratégia.</p>
+
+                                <div style="display: flex; flex-direction: column; gap: 10px;">
+                                    <div class="form-group" style="margin: 0;">
+                                        <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 3px; display: block;">Segmento / Setor:</label>
+                                        <select id="icp-segment" class="form-control" style="font-size: 12px; height: 34px;">
+                                            <option value="">Selecione...</option>
+                                            <option value="Saúde">Saúde e Clínicas</option>
+                                            <option value="Educação">Educação e Cursos</option>
+                                            <option value="Tecnologia">Tecnologia / SaaS</option>
+                                            <option value="Varejo">Varejo e E-commerce</option>
+                                            <option value="Imóveis">Imóveis e Construção</option>
+                                            <option value="Financeiro">Financeiro e Seguros</option>
+                                            <option value="Indústria">Indústria e Manufatura</option>
+                                            <option value="Serviços">Serviços Profissionais</option>
+                                            <option value="Alimentação">Alimentação e Restaurantes</option>
+                                            <option value="Outro">Outro</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group" style="margin: 0;">
+                                        <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 3px; display: block;">Porte da Empresa:</label>
+                                        <select id="icp-size" class="form-control" style="font-size: 12px; height: 34px;">
+                                            <option value="Qualquer porte">Qualquer porte</option>
+                                            <option value="MEI / Autônomo">MEI / Autônomo</option>
+                                            <option value="Pequena (1-49 funcionários)">Pequena (1-49 func.)</option>
+                                            <option value="Média (50-299 funcionários)">Média (50-299 func.)</option>
+                                            <option value="Grande (300+ funcionários)">Grande (300+ func.)</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group" style="margin: 0;">
+                                        <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 3px; display: block;">Cargo do Tomador de Decisão:</label>
+                                        <input type="text" id="icp-role" class="form-control" placeholder="Ex: Diretor, CEO, Gerente Comercial..." style="font-size: 12px; height: 34px;">
+                                    </div>
+
+                                    <div class="form-group" style="margin: 0;">
+                                        <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 3px; display: block;">Localização / Região:</label>
+                                        <input type="text" id="icp-location" class="form-control" placeholder="Ex: São Paulo, Sul do Brasil, Nacional..." style="font-size: 12px; height: 34px;">
+                                    </div>
+
+                                    <div class="form-group" style="margin: 0;">
+                                        <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 3px; display: block;">Faixa de Orçamento / Ticket:</label>
+                                        <select id="icp-budget" class="form-control" style="font-size: 12px; height: 34px;">
+                                            <option value="Não definido">Não definido</option>
+                                            <option value="Até R$ 2.000/mês">Até R$ 2.000/mês</option>
+                                            <option value="R$ 2.000 - R$ 10.000/mês">R$ 2k - R$ 10k/mês</option>
+                                            <option value="R$ 10.000 - R$ 50.000/mês">R$ 10k - R$ 50k/mês</option>
+                                            <option value="Acima de R$ 50.000/mês">Acima de R$ 50k/mês</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group" style="margin: 0;">
+                                        <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 3px; display: block;">Principais Dores / Problemas que Resolve:</label>
+                                        <textarea id="icp-pain" class="form-control" placeholder="Ex: Falta de clientes, alta rotatividade, processos manuais, baixa conversão..." style="min-height: 60px; font-size: 12px;"></textarea>
+                                    </div>
+
+                                    <button onclick="window.saveIcpProfile()" style="background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.3); color: #8b5cf6; border-radius: var(--radius-sm); padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; width: 100%; transition: all 0.2s;">
+                                        💾 Salvar Perfil ICP
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Coluna 3: Geração da Estratégia -->
                             <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
                                 <div>
-                                    <h4 style="font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                                        ⚡ Planejamento da Campanha da Semana
+                                    <h4 style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                                        ⚡ Gerar Planejamento
                                     </h4>
-                                    <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px;">
-                                        O Guru de IA irá cruzar os dados de comportamento fornecidos com as métricas e leads atuais do CRM para gerar um planejamento outbound específico para a sua equipe de vendas.
+                                    <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px;">
+                                        A IA cruzará seu ICP, os documentos da base de conhecimento e os leads atuais do CRM para gerar um plano outbound específico para esta semana.
                                     </p>
+
+                                    <!-- Checklist de contexto disponível -->
+                                    <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px;">
+                                        <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Contexto que será utilizado:</div>
+                                        <div id="guru-context-icp" style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary);">
+                                            <span id="guru-ctx-icp-icon">⚪</span> Perfil ICP
+                                        </div>
+                                        <div id="guru-context-docs" style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary);">
+                                            <span id="guru-ctx-docs-icon">⚪</span> Documentos na base (<span id="guru-ctx-docs-count">0</span>)
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary);">
+                                            <span>🟢</span> Leads do CRM
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary);">
+                                            <span id="guru-ctx-history-icon">⚪</span> Histórico de estratégias (<span id="guru-ctx-history-count">0</span>)
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div style="display: flex; flex-direction: column; gap: 10px;">
-                                    <button class="btn btn-primary" id="btn-generate-weekly-strategy" style="background: #8b5cf6; border-color: #8b5cf6; width: 100%; height: 42px; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700;">
-                                        <span>✨</span> Gerar Estratégias da Semana
+                                    <button class="btn btn-primary" id="btn-generate-weekly-strategy" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); border-color: #7c3aed; width: 100%; height: 46px; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; font-size: 13px; box-shadow: 0 4px 12px rgba(139,92,246,0.3);">
+                                        <span>✨</span> Gerar Estratégia da Semana
                                     </button>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Área de Resultado do Planejamento -->
-                        <div id="guru-strategy-result-container" style="display: none; border-top: 1px solid var(--border-color); padding-top: 20px; margin-top: 20px;">
+                        <div id="guru-strategy-result-container" style="display: none; border-top: 1px solid var(--border-color); padding-top: 20px; margin-top: 4px;">
                             <h4 style="font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                                📝 Estratégias Sugeridas pela IA:
+                                📝 Planejamento Gerado pela IA:
                             </h4>
-                            <div id="guru-strategy-text" style="font-size: 13px; line-height: 1.6; color: var(--text-primary); background: var(--bg-surface); border: 1px solid var(--border-color); padding: 16px; border-radius: var(--radius-md); max-height: 350px; overflow-y: auto; margin-bottom: 16px; white-space: pre-wrap;">
+                            <div id="guru-strategy-text" style="font-size: 13px; line-height: 1.7; color: var(--text-primary); background: var(--bg-surface); border: 1px solid var(--border-color); padding: 20px; border-radius: var(--radius-md); max-height: 420px; overflow-y: auto; margin-bottom: 16px; white-space: pre-wrap;">
                                 <!-- Gerado via JS -->
                             </div>
-                            
-                            <!-- Opções de Seguir ou Descartar -->
-                            <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                                <button class="btn btn-outline" id="btn-reject-strategy" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.3);">Descartar Sugestão</button>
+                            <div style="display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap;">
+                                <button class="btn btn-outline" id="btn-reject-strategy" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.3);">❌ Descartar</button>
                                 <button class="btn btn-primary" id="btn-accept-strategy" style="background: var(--success); border-color: var(--success); gap: 6px;">
                                     <span>✅</span> Seguir Sugestão (Atribuir Tarefas)
                                 </button>
                             </div>
+                        </div>
+
+                        <!-- Histórico de Estratégias Anteriores -->
+                        <div id="guru-history-section" style="display: none; border-top: 1px solid var(--border-color); padding-top: 16px; margin-top: 16px;">
+                            <details>
+                                <summary style="cursor: pointer; font-size: 13px; font-weight: 700; color: var(--text-secondary); list-style: none; display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                                    <span>🕐</span> Histórico de Planejamentos Anteriores
+                                    <span style="font-size: 11px; font-weight: 400; color: var(--text-muted);">(clique para expandir)</span>
+                                </summary>
+                                <div id="guru-history-list" style="display: flex; flex-direction: column; gap: 12px; margin-top: 12px;">
+                                    <!-- Carregado via JS -->
+                                </div>
+                            </details>
                         </div>
                     </div>
 

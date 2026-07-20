@@ -1,29 +1,47 @@
 const puppeteer = require('puppeteer');
 
 (async () => {
-  const browser = await puppeteer.launch();
-  const page = await browser.newPage();
-  
-  page.on('console', msg => console.log('PAGE LOG:', msg.text()));
-  page.on('pageerror', error => console.log('PAGE ERROR:', error.message));
-  page.on('requestfailed', request => {
-    console.log('REQUEST FAILED:', request.url(), request.failure().errorText);
-  });
-  page.on('response', response => {
-    if (response.status() >= 400) {
-      console.log('HTTP ERROR:', response.status(), response.url());
-    }
-  });
+    try {
+        console.log("Iniciando teste de login detalhado na porta 3000...");
+        const browser = await puppeteer.launch({ headless: "new" });
+        const page = await browser.newPage();
 
-  await page.goto('http://127.0.0.1:8080/#integrations', {waitUntil: 'networkidle0'});
-  
-  await page.evaluate(() => {
-    document.getElementById('login-email').value = 'admin@vellia.com';
-    document.getElementById('login-password').value = 'admin123';
-    document.querySelector('#login-form button').click();
-  });
-  
-  await new Promise(r => setTimeout(r, 2000));
-  
-  await browser.close();
+        page.on('console', msg => console.log('LOG DO NAVEGADOR:', msg.type(), msg.text()));
+        page.on('pageerror', err => console.log('ERRO DO NAVEGADOR:', err.toString()));
+        page.on('response', response => {
+            if (response.status() >= 400) {
+                console.log(`FALHA NA REQUISIÇÃO [${response.status()}]: ${response.url()}`);
+            }
+        });
+
+        await page.goto('http://localhost:3000', { waitUntil: 'networkidle0' });
+
+        console.log("Preenchendo e-mail e senha...");
+        await page.waitForSelector('#login-email');
+        await page.type('#login-email', 'admin@vellia.com');
+        await page.type('#login-password', '123456');
+
+        console.log("Clicando em Acessar Plataforma...");
+        await page.click('#btn-login-submit');
+
+        await new Promise(r => setTimeout(r, 2000));
+
+        const isAppShellVisible = await page.evaluate(() => {
+            const appShell = document.getElementById('app-shell');
+            return appShell ? getComputedStyle(appShell).display !== 'none' : false;
+        });
+
+        console.log("--> Tela Principal (App Shell) visível:", isAppShellVisible);
+
+        if (isAppShellVisible) {
+            console.log("✅ TESTE DE LOGIN LOCAL REALIZADO COM SUCESSO!");
+        } else {
+            console.log("❌ LOGIN FALHOU.");
+        }
+
+        await browser.close();
+    } catch (e) {
+        console.error("Erro no script de teste:", e);
+        process.exit(1);
+    }
 })();

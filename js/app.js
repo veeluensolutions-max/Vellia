@@ -18,29 +18,29 @@ import { Pricing } from "./pricing.js";
 import { Integrations } from "./integrations.js";
 import { connectRealtime, disconnectRealtime } from "./realtime.js";
 
-// Elementos Globais DOM
+// Elementos Globais DOM (Getters Dinâmicos para garantia de não-nulidade)
 const elements = {
-    loginScreen: document.getElementById("login-screen"),
-    appShell: document.getElementById("app-shell"),
-    loginForm: document.getElementById("login-form"),
-    loginEmail: document.getElementById("login-email"),
-    loginPassword: document.getElementById("login-password"),
-    loginError: document.getElementById("login-error"),
-    loginErrorText: document.getElementById("login-error-text"),
-    btnLogout: document.getElementById("btn-logout"),
-    btnThemeToggle: document.getElementById("btn-theme-toggle"),
-    viewTitle: document.getElementById("view-title"),
-    userAvatar: document.getElementById("user-avatar"),
-    userDisplayName: document.getElementById("user-display-name"),
-    userDisplayRole: document.getElementById("user-display-role"),
-    menuToggleBtn: document.getElementById("menu-toggle-btn"),
-    sidebar: document.querySelector(".app-sidebar"),
-    sidebarOverlay: document.getElementById("sidebar-overlay"),
-    logsTableBody: document.getElementById("logs-table-body"),
-    logSearch: document.getElementById("log-search"),
-    btnRefreshLogs: document.getElementById("btn-refresh-logs"),
-    btnClearLogs: document.getElementById("btn-clear-logs"),
-    menuItems: document.querySelectorAll(".sidebar-menu .menu-item")
+    get loginScreen() { return document.getElementById("login-screen"); },
+    get appShell() { return document.getElementById("app-shell"); },
+    get loginForm() { return document.getElementById("login-form"); },
+    get loginEmail() { return document.getElementById("login-email"); },
+    get loginPassword() { return document.getElementById("login-password"); },
+    get loginError() { return document.getElementById("login-error"); },
+    get loginErrorText() { return document.getElementById("login-error-text"); },
+    get btnLogout() { return document.getElementById("btn-logout"); },
+    get btnThemeToggle() { return document.getElementById("btn-theme-toggle"); },
+    get viewTitle() { return document.getElementById("view-title"); },
+    get userAvatar() { return document.getElementById("user-avatar"); },
+    get userDisplayName() { return document.getElementById("user-display-name"); },
+    get userDisplayRole() { return document.getElementById("user-display-role"); },
+    get menuToggleBtn() { return document.getElementById("menu-toggle-btn"); },
+    get sidebar() { return document.querySelector(".app-sidebar"); },
+    get sidebarOverlay() { return document.getElementById("sidebar-overlay"); },
+    get logsTableBody() { return document.getElementById("logs-table-body"); },
+    get logSearch() { return document.getElementById("log-search"); },
+    get btnRefreshLogs() { return document.getElementById("btn-refresh-logs"); },
+    get btnClearLogs() { return document.getElementById("btn-clear-logs"); },
+    get menuItems() { return document.querySelectorAll(".sidebar-menu .menu-item"); }
 };
 
 // ==========================================================================
@@ -1022,20 +1022,42 @@ function setupSellerQuickActions() {
 // ==========================================================================
 
 function setupEventListeners() {
-    // Form de Login
-    elements.loginForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const email = elements.loginEmail.value.trim();
-        const password = elements.loginPassword.value;
+    // Form de Login com suporte a submit, clique no botão e botões 1-clique de Acesso Rápido
+    const executeLogin = (targetEmail, targetPassword) => {
+        const email = targetEmail || (elements.loginEmail ? elements.loginEmail.value.trim() : "");
+        const password = targetPassword || (elements.loginPassword ? elements.loginPassword.value : "");
         
         const result = Auth.login(email, password);
         if (result.success) {
             showAppShell(result.user);
-        } else {
+        } else if (elements.loginErrorText && elements.loginError) {
             elements.loginErrorText.textContent = result.error;
             elements.loginError.style.display = "flex";
             elements.loginError.classList.add("animate-fade-in");
         }
+    };
+
+    if (elements.loginForm) {
+        elements.loginForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            executeLogin();
+        });
+    }
+
+    const btnSubmit = document.getElementById("btn-login-submit");
+    if (btnSubmit) {
+        btnSubmit.addEventListener("click", (e) => {
+            e.preventDefault();
+            executeLogin();
+        });
+    }
+
+    document.querySelectorAll(".preset-login-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            e.preventDefault();
+            const email = btn.getAttribute("data-email");
+            executeLogin(email, "123456");
+        });
     });
 
     // Logout

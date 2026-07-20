@@ -2733,6 +2733,45 @@ input:checked + .switch-slider::before {
     border-color: #8b5cf6 !important;
 }
 
+/* WhatsApp Copilot & SDR Cadence */
+.wa-copilot-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    font-size: 12px;
+    line-height: 1.4;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.wa-copilot-card:hover {
+    border-color: #25d366;
+    background: rgba(37,211,102,0.08);
+}
+
+.sdr-cadence-step-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: var(--bg-app);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+}
+
+.sdr-cadence-step-item.active {
+    border-color: #8b5cf6;
+    background: rgba(139,92,246,0.08);
+}
+
+.sdr-cadence-step-item.done {
+    opacity: 0.7;
+    border-color: var(--success);
+}
+
+
 
 
 

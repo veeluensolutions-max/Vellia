@@ -1,4 +1,4 @@
-﻿import { Store } from "./store.js";
+import { Store } from "./store.js";
 import { Auth } from "./auth.js";
 
 export const SDR = {
@@ -215,6 +215,126 @@ Retorne a resposta estritamente no seguinte formato JSON:
     sendNativeAlert(title, message) {
         if ("Notification" in window && Notification.permission === "granted") {
             new Notification(title, { body: message });
+        }
+    },
+
+    // =========================================================================
+    // MOTOR DE CADÊNCIA AUTOMATIZADA SDR MULTICANAL
+    // =========================================================================
+
+    CADENCE_STEPS: [
+        { step: 1, title: "Boas-vindas & Triagem Inicial", type: "WhatsApp", delay: "Dia 1" },
+        { step: 2, title: "Estudo de Caso & Prova Social", type: "WhatsApp / E-mail", delay: "Dia 2" },
+        { step: 3, title: "Follow-up Comercial & Proposta", type: "WhatsApp", delay: "Dia 3" },
+        { step: 4, title: "Reengajamento & Oferta de Fechamento", type: "WhatsApp Direct", delay: "Dia 5" }
+    ],
+
+    renderCadenceWidget(leadId) {
+        const container = document.getElementById("sdr-cadence-widget-body");
+        const btnToggle = document.getElementById("btn-toggle-sdr-cadence");
+        if (!container) return;
+
+        const lead = Store.getLeadById(leadId);
+        if (!lead) return;
+
+        const active = lead.cadenceActive !== false;
+        const currentStep = lead.cadenceStep || 1;
+
+        if (btnToggle) {
+            btnToggle.textContent = active ? "⏸️ Pausar Cadência" : "▶ Ativar Cadência";
+            btnToggle.style.color = active ? "var(--danger)" : "var(--primary-light)";
+            btnToggle.onclick = () => this.toggleCadence(leadId);
+        }
+
+        const pct = Math.min(100, Math.round(((currentStep - 1) / 4) * 100));
+
+        container.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11.5px;">
+                <span style="font-weight: 700; color: var(--text-primary);">Status: ${active ? "🟢 Em Execução" : "⏸️ Pausada"}</span>
+                <span style="font-weight: 700; color: #8b5cf6;">Passo ${currentStep > 4 ? 4 : currentStep} de 4 (${currentStep > 4 ? 100 : pct}%)</span>
+            </div>
+
+            <div style="height: 6px; background: var(--bg-app); border-radius: 4px; overflow: hidden; width: 100%;">
+                <div style="height: 100%; width: ${currentStep > 4 ? 100 : pct}%; background: linear-gradient(90deg, #8b5cf6, #25d366); transition: width 0.3s;"></div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">
+                ${this.CADENCE_STEPS.map(s => {
+                    const isDone = s.step < currentStep;
+                    const isCurrent = s.step === currentStep;
+                    const statusClass = isDone ? "done" : isCurrent ? "active" : "";
+                    const icon = isDone ? "✅" : isCurrent ? "⚡" : "⏳";
+                    return `
+                        <div class="sdr-cadence-step-item ${statusClass}">
+                            <span>${icon}</span>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 700; color: var(--text-primary); font-size: 11.5px;">${s.step}. ${s.title}</div>
+                                <div style="font-size: 10.5px; color: var(--text-muted);">${s.type} • ${s.delay}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join("")}
+            </div>
+
+            <div style="display: flex; gap: 8px; margin-top: 6px;">
+                <button type="button" onclick="window.SDR.advanceCadenceStep('${leadId}')" class="btn btn-primary" style="flex: 1; height: 32px; font-size: 11.5px; font-weight: 700; background: #8b5cf6; border: none;" ${!active || currentStep > 4 ? "disabled" : ""}>
+                    ⚡ Executar Passo ${currentStep <= 4 ? currentStep : "Concluído"} (${currentStep <= 4 ? this.CADENCE_STEPS[currentStep - 1].delay : "Fim"})
+                </button>
+            </div>
+        `;
+    },
+
+    toggleCadence(leadId) {
+        const lead = Store.getLeadById(leadId);
+        if (!lead) return;
+
+        lead.cadenceActive = !(lead.cadenceActive !== false);
+        const leads = Store.getLeads();
+        const idx = leads.findIndex(l => l.id === leadId);
+        if (idx !== -1) {
+            leads[idx] = lead;
+            Store.saveLeads(leads);
+        }
+
+        this.addSystemLog(lead, `Cadência SDR ${lead.cadenceActive ? "reativada" : "pausada pelo usuário"}.`);
+        this.renderCadenceWidget(leadId);
+    },
+
+    async advanceCadenceStep(leadId) {
+        const lead = Store.getLeadById(leadId);
+        if (!lead) return;
+
+        const currentStep = lead.cadenceStep || 1;
+        if (currentStep > 4) {
+            alert("Todas as etapas da cadência para este lead já foram concluídas!");
+            return;
+        }
+
+        const stepInfo = this.CADENCE_STEPS[currentStep - 1];
+
+        // Registrar execução do passo
+        const desc = `🔄 **Passo ${stepInfo.step} da Cadência SDR Executado:** ${stepInfo.title} (${stepInfo.type}).`;
+        Store.addLeadInteraction(lead.id, {
+            type: "WhatsApp",
+            description: desc
+        }, "sdr-ai@vellia.com");
+
+        lead.cadenceStep = currentStep + 1;
+        if (lead.cadenceStep > 4) lead.cadenceActive = false;
+
+        const leads = Store.getLeads();
+        const idx = leads.findIndex(l => l.id === leadId);
+        if (idx !== -1) {
+            leads[idx] = lead;
+            Store.saveLeads(leads);
+        }
+
+        this.renderCadenceWidget(leadId);
+        window.dispatchEvent(new CustomEvent("vellia:waSent"));
+
+        // Abrir modal de WhatsApp com a mensagem do passo pré-preenchida
+        if (window.WhatsApp) {
+            window.WhatsApp.openModalForLead(leadId);
         }
     }
 };

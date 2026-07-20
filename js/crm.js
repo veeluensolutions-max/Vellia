@@ -556,6 +556,11 @@ export const CRM = {
             }
         }
 
+        // Renderizar Widget de Cadência SDR
+        if (window.SDR && window.SDR.renderCadenceWidget) {
+            window.SDR.renderCadenceWidget(lead.id);
+        }
+
         // Resetar form follow-up
         const ffContainer = document.getElementById("followup-form-container");
         const ffToggle = document.getElementById("btn-toggle-followup-form");

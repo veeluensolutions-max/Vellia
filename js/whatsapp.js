@@ -1,4 +1,4 @@
-﻿import { Store } from "./store.js";
+import { Store } from "./store.js";
 import { Auth } from "./auth.js";
 import { Audit } from "./audit.js";
 
@@ -44,6 +44,11 @@ export const WhatsApp = {
         if (btnGenAI) {
             btnGenAI.addEventListener("click", () => this.generateMessageAI());
         }
+
+        const btnRefreshCopilot = document.getElementById("btn-refresh-wa-copilot");
+        if (btnRefreshCopilot) {
+            btnRefreshCopilot.addEventListener("click", () => this.loadCopilotSuggestions());
+        }
     },
 
     async openModalForLead(leadId) {
@@ -63,6 +68,7 @@ export const WhatsApp = {
             }
         }
         this.updateTemplateMessage();
+        this.loadCopilotSuggestions();
 
         this.showModal();
     },
@@ -75,6 +81,7 @@ export const WhatsApp = {
         const select = document.getElementById("wa-template-select");
         if (select) select.value = "proposal";
         this.updateTemplateMessage();
+        this.loadCopilotSuggestions();
 
         this.showModal();
     },
@@ -269,9 +276,106 @@ Diretrizes:
             console.error("Erro ao gerar mensagem com IA:", err);
             alert("Não foi possível gerar a mensagem com a IA. Tente novamente.");
         } finally {
+            textEl.value = text;
+        } catch (err) {
+            console.error("Erro ao gerar mensagem com IA:", err);
+            alert("Não foi possível gerar a mensagem com a IA. Tente novamente.");
+        } finally {
             btn.innerHTML = originalBtnText;
             btn.disabled = false;
         }
+    },
+
+    async loadCopilotSuggestions() {
+        const container = document.getElementById("wa-copilot-suggestions-list");
+        if (!container) return;
+
+        const lead = Store.getLeadById(this.activeLeadId);
+        if (!lead) {
+            container.innerHTML = `<span style="font-size: 11.5px; color: var(--text-muted);">Selecione um lead para ver as sugestões do Copilot.</span>`;
+            return;
+        }
+
+        container.innerHTML = `<span style="font-size: 11.5px; color: #25d366;">✨ Gerando 3 opções de abordagem personalizadas via IA...</span>`;
+
+        const currentUser = Auth.getCurrentUser();
+        const sellerName = currentUser ? currentUser.name : "Consultor Vellia";
+        const contactName = lead.contact || lead.company;
+        const segment = lead.segment || "serviços";
+        const stage = lead.stage || "Contato";
+
+        // Opções padrão consultivas
+        const option1 = `Olá, ${contactName}! Aqui é o ${sellerName} da Vellia. Vi seu interesse na área de ${segment}. Teria 5 min para batermos um papo rápido nesta semana?`;
+        const option2 = `Olá ${contactName}! Como estão os desafios de vendas em ${segment} na ${lead.company}? Estruturamos uma estratégia para impulsionar esses resultados.`;
+        const option3 = `Olá ${contactName}! Entendo a rotina corrida, mas ajudamos empresas como a ${lead.company} a otimizar a conversão de propostas. Vale um café rápido?`;
+
+        container.innerHTML = `
+            <div class="wa-copilot-card" onclick="window.applyCopilotText('${option1.replace(/'/g, "\\'")}')">
+                <span style="font-weight: 700; color: #25d366;">💬 1. Abordagem Direta & Agendamento</span>
+                <p style="margin: 3px 0 0; color: var(--text-secondary);">${option1}</p>
+            </div>
+            <div class="wa-copilot-card" onclick="window.applyCopilotText('${option2.replace(/'/g, "\\'")}')">
+                <span style="font-weight: 700; color: var(--primary-light);">🧠 2. Abordagem Consultiva (Dor)</span>
+                <p style="margin: 3px 0 0; color: var(--text-secondary);">${option2}</p>
+            </div>
+            <div class="wa-copilot-card" onclick="window.applyCopilotText('${option3.replace(/'/g, "\\'")}')">
+                <span style="font-weight: 700; color: #8b5cf6;">🛡️ 3. Foco em Valor & Proposta</span>
+                <p style="margin: 3px 0 0; color: var(--text-secondary);">${option3}</p>
+            </div>
+        `;
+
+        window.applyCopilotText = (txt) => {
+            const textEl = document.getElementById("wa-message-text");
+            if (textEl) {
+                textEl.value = txt;
+                textEl.focus();
+            }
+        };
+
+        try {
+            const prompt = `Gere 3 sugestões ultra-curtas e persuasivas de mensagens comerciais para WhatsApp para o lead "${contactName}" (Empresa: ${lead.company}, Segmento: ${segment}, Estágio: ${stage}).
+Retorne estritamente em formato JSON:
+{
+  "op1": "texto curto 1...",
+  "op2": "texto curto 2...",
+  "op3": "texto curto 3..."
+}`;
+            const res = await fetch("/api/gemini-proxy", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: "gemini-2.5-flash",
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: { responseMimeType: "application/json" }
+                })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (jsonText) {
+                    const parsed = JSON.parse(jsonText);
+                    const p1 = parsed.op1 || option1;
+                    const p2 = parsed.op2 || option2;
+                    const p3 = parsed.op3 || option3;
+
+                    container.innerHTML = `
+                        <div class="wa-copilot-card" onclick="window.applyCopilotText(\`${p1.replace(/`/g, '\\`')}\`)">
+                            <span style="font-weight: 700; color: #25d366;">💬 1. Abordagem Direta</span>
+                            <p style="margin: 3px 0 0; color: var(--text-secondary);">${p1}</p>
+                        </div>
+                        <div class="wa-copilot-card" onclick="window.applyCopilotText(\`${p2.replace(/`/g, '\\`')}\`)">
+                            <span style="font-weight: 700; color: var(--primary-light);">🧠 2. Abordagem Consultiva</span>
+                            <p style="margin: 3px 0 0; color: var(--text-secondary);">${p2}</p>
+                        </div>
+                        <div class="wa-copilot-card" onclick="window.applyCopilotText(\`${p3.replace(/`/g, '\\`')}\`)">
+                            <span style="font-weight: 700; color: #8b5cf6;">🛡️ 3. Foco em Valor</span>
+                            <p style="margin: 3px 0 0; color: var(--text-secondary);">${p3}</p>
+                        </div>
+                    `;
+                }
+            }
+        } catch(e) {}
     }
 };
 

@@ -150,7 +150,7 @@ export const WhatsApp = {
         this.activeProposalId = null;
     },
 
-    handleSend(isSimulated) {
+    async handleSend(isSimulated) {
         const lead = Store.getLeadById(this.activeLeadId);
         if (!lead) return;
 
@@ -164,36 +164,62 @@ export const WhatsApp = {
         const currentUser = Auth.getCurrentUser();
         const userEmail = currentUser ? currentUser.email : "sistema@vellia.com";
 
+        // Formatação inteligente de telefone
+        let rawPhone = lead.whatsapp || lead.phone || "";
+        let cleanPhone = rawPhone.replace(/\D/g, "");
+        if (cleanPhone.length === 10 || cleanPhone.length === 11) {
+            cleanPhone = "55" + cleanPhone;
+        }
+
         // 1. Gravar interação na linha do tempo do Lead
-        const activityDesc = `${isSimulated ? "Simulado: " : ""}Mensagem enviada por WhatsApp: "${messageText.substring(0, 60)}..."`;
+        const activityDesc = `${isSimulated ? "Simulado: " : ""}Mensagem de WhatsApp para ${lead.contact || lead.company}: "${messageText.substring(0, 70)}..."`;
         Store.addLeadInteraction(lead.id, {
             type: "WhatsApp",
             description: activityDesc
         }, userEmail);
 
         // 2. Gravar auditoria
-        Audit.logLeadUpdate(userEmail, lead.company, `Mensagem de WhatsApp ${isSimulated ? "simulada" : "real"} enviada para ${lead.contact}.`);
+        Audit.logLeadUpdate(userEmail, lead.company, `Mensagem de WhatsApp ${isSimulated ? "simulada" : "real"} enviada para ${lead.contact || lead.company}.`);
 
-        // 3. Abrir WhatsApp real se não for simulado ou usar a API se estiver conectada
+        // 3. Executar envio real
         if (!isSimulated) {
-            const waConfig = JSON.parse(localStorage.getItem("comercial_wa_api_config"));
-            if (waConfig && waConfig.connected) {
-                Audit.logLeadUpdate(userEmail, lead.company, `Mensagem de WhatsApp enviada via API Gateway (${waConfig.instanceId}) para ${lead.contact}.`);
-                alert(`Mensagem enviada via WhatsApp API (Instância: ${waConfig.instanceId}) com sucesso!\n\nDestinatário: ${lead.contact}\nMensagem: "${messageText}"`);
-            } else {
-                let cleanPhone = (lead.whatsapp || lead.phone || "").replace(/\D/g, "");
-                if (cleanPhone.length > 0) {
-                    if (cleanPhone.length === 11 || cleanPhone.length === 10) {
-                        cleanPhone = "55" + cleanPhone;
+            const waConfig = JSON.parse(localStorage.getItem("comercial_wa_api_config")) || {};
+            
+            if (waConfig.connected && waConfig.apiUrl) {
+                // Disparo real via API Gateway Serverless
+                try {
+                    const res = await fetch("/api/send-whatsapp", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            phone: cleanPhone,
+                            message: messageText,
+                            config: waConfig
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.success && data.provider !== "Deep Link Nativo") {
+                        alert(`✅ Mensagem enviada via ${data.provider} com sucesso!\n\nDestinatário: ${lead.contact || lead.company} (${cleanPhone})\nID da Mensagem: ${data.messageId}`);
+                    } else if (cleanPhone) {
+                        const deepLinkUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(messageText)}`;
+                        window.open(deepLinkUrl, "_blank");
                     }
-                    const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageText)}`;
-                    window.open(waUrl, "_blank");
-                } else {
-                    alert("Telefone inválido ou não cadastrado para este lead. Mas o envio foi simulado localmente!");
+                } catch(e) {
+                    console.error("Erro ao disparar via API Serverless:", e);
+                    if (cleanPhone) {
+                        const deepLinkUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(messageText)}`;
+                        window.open(deepLinkUrl, "_blank");
+                    }
                 }
+            } else if (cleanPhone) {
+                // Disparo nativo direto (Abre WhatsApp Web / App nativo)
+                const deepLinkUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(messageText)}`;
+                window.open(deepLinkUrl, "_blank");
+            } else {
+                alert("Telefone inválido ou não cadastrado para este lead. A mensagem foi registrada como histórico local!");
             }
         } else {
-            alert(`Envio simulado com sucesso! A atividade foi registrada no histórico do lead e você ganhou +5 pontos.`);
+            alert(`Envio simulado com sucesso! A atividade foi registrada no histórico de ${lead.company}.`);
         }
 
         // Fechar modal

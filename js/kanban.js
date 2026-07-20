@@ -101,7 +101,7 @@ export const Kanban = {
             const leadValue = leadProps.reduce((s, p) => s + (p.value || 0), 0);
             
             const users = Store.getUsers();
-            const ownerUser = users.find(u => u.email === lead.owner);
+            const ownerUser = users.find(u => u && u.email === lead.owner);
             const avatar = ownerUser ? ownerUser.avatar : "U";
             const ownerName = ownerUser ? ownerUser.name : "Indefinido";
 
@@ -119,19 +119,45 @@ export const Kanban = {
             // Usar aiScore do SDR Agent (Store) com fallback para ctx
             const aiScore = lead.aiScore != null ? lead.aiScore : (ctx.scoredLeads.find(l => l.id === lead.id)?._score || 0);
 
+            // Determinar estilo dinâmico com base no Score IA (Visual Premium e Curado)
+            let cardColor = "var(--primary, #6366f1)";
+            let glowColor = "rgba(99, 102, 241, 0.08)";
+            let scoreIcon = "❄️", scoreLabel = "Baixa", scoreColor = "#6366f1";
+            let scoreBg = "rgba(99, 102, 241, 0.12)", scoreBorder = "rgba(99, 102, 241, 0.3)";
+
+            if (aiScore >= 75) {
+                cardColor = "var(--danger, #ef4444)";
+                glowColor = "rgba(239, 68, 68, 0.08)";
+                scoreIcon = "🔥"; scoreLabel = "Alta"; scoreColor = "#ef4444";
+                scoreBg = "rgba(239, 68, 68, 0.12)"; scoreBorder = "rgba(239, 68, 68, 0.3)";
+            } else if (aiScore >= 45) {
+                cardColor = "var(--warning, #f59e0b)";
+                glowColor = "rgba(245, 158, 11, 0.08)";
+                scoreIcon = "⚡"; scoreLabel = "Média"; scoreColor = "#f59e0b";
+                scoreBg = "rgba(245, 158, 11, 0.12)"; scoreBorder = "rgba(245, 158, 11, 0.3)";
+            }
+
+            card.style.borderLeft = `4px solid ${cardColor}`;
+            card.style.boxShadow = `var(--shadow-sm), 0 2px 12px ${glowColor}`;
+
+            // Micro-animações de Hover Premium
+            card.addEventListener("mouseenter", () => {
+                if (!card.classList.contains("dragging")) {
+                    card.style.transform = "translateY(-3px)";
+                    card.style.borderColor = `${cardColor}60`;
+                    card.style.boxShadow = `var(--shadow-md), 0 6px 20px ${cardColor}22`;
+                }
+            });
+            card.addEventListener("mouseleave", () => {
+                if (!card.classList.contains("dragging")) {
+                    card.style.transform = "";
+                    card.style.borderColor = "";
+                    card.style.boxShadow = `var(--shadow-sm), 0 2px 12px ${glowColor}`;
+                }
+            });
+
             let tempBadge = "";
             if (lead.stage !== "Cliente Fechado" && lead.stage !== "Cliente Perdido") {
-                let scoreIcon, scoreColor, scoreBg, scoreBorder, scoreLabel;
-                if (aiScore >= 75) {
-                    scoreIcon = "🔥"; scoreLabel = "Alta"; scoreColor = "#ef4444";
-                    scoreBg = "rgba(239, 68, 68, 0.12)"; scoreBorder = "rgba(239, 68, 68, 0.3)";
-                } else if (aiScore >= 45) {
-                    scoreIcon = "⚡"; scoreLabel = "Média"; scoreColor = "#f59e0b";
-                    scoreBg = "rgba(245, 158, 11, 0.12)"; scoreBorder = "rgba(245, 158, 11, 0.3)";
-                } else {
-                    scoreIcon = "❄️"; scoreLabel = "Baixa"; scoreColor = "#6366f1";
-                    scoreBg = "rgba(99, 102, 241, 0.12)"; scoreBorder = "rgba(99, 102, 241, 0.3)";
-                }
                 tempBadge = `<span class="badge ai-score-badge" data-lead-id="${lead.id}" style="font-size: 9px; padding: 2px 7px; border-radius: 99px; background: ${scoreBg}; color: ${scoreColor}; border: 1px solid ${scoreBorder}; display: inline-flex; align-items: center; gap: 3px;" title="Score SDR Agent: ${aiScore}/100 — Prioridade ${scoreLabel}">${scoreIcon} <strong style='font-size:9px;'>${aiScore}</strong></span>`;
             }
 

@@ -421,7 +421,8 @@ export const Store = {
     },
 
     getUserByEmail(email) {
-        return this.getUsers().find(u => u.email.toLowerCase() === email.toLowerCase());
+        if (!email || typeof email !== "string") return null;
+        return this.getUsers().find(u => u && u.email && typeof u.email === "string" && u.email.toLowerCase() === email.toLowerCase());
     },
 
     // LEADS (CRM)

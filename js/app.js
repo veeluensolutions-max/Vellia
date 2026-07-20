@@ -425,8 +425,8 @@ function updateDashboardCounters() {
             // === CÁLCULO DE FORECAST PREDITIVO (IA) DO VENDEDOR ===
             const allProposals = Store.getProposals();
             const myOpenProposals = allProposals.filter(p => {
-                if (!["Enviada", "Em Negociação"].includes(p.status)) return false;
-                const lead = myLeads.find(l => l.company.toLowerCase() === p.company.toLowerCase());
+                if (!p || !["Enviada", "Em Negociação"].includes(p.status)) return false;
+                const lead = myLeads.find(l => l && l.company && typeof l.company === "string" && p.company && typeof p.company === "string" && l.company.toLowerCase() === p.company.toLowerCase());
                 return !!lead;
             });
 
@@ -443,12 +443,12 @@ function updateDashboardCounters() {
 
             const weightedProps = myOpenProposals.reduce((sum, p) => sum + (p.value || 0) * 0.70, 0); // 70% chance para propostas ativas
             const weightedLeads = myLeads
-                .filter(l => !["Perdido", "Cliente Ativo"].includes(l.stage))
-                .filter(l => !myOpenProposals.some(p => p.company.toLowerCase() === l.company.toLowerCase()))
+                .filter(l => l && l.stage && !["Perdido", "Cliente Ativo"].includes(l.stage))
+                .filter(l => l && l.company && !myOpenProposals.some(p => p && p.company && typeof p.company === "string" && p.company.toLowerCase() === l.company.toLowerCase()))
                 .reduce((sum, l) => {
                     const prob = (STAGE_PROBABILITY[l.stage] || 10) / 100;
-                    const avgVal = 8000; // Valor de ticket médio estimado
-                    return sum + (avgVal * prob * 0.40); // 40% chance de virar proposta
+                    const avgVal = 8000; // Ticket médio
+                    return sum + (avgVal * prob * 0.40);
                 }, 0);
 
             const forecastTotal = Math.round(myRevenue + weightedProps + weightedLeads);

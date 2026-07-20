@@ -256,15 +256,16 @@ export const CRM = {
             let ownerName = "Não atribuído";
             let ownerAvatar = "—";
             let ownerColor = "#94a3b8";
-            if (lead.owner) {
+            if (lead.owner && typeof lead.owner === "string") {
                 const ownerUser = Store.getUserByEmail(lead.owner);
                 if (ownerUser) {
-                    ownerName = ownerUser.name;
-                    ownerAvatar = ownerUser.avatar;
+                    ownerName = ownerUser.name || "Não atribuído";
+                    ownerAvatar = ownerUser.avatar || "—";
                     ownerColor = "var(--primary)";
                 } else {
-                    ownerName = lead.owner.split("@")[0];
-                    ownerAvatar = ownerName.substring(0, 2).toUpperCase();
+                    const parts = lead.owner.split("@");
+                    ownerName = parts[0] || "Não atribuído";
+                    ownerAvatar = typeof ownerName === "string" ? ownerName.substring(0, 2).toUpperCase() : "—";
                 }
             }
 
@@ -272,7 +273,7 @@ export const CRM = {
             const ownerCell = isAdmin
                 ? `<select class="filter-control assign-owner-select" data-id="${lead.id}" style="height: 32px; font-size: 12px; min-width: 140px;" onclick="event.stopPropagation();">
                     <option value="">— Não atribuído —</option>
-                    ${Store.getUsers().filter(u => u.role === "seller" || u.role === "manager" || u.role === "admin").map(s => `<option value="${s.email}" ${lead.owner === s.email ? "selected" : ""}>${s.name}</option>`).join("")}
+                    ${Store.getUsers().filter(u => u && (u.role === "seller" || u.role === "manager" || u.role === "admin")).map(s => `<option value="${s.email || ''}" ${lead.owner === s.email ? "selected" : ""}>${s.name || s.email || ''}</option>`).join("")}
                    </select>`
                 : `<div style="display:flex;align-items:center;gap:8px;">
                      <div class="user-avatar" style="width:24px;height:24px;font-size:10px;flex-shrink:0;background:${ownerColor};">${ownerAvatar}</div>

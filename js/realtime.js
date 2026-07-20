@@ -122,8 +122,13 @@ function updateStatusBadge(connected) {
 function processIncomingLead(lead) {
     if (!lead || !lead.id) return;
 
-    const localLeads = JSON.parse(localStorage.getItem("comercial_leads")) || [];
-    const alreadyExists = localLeads.some(l => l.id === lead.id);
+    let localLeads = [];
+    try {
+        localLeads = JSON.parse(localStorage.getItem("comercial_leads")) || [];
+    } catch (e) {
+        localLeads = [];
+    }
+    const alreadyExists = localLeads.some(l => l && l.id === lead.id);
     if (alreadyExists) return;
 
     console.log("⚡ [Realtime] Novo lead recebido:", lead.company, lead.id);

@@ -1022,10 +1022,10 @@ function setupSellerQuickActions() {
 // ==========================================================================
 
 function setupEventListeners() {
-    // Form de Login com suporte a submit, clique no botão e botões 1-clique de Acesso Rápido
-    const executeLogin = (targetEmail, targetPassword) => {
-        const email = targetEmail || (elements.loginEmail ? elements.loginEmail.value.trim() : "");
-        const password = targetPassword || (elements.loginPassword ? elements.loginPassword.value : "");
+    // Form de Login
+    const executeLogin = () => {
+        const email = elements.loginEmail ? elements.loginEmail.value.trim() : "";
+        const password = elements.loginPassword ? elements.loginPassword.value : "";
         
         const result = Auth.login(email, password);
         if (result.success) {
@@ -1051,14 +1051,6 @@ function setupEventListeners() {
             executeLogin();
         });
     }
-
-    document.querySelectorAll(".preset-login-btn").forEach(btn => {
-        btn.addEventListener("click", (e) => {
-            e.preventDefault();
-            const email = btn.getAttribute("data-email");
-            executeLogin(email, "123456");
-        });
-    });
 
     // Logout
     elements.btnLogout.addEventListener("click", () => {

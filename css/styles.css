@@ -2689,6 +2689,51 @@ input:checked + .switch-slider::before {
     transform: translateX(20px);
 }
 
+/* Guru Enhanced Features & Modals */
+.guru-task-item {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: border-color var(--transition-fast);
+}
+
+.guru-task-item:hover {
+    border-color: rgba(139,92,246,0.4);
+}
+
+.guru-task-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.guru-task-input {
+    width: 100%;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    font-size: 12.5px;
+    background: var(--bg-app);
+    color: var(--text-primary);
+}
+
+.guru-script-tab {
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.guru-script-tab.active {
+    background: #8b5cf6 !important;
+    color: white !important;
+    border-color: #8b5cf6 !important;
+}
+
+
 
 
 

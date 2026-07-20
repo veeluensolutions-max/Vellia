@@ -745,6 +745,126 @@ export const Store = {
         return await syncFromSupabase();
     },
 
+    // =========================================================================
+    // MÉTODOS DE HISTÓRICO ANUAL & COMPARATIVO MENSAL
+    // =========================================================================
+
+    getMonthlyMetrics(year, month) {
+        const mStr = String(month).padStart(2, "0");
+        const yStr = String(year);
+        const periodKey = `${yStr}-${mStr}`;
+
+        const leads = this.getLeads();
+        const proposals = this.getProposals();
+        const users = this.getUsers();
+        const logs = JSON.parse(localStorage.getItem("comercial_logs") || "[]");
+        const guruHistory = JSON.parse(localStorage.getItem("guru_strategy_history") || "[]");
+
+        // 1. Leads criados e qualificados no mês
+        const monthLeads = leads.filter(l => {
+            if (!l.createdAt) return false;
+            return l.createdAt.startsWith(periodKey);
+        });
+
+        const leadsCreated = monthLeads.length;
+        const leadsQualified = monthLeads.filter(l => !["Contato", "Cliente Perdido"].includes(l.stage)).length;
+
+        // 2. Propostas e Faturamento
+        const monthProposals = proposals.filter(p => {
+            if (!p.createdAt) return false;
+            return p.createdAt.startsWith(periodKey);
+        });
+
+        const proposalsCount = monthProposals.length;
+        const wonProposals = monthProposals.filter(p => p.status === "Ganho");
+        const wonCount = wonProposals.length;
+        const revenue = wonProposals.reduce((sum, p) => sum + (Number(p.value) || 0), 0);
+
+        // 3. Taxa de conversão
+        const conversionRate = proposalsCount > 0 ? Math.round((wonCount / proposalsCount) * 100) : 0;
+
+        // 4. Tarefas concluídas no mês
+        let completedTasks = 0;
+        let totalTasks = 0;
+        users.forEach(u => {
+            const userTasks = JSON.parse(localStorage.getItem(`seller_tasks_${u.email}`) || "[]");
+            userTasks.forEach(t => {
+                if (t.date && t.date.includes(`/${mStr}/${yStr}`)) {
+                    totalTasks++;
+                    if (t.done) completedTasks++;
+                }
+            });
+        });
+
+        // 5. Estratégias do Guru executadas no mês
+        const monthStrategies = guruHistory.filter(h => {
+            if (!h.date) return false;
+            return h.date.includes(`/${mStr}/${yStr}`) || h.date.startsWith(periodKey);
+        }).length;
+
+        // 6. Logs de atividades do mês
+        const monthLogs = logs.filter(l => {
+            if (!l.timestamp) return false;
+            return l.timestamp.startsWith(periodKey);
+        }).length;
+
+        return {
+            period: periodKey,
+            year: yStr,
+            month: mStr,
+            revenue,
+            wonCount,
+            proposalsCount,
+            leadsCreated,
+            leadsQualified,
+            completedTasks,
+            totalTasks,
+            strategiesCount: monthStrategies,
+            conversionRate,
+            logsCount: monthLogs
+        };
+    },
+
+    getAnnualOverview(year = new Date().getFullYear()) {
+        const months = [];
+        for (let m = 1; m <= 12; m++) {
+            months.push(this.getMonthlyMetrics(year, m));
+        }
+        return {
+            year,
+            months,
+            totalRevenue: months.reduce((s, m) => s + m.revenue, 0),
+            totalWon: months.reduce((s, m) => s + m.wonCount, 0),
+            totalLeads: months.reduce((s, m) => s + m.leadsCreated, 0),
+            totalTasks: months.reduce((s, m) => s + m.completedTasks, 0),
+            totalStrategies: months.reduce((s, m) => s + m.strategiesCount, 0)
+        };
+    },
+
+    compareMonths(yearA, monthA, yearB, monthB) {
+        const mA = this.getMonthlyMetrics(yearA, monthA);
+        const mB = this.getMonthlyMetrics(yearB, monthB);
+
+        const calcDiff = (vA, vB) => {
+            if (vB === 0) return vA > 0 ? 100 : 0;
+            return Math.round(((vA - vB) / vB) * 100);
+        };
+
+        return {
+            monthA: mA,
+            monthB: mB,
+            diff: {
+                revenuePct: calcDiff(mA.revenue, mB.revenue),
+                revenueAbs: mA.revenue - mB.revenue,
+                wonPct: calcDiff(mA.wonCount, mB.wonCount),
+                leadsPct: calcDiff(mA.leadsQualified, mB.leadsQualified),
+                tasksPct: calcDiff(mA.completedTasks, mB.completedTasks),
+                strategiesPct: calcDiff(mA.strategiesCount, mB.strategiesCount),
+                conversionDiff: mA.conversionRate - mB.conversionRate
+            }
+        };
+    },
+
     // Métodos utilitários para resetar banco se necessário
     resetAll() {
         localStorage.removeItem("comercial_users");

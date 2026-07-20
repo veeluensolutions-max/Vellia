@@ -302,11 +302,6 @@ Diretrizes:
             console.error("Erro ao gerar mensagem com IA:", err);
             alert("Não foi possível gerar a mensagem com a IA. Tente novamente.");
         } finally {
-            textEl.value = text;
-        } catch (err) {
-            console.error("Erro ao gerar mensagem com IA:", err);
-            alert("Não foi possível gerar a mensagem com a IA. Tente novamente.");
-        } finally {
             btn.innerHTML = originalBtnText;
             btn.disabled = false;
         }

@@ -36,7 +36,72 @@ const DEFAULT_USERS = [
 ];
 
 const INITIAL_LOGS = [];
-const INITIAL_LEADS = [];
+const INITIAL_LEADS = [
+    {
+        id: "lead_1",
+        company: "TechSolutions Brasil",
+        contact: "Carlos Eduardo",
+        role: "CTO",
+        email: "carlos.eduardo@techsolutions.com.br",
+        phone: "(11) 98765-4321",
+        whatsapp: "+5511987654321",
+        segment: "Tecnologia",
+        source: "Inbound Website",
+        stage: "Lead Qualificado",
+        owner: "vendedor@vellia.com",
+        aiScore: 85,
+        estimatedValue: 45000,
+        createdAt: new Date().toISOString()
+    },
+    {
+        id: "lead_2",
+        company: "Inovações Varejo",
+        contact: "Mariana Costa",
+        role: "Diretora Comercial",
+        email: "mariana.costa@inovacoesvarejo.com",
+        phone: "(21) 99887-6655",
+        whatsapp: "+5521998876655",
+        segment: "Varejo",
+        source: "WhatsApp Copilot",
+        stage: "Negociação",
+        owner: "vendedor@vellia.com",
+        aiScore: 92,
+        estimatedValue: 78000,
+        createdAt: new Date().toISOString()
+    },
+    {
+        id: "lead_3",
+        company: "Supermercados Alvorada",
+        contact: "Roberto Mendes",
+        role: "Gerente Operacional",
+        email: "roberto@superalvorada.com.br",
+        phone: "(31) 98877-1122",
+        whatsapp: "+5531988771122",
+        segment: "Alimentos",
+        source: "Google Ads",
+        stage: "Proposta Enviada",
+        owner: "gerente@vellia.com",
+        aiScore: 68,
+        estimatedValue: 32000,
+        createdAt: new Date().toISOString()
+    },
+    {
+        id: "lead_4",
+        company: "Logística Global S.A.",
+        contact: "Fernanda Lima",
+        role: "Head de Inovação",
+        email: "fernanda.lima@logglobal.com.br",
+        phone: "(41) 97654-3210",
+        whatsapp: "+5541976543210",
+        segment: "Logística",
+        source: "Indicação Direct",
+        stage: "Cliente Fechado",
+        owner: "admin@vellia.com",
+        aiScore: 95,
+        estimatedValue: 120000,
+        createdAt: new Date().toISOString()
+    }
+];
 const INITIAL_PROPOSALS = [];
 
 const INITIAL_SERVICES = [

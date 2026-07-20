@@ -163,6 +163,19 @@ export const Kanban = {
 
             const fmtVal = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(leadValue);
 
+            // Barra de progresso do Score IA
+            const scoreBarHtml = (lead.stage !== "Cliente Fechado" && lead.stage !== "Cliente Perdido") ? `
+                <div style="margin: 2px 0 0 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                        <span style="font-size: 9px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px;">Score IA</span>
+                        <span style="font-size: 9px; font-weight: 800; color: ${scoreColor};">${aiScore}/100</span>
+                    </div>
+                    <div style="background: var(--border-color); border-radius: 99px; height: 4px; overflow: hidden;">
+                        <div class="kanban-score-bar" data-score="${aiScore}" style="width: 0%; height: 100%; border-radius: 99px; background: linear-gradient(90deg, ${scoreColor}99, ${scoreColor}); transition: width 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);"></div>
+                    </div>
+                </div>
+            ` : "";
+
             card.innerHTML = `
                 <div class="kanban-card-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
                     <div style="display: flex; gap: 4px; align-items: center;">
@@ -182,6 +195,8 @@ export const Kanban = {
                 </div>
                 ` : ""}
                 
+                ${scoreBarHtml}
+
                 <div class="kanban-card-details" style="margin-top: 4px;">
                     <span class="kanban-card-tag">${lead.segment}</span>
                     <div style="display: flex; align-items: center; gap: 8px;">
@@ -204,7 +219,28 @@ export const Kanban = {
             card.addEventListener("dragstart", (e) => this.handleDragStart(e, lead.id));
             card.addEventListener("dragend", (e) => this.handleDragEnd(e));
 
+            // Animação de entrada staggered
+            const cardIndex = stageCounts[lead.stage] - 1;
+            card.style.opacity = "0";
+            card.style.transform = "translateY(12px)";
+            card.style.transition = "opacity 0.35s ease, transform 0.35s ease";
+
             container.appendChild(card);
+
+            // Animar cada cartão com delay progressivo
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    card.style.opacity = "";
+                    card.style.transform = "";
+                    // Após entrada, ativar barra de progresso do score
+                    const bar = card.querySelector(".kanban-score-bar");
+                    if (bar) {
+                        setTimeout(() => {
+                            bar.style.width = `${bar.dataset.score}%`;
+                        }, 100);
+                    }
+                }, Math.min(cardIndex * 50, 400));
+            });
         });
 
         // Atualizar contadores no topo das colunas
@@ -230,23 +266,52 @@ export const Kanban = {
     // TRATADORES DE EVENTO DRAG & DROP
     // ==========================================================================
 
+    _removePlaceholders() {
+        document.querySelectorAll(".kanban-drop-placeholder").forEach(p => p.remove());
+    },
+
+    _getDropPosition(e, container) {
+        const cards = [...container.querySelectorAll(".kanban-card:not(.dragging)")];
+        for (const card of cards) {
+            const rect = card.getBoundingClientRect();
+            if (e.clientY < rect.top + rect.height / 2) return card;
+        }
+        return null; // inserir no final
+    },
+
     handleDragStart(e, leadId) {
         draggedLeadId = leadId;
         e.dataTransfer.setData("text/plain", leadId);
-        e.currentTarget.classList.add("dragging");
+        e.dataTransfer.effectAllowed = "move";
+        // Delay para garantir que o card visualmente suma após pegá-lo
+        requestAnimationFrame(() => e.currentTarget.classList.add("dragging"));
     },
 
     handleDragEnd(e) {
         e.currentTarget.classList.remove("dragging");
-        // Remover classe de drop em todas as colunas
+        // Limpar todos os estados visuais de drag
         document.querySelectorAll(".kanban-col-cards").forEach(col => {
             col.classList.remove("drag-over");
         });
+        this._removePlaceholders();
         draggedLeadId = null;
     },
 
     handleDragOver(e) {
-        e.preventDefault(); // Necessário para permitir Drop
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        // Mostrar placeholder de inserção por posição
+        const container = e.currentTarget;
+        const beforeCard = this._getDropPosition(e, container);
+        this._removePlaceholders();
+        const placeholder = document.createElement("div");
+        placeholder.className = "kanban-drop-placeholder";
+        placeholder.style.cssText = "height: 4px; border-radius: 99px; background: var(--primary); margin: 2px 0; opacity: 0.8; animation: placeholderPulse 0.8s ease-in-out infinite;";
+        if (beforeCard) {
+            container.insertBefore(placeholder, beforeCard);
+        } else {
+            container.appendChild(placeholder);
+        }
     },
 
     handleDragEnter(e, container) {
@@ -258,6 +323,7 @@ export const Kanban = {
         // Verificar se está realmente saindo do container e não de um filho (card)
         if (!container.contains(e.relatedTarget)) {
             container.classList.remove("drag-over");
+            this._removePlaceholders();
         }
     },
 

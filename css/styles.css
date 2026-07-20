@@ -58,6 +58,9 @@
     --danger: #ef4444;
     --danger-light: #fee2e2;
     --danger-dark: #991b1b;
+
+    /* Card background */
+    --bg-card: #ffffff;
 }
 
 /* Theme Dark Class Override */
@@ -92,6 +95,32 @@
     --danger: #ef4444;
     --danger-light: rgba(239, 68, 68, 0.15);
     --danger-dark: #f87171;
+
+    /* Card background */
+    --bg-card: #12141c;
+}
+
+/* ==========================================================================
+   KEYFRAME ANIMATIONS
+   ========================================================================== */
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes animate-fade-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes placeholderPulse {
+    0%, 100% { opacity: 0.6; transform: scaleX(0.97); }
+    50%       { opacity: 1;   transform: scaleX(1); }
+}
+
+.animate-fade-in {
+    animation: animate-fade-in 0.3s ease forwards;
 }
 
 /* ==========================================================================

@@ -1173,3 +1173,10 @@ if (document.readyState === "loading") {
 } else {
     initApp();
 }
+
+// Exportar modulos globalmente para facilitar depuracao, testes e integracao
+window.Store = Store;
+window.Auth = Auth;
+window.Audit = Audit;
+window.CRM = CRM;
+window.Kanban = Kanban;

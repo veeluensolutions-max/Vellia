@@ -1,6 +1,7 @@
 import { Store } from "./store.js";
 import { Auth } from "./auth.js";
 import { Audit } from "./audit.js";
+import { SDR } from "./sdr.js";
 
 let activeLeadId = null;
 let pendingStageChange = null;
@@ -570,9 +571,7 @@ export const CRM = {
         }
 
         // Renderizar Widget de Cadência SDR
-        if (window.SDR && window.SDR.renderCadenceWidget) {
-            window.SDR.renderCadenceWidget(lead.id);
-        }
+        SDR.renderCadenceWidget(lead.id);
 
         // Resetar form follow-up
         const ffContainer = document.getElementById("followup-form-container");

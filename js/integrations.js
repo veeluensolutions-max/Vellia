@@ -49,15 +49,21 @@ export const Integrations = {
                             <span>🤖 SDR AI Automático</span>
                             <input type="checkbox" id="toggle-sdr-ai" ${config.sdrActive !== false ? "checked" : ""} style="cursor: pointer; width: 16px; height: 16px;">
                         </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>⚡ Resposta WhatsApp (&lt; 1 min)</span>
+                            <span class="badge badge-success" style="background: #dcfce7; color: #16a34a; font-size: 11px;">⚡ Ativo</span>
+                        </div>
                         <div style="display: flex; justify-content: space-between;">
                             <span>Leads Recebidos (Hoje)</span>
                             <span style="font-weight: 700;" id="meta-leads-count">0</span>
                         </div>
                     </div>
 
-                    <div style="margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border-color); display: flex; gap: 10px;">
-                        <button class="btn btn-primary" style="flex: 1;" onclick="window.simulateMetaLead()">Simular Lead</button>
-                        <button class="btn btn-outline" style="flex: 1;" onclick="window.openMetaConfigModal()">Configurar</button>
+                    <div style="margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border-color); display: flex; flex-wrap: wrap; gap: 8px;">
+                        <button class="btn btn-primary" style="flex: 1; font-size: 11.5px; padding: 6px 8px;" onclick="window.simulateMetaLead()">Simular Lead</button>
+                        <button class="btn btn-outline" style="flex: 1; font-size: 11.5px; padding: 6px 8px;" onclick="window.simulateMessengerMessage()">Simular Messenger</button>
+                        <button class="btn btn-outline" style="flex: 1; font-size: 11.5px; padding: 6px 8px; border-color: #e1306c; color: #e1306c;" onclick="window.simulateInstagramDirect()">📸 Simular Instagram Direct</button>
+                        <button class="btn btn-outline" style="width: 100%; font-size: 12px; padding: 6px 10px;" onclick="window.openMetaConfigModal()">⚙️ Configurações Meta</button>
                     </div>
                 </div>
 
@@ -392,8 +398,11 @@ window.simulateMetaLead = function() {
             countSpan.textContent = parseInt(countSpan.textContent) + 1;
         }
 
-        // Disparar evento para atualizar visões
+        // Disparar evento para atualizar visões e notificações
         window.dispatchEvent(new CustomEvent("vellia:waSent"));
+        window.dispatchEvent(new CustomEvent("vellia:metaLeadReceived", {
+            detail: { contact: newLead.name || newLead.contact, company: newLead.company, source: "Meta Ads" }
+        }));
 
         // Se a automação SDR estiver ativa, inicia a triagem após 1.5s
         const waConfig = JSON.parse(localStorage.getItem("comercial_wa_api_config")) || { sdrActive: true };
@@ -404,6 +413,132 @@ window.simulateMetaLead = function() {
             alert(`Lead simulado do Meta Ads (${newLead.company}) recebido! O SDR AI iniciou a triagem automática.`);
         } else {
             alert('Lead simulado recebido com sucesso! Vá para a tela de Contatos para visualizá-lo.');
+        }
+    });
+};
+
+window.simulateMessengerMessage = function() {
+    import('./store.js').then(module => {
+        const Store = module.Store;
+        const leads = Store.getLeads();
+        
+        const mockSenderId = Math.floor(1000 + Math.random() * 9000).toString();
+        const newLead = {
+            id: 'L_msg_' + Date.now(),
+            name: 'Cliente Messenger ' + mockSenderId,
+            contact: 'Cliente Facebook ' + mockSenderId,
+            email: `messenger_${mockSenderId}@facebook.com`,
+            phone: `(FB) ${mockSenderId}`,
+            company: 'FB Messenger (' + mockSenderId + ')',
+            segment: 'Redes Sociais',
+            owner: 'admin@vellia.com',
+            stage: 'Contato',
+            source: 'Facebook Messenger',
+            date: new Date().toISOString()
+        };
+        
+        leads.unshift(newLead);
+        Store.saveLeads(leads);
+        
+        const logs = Store.getLogs();
+        logs.unshift({
+            id: 'log-' + Date.now(),
+            timestamp: new Date().toISOString(),
+            userEmail: 'sistema@vellia.com',
+            action: 'MESSENGER_RECEIVED',
+            details: `Mensagem recebida no Facebook Messenger de ${newLead.company}`
+        });
+        Store.saveLogs(logs);
+
+        // Atualizar contador na tela se existir
+        const countSpan = document.getElementById('meta-leads-count');
+        if (countSpan) {
+            countSpan.textContent = parseInt(countSpan.textContent) + 1;
+        }
+
+        window.dispatchEvent(new CustomEvent("vellia:waSent"));
+        window.dispatchEvent(new CustomEvent("vellia:metaLeadReceived", {
+            detail: { contact: newLead.contact, company: newLead.company, source: "Facebook Messenger" }
+        }));
+
+        const waConfig = JSON.parse(localStorage.getItem("comercial_wa_api_config")) || { sdrActive: true };
+        if (waConfig.sdrActive !== false) {
+            setTimeout(() => {
+                import('./sdr.js').then(m => m.SDR.runTriage(newLead.id));
+            }, 1500);
+            alert(`Mensagem simulada do Facebook Messenger (${newLead.company}) recebida! O SDR AI iniciou a triagem automática.`);
+        } else {
+            alert('Mensagem do Facebook Messenger recebida com sucesso!');
+        }
+    });
+};
+
+window.simulateInstagramDirect = function() {
+    import('./store.js').then(module => {
+        const Store = module.Store;
+        const leads = Store.getLeads();
+        
+        const mockIgUsernames = ["@mariana.tech", "@lucas.design", "@carol.influencer", "@rafael.ventures"];
+        const randIdx = Math.floor(Math.random() * mockIgUsernames.length);
+        const mockHandle = mockIgUsernames[randIdx];
+        const mockId = Math.floor(1000 + Math.random() * 9000).toString();
+
+        const newLead = {
+            id: 'L_ig_' + Date.now(),
+            name: `Cliente Instagram (${mockHandle})`,
+            contact: mockHandle,
+            email: `direct_${mockId}@instagram.com`,
+            phone: `(IG) ${mockHandle}`,
+            whatsapp: `55119${mockId}${mockId}`,
+            company: `Instagram Direct (${mockHandle})`,
+            segment: 'Redes Sociais',
+            owner: 'admin@vellia.com',
+            stage: 'Contato',
+            source: 'Instagram Direct',
+            date: new Date().toISOString(),
+            interactions: [
+                {
+                    id: 'int_ig_init_' + Date.now(),
+                    type: "Instagram Direct",
+                    description: `📸 **Mensagem Recebida via Instagram Direct:** "Olá! Vi o post de vocês sobre a plataforma comercial e gostaria de saber os valores para a minha equipe."`,
+                    timestamp: new Date().toISOString(),
+                    userEmail: "sistema@vellia.com"
+                }
+            ]
+        };
+        
+        leads.unshift(newLead);
+        Store.saveLeads(leads);
+        
+        const logs = Store.getLogs();
+        logs.unshift({
+            id: 'log-' + Date.now(),
+            timestamp: new Date().toISOString(),
+            userEmail: 'sistema@vellia.com',
+            action: 'INSTAGRAM_DIRECT_RECEIVED',
+            details: `Mensagem recebida no Instagram Direct de ${mockHandle}`
+        });
+        Store.saveLogs(logs);
+
+        // Atualizar contador na tela se existir
+        const countSpan = document.getElementById('meta-leads-count');
+        if (countSpan) {
+            countSpan.textContent = parseInt(countSpan.textContent) + 1;
+        }
+
+        window.dispatchEvent(new CustomEvent("vellia:waSent"));
+        window.dispatchEvent(new CustomEvent("vellia:metaLeadReceived", {
+            detail: { contact: newLead.contact, company: newLead.company, source: "Instagram Direct" }
+        }));
+
+        const waConfig = JSON.parse(localStorage.getItem("comercial_wa_api_config")) || { sdrActive: true };
+        if (waConfig.sdrActive !== false) {
+            setTimeout(() => {
+                import('./sdr.js').then(m => m.SDR.runTriage(newLead.id));
+            }, 1500);
+            alert(`Mensagem simulada do Instagram Direct (${mockHandle}) recebida! O SDR AI iniciou a triagem automática.`);
+        } else {
+            alert(`Mensagem do Instagram Direct (${mockHandle}) recebida com sucesso!`);
         }
     });
 };
@@ -452,11 +587,17 @@ window.openMetaConfigModal = function() {
                     </div>
                 </div>
 
-                <!-- Graph API Credentials -->
+                <!-- Graph API & CAPI Credentials -->
                 <div class="form-group" style="display: flex; flex-direction: column; gap: 4px;">
                     <label style="font-size: 12px; font-weight: 600; color: var(--text-primary); display: block;">Page Access Token (Token de Acesso)</label>
                     <input type="password" id="meta-access-token-input" class="form-control" placeholder="Inserir Page Access Token do Facebook" style="font-size: 12px; height: 36px; width: 100%; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0 8px;">
-                    <span style="font-size: 11px; color: var(--text-muted); display: block;">Token requerido para que o backend consulte dados do formulário a partir do leadgen_id.</span>
+                    <span style="font-size: 11px; color: var(--text-muted); display: block;">Token requerido para consulta do formulário via Graph API e envio de eventos CAPI.</span>
+                </div>
+
+                <div class="form-group" style="display: flex; flex-direction: column; gap: 4px;">
+                    <label style="font-size: 12px; font-weight: 600; color: var(--text-primary); display: block;">Meta Pixel ID (Conversions API)</label>
+                    <input type="text" id="meta-pixel-id-input" class="form-control" placeholder="Ex: 123456789012345" style="font-size: 12px; height: 36px; width: 100%; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0 8px;" value="123456789012345">
+                    <span style="font-size: 11px; color: var(--text-muted); display: block;">ID do Pixel para envio de estatísticas de conversão e otimização de anúncios.</span>
                 </div>
 
                 <!-- Mapeamento de Campos -->
@@ -482,17 +623,22 @@ window.openMetaConfigModal = function() {
                 </div>
 
                 <!-- Sandbox -->
-                <div style="border-top: 1px solid var(--border-color); padding-top: 14px; background: rgba(99,102,241,0.03); padding: 12px; border-radius: var(--radius-md); border: 1px dashed var(--primary); margin-top: 8px;">
-                    <h4 style="font-size: 13px; font-weight: 700; color: var(--primary); margin: 0 0 6px 0; display: flex; align-items: center; gap: 6px;">
-                        <span>🚀</span> Sandbox do Desenvolvedor (Simulador Webhook)
+                <div style="border-top: 1px solid var(--border-color); padding-top: 14px; background: rgba(99,102,241,0.03); padding: 12px; border-radius: var(--radius-md); border: 1px dashed var(--primary); margin-top: 8px; display: flex; flex-direction: column; gap: 8px;">
+                    <h4 style="font-size: 13px; font-weight: 700; color: var(--primary); margin: 0; display: flex; align-items: center; gap: 6px;">
+                        <span>🚀</span> Sandbox do Desenvolvedor (Simuladores API)
                     </h4>
-                    <p style="font-size: 11px; color: var(--text-muted); margin: 0 0 10px 0;">Envie um POST contendo o payload de webhook simulado para o endpoint backend do VelliaCRM.</p>
+                    <p style="font-size: 11px; color: var(--text-muted); margin: 0;">Envie um POST contendo o payload de webhook simulado para o endpoint backend do VelliaCRM.</p>
                     
-                    <textarea id="meta-sandbox-payload" class="form-control" style="font-family: monospace; font-size: 11px; height: 80px; width: 100%; margin-bottom: 10px; background: var(--bg-app); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 6px; resize: vertical;"></textarea>
+                    <textarea id="meta-sandbox-payload" class="form-control" style="font-family: monospace; font-size: 11px; height: 75px; width: 100%; background: var(--bg-app); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 6px; resize: vertical;"></textarea>
                     
-                    <button class="btn btn-outline" id="btn-fire-sandbox-webhook" style="width: 100%; font-size: 12px; height: 32px; display: flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--primary); color: var(--primary); background: transparent; cursor: pointer;">
-                        Enviar Webhook de Teste (POST /api/meta-webhook)
-                    </button>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-outline" id="btn-fire-sandbox-webhook" style="flex: 1; font-size: 11px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--primary); color: var(--primary); background: transparent; cursor: pointer;">
+                            Webhook Teste (POST /api/meta-webhook)
+                        </button>
+                        <button class="btn btn-outline" id="btn-fire-capi-test" style="flex: 1; font-size: 11px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid #16a34a; color: #16a34a; background: transparent; cursor: pointer;">
+                            📊 Testar CAPI Pixel (POST /api/meta-capi)
+                        </button>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer" style="padding: 16px 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 10px; background: var(--bg-card); border-bottom-left-radius: var(--radius-lg); border-bottom-right-radius: var(--radius-lg);">
@@ -509,6 +655,7 @@ window.openMetaConfigModal = function() {
         document.getElementById("btn-save-meta-config").addEventListener("click", async () => {
             const verifyToken = document.getElementById("meta-verify-token-input").value.trim();
             const accessToken = document.getElementById("meta-access-token-input").value.trim();
+            const pixelId = document.getElementById("meta-pixel-id-input").value.trim();
             const mapName = document.getElementById("map-name").value.trim();
             const mapEmail = document.getElementById("map-email").value.trim();
             const mapPhone = document.getElementById("map-phone").value.trim();
@@ -517,6 +664,7 @@ window.openMetaConfigModal = function() {
             const config = {
                 verifyToken,
                 accessToken,
+                pixelId,
                 fields: {
                     name: mapName,
                     email: mapEmail,
@@ -537,6 +685,45 @@ window.openMetaConfigModal = function() {
             saveBtn.textContent = "Salvar Configurações";
             alert("Configurações salvas e sincronizadas com sucesso!");
             window.closeMetaConfigModal();
+        });
+
+        document.getElementById("btn-fire-capi-test").addEventListener("click", async () => {
+            const capiBtn = document.getElementById("btn-fire-capi-test");
+            capiBtn.disabled = true;
+            capiBtn.textContent = "Enviando Evento CAPI...";
+
+            try {
+                const response = await fetch("/api/meta-capi", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        eventName: "QualifyLead",
+                        pixelId: document.getElementById("meta-pixel-id-input").value.trim(),
+                        lead: {
+                            id: `lead_test_${Date.now()}`,
+                            company: "Empresa Teste CAPI",
+                            contact: "Cliente Diagnóstico",
+                            email: "teste.capi@exemplo.com",
+                            phone: "(11) 99999-8888",
+                            stage: "Lead Qualificado",
+                            estimatedValue: 50000
+                        }
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    alert(`✅ Evento Meta CAPI (${data.eventName}) disparado com sucesso em modo ${data.mode}!\nID do Evento: ${data.eventId}`);
+                } else {
+                    const text = await response.text();
+                    alert(`Falha ao disparar evento CAPI: ${response.status} - ${text}`);
+                }
+            } catch (err) {
+                alert(`Erro ao testar CAPI Meta: ${err.message}`);
+            } finally {
+                capiBtn.disabled = false;
+                capiBtn.textContent = "📊 Testar CAPI Pixel (POST /api/meta-capi)";
+            }
         });
 
         document.getElementById("btn-fire-sandbox-webhook").addEventListener("click", async () => {

@@ -45,6 +45,26 @@ export const Notifications = {
             });
         });
 
+        // Ouvir notificações de Leads recebidos do Meta Ads / Facebook / Messenger / Instagram Direct
+        window.addEventListener("vellia:metaLeadReceived", (e) => {
+            const { contact, company, source } = e.detail || {};
+            const leadTitle = source === "Instagram Direct"
+                ? "📸 Nova Mensagem Direct no Instagram!"
+                : (source === "Facebook Messenger" ? "💬 Nova Mensagem no Facebook Messenger" : "🚨 Novo Lead do Meta Ads (Facebook)");
+            const leadMsg = `${contact || 'Novo Lead'} (${company || 'Empresa'}) deu entrada no CRM via ${source || 'Redes Sociais'}.`;
+            
+            this.addItem({
+                id: `meta_notif_${Date.now()}`,
+                title: leadTitle,
+                message: leadMsg,
+                type: "lead",
+                read: false,
+                timestamp: new Date()
+            });
+
+            this.sendNativeNotification(leadTitle, leadMsg);
+        });
+
         // Ouvir notificações originadas pelos Agentes de IA
         window.addEventListener("vellia:aiNotification", (e) => {
             const { id, title, message, type } = e.detail || {};
@@ -272,22 +292,19 @@ export const Notifications = {
         return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
     },
 
-    // Adicionar item de notificação programaticamente (ex: novos leads para vendedor)
     addItem(item) {
-        // Evitar duplicatas por ID
         if (this.items.find(i => i.id === item.id)) return;
         this.items.unshift({ ...item, read: false });
         this.render();
     },
 
-    // Verificar follow-ups agendados e disparar notificações
     checkFollowupReminders() {
         const currentUser = Auth.getCurrentUser();
         if (!currentUser) return;
 
         const allLeads = Store.getLeads();
         const now = Date.now();
-        const windowMs = 10 * 60 * 1000; // 10 minutos de tolerância
+        const windowMs = 10 * 60 * 1000;
         const notifiedKey = "vellia_followup_notified";
         const notified = JSON.parse(sessionStorage.getItem(notifiedKey) || "[]");
         let changed = false;
@@ -325,7 +342,6 @@ export const Notifications = {
         }
     },
 
-    // Verificar tarefas do dia atribuídas pelo gestor ainda pendentes
     checkOverdueTasks() {
         const currentUser = Auth.getCurrentUser();
         if (!currentUser) return;
@@ -366,4 +382,3 @@ export const Notifications = {
         sessionStorage.setItem(notifiedKey, JSON.stringify(notified));
     }
 };
-

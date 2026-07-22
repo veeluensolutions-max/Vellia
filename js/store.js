@@ -173,9 +173,40 @@ async function supabaseFetch(table) {
     return await response.json();
 }
 
+const TABLE_SCHEMAS = {
+    comercial_users: ['id', 'name', 'email', 'password', 'role', 'avatar', 'status', 'lastLoginAt'],
+    comercial_leads: ['id', 'company', 'contact', 'role', 'phone', 'whatsapp', 'email', 'city', 'state', 'segment', 'source', 'stage', 'owner', 'interactions', 'stageHistory'],
+    comercial_proposals: ['id', 'leadId', 'company', 'contact', 'title', 'value', 'status', 'sentAt', 'closedAt', 'validUntil', 'competitor', 'lossReason', 'notes', 'createdBy'],
+    comercial_logs: ['id', 'timestamp', 'userEmail', 'action', 'details', 'status'],
+    comercial_services: ['id', 'name', 'category', 'baseMargin', 'isActive'],
+    comercial_goals: ['userEmail', 'period', 'targets'],
+    comercial_tasks: ['id', 'owner', 'text', 'done', 'date', 'priority', 'assignedBy']
+};
+
 async function upsertSupabase(table, data) {
     const url = `${SUPABASE_URL}/rest/v1/${table}`;
     try {
+        let payload = data;
+        if (TABLE_SCHEMAS[table]) {
+            if (Array.isArray(data)) {
+                payload = data.map(item => {
+                    const filtered = {};
+                    for (const key of TABLE_SCHEMAS[table]) {
+                        if (item.hasOwnProperty(key)) {
+                            filtered[key] = item[key];
+                        }
+                    }
+                    return filtered;
+                });
+            } else {
+                payload = {};
+                for (const key of TABLE_SCHEMAS[table]) {
+                    if (data.hasOwnProperty(key)) {
+                        payload[key] = data[key];
+                    }
+                }
+            }
+        }
         const response = await fetch(url, {
             method: "POST",
             headers: {
@@ -184,7 +215,7 @@ async function upsertSupabase(table, data) {
                 "Content-Type": "application/json",
                 "Prefer": "resolution=merge-duplicates"
             },
-            body: JSON.stringify(data)
+            body: JSON.stringify(payload)
         });
         if (!response.ok) {
             const errBody = await response.text();
@@ -430,6 +461,26 @@ export const Store = {
         return JSON.parse(localStorage.getItem("comercial_leads")) || [];
     },
 
+    saveLeads(leads) {
+        localStorage.setItem("comercial_leads", JSON.stringify(leads));
+        if (Array.isArray(leads)) {
+            for (const lead of leads) {
+                upsertSupabase("comercial_leads", lead);
+            }
+        }
+    },
+
+    getLogs() {
+        return JSON.parse(localStorage.getItem("comercial_logs")) || [];
+    },
+
+    saveLogs(logs) {
+        localStorage.setItem("comercial_logs", JSON.stringify(logs));
+        if (Array.isArray(logs) && logs.length > 0) {
+            upsertSupabase("comercial_logs", logs[0]);
+        }
+    },
+
     getLeadById(id) {
         return this.getLeads().find(l => l.id === id);
     },
@@ -511,12 +562,49 @@ export const Store = {
             leads[index].stage = newStage;
             
             // Gravar histórico de etapas
+            leads[index].stageHistory = leads[index].stageHistory || [];
             leads[index].stageHistory.push({
                 stage: newStage,
                 userEmail,
                 timestamp: new Date().toISOString(),
                 reason: reason || `Transição manual de etapa.`
             });
+
+            // Disparar Meta Conversions API (CAPI) para estágios estratégicos
+            const metaConfig = JSON.parse(localStorage.getItem("comercial_meta_config")) || {};
+            const relevantStages = ["Lead Qualificado", "Proposta Enviada", "Negociação", "Cliente Fechado"];
+            
+            if (relevantStages.includes(newStage)) {
+                fetch('/api/meta-capi', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        lead: leads[index],
+                        pixelId: metaConfig.pixelId,
+                        accessToken: metaConfig.accessToken
+                    })
+                }).then(res => res.json()).then(data => {
+                    if (data && data.success) {
+                        const targetLead = this.getLeadById(leadId);
+                        if (targetLead) {
+                            targetLead.interactions = targetLead.interactions || [];
+                            targetLead.interactions.push({
+                                id: 'capi_notif_' + Date.now(),
+                                type: "Observação",
+                                description: `📊 **Meta Conversions API (CAPI):** Evento \`${data.eventName}\` enviado com sucesso para a Meta (${data.mode || 'Sandbox'}).`,
+                                timestamp: new Date().toISOString(),
+                                userEmail: "sistema@vellia.com"
+                            });
+                            const currentLeads = this.getLeads();
+                            const idx = currentLeads.findIndex(l => l.id === leadId);
+                            if (idx !== -1) {
+                                currentLeads[idx] = targetLead;
+                                localStorage.setItem("comercial_leads", JSON.stringify(currentLeads));
+                            }
+                        }
+                    }
+                }).catch(err => console.warn("Erro ao disparar Meta CAPI:", err));
+            }
 
             localStorage.setItem("comercial_leads", JSON.stringify(leads));
             upsertSupabase("comercial_leads", leads[index]);

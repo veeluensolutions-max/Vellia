@@ -104,6 +104,43 @@ Retorne a resposta estritamente no seguinte formato JSON:
                 userEmail: "sdr-ai@vellia.com"
             });
 
+            // 5. Tentar disparo real via WhatsApp API (/api/send-whatsapp)
+            const waConfig = JSON.parse(localStorage.getItem("comercial_wa_api_config")) || {};
+            const leadPhone = lead.whatsapp || lead.phone;
+            const initialSdrMsg = parsed.dialogue.find(d => d.from === "SDR")?.text || `Olá ${lead.contact || ''}, vi seu interesse via Meta Ads. Como podemos ajudar?`;
+
+            if (leadPhone) {
+                try {
+                    const sendRes = await fetch('/api/send-whatsapp', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            phone: leadPhone,
+                            message: initialSdrMsg,
+                            config: waConfig
+                        })
+                    });
+
+                    if (sendRes.ok) {
+                        const sendData = await sendRes.json();
+                        const providerMsg = sendData.provider || 'API WhatsApp';
+                        const isLink = sendData.deepLink;
+
+                        lead.interactions.push({
+                            id: 'wa_sdr_sent_' + Date.now(),
+                            type: "WhatsApp",
+                            description: isLink 
+                                ? `🚀 **Abordagem Inicial WhatsApp Pronta (< 1 min):**\n\n💬 "${initialSdrMsg}"\n\n👉 [Clique para enviar via WhatsApp Web/App](${sendData.deepLink})`
+                                : `⚡ **Disparo Automático WhatsApp Realizado (${providerMsg}):**\n\n💬 "${initialSdrMsg}"`,
+                            timestamp: new Date().toISOString(),
+                            userEmail: "sdr-ai@vellia.com"
+                        });
+                    }
+                } catch (err) {
+                    console.warn("[SDR AI] Erro ao invocar /api/send-whatsapp:", err);
+                }
+            }
+
             lead.interactions.push({
                 id: 'wa_sdr_summary_' + Date.now(),
                 type: "Observação",
@@ -190,6 +227,8 @@ Retorne a resposta estritamente no seguinte formato JSON:
     runTriageFallback(lead) {
         const oldStage = lead.stage;
         lead.stage = "Lead Qualificado";
+        
+        lead.interactions = lead.interactions || [];
         lead.interactions.push({
             id: 'wa_sdr_fallback_' + Date.now(),
             type: "Observação",
@@ -197,6 +236,8 @@ Retorne a resposta estritamente no seguinte formato JSON:
             timestamp: new Date().toISOString(),
             userEmail: "sdr-ai@vellia.com"
         });
+
+        lead.stageHistory = lead.stageHistory || [];
         lead.stageHistory.push({
             stage: "Lead Qualificado",
             userEmail: "sdr-ai@vellia.com",

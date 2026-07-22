@@ -82,6 +82,7 @@ export const Dashboard = {
         this.renderRecentActivity(leads, proposals);
         this.renderTasksWeekChart();
         this.renderMetaAdsPanel();
+        this.renderChannelRoiMatrix(leads, proposals);
     },
 
     // ===========================================================================
@@ -1020,6 +1021,105 @@ export const Dashboard = {
                     }
                 });
             }
+        }
+    },
+
+    // ===========================================================================
+    // MATRIZ DE PERFORMANCE E ROI POR CANAL DE ANÚNCIOS
+    // ===========================================================================
+    renderChannelRoiMatrix(leads, proposals) {
+        const container = document.getElementById("channel-roi-matrix-container");
+        if (!container) return;
+
+        const channels = [
+            { name: "Meta Ads (Facebook)", key: ["Meta Ads", "Facebook"], icon: "🟦", color: "#1877F2" },
+            { name: "Instagram Direct", key: ["Instagram Direct", "Instagram"], icon: "📸", color: "#E1306C" },
+            { name: "Facebook Messenger", key: ["Facebook Messenger", "Messenger"], icon: "💬", color: "#0084FF" },
+            { name: "WhatsApp API", key: ["WhatsApp", "WhatsApp Copilot"], icon: "🟢", color: "#25D366" },
+            { name: "Google Ads", key: ["Google Ads", "Google"], icon: "🔍", color: "#EA4335" },
+            { name: "Inbound Website", key: ["Inbound Website", "Website"], icon: "🌐", color: "#6366F1" },
+            { name: "Outros / Indicação", key: ["Indicação Direct", "Outbound", "Outros"], icon: "🤝", color: "#8B5CF6" }
+        ];
+
+        const fmt = v => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+
+        const matrixData = channels.map(ch => {
+            const chLeads = leads.filter(l => ch.key.some(k => (l.source || "").toLowerCase().includes(k.toLowerCase())));
+            const totalCount = chLeads.length;
+            const qualifiedCount = chLeads.filter(l => l.stage !== "Contato" && l.stage !== "Lead Gerado" && l.stage !== "Cliente Perdido").length;
+            const wonLeads = chLeads.filter(l => l.stage === "Cliente Fechado");
+            const wonCount = wonLeads.length;
+            
+            // Somar receita de propostas ganhas ou estimativa do lead
+            const wonRevenue = proposals
+                .filter(p => p.status === "Ganho" && chLeads.some(l => l.id === p.leadId || l.company === p.company))
+                .reduce((s, p) => s + (p.value || 0), 0) || wonLeads.reduce((s, l) => s + (l.estimatedValue || 0), 0);
+
+            const convRate = totalCount > 0 ? Math.round((wonCount / totalCount) * 100) : 0;
+            const ticketMedio = wonCount > 0 ? Math.round(wonRevenue / wonCount) : 0;
+
+            return {
+                ...ch,
+                totalCount,
+                qualifiedCount,
+                wonCount,
+                wonRevenue,
+                convRate,
+                ticketMedio
+            };
+        });
+
+        const maxRevenue = Math.max(...matrixData.map(d => d.wonRevenue), 1);
+
+        container.innerHTML = `
+            <div style="overflow-x: auto;">
+                <table class="table" style="width: 100%; border-collapse: collapse; font-size: 12.5px;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted); text-align: left;">
+                            <th style="padding: 10px 12px;">Canal de Anúncio / Origem</th>
+                            <th style="padding: 10px 12px; text-align: center;">Total Leads</th>
+                            <th style="padding: 10px 12px; text-align: center;">Qualificados (SDR)</th>
+                            <th style="padding: 10px 12px; text-align: center;">Vendas Fechadas</th>
+                            <th style="padding: 10px 12px; text-align: center;">Taxa de Conversão</th>
+                            <th style="padding: 10px 12px; text-align: right;">Receita Gerada</th>
+                            <th style="padding: 10px 12px; text-align: right;">Ticket Médio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${matrixData.map(row => {
+                            const pctBar = Math.round((row.wonRevenue / maxRevenue) * 100);
+                            return `
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td style="padding: 12px; font-weight: 700; color: var(--text-primary);">
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <span>${row.icon}</span>
+                                            <span>${row.name}</span>
+                                        </div>
+                                    </td>
+                                    <td style="padding: 12px; text-align: center; font-weight: 600;">${row.totalCount}</td>
+                                    <td style="padding: 12px; text-align: center; color: #8b5cf6; font-weight: 600;">${row.qualifiedCount}</td>
+                                    <td style="padding: 12px; text-align: center; color: #10b981; font-weight: 700;">${row.wonCount}</td>
+                                    <td style="padding: 12px; text-align: center;">
+                                        <span class="badge" style="background: rgba(99,102,241,0.1); color: var(--primary); font-weight: 700;">${row.convRate}%</span>
+                                    </td>
+                                    <td style="padding: 12px; text-align: right; font-weight: 700; color: var(--text-primary);">
+                                        <div>${fmt(row.wonRevenue)}</div>
+                                        <div style="height: 4px; background: var(--bg-app); border-radius: 2px; margin-top: 4px; overflow: hidden; min-width: 100px;">
+                                            <div style="height: 100%; width: ${pctBar}%; background: ${row.color}; border-radius: 2px; transition: width 0.6s;"></div>
+                                        </div>
+                                    </td>
+                                    <td style="padding: 12px; text-align: right; font-weight: 600; color: var(--text-muted);">${fmt(row.ticketMedio)}</td>
+                                </tr>
+                            `;
+                        }).join("")}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        const lastUpdate = document.getElementById("channel-roi-last-update");
+        if (lastUpdate) {
+            lastUpdate.textContent = "Atualizado em tempo real: " + new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
         }
     }
 };

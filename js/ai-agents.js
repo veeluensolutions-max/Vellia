@@ -2,7 +2,7 @@ import { Store } from "./store.js";
 import { Auth } from "./auth.js";
 
 // ===========================================================================
-// VELLIA AI AGENTS â€” Motor de ExecuÃ§Ã£o Real
+// VELLIA AI AGENTS — Motor de Execução Real
 // ===========================================================================
 
 export const AIAgents = {
@@ -10,7 +10,7 @@ export const AIAgents = {
     _analystInterval: null,
     _agentEmail: "agent@vellia.ai",
 
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────────────────────────────────
     // INIT
     init() {
         this.renderLogs();
@@ -47,9 +47,9 @@ export const AIAgents = {
         window.addEventListener("vellia:proposalUpdated", ()  => this.runAnalystCycle());
     },
 
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    // MOTORES PERIÃ“DICOS
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────────────────────────────────
+    // MOTORES PERIÓDICOS
+    // ─────────────────────────────────────────────────────────────────────────
     startRealtimeEngines() {
         clearInterval(this._sdrInterval);
         this._sdrInterval = setInterval(() => {
@@ -70,27 +70,27 @@ export const AIAgents = {
         return localStorage.getItem(`agent_${id}_active`) !== "false";
     },
 
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────────────────────────────────
     // REAGIR A NOVO LEAD
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────────────────────────────────
     onLeadAdded(lead) {
         if (!this.isAgentActive("sdr")) return;
         const score = this.scoreLead(lead);
         Store.updateLead(lead.id, { aiScore: score }, this._agentEmail);
 
-        const priority = score >= 75 ? "ðŸ”¥ ALTA" : score >= 45 ? "âš¡ MÃ‰DIA" : "â„ï¸ BAIXA";
+        const priority = score >= 75 ? "🔥 ALTA" : score >= 45 ? "⚡ MÉDIA" : "❄️ BAIXA";
         this.addAgentLog(
             "SDR Agent",
-            `Novo lead detectado: ${lead.company} â€” Score ${score}/100 (Prioridade ${priority}). ${this.sdrRecommendation(score, lead)}`,
+            `Novo lead detectado: ${lead.company} — Score ${score}/100 (Prioridade ${priority}). ${this.sdrRecommendation(score, lead)}`,
             score >= 75 ? "success" : score >= 45 ? "info" : "warn"
         );
 
         window.dispatchEvent(new CustomEvent("vellia:agentScoreUpdated", { detail: { leadId: lead.id, score } }));
     },
 
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    // CICLO SDR â€” QualificaÃ§Ã£o de Todos os Leads
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────────────────────────────────
+    // CICLO SDR — Qualificação de Todos os Leads
+    // ─────────────────────────────────────────────────────────────────────────
     runSDRCycle(verbose = true) {
         const leads = Store.getLeads();
         if (leads.length === 0) {
@@ -124,20 +124,20 @@ export const AIAgents = {
 
         if (highPriority.length > 0) {
             const top = highPriority.sort((a, b) => b.aiScore - a.aiScore)[0];
-            this.addAgentLog("SDR Agent", `ðŸ”¥ Lead prioritÃ¡rio: ${top.company} (Score ${top.aiScore}/100) â€” ${this.sdrRecommendation(top.aiScore, top)}`, "success");
+            this.addAgentLog("SDR Agent", `🔥 Lead prioritário: ${top.company} (Score ${top.aiScore}/100) — ${this.sdrRecommendation(top.aiScore, top)}`, "success");
         }
 
         if (coldLeads.length > 0) {
             const names = coldLeads.slice(0, 3).map(l => l.company).join(", ");
-            this.addAgentLog("SDR Agent", `â„ï¸ ${coldLeads.length} lead(s) sem contato recente: ${names}${coldLeads.length > 3 ? ` e +${coldLeads.length - 3}` : ""}. Recomendado reengajamento.`, "warn");
+            this.addAgentLog("SDR Agent", `❄️ ${coldLeads.length} lead(s) sem contato recente: ${names}${coldLeads.length > 3 ? ` e +${coldLeads.length - 3}` : ""}. Recomendado reengajamento.`, "warn");
         }
 
         window.dispatchEvent(new CustomEvent("vellia:agentScoreUpdated", { detail: { all: true } }));
     },
 
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    // CICLO ANALYST â€” Auditoria do Pipeline
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────────────────────────────────
+    // CICLO ANALYST — Auditoria do Pipeline
+    // ─────────────────────────────────────────────────────────────────────────
     runAnalystCycle() {
         const proposals = Store.getProposals();
         if (proposals.length === 0) {
@@ -147,7 +147,7 @@ export const AIAgents = {
 
         const fmt  = v => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(v);
         const now  = new Date();
-        const open = proposals.filter(p => ["Enviada", "Em NegociaÃ§Ã£o"].includes(p.status));
+        const open = proposals.filter(p => ["Enviada", "Em Negociação"].includes(p.status));
         const won  = proposals.filter(p => p.status === "Ganho");
         const totalOpen = open.reduce((s, p) => s + (p.value || 0), 0);
         const totalWon  = won.reduce((s, p) => s + (p.value || 0), 0);
@@ -161,31 +161,31 @@ export const AIAgents = {
 
         this.addAgentLog(
             "Analyst Agent",
-            `Pipeline auditado: ${open.length} abertas (${fmt(totalOpen)}), taxa de conversÃ£o ${convRate}%, ${won.length} ganhas (${fmt(totalWon)}).`,
+            `Pipeline auditado: ${open.length} abertas (${fmt(totalOpen)}), taxa de conversão ${convRate}%, ${won.length} ganhas (${fmt(totalWon)}).`,
             "success"
         );
 
         if (expiringSoon.length > 0) {
             const valueRisk = expiringSoon.reduce((s, p) => s + (p.value || 0), 0);
             const names = expiringSoon.slice(0, 2).map(p => p.company).join(", ");
-            this.addAgentLog("Analyst Agent", `âš ï¸ ${expiringSoon.length} proposta(s) vence(m) em 7 dias â€” ${fmt(valueRisk)} em risco: ${names}${expiringSoon.length > 2 ? ` e +${expiringSoon.length - 2}` : ""}. Priorize o fechamento!`, "warn");
+            this.addAgentLog("Analyst Agent", `⚠️ ${expiringSoon.length} proposta(s) vence(m) em 7 dias — ${fmt(valueRisk)} em risco: ${names}${expiringSoon.length > 2 ? ` e +${expiringSoon.length - 2}` : ""}. Priorize o fechamento!`, "warn");
         }
 
         if (convRate < 30 && proposals.length >= 3) {
-            this.addAgentLog("Analyst Agent", `ðŸ“‰ Taxa de conversÃ£o em ${convRate}% â€” abaixo do esperado. Revise abordagens e motivos de perda.`, "warn");
+            this.addAgentLog("Analyst Agent", `📉 Taxa de conversão em ${convRate}% — abaixo do esperado. Revise abordagens e motivos de perda.`, "warn");
         } else if (convRate >= 60) {
-            this.addAgentLog("Analyst Agent", `ðŸ† Taxa de conversÃ£o excelente: ${convRate}%! PadrÃ£o acima da mÃ©dia de mercado.`, "success");
+            this.addAgentLog("Analyst Agent", `🏆 Taxa de conversão excelente: ${convRate}%! Padrão acima da média de mercado.`, "success");
         }
     },
 
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    // ALGORITMO DE SCORE SDR (0â€“100)
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────────────────────────────────
+    // ALGORITMO DE SCORE SDR (0–100)
+    // ─────────────────────────────────────────────────────────────────────────
     scoreLead(lead) {
         let score = 0;
 
-        // EstÃ¡gio do funil (+40 pts mÃ¡x)
-        const stageScores = { "Contato": 10, "Qualificado": 20, "ReuniÃ£o Marcada": 30, "Proposta Enviada": 35, "NegociaÃ§Ã£o": 40 };
+        // Estágio do funil (+40 pts máx)
+        const stageScores = { "Contato": 10, "Qualificado": 20, "Reunião Marcada": 30, "Proposta Enviada": 35, "Negociação": 40 };
         score += stageScores[lead.stage] || 5;
 
         // Completude do cadastro (+20 pts)
@@ -196,7 +196,7 @@ export const AIAgents = {
         if (lead.segment && lead.segment !== "Outros") score += 3;
         if (lead.city)     score += 3;
 
-        // InteraÃ§Ãµes (+20 pts)
+        // Interações (+20 pts)
         const intCount = lead.interactions?.length || 0;
         if (intCount >= 1)  score += 5;
         if (intCount >= 3)  score += 5;
@@ -204,10 +204,10 @@ export const AIAgents = {
         if (intCount >= 10) score += 5;
 
         // Segmento de alto valor (+10 pts)
-        const highValue = ["Tecnologia", "IndÃºstria", "SaÃºde", "EducaÃ§Ã£o", "ConstruÃ§Ã£o"];
+        const highValue = ["Tecnologia", "Indústria", "Saúde", "Educação", "Construção"];
         if (highValue.includes(lead.segment)) score += 10;
 
-        // RecÃªncia â€” interaÃ§Ã£o nos Ãºltimos 3 dias (+10 pts)
+        // Recência — interação nos últimos 3 dias (+10 pts)
         if (intCount > 0) {
             const daysSince = (Date.now() - new Date(lead.interactions.slice(-1)[0].timestamp)) / (1000 * 60 * 60 * 24);
             if (daysSince <= 3) score += 10;
@@ -218,17 +218,17 @@ export const AIAgents = {
 
     sdrRecommendation(score, lead) {
         const config   = JSON.parse(localStorage.getItem("agent_sdr_config") || '{"tone":"formal"}');
-        const toneMap  = { formal: "formal", casual: "informal", technical: "tÃ©cnica" };
+        const toneMap  = { formal: "formal", casual: "informal", technical: "técnica" };
         const tone     = toneMap[config.tone] || "formal";
         if (score >= 75) return `Enviar proposta em abordagem ${tone} imediatamente.`;
-        if (score >= 50) return `Agendar reuniÃ£o de descoberta no tom ${tone}.`;
-        if (score >= 30) return `Enviar conteÃºdo de valor para nutrir o relacionamento.`;
-        return `Lead frio â€” tentar reengajamento por WhatsApp.`;
+        if (score >= 50) return `Agendar reunião de descoberta no tom ${tone}.`;
+        if (score >= 30) return `Enviar conteúdo de valor para nutrir o relacionamento.`;
+        return `Lead frio — tentar reengajamento por WhatsApp.`;
     },
 
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────────────────────────────────
     // LOG ENGINE
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────────────────────────────────
     addAgentLog(agentName, text, status = "info") {
         const logs = JSON.parse(localStorage.getItem("ai_agents_logs") || "[]");
         logs.unshift({ timestamp: new Date().toISOString(), agent: agentName, text, status });
@@ -243,7 +243,7 @@ export const AIAgents = {
         const logs = JSON.parse(localStorage.getItem("ai_agents_logs") || "[]");
 
         if (logs.length === 0) {
-            container.innerHTML = `<p style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px 0;">Nenhuma aÃ§Ã£o dos agentes ainda. Ative-os para comeÃ§ar.</p>`;
+            container.innerHTML = `<p style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px 0;">Nenhuma ação dos agentes ainda. Ative-os para começar.</p>`;
             return;
         }
 
@@ -254,10 +254,10 @@ export const AIAgents = {
         };
 
         const agentIcon = a => {
-            if (a.includes("SDR"))        return "ðŸ¤–";
-            if (a.includes("Copywriter")) return "âœï¸";
-            if (a.includes("Analyst"))    return "ðŸ“ˆ";
-            return "âš¡";
+            if (a.includes("SDR"))        return "🤖";
+            if (a.includes("Copywriter")) return "✍️";
+            if (a.includes("Analyst"))    return "📈";
+            return "⚡";
         };
 
         container.innerHTML = logs.map(l => `
@@ -273,10 +273,10 @@ export const AIAgents = {
             </div>
         `).join("");
 
-        // Atualizar "Ãºltima aÃ§Ã£o" nos cards
-        const lastSdr     = logs.find(l => l.agent === "SDR Agent")?.text      || "Aguardando ativaÃ§Ã£o.";
-        const lastCopy    = logs.find(l => l.agent === "Copywriter Agent")?.text || "Aguardando ativaÃ§Ã£o.";
-        const lastAnalyst = logs.find(l => l.agent === "Analyst Agent")?.text   || "Aguardando ativaÃ§Ã£o.";
+        // Atualizar "última ação" nos cards
+        const lastSdr     = logs.find(l => l.agent === "SDR Agent")?.text      || "Aguardando ativação.";
+        const lastCopy    = logs.find(l => l.agent === "Copywriter Agent")?.text || "Aguardando ativação.";
+        const lastAnalyst = logs.find(l => l.agent === "Analyst Agent")?.text   || "Aguardando ativação.";
 
         const sdrActEl     = document.getElementById("agent-sdr-last-action");
         const copyActEl    = document.getElementById("agent-copy-last-action");
@@ -287,9 +287,9 @@ export const AIAgents = {
         if (analystActEl) analystActEl.textContent  = lastAnalyst;
     },
 
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────────────────────────────────
     // BIND EVENTS
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────────────────────────────────
     bindEvents() {
         const sdrToggle     = document.getElementById("agent-sdr-toggle");
         const analystToggle = document.getElementById("agent-analyst-toggle");
@@ -501,20 +501,20 @@ export const AIAgents = {
             document.querySelectorAll(".config-fields-group").forEach(el => el.style.display = "none");
 
             if (agentId === "sdr") {
-                titleEl.innerHTML = "<span>ðŸ¤–</span> Configurar SDR Agent (Vellin)";
+                titleEl.innerHTML = "<span>🤖</span> Configurar SDR Agent (Vellin)";
                 document.getElementById("config-fields-sdr").style.display = "block";
                 const c = JSON.parse(localStorage.getItem("agent_sdr_config") || '{"approach":"quick","tone":"formal","delay":"1"}');
                 document.getElementById("sdr-approach").value = c.approach;
                 document.getElementById("sdr-tone").value     = c.tone;
                 document.getElementById("sdr-delay").value    = c.delay;
             } else if (agentId === "copy") {
-                titleEl.innerHTML = "<span>âœï¸</span> Configurar Copywriter Agent";
+                titleEl.innerHTML = "<span>✍️</span> Configurar Copywriter Agent";
                 document.getElementById("config-fields-copy").style.display = "block";
                 const c = JSON.parse(localStorage.getItem("agent_copy_config") || '{"style":"persuasive","length":"medium"}');
                 document.getElementById("copy-style").value  = c.style;
                 document.getElementById("copy-length").value = c.length;
             } else if (agentId === "analyst") {
-                titleEl.innerHTML = "<span>ðŸ“ˆ</span> Configurar Analyst Agent";
+                titleEl.innerHTML = "<span>📈</span> Configurar Analyst Agent";
                 document.getElementById("config-fields-analyst").style.display = "block";
                 const c = JSON.parse(localStorage.getItem("agent_analyst_config") || '{"frequency":"daily","forecast":"realistic"}');
                 document.getElementById("analyst-frequency").value     = c.frequency;
@@ -537,19 +537,19 @@ export const AIAgents = {
                 if (agentId === "sdr") {
                     const config = { approach: document.getElementById("sdr-approach").value, tone: document.getElementById("sdr-tone").value, delay: document.getElementById("sdr-delay").value };
                     localStorage.setItem("agent_sdr_config", JSON.stringify(config));
-                    const approachMap = { quick: "QualificaÃ§Ã£o RÃ¡pida", consultative: "Consultiva", direct: "Direta" };
-                    this.addAgentLog("SDR Agent", `âš™ï¸ ConfiguraÃ§Ã£o salva: Abordagem '${approachMap[config.approach]}', tom '${config.tone}'. Reagendando ciclo.`, "success");
+                    const approachMap = { quick: "Qualificação Rápida", consultative: "Consultiva", direct: "Direta" };
+                    this.addAgentLog("SDR Agent", `⚙️ Configuração salva: Abordagem '${approachMap[config.approach]}', tom '${config.tone}'. Reagendando ciclo.`, "success");
                     if (this.isAgentActive("sdr")) this.runSDRCycle(false);
                 } else if (agentId === "copy") {
                     const config = { style: document.getElementById("copy-style").value, length: document.getElementById("copy-length").value };
                     localStorage.setItem("agent_copy_config", JSON.stringify(config));
-                    const styleMap = { persuasive: "Persuasivo", technical: "TÃ©cnico", concise: "Direto ao Ponto" };
-                    this.addAgentLog("Copywriter Agent", `âš™ï¸ ConfiguraÃ§Ã£o salva: Estilo '${styleMap[config.style]}'.`, "success");
+                    const styleMap = { persuasive: "Persuasivo", technical: "Técnico", concise: "Direto ao Ponto" };
+                    this.addAgentLog("Copywriter Agent", `⚙️ Configuração salva: Estilo '${styleMap[config.style]}'.`, "success");
                 } else if (agentId === "analyst") {
                     const config = { frequency: document.getElementById("analyst-frequency").value, forecast: document.getElementById("analyst-forecast-type").value };
                     localStorage.setItem("agent_analyst_config", JSON.stringify(config));
-                    const freqMap = { hourly: "Tempo Real", daily: "DiÃ¡rio", weekly: "Semanal" };
-                    this.addAgentLog("Analyst Agent", `âš™ï¸  ConfiguraÃ§Ã£o salva: FrequÃªncia '${freqMap[config.frequency]}'. Nova auditoria em andamento.`, "success");
+                    const freqMap = { hourly: "Tempo Real", daily: "Diário", weekly: "Semanal" };
+                    this.addAgentLog("Analyst Agent", `⚙️ Configuração salva: Frequência '${freqMap[config.frequency]}'. Nova auditoria em andamento.`, "success");
                     if (this.isAgentActive("analyst")) this.runAnalystCycle();
                 }
 

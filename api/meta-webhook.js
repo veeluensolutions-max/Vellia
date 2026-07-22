@@ -1,7 +1,20 @@
 // Vercel Serverless Function
-// Rota: POST /api/meta-webhook
+// Rota: POST /api/meta-webhook | GET /api/meta-webhook
 
 export default async function handler(req, res) {
+    // Configurar cabeçalhos CORS
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader(
+        'Access-Control-Allow-Headers',
+        'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+    );
+
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
     if (req.method === 'GET') {
         // Validação do Webhook (Meta exige que você responda ao challenge hub.challenge)
         const mode = req.query['hub.mode'];
@@ -46,9 +59,9 @@ export default async function handler(req, res) {
     if (req.method === 'POST') {
         const body = req.body;
 
-        console.log('📬 Webhook recebido do Meta Ads:', JSON.stringify(body, null, 2));
+        console.log('📬 Webhook recebido do Meta Ads / Messenger:', JSON.stringify(body, null, 2));
 
-        if (body.object === 'page') {
+        if (body.object === 'page' || body.object === 'instagram') {
             // Buscar configurações do Meta do Supabase
             let config = {
                 verifyToken: "vellia-crm-token-123",
@@ -85,19 +98,96 @@ export default async function handler(req, res) {
             const token = process.env.META_ACCESS_TOKEN || config.accessToken;
 
             for (const entry of body.entry) {
-                const webhook_event = entry.messaging ? entry.messaging[0] : (entry.changes ? entry.changes[0] : null);
-                console.log('Evento do Webhook:', webhook_event);
-                
-                if (webhook_event && (webhook_event.field === 'leadgen' || webhook_event.value?.leadgen_id)) {
-                    const leadgenId = webhook_event.value.leadgen_id;
-                    const formId = webhook_event.value.form_id;
-                    const adId = webhook_event.value.ad_id;
-                    const campaignId = webhook_event.value.campaign_id;
+                // Tratar eventos de Leadgen (Formulários do Facebook) ou Messenger
+                const messagingEvent = entry.messaging ? entry.messaging[0] : null;
+                const changeEvent = entry.changes ? entry.changes[0] : null;
+
+                // --- FLUXO 1: MENSAGEM DO MESSENGER OU INSTAGRAM DIRECT ---
+                if (messagingEvent && messagingEvent.message) {
+                    const senderId = messagingEvent.sender ? messagingEvent.sender.id : "desconhecido";
+                    const messageText = messagingEvent.message.text || "[Mídia/Anexo]";
+                    const isInstagram = body.object === 'instagram' || entry.id?.startsWith("ig_");
+                    const sourceName = isInstagram ? "Instagram Direct" : "Facebook Messenger";
+                    const prefix = isInstagram ? "IG" : "FB";
+
+                    const messengerLead = {
+                        id: `lead_${isInstagram ? 'ig' : 'msg'}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+                        company: `${sourceName} (ID: ${senderId.substr(-4)})`,
+                        contact: `Usuário ${isInstagram ? 'Instagram' : 'Facebook'} ${senderId.substr(-4)}`,
+                        role: `Cliente ${isInstagram ? 'Instagram' : 'Messenger'}`,
+                        phone: `(${prefix}) ${senderId}`,
+                        whatsapp: senderId.replace(/[^0-9]/g, ''),
+                        email: `${isInstagram ? 'instagram' : 'messenger'}_${senderId}@social.com`,
+                        city: "Rede Social",
+                        state: prefix,
+                        segment: isInstagram ? "Instagram Direct" : "Messenger Direct",
+                        source: sourceName,
+                        stage: "Contato",
+                        owner: "admin@vellia.com",
+                        interactions: [
+                            {
+                                id: `int_${isInstagram ? 'ig' : 'msg'}_${Date.now()}`,
+                                type: "Mensagem Recebida",
+                                description: `Mensagem via ${sourceName}: "${messageText}"`,
+                                timestamp: new Date().toISOString(),
+                                userEmail: "sistema@vellia.com"
+                            }
+                        ],
+                        stageHistory: [
+                            {
+                                stage: "Contato",
+                                userEmail: "sistema@vellia.com",
+                                timestamp: new Date().toISOString(),
+                                reason: `Nova mensagem iniciada via ${sourceName}.`
+                            }
+                        ]
+                    };
+
+                    try {
+                        await fetch(`${sbUrl}/rest/v1/comercial_leads`, {
+                            method: "POST",
+                            headers: {
+                                "apikey": sbKey,
+                                "Authorization": `Bearer ${sbKey}`,
+                                "Content-Type": "application/json",
+                                "Prefer": "resolution=merge-duplicates"
+                            },
+                            body: JSON.stringify(messengerLead)
+                        });
+
+                        await fetch(`${sbUrl}/rest/v1/comercial_logs`, {
+                            method: "POST",
+                            headers: {
+                                "apikey": sbKey,
+                                "Authorization": `Bearer ${sbKey}`,
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({
+                                id: `log_${Date.now()}_messenger`,
+                                timestamp: new Date().toISOString(),
+                                userEmail: "sistema@vellia.com",
+                                action: "MESSENGER_RECEIVED",
+                                details: `Mensagem recebida no Facebook Messenger de ${senderId}: "${messageText.substring(0, 40)}"`,
+                                status: "SUCCESS"
+                            })
+                        });
+                    } catch (err) {
+                        console.error("Erro ao salvar mensagem do Messenger no Supabase:", err);
+                    }
+                    continue;
+                }
+
+                // --- FLUXO 2: LEADGEN (FORMULÁRIOS DE LEAD ADS) ---
+                if (changeEvent && (changeEvent.field === 'leadgen' || changeEvent.value?.leadgen_id)) {
+                    const leadgenId = changeEvent.value.leadgen_id;
+                    const formId = changeEvent.value.form_id;
+                    const adId = changeEvent.value.ad_id;
+                    const campaignId = changeEvent.value.campaign_id;
 
                     let leadData = null;
                     let fetchError = null;
 
-                    if (token && token !== 'EAAC...' && leadgenId && !leadgenId.startsWith("leadgen_")) {
+                    if (token && token !== 'EAAC...' && leadgenId && !leadgenId.startsWith("leadgen_") && !leadgenId.startsWith("mock_")) {
                         try {
                             const graphUrl = `https://graph.facebook.com/v20.0/${leadgenId}?access_token=${token}`;
                             const graphRes = await fetch(graphUrl);
@@ -121,8 +211,8 @@ export default async function handler(req, res) {
                     // Fallback se falhar ou se for simulação
                     if (!leadData) {
                         console.log("Gerando lead de teste devido a:", fetchError);
-                        const mockNames = ["Ricardo Vanzin", "Mariana Silveira", "Alexandre Pires", "Caroline Schultz"];
-                        const mockCompanies = ["Vanzin Distribuidora", "Silveira Tech", "Pires & Associados", "Schultz Indústrias"];
+                        const mockNames = ["Ricardo Vanzin", "Mariana Silveira", "Alexandre Pires", "Caroline Schultz", "Felipe Alcantara"];
+                        const mockCompanies = ["Vanzin Distribuidora", "Silveira Tech", "Pires & Associados", "Schultz Indústrias", "Alcantara Soluções"];
                         const randIdx = Math.floor(Math.random() * mockNames.length);
 
                         leadData = {
@@ -144,10 +234,10 @@ export default async function handler(req, res) {
                     let email = '';
                     let phone = '';
                     let company = 'Meta Ads Lead';
-                    let role = '';
-                    let city = '';
-                    let state = '';
-                    let segment = 'Outros';
+                    let role = 'Interessado Meta Ads';
+                    let city = 'São Paulo';
+                    let state = 'SP';
+                    let segment = 'Marketing Digital';
 
                     fieldData.forEach(field => {
                         const name = field.name;
@@ -174,7 +264,7 @@ export default async function handler(req, res) {
 
                     // Criar estrutura de Lead do Vellia CRM
                     const newLead = {
-                        id: `lead_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+                        id: `lead_meta_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
                         company: company,
                         contact: contactName,
                         role: role,
@@ -250,9 +340,9 @@ export default async function handler(req, res) {
                 }
             }
 
-            return res.status(200).send('EVENT_RECEIVED');
+            return res.status(200).json({ status: 'EVENT_RECEIVED', timestamp: new Date().toISOString() });
         } else {
-            return res.status(404).end();
+            return res.status(404).json({ error: 'Objeto webhook não suportado' });
         }
     }
 

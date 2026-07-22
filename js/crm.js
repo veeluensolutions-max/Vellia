@@ -9,6 +9,10 @@ export const CRM = {
     init() {
         this.bindEvents();
         this.renderLeadsTable();
+
+        // Atualização em tempo real ao receber leads via Meta Ads / Facebook / WhatsApp
+        window.addEventListener("vellia:metaLeadReceived", () => this.renderLeadsTable());
+        window.addEventListener("vellia:waSent", () => this.renderLeadsTable());
     },
 
     bindEvents() {

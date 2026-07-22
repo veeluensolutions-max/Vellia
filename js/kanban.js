@@ -6,6 +6,7 @@ let draggedLeadId = null;
 
 export const Kanban = {
     init() {
+        CRM.init(); // Garante a inicializacao dos modais globais e eventos do CRM
         this.renderKanban();
     },
 

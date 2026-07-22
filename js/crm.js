@@ -6,13 +6,21 @@ let activeLeadId = null;
 let pendingStageChange = null;
 
 export const CRM = {
+    _eventsBound: false,
+    _realtimeListenersBound: false,
     init() {
-        this.bindEvents();
+        if (!this._eventsBound) {
+            this.bindEvents();
+            this._eventsBound = true;
+        }
         this.renderLeadsTable();
 
-        // Atualização em tempo real ao receber leads via Meta Ads / Facebook / WhatsApp
-        window.addEventListener("vellia:metaLeadReceived", () => this.renderLeadsTable());
-        window.addEventListener("vellia:waSent", () => this.renderLeadsTable());
+        if (!this._realtimeListenersBound) {
+            // Atualização em tempo real ao receber leads via Meta Ads / Facebook / WhatsApp
+            window.addEventListener("vellia:metaLeadReceived", () => this.renderLeadsTable());
+            window.addEventListener("vellia:waSent", () => this.renderLeadsTable());
+            this._realtimeListenersBound = true;
+        }
     },
 
     bindEvents() {

@@ -1,4 +1,4 @@
-﻿import { Store } from "./store.js";
+import { Store } from "./store.js";
 import { Auth } from "./auth.js";
 import { Audit } from "./audit.js";
 
@@ -6,11 +6,15 @@ let activeProposalId = null;
 let isSaving = false;
 
 export const Proposals = {
+    _eventsBound: false,
     init() {
         this.renderStats();
         this.renderTable();
         this.renderLossAnalysis();
-        this.bindEvents();
+        if (!this._eventsBound) {
+            this.bindEvents();
+            this._eventsBound = true;
+        }
     },
 
     bindEvents() {

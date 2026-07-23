@@ -147,10 +147,10 @@
                                 <span>Equipe Comercial</span>
                             </a>
                         </li>
-                        <li class="menu-item" data-view="ai" id="menu-ai">
-                            <a href="#ai">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 0 1 7.54 16.59c-.24.28-.34.66-.27 1.03l.36 1.89A1 1 0 0 1 18.66 23H5.34a1 1 0 0 1-.97-1.19l.36-1.89c.07-.37-.03-.75-.27-1.03A10 10 0 0 1 12 2z"/><path d="M9 10h6M9 14h6"/></svg>
-                                <span>Assistente IA</span>
+                        <li class="menu-item" data-view="inspections" id="menu-inspections">
+                            <a href="#inspections">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <span>Inspeções & Renovação</span>
                             </a>
                         </li>
                         <li class="menu-item" data-view="ai-agents" id="menu-ai-agents">
@@ -2027,76 +2027,84 @@
 
 
                 <!-- ==========================================================
-                     VIEW: VELLIA AI ASSISTANT (ETAPA 9)
+                     VIEW: INSPEÇÕES & RENOVAÇÃO
                      ========================================================== -->
-                <div id="view-ai" class="spa-view" style="display: none;">
-                    <div class="ai-layout-grid" style="display: grid; grid-template-columns: 1fr 320px; gap: 24px; height: calc(100vh - 160px); min-height: 500px;">
-
-                        <!-- Chat Principal -->
-                        <div class="card" style="display: flex; flex-direction: column; padding: 0; overflow: hidden;">
-
-                            <!-- Header do Chat -->
-                            <div style="display: flex; align-items: center; gap: 14px; padding: 18px 24px; border-bottom: 1px solid var(--border-color); background: linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.05) 100%);">
-                                <div style="width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(99,102,241,0.3);">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-                                </div>
-                                <div>
-                                    <div style="font-weight: 800; font-size: 15px; color: var(--text-primary);">Vellia AI</div>
-                                    <div style="font-size: 12px; color: var(--success); display: flex; align-items: center; gap: 5px;">
-                                        <span style="width: 7px; height: 7px; background: var(--success); border-radius: 50%; display: inline-block; animation: pulse 2s infinite;"></span>
-                                        Assistente Comercial Online
-                                    </div>
-                                </div>
-                                <div style="margin-left: auto; font-size: 11px; color: var(--text-muted); background: var(--bg-app); border: 1px solid var(--border-color); padding: 4px 10px; border-radius: 99px;">Motor Local — Dados Privados 🔒</div>
-                            </div>
-
-                            <!-- Área de Mensagens -->
-                            <div id="ai-chat-messages" style="flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 16px;">
-                                <!-- Mensagens renderizadas via JS -->
-                            </div>
-
-                            <!-- Input do Chat -->
-                            <div style="border-top: 1px solid var(--border-color); padding: 16px 24px;">
-                                <!-- Chips de atalho -->
-                                <div id="ai-chips-container" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
-                                    <!-- Carregado via JS -->
-                                </div>
-                                <form id="ai-chat-form" style="display: flex; gap: 12px;">
-                                    <input
-                                        id="ai-chat-input"
-                                        type="text"
-                                        class="form-control"
-                                        placeholder="Pergunte algo ao Vellia AI... ex: 'quais leads frios tenho?'"
-                                        autocomplete="off"
-                                        style="flex: 1; height: 44px;"
-                                    >
-                                    <button type="submit" class="btn btn-primary" style="padding: 0 18px; height: 44px; flex-shrink: 0;">
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                                    </button>
-                                </form>
+                <div id="view-inspections" class="spa-view" style="display: none;">
+                    <!-- Top Filtros e Resumos -->
+                    <div class="card stat-card" style="margin-bottom: 24px; padding: 20px 24px; display: flex; flex-direction: column; gap: 16px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                            <div>
+                                <h3 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0;">Central de Inspeções & Renovações</h3>
+                                <p style="font-size: 12px; color: var(--text-muted); margin: 4px 0 0 0;">Monitore os serviços executados e notifique os clientes antes do vencimento anual das vistorias e laudos.</p>
                             </div>
                         </div>
-
-                        <!-- Painel Lateral: Capacidades da IA -->
-                        <!-- Painel Lateral: Insights -->
-                        <div style="display: flex; flex-direction: column; gap: 16px;">
-                            <div class="card" style="padding: 20px;">
-                                <h4 style="font-weight: 700; font-size: 13px; color: var(--primary); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
-                                    <span style="font-size: 16px;">💡</span> Insights do Dia
-                                </h4>
-                                <div id="ai-insights-container" style="display: flex; flex-direction: column; gap: 10px;">
-                                    <!-- Carregado via JS -->
-                                </div>
+                        
+                        <!-- Barra de Filtros -->
+                        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; background: var(--bg-body); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                            <div style="flex: 1; min-width: 200px; display: flex; align-items: center; gap: 8px; background: var(--bg-app); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0 10px;">
+                                <span>🔍</span>
+                                <input type="text" id="filter-inspection-search" class="form-control" placeholder="Buscar por cliente ou serviço..." style="border: none; background: transparent; height: 34px; padding: 0;">
                             </div>
-
-                            <div class="card" style="padding: 20px; background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.05));">
-                                <h4 style="font-weight: 700; font-size: 13px; color: var(--text-primary); margin-bottom: 8px;">🔒 Motor Local Inteligente</h4>
-                                <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6;">O Vellia AI rastreia seu histórico localmente para prever cenários comerciais. Tente os comandos abaixo:</p>
-                                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;">
-                                    <div style="font-size: 12px; color: var(--text-muted); padding: 6px 10px; background: var(--bg-app); border: 1px solid var(--border-color); border-radius: var(--radius-md); font-style: italic;">"Quais propostas posso focar hoje?"</div>
-                                    <div style="font-size: 12px; color: var(--text-muted); padding: 6px 10px; background: var(--bg-app); border: 1px solid var(--border-color); border-radius: var(--radius-md); font-style: italic;">"Por que estamos perdendo vendas?"</div>
-                                </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">Status:</span>
+                                <select id="filter-inspection-status" class="filter-control" style="height: 36px; padding: 6px 12px; border-radius: 6px; min-width: 165px;">
+                                    <option value="all">Todos os Status</option>
+                                    <option value="alerta">🟠 Crítico (Vence em < 3 meses)</option>
+                                    <option value="valida">🟢 Válida (Mais de 3 meses)</option>
+                                    <option value="vencida">🔴 Vencida (Laudo Expirado)</option>
+                                </select>
                             </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">Ano de Execução:</span>
+                                <select id="filter-inspection-year" class="filter-control" style="height: 36px; padding: 6px 12px; border-radius: 6px; min-width: 100px;">
+                                    <option value="all">Todos</option>
+                                    <option value="2026">2026</option>
+                                    <option value="2025">2025</option>
+                                    <option value="2024">2024</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Grid de KPIs rápidos -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                        <div class="card stat-card" style="padding: 16px 20px; border-left: 4px solid var(--primary);">
+                            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">Total de Inspeções</div>
+                            <div style="font-size: 24px; font-weight: 800; color: var(--text-primary); margin-top: 4px;" id="kpi-inspections-total">0</div>
+                        </div>
+                        <div class="card stat-card" style="padding: 16px 20px; border-left: 4px solid #ef4444;">
+                            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">Laudos Vencidos</div>
+                            <div style="font-size: 24px; font-weight: 800; color: #ef4444; margin-top: 4px;" id="kpi-inspections-expired">0</div>
+                        </div>
+                        <div class="card stat-card" style="padding: 16px 20px; border-left: 4px solid #f59e0b;">
+                            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">Críticos (Vence em < 3 meses)</div>
+                            <div style="font-size: 24px; font-weight: 800; color: #f59e0b; margin-top: 4px;" id="kpi-inspections-critical">0</div>
+                        </div>
+                        <div class="card stat-card" style="padding: 16px 20px; border-left: 4px solid #10b981;">
+                            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">Laudos Regulares</div>
+                            <div style="font-size: 24px; font-weight: 800; color: #10b981; margin-top: 4px;" id="kpi-inspections-valid">0</div>
+                        </div>
+                    </div>
+
+                    <!-- Tabela de Inspeções -->
+                    <div class="card" style="padding: 0; overflow: hidden; border: 1px solid var(--border-color); border-radius: var(--radius-lg);">
+                        <div class="table-responsive">
+                            <table class="table" style="width: 100%; border-collapse: collapse; margin: 0;">
+                                <thead>
+                                    <tr style="background: var(--bg-body);">
+                                        <th style="padding: 14px 20px; text-align: left; font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; border-bottom: 1px solid var(--border-color);">Cliente / Empresa</th>
+                                        <th style="padding: 14px 20px; text-align: left; font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; border-bottom: 1px solid var(--border-color);">Serviço Executado</th>
+                                        <th style="padding: 14px 20px; text-align: left; font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; border-bottom: 1px solid var(--border-color);">Data de Execução</th>
+                                        <th style="padding: 14px 20px; text-align: left; font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; border-bottom: 1px solid var(--border-color);">Vencimento</th>
+                                        <th style="padding: 14px 20px; text-align: left; font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; border-bottom: 1px solid var(--border-color);">Prazo Restante</th>
+                                        <th style="padding: 14px 20px; text-align: center; font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; border-bottom: 1px solid var(--border-color);">Status</th>
+                                        <th style="padding: 14px 20px; text-align: center; font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; border-bottom: 1px solid var(--border-color);">Ações de Revenda</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inspections-table-body">
+                                    <!-- Inserido dinamicamente via JS -->
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -2294,6 +2302,45 @@
                         Registrar
                     </button>
                 </form>
+            </div>
+
+            <!-- Seção: Inspeções do Cliente -->
+            <div class="drawer-section" id="drawer-inspections-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <span class="drawer-section-title" style="margin-bottom: 0;">📋 Inspeções & Laudos</span>
+                    <button id="btn-toggle-inspection-form" style="font-size: 11px; font-weight: 700; color: var(--primary); background: none; border: none; cursor: pointer;">+ Registrar Nova</button>
+                </div>
+                
+                <!-- Formulário de Registro de Inspeção -->
+                <div id="inspection-form-container" style="display: none; background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; margin-bottom: 12px;">
+                    <div class="form-group" style="margin-bottom: 10px;">
+                        <label for="inspection-service-select" style="font-size: 11px; font-weight: 600;">Serviço Realizado *</label>
+                        <select id="inspection-service-select" class="form-control" style="height: 36px; padding: 6px 10px; font-size: 13px;">
+                            <!-- Preenchido dinamicamente -->
+                        </select>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                        <div class="form-group" style="margin: 0;">
+                            <label for="inspection-exec-date" style="font-size: 11px; font-weight: 600;">Data Execução *</label>
+                            <input type="date" id="inspection-exec-date" class="form-control" style="height: 36px; font-size: 13px;">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="inspection-expiry-date" style="font-size: 11px; font-weight: 600;">Vencimento</label>
+                            <input type="date" id="inspection-expiry-date" class="form-control" style="height: 36px; font-size: 13px;" placeholder="1 ano depois (padrão)">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label for="inspection-notes" style="font-size: 11px; font-weight: 600;">Notas / Observações</label>
+                        <input type="text" id="inspection-notes" class="form-control" placeholder="Anotações ou número do laudo..." style="height: 36px; font-size: 13px;">
+                    </div>
+                    <button id="btn-save-inspection" class="btn btn-primary" style="padding: 8px 16px; font-size: 12px; width: 100%;">
+                        Salvar Inspeção
+                    </button>
+                </div>
+
+                <div id="drawer-inspections-list" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
+                    <!-- Preenchido dinamicamente -->
+                </div>
             </div>
 
             <!-- Seção 4: Agendamento de Follow-up -->

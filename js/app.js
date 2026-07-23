@@ -8,7 +8,8 @@ import { Dashboard } from "./dashboard.js";
 import { Goals } from "./goals.js";
 import { Services } from "./services.js";
 import { Forecast } from "./forecast.js";
-import { VelliaAI, analyzeContext } from "./ai.js";
+import { analyzeContext } from "./ai.js";
+import { Inspections } from "./inspections.js";
 import { Notifications } from "./notifications.js";
 import { DataExport } from "./export.js";
 import { Team } from "./team.js";
@@ -230,8 +231,8 @@ function navigateTo(viewName) {
         Services.init();
     } else if (viewName === "forecast") {
         Forecast.init();
-    } else if (viewName === "ai") {
-        VelliaAI.init();
+    } else if (viewName === "inspections") {
+        Inspections.init();
     } else if (viewName === "pricing") {
         Pricing.init();
     } else if (viewName === "integrations") {

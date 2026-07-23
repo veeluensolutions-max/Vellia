@@ -162,6 +162,28 @@ export const CRM = {
                 }
             });
         }
+
+        // Inspeções do cliente
+        const btnToggleInspection = document.getElementById("btn-toggle-inspection-form");
+        const inspectionFormContainer = document.getElementById("inspection-form-container");
+        if (btnToggleInspection && inspectionFormContainer) {
+            btnToggleInspection.addEventListener("click", () => {
+                const visible = inspectionFormContainer.style.display !== "none";
+                inspectionFormContainer.style.display = visible ? "none" : "block";
+                btnToggleInspection.textContent = visible ? "+ Registrar Nova" : "✕ Fechar";
+                if (!visible) {
+                    const execInput = document.getElementById("inspection-exec-date");
+                    if (execInput) execInput.value = new Date().toISOString().split("T")[0];
+                }
+            });
+        }
+
+        const btnSaveInspection = document.getElementById("btn-save-inspection");
+        if (btnSaveInspection) {
+            btnSaveInspection.addEventListener("click", () => {
+                this.saveLeadInspection();
+            });
+        }
     },
 
     // ==========================================================================
@@ -591,6 +613,19 @@ export const CRM = {
         const ffToggle = document.getElementById("btn-toggle-followup-form");
         if (ffContainer) ffContainer.style.display = "none";
         if (ffToggle) ffToggle.textContent = "+ Novo";
+
+        // Inicializar e Renderizar Inspeções do Cliente
+        const serviceSelect = document.getElementById("inspection-service-select");
+        if (serviceSelect) {
+            const services = Store.getServices();
+            serviceSelect.innerHTML = services.map(s => `<option value="${s.name}">${s.name}</option>`).join("") || `<option value="Vistoria Geral">Vistoria Geral</option>`;
+        }
+        const btnToggleInspection = document.getElementById("btn-toggle-inspection-form");
+        const inspectionFormContainer = document.getElementById("inspection-form-container");
+        if (btnToggleInspection) btnToggleInspection.textContent = "+ Registrar Nova";
+        if (inspectionFormContainer) inspectionFormContainer.style.display = "none";
+        
+        this.renderDrawerInspections(lead);
 
         // Exibir Drawer e Overlay
         document.getElementById("lead-drawer").classList.add("open");
@@ -1360,6 +1395,153 @@ export const CRM = {
                 this.renderWhatsAppChat(refreshedLead);
                 this.renderTimeline(refreshedLead);
             }, 2000);
+        }
+    },
+
+    renderDrawerInspections(lead) {
+        const container = document.getElementById("drawer-inspections-list");
+        if (!container) return;
+
+        const inspections = (lead.interactions || []).filter(i => i.type === "Inspeção");
+        if (inspections.length === 0) {
+            container.innerHTML = `
+                <div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 12px; border: 1px dashed var(--border-color); border-radius: 6px;">
+                    Nenhuma inspeção registrada para este cliente.
+                </div>
+            `;
+            return;
+        }
+
+        const formatDate = (dateStr) => {
+            if (!dateStr) return "N/A";
+            const parts = dateStr.split("-");
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        };
+
+        container.innerHTML = inspections.map(item => {
+            const serviceName = item.meta?.serviceName || "Vistoria Geral";
+            const execDate = item.meta?.executionDate || item.timestamp?.split("T")[0];
+            let expiryDate = item.meta?.expiryDate;
+            if (!expiryDate && execDate) {
+                const date = new Date(execDate + "T12:00:00");
+                date.setFullYear(date.getFullYear() + 1);
+                expiryDate = date.toISOString().split("T")[0];
+            }
+
+            // Prazos e status
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const expDate = new Date(expiryDate + "T12:00:00");
+            expDate.setHours(0,0,0,0);
+            const diff = expDate.getTime() - today.getTime();
+            const daysRemaining = Math.ceil(diff / (1000 * 3600 * 24));
+
+            let statusBadge = "";
+            let remainingText = "";
+            let showNotify = false;
+
+            if (daysRemaining < 0) {
+                statusBadge = `<span style="font-size: 9px; font-weight:700; color:#dc2626; background:#fee2e2; border:1px solid #fca5a5; padding: 2px 6px; border-radius: 4px; display:inline-block;">🔴 Vencida</span>`;
+                remainingText = `Vencido há ${Math.abs(daysRemaining)} dias`;
+                showNotify = true;
+            } else if (daysRemaining <= 90) {
+                statusBadge = `<span style="font-size: 9px; font-weight:700; color:#d97706; background:#fef3c7; border:1px solid #fcd34d; padding: 2px 6px; border-radius: 4px; display:inline-block; animation: pulse 2s infinite;"> 🟠 Crítico</span>`;
+                remainingText = `Vence em ${daysRemaining} dias`;
+                showNotify = true;
+            } else {
+                statusBadge = `<span style="font-size: 9px; font-weight:700; color:#16a34a; background:#dcfce7; border:1px solid #86efac; padding: 2px 6px; border-radius: 4px; display:inline-block;">🟢 Válida</span>`;
+                remainingText = `Vence em ${daysRemaining} dias`;
+            }
+
+            const notifyBtn = showNotify 
+                ? `<button class="btn btn-sm btn-success" style="background:#25d366; color:white; border:none; border-radius:6px; font-size:10px; cursor:pointer; font-weight:700; padding:4px 8px;" onclick="window.sendInspectionNotification('${lead.id}', '${item.id}')">💬 Alerta</button>`
+                : "";
+
+            return `
+                <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 10px; display: flex; flex-direction: column; gap: 6px; font-size: 12.5px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <strong style="color: var(--text-primary); font-size: 13px;">${serviceName}</strong>
+                        ${statusBadge}
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; color: var(--text-muted); font-size: 11px;">
+                        <div>
+                            <span>Execução: ${formatDate(execDate)}</span><br>
+                            <span>Vencimento: <strong>${formatDate(expiryDate)}</strong></span>
+                        </div>
+                        <div>
+                            <span style="display:block; text-align:right; margin-bottom:4px;">${remainingText}</span>
+                            ${notifyBtn}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join("");
+    },
+
+    saveLeadInspection() {
+        if (!activeLeadId) return;
+
+        const serviceSelect = document.getElementById("inspection-service-select");
+        const execInput = document.getElementById("inspection-exec-date");
+        const expInput = document.getElementById("inspection-expiry-date");
+        const notesInput = document.getElementById("inspection-notes");
+
+        if (!execInput || !execInput.value) {
+            alert("Por favor, preencha a data de execução da inspeção.");
+            return;
+        }
+
+        const currentUser = Auth.getCurrentUser();
+        const userEmail = currentUser?.email || "sistema@vellia.com";
+        const serviceName = serviceSelect.value;
+        const execDate = execInput.value;
+        let expiryDate = expInput.value;
+
+        if (!expiryDate) {
+            const date = new Date(execDate + "T12:00:00");
+            date.setFullYear(date.getFullYear() + 1);
+            expiryDate = date.toISOString().split("T")[0];
+        }
+
+        const notes = notesInput ? notesInput.value.trim() : "";
+
+        const interaction = {
+            id: `insp_${Date.now()}`,
+            type: "Inspeção",
+            description: `📋 **Inspeção Realizada:** ${serviceName}\n📅 **Executado em:** ${execDate}\n⚠️ **Vencimento:** ${expiryDate}\n📝 **Notas:** ${notes || "Sem observações"}`,
+            timestamp: new Date().toISOString(),
+            userEmail,
+            meta: {
+                serviceName,
+                executionDate: execDate,
+                expiryDate,
+                notes
+            }
+        };
+
+        const lead = Store.getLeadById(activeLeadId);
+        if (lead) {
+            lead.interactions = lead.interactions || [];
+            lead.interactions.push(interaction);
+            
+            Store.updateLead(lead.id, { interactions: lead.interactions }, userEmail);
+
+            // Limpar formulário
+            execInput.value = "";
+            if (expInput) expInput.value = "";
+            if (notesInput) notesInput.value = "";
+            
+            const formContainer = document.getElementById("inspection-form-container");
+            const btnToggle = document.getElementById("btn-toggle-inspection-form");
+            if (formContainer) formContainer.style.display = "none";
+            if (btnToggle) btnToggle.textContent = "+ Registrar Nova";
+
+            const updatedLead = Store.getLeadById(activeLeadId);
+            this.renderDrawerInspections(updatedLead);
+            this.renderTimeline(updatedLead);
+
+            // Disparar sincronização local para atualizar a visualização central de inspeções
+            window.dispatchEvent(new CustomEvent("vellia:waSent"));
         }
     }
 };

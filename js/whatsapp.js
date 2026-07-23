@@ -127,6 +127,14 @@ export const WhatsApp = {
             }
         } else if (templateType === "proposal") {
             message = `Olá ${lead.contact || lead.company}, tudo bem? Gostaria de saber se você conseguiu analisar a nossa proposta comercial enviada recentemente. Ficamos à disposição!`;
+        } else if (templateType === "inspection_renovation") {
+            message = `Olá ${lead.contact || lead.company}, tudo bem? Passando para te lembrar que o prazo da vistoria técnica / laudo periódico da sua empresa está próximo do vencimento. Gostaria de agendar a renovação para garantirmos a continuidade da conformidade e normas de segurança? Fico no aguardo! 😊`;
+        } else if (templateType === "inspection_confirm") {
+            message = `Olá ${lead.contact || lead.company}! Confirmando o agendamento da nossa vistoria técnica na ${lead.company}. Nosso engenheiro responsável estará no local conforme o horário combinado. Qualquer ajuste de horário, por favor me avise por aqui! 📋`;
+        } else if (templateType === "post_sales") {
+            message = `Olá ${lead.contact || lead.company}! Gostaria de agradecer pela confiança na parceria com a Vellia. O serviço para a ${lead.company} foi concluído com sucesso. Como foi sua experiência com a nossa equipe? Seu feedback é muito importante para nós! 🎉`;
+        } else if (templateType === "closing_urgency") {
+            message = `Olá ${lead.contact || lead.company}, tudo bem? Consegui aprovar junto à nossa diretoria uma condição especial exclusiva válida até o fim desta semana para fecharmos o projeto de ${lead.segment || "engenharia"}. Consegue falar 5 minutos hoje para alinharmos? ⚡`;
         } else if (templateType === "reengage") {
             message = `Olá ${lead.contact || lead.company}, como vai? Faz um tempo que não nos falamos! Gostaria de saber como estão os desafios de ${lead.segment || "negócios"} por aí e se ainda faz sentido analisarmos a solução inteligente da Vellia. Quando teria 5 minutos livres esta semana para batermos um papo rápido?`;
         }

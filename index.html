@@ -2134,6 +2134,53 @@
                             </table>
                         </div>
                     </div>
+
+                    <!-- Painel de Análise Anual & Índice de Renovação -->
+                    <div class="card" style="padding: 24px; margin-top: 24px; border-left: 4px solid #10b981; background: linear-gradient(135deg, rgba(16,185,129,0.03) 0%, transparent 100%);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                            <div>
+                                <h4 style="font-weight: 800; font-size: 15px; color: var(--text-primary); margin: 0 0 3px 0; display: flex; align-items: center; gap: 8px;">
+                                    📊 Comparativo Anual de Vistorias & Taxa de Revenda
+                                </h4>
+                                <span style="font-size: 11.5px; color: var(--text-muted);">Métricas de retenção de laudos, histórico por ano e recorrência de contratos</span>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <!-- Gráfico comparativo de vistorias por ano -->
+                            <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 18px;">
+                                <h5 style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin: 0 0 14px 0;">📈 Vistorias Realizadas por Ano</h5>
+                                <div style="position: relative; height: 220px; width: 100%;">
+                                    <canvas id="chart-inspections-yearly"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Resumo de Taxa de Renovação & Clientes Recorrentes -->
+                            <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
+                                <div>
+                                    <h5 style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin: 0 0 14px 0;">🔄 Desempenho de Renovação</h5>
+                                    
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                                        <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px;">
+                                            <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Taxa de Renovação</span>
+                                            <div style="font-size: 24px; font-weight: 800; color: #10b981; margin-top: 2px;" id="inspection-renewal-rate">0%</div>
+                                        </div>
+                                        <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px;">
+                                            <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Receita de Renovações</span>
+                                            <div style="font-size: 20px; font-weight: 800; color: #8b5cf6; margin-top: 2px;" id="inspection-renewal-revenue">R$ 0</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h6 style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin: 0 0 8px 0;">🏆 Principais Clientes Recorrentes</h6>
+                                    <div id="inspections-top-clients" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px;">
+                                        <!-- Preenchido via JS -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
 
@@ -3362,6 +3409,10 @@
                     <option value="welcome">Apresentação / Boas-vindas 👋</option>
                     <option value="followup">Follow-up Comercial 🧊</option>
                     <option value="proposal">Cobrança de Proposta 💰</option>
+                    <option value="inspection_renovation">🔴 Lembrete de Renovação de Laudo / Vistoria</option>
+                    <option value="inspection_confirm">📋 Confirmação de Agendamento de Vistoria</option>
+                    <option value="post_sales">🎉 Agradecimento & Pós-venda</option>
+                    <option value="closing_urgency">⚡ Urgência de Fechamento / Oferta Especial</option>
                     <option value="reengage">Reengajamento de Lead Frio ❄️</option>
                 </select>
             </div>

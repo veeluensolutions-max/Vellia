@@ -242,8 +242,11 @@
                                 <button id="btn-export-leads" class="btn btn-outline" style="width: 100%; margin-bottom: 8px; justify-content: flex-start; border: none; font-weight: normal; padding: 10px 12px; background: transparent;">
                                     <span style="margin-right: 8px;">👥</span> Base de Leads (CSV)
                                 </button>
-                                <button id="btn-export-proposals" class="btn btn-outline" style="width: 100%; justify-content: flex-start; border: none; font-weight: normal; padding: 10px 12px; background: transparent;">
+                                <button id="btn-export-proposals" class="btn btn-outline" style="width: 100%; margin-bottom: 8px; justify-content: flex-start; border: none; font-weight: normal; padding: 10px 12px; background: transparent;">
                                     <span style="margin-right: 8px;">📝</span> Propostas (CSV)
+                                </button>
+                                <button id="btn-export-pdf-inspections" onclick="window.exportInspectionsSummaryPDF(); document.getElementById('export-panel').style.display='none';" class="btn btn-outline" style="width: 100%; justify-content: flex-start; border: none; font-weight: normal; padding: 10px 12px; background: transparent;">
+                                    <span style="margin-right: 8px;">📄</span> Inspeções & Laudos (PDF)
                                 </button>
                             </div>
                         </div>
@@ -2041,6 +2044,11 @@
                             <div>
                                 <h3 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0;">Central de Inspeções & Renovações</h3>
                                 <p style="font-size: 12px; color: var(--text-muted); margin: 4px 0 0 0;">Monitore os serviços executados e notifique os clientes antes do vencimento anual das vistorias e laudos.</p>
+                            </div>
+                            <div>
+                                <button class="btn btn-outline" style="font-size: 12px; padding: 7px 14px; gap: 6px; display: inline-flex; align-items: center; border-color: var(--primary); color: var(--primary); font-weight: 700; cursor: pointer;" onclick="window.exportInspectionsSummaryPDF()">
+                                    📄 Relatório Geral (PDF)
+                                </button>
                             </div>
                         </div>
                         

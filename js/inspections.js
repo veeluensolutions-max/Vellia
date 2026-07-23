@@ -1,4 +1,5 @@
 import { Store } from "./store.js";
+import { PDFGenerator } from "./pdf-generator.js";
 
 const SUPABASE_URL = "https://ogrbsonpkiamoytxjshg.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Wi3eKJi5uyEzqihEDF6Eaw_-i0zcHe7";
@@ -187,14 +188,24 @@ export const Inspections = {
                     <td style="padding: 16px 20px;">${remainingText}</td>
                     <td style="padding: 16px 20px; text-align: center;">${statusBadge}</td>
                     <td style="padding: 16px 20px; text-align: center;">
-                        <button 
-                            class="btn btn-sm"
-                            style="${buttonStyle} padding: 8px 14px; border-radius: 8px; font-size: 11.5px; transition: all 0.2s;"
-                            onclick="window.sendInspectionNotification('${item.leadId}', '${item.id}')"
-                            ${buttonDisabled}
-                        >
-                            ${buttonText}
-                        </button>
+                        <div style="display:flex; gap:6px; justify-content:center; align-items:center;">
+                            <button 
+                                class="btn btn-sm"
+                                style="${buttonStyle} padding: 8px 12px; border-radius: 8px; font-size: 11.5px; transition: all 0.2s;"
+                                onclick="window.sendInspectionNotification('${item.leadId}', '${item.id}')"
+                                ${buttonDisabled}
+                            >
+                                ${buttonText}
+                            </button>
+                            <button 
+                                class="btn btn-outline btn-sm"
+                                style="padding: 8px 12px; border-radius: 8px; font-size: 11.5px; border-color: var(--primary); color: var(--primary); background: transparent; font-weight: 700; cursor: pointer;"
+                                onclick="window.generateInspectionPDF('${item.leadId}', '${item.id}')"
+                                title="Gerar Laudo Oficial em PDF"
+                            >
+                                📄 Laudo PDF
+                            </button>
+                        </div>
                     </td>
                 </tr>
             `;

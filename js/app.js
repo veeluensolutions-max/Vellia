@@ -19,6 +19,7 @@ import { Pricing } from "./pricing.js";
 import { Integrations } from "./integrations.js";
 import { connectRealtime, disconnectRealtime } from "./realtime.js";
 import { InspectionScheduler } from "./inspection-scheduler.js";
+import "./pdf-generator.js";
 
 // Elementos Globais DOM (Getters Dinâmicos para garantia de não-nulidade)
 const elements = {

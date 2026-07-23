@@ -1,7 +1,42 @@
 import { Store } from "./store.js";
 
+const SUPABASE_URL = "https://ogrbsonpkiamoytxjshg.supabase.co";
+const SUPABASE_KEY = "sb_publishable_Wi3eKJi5uyEzqihEDF6Eaw_-i0zcHe7";
+
 export const Inspections = {
-    init() {
+    async init() {
+        // Mostrar loading enquanto busca dados frescos do Supabase
+        const tableBody = document.getElementById("inspections-table-body");
+        if (tableBody) {
+            tableBody.innerHTML = `<tr><td colspan="7" style="padding: 40px; text-align: center; color: var(--text-muted);">⏳ Sincronizando com o banco de dados...</td></tr>`;
+        }
+
+        try {
+            // Buscar todos os leads atualizados do Supabase
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/comercial_leads?select=*`, {
+                headers: {
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": `Bearer ${SUPABASE_KEY}`
+                }
+            });
+            if (res.ok) {
+                const freshLeads = await res.json();
+                if (Array.isArray(freshLeads) && freshLeads.length > 0) {
+                    // Mesclar com leads locais preservando qualquer dado local extra
+                    let localLeads = [];
+                    try { localLeads = JSON.parse(localStorage.getItem("comercial_leads")) || []; } catch(e) {}
+                    const merged = freshLeads.map(remote => {
+                        const local = localLeads.find(l => l && l.id === remote.id);
+                        return local ? { ...local, ...remote } : remote;
+                    });
+                    localStorage.setItem("comercial_leads", JSON.stringify(merged));
+                    console.log(`✅ [Inspections] ${merged.length} leads sincronizados do Supabase.`);
+                }
+            }
+        } catch (err) {
+            console.warn("[Inspections] Falha ao sincronizar com Supabase, usando cache local:", err.message);
+        }
+
         this.render();
         this.setupListeners();
     },
@@ -181,8 +216,14 @@ export const Inspections = {
             yearSelect.addEventListener("change", () => this.render());
         }
 
-        // Listener de sincronização em tempo real
+        // Listener de sincronização em tempo real (novas mensagens ou outros eventos gerais)
         window.addEventListener("vellia:waSent", () => this.render());
+
+        // Listener específico para atualização de lead (via Realtime WS UPDATE)
+        window.addEventListener("vellia:leadUpdated", () => {
+            console.log("🔄 [Inspections] Lead atualizado remotamente — re-renderizando central de inspeções.");
+            this.render();
+        });
     }
 };
 

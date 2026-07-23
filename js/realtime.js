@@ -118,7 +118,7 @@ function updateStatusBadge(connected) {
     }
 }
 
-// ─── Processar novo lead recebido via WS ──────────────────────────────
+// ─── Processar novo lead recebido via WS (INSERT) ─────────────────────
 function processIncomingLead(lead) {
     if (!lead || !lead.id) return;
 
@@ -128,8 +128,8 @@ function processIncomingLead(lead) {
     } catch (e) {
         localLeads = [];
     }
-    const alreadyExists = localLeads.some(l => l && l.id === lead.id);
-    if (alreadyExists) return;
+    const existingIdx = localLeads.findIndex(l => l && l.id === lead.id);
+    if (existingIdx !== -1) return; // Lead já existe localmente — atualizações tratadas em processLeadUpdate
 
     console.log("⚡ [Realtime] Novo lead recebido:", lead.company, lead.id);
 
@@ -152,6 +152,35 @@ function processIncomingLead(lead) {
             import("./sdr.js").then(m => m.SDR.runTriage(lead.id));
         }, 1500);
     }
+}
+
+// ─── Processar atualização de lead existente via WS (UPDATE) ─────────────
+function processLeadUpdate(lead) {
+    if (!lead || !lead.id) return;
+
+    let localLeads = [];
+    try {
+        localLeads = JSON.parse(localStorage.getItem("comercial_leads")) || [];
+    } catch (e) {
+        localLeads = [];
+    }
+
+    const existingIdx = localLeads.findIndex(l => l && l.id === lead.id);
+    if (existingIdx === -1) {
+        // Lead não existe localmente ainda — adicionar
+        localLeads.push(lead);
+    } else {
+        // Mesclar lead remoto com dados locais (o remoto tem precedência)
+        localLeads[existingIdx] = { ...localLeads[existingIdx], ...lead };
+    }
+
+    localStorage.setItem("comercial_leads", JSON.stringify(localLeads));
+    console.log("🔄 [Realtime] Lead atualizado localmente:", lead.company, lead.id);
+
+    // Disparar sincronização geral para atualizar CRM, Kanban e Central de Inspeções
+    window.dispatchEvent(new CustomEvent("vellia:leadUpdated", { detail: lead }));
+    window.dispatchEvent(new CustomEvent("vellia:waSent"));
+    window.dispatchEvent(new Event("storage"));
 }
 
 // ─── Processar nova tarefa ou alteração de tarefa recebida via WS ──────
@@ -342,6 +371,15 @@ export function connectRealtime() {
                 if (lead) processIncomingLead(lead);
             }
 
+            // Evento de UPDATE na tabela comercial_leads (inclui mudanças em interactions/inspeções)
+            if (
+                msg.topic === "realtime:public:comercial_leads" &&
+                msg.event === "UPDATE"
+            ) {
+                const lead = msg.payload?.record || msg.payload?.new_record;
+                if (lead) processLeadUpdate(lead);
+            }
+
             // Evento na tabela comercial_tasks
             if (msg.topic === "realtime:public:comercial_tasks") {
                 const type = msg.event; // "INSERT", "UPDATE", "DELETE"
@@ -362,9 +400,10 @@ export function connectRealtime() {
                             Store.syncTasksForUser(ownerEmail);
                         }
                     } else if (changes.table === "comercial_leads") {
-                        if (changes.type === "INSERT" || changes.type === "UPDATE") {
-                            const lead = changes.record || changes.new_record;
-                            if (lead) processIncomingLead(lead);
+                        const lead = changes.record || changes.new_record;
+                        if (lead) {
+                            if (changes.type === "INSERT") processIncomingLead(lead);
+                            else if (changes.type === "UPDATE") processLeadUpdate(lead);
                         }
                     } else if (changes.table === "comercial_tasks") {
                         const type = changes.type;

@@ -242,24 +242,28 @@ export const CRM = {
         }
 
         tableBody.innerHTML = filteredLeads.map(lead => {
-            let stageBadgeClass = "badge-info";
-            if (lead.stage === "Cliente Fechado") stageBadgeClass = "badge-success";
-            else if (lead.stage === "Cliente Perdido") stageBadgeClass = "badge-danger";
-            else if (lead.stage === "Negociação" || lead.stage === "Proposta Enviada") stageBadgeClass = "badge-warning";
+            let stageBadgeClass = "badge-stage-contato";
+            if (lead.stage === "Contato") stageBadgeClass = "badge-stage-contato";
+            else if (lead.stage === "Lead Gerado") stageBadgeClass = "badge-stage-lead-gerado";
+            else if (lead.stage === "Lead Qualificado") stageBadgeClass = "badge-stage-lead-qualificado";
+            else if (lead.stage === "Proposta Enviada") stageBadgeClass = "badge-stage-proposta-enviada";
+            else if (lead.stage === "Negociação") stageBadgeClass = "badge-stage-negociacao";
+            else if (lead.stage === "Cliente Fechado") stageBadgeClass = "badge-stage-cliente-fechado";
+            else if (lead.stage === "Cliente Perdido") stageBadgeClass = "badge-stage-cliente-perdido";
 
             // Badge de Score IA (SDR Agent)
             const aiScore = lead.aiScore != null ? lead.aiScore : null;
             let scoreBadge = `<span style="font-size: 11px; color: var(--text-muted);">—</span>`;
             if (aiScore !== null) {
-                let icon, color, bg;
-                if (aiScore >= 75)      { icon = "🔥"; color = "#ef4444"; bg = "rgba(239,68,68,0.1)"; }
-                else if (aiScore >= 45) { icon = "⚡"; color = "#f59e0b"; bg = "rgba(245,158,11,0.1)"; }
-                else                   { icon = "❄️"; color = "#6366f1"; bg = "rgba(99,102,241,0.1)"; }
+                let icon, color, bg, gradStart, gradEnd;
+                if (aiScore >= 75)      { icon = "🔥"; color = "#ef4444"; bg = "rgba(239,68,68,0.1)"; gradStart = "#f43f5e"; gradEnd = "#e11d48"; }
+                else if (aiScore >= 45) { icon = "⚡"; color = "#f59e0b"; bg = "rgba(245,158,11,0.1)"; gradStart = "#fbbf24"; gradEnd = "#f59e0b"; }
+                else                   { icon = "❄️"; color = "#3b82f6"; bg = "rgba(59,130,246,0.1)"; gradStart = "#60a5fa"; gradEnd = "#3b82f6"; }
                 scoreBadge = `
-                    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
-                        <span style="font-size:9px;font-weight:700;background:${bg};color:${color};border:1px solid ${color}40;padding:2px 8px;border-radius:99px;">${icon} ${aiScore}/100</span>
-                        <div style="width:50px;height:4px;background:var(--bg-app);border-radius:99px;overflow:hidden;">
-                            <div style="width:${aiScore}%;height:100%;background:${color};border-radius:99px;"></div>
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+                        <span style="font-size:10px;font-weight:700;background:${bg};color:${color};border:1px solid ${color}30;padding:2px 8px;border-radius:99px;display:inline-flex;align-items:center;gap:3px;">${icon} ${aiScore}/100</span>
+                        <div style="width:60px;height:5px;background:var(--border-color);border-radius:99px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,0.06);">
+                            <div style="width:${aiScore}%;height:100%;background:linear-gradient(90deg, ${gradStart}, ${gradEnd});border-radius:99px;"></div>
                         </div>
                     </div>
                 `;

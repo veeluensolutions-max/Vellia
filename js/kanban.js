@@ -108,13 +108,13 @@ export const Kanban = {
 
             // Prioridade dinâmica baseada no valor ou segmento
             let priority = "Baixa";
-            let priorityClass = "badge-info"; 
+            let priorityClass = "badge-priority-baixa"; 
             if (leadValue > 15000 || lead.segment === "Tecnologia") {
                 priority = "Alta";
-                priorityClass = "badge-danger";
+                priorityClass = "badge-priority-alta";
             } else if (leadValue > 5000 || lead.segment === "Construção Civil") {
                 priority = "Média";
-                priorityClass = "badge-warning";
+                priorityClass = "badge-priority-media";
             }
 
             // Usar aiScore do SDR Agent (Store) com fallback para ctx
@@ -204,7 +204,7 @@ export const Kanban = {
                         <span class="kanban-card-time" style="color: ${timeColor}; font-weight: 500;">
                             🕒 ${daysNoContact === 0 ? 'Hoje' : `${daysNoContact}d`}
                         </span>
-                        <button class="kanban-card-wa-btn" data-id="${lead.id}" onclick="event.stopPropagation(); window.WhatsApp?.openModalForLead('${lead.id}')" style="background: none; border: none; cursor: pointer; color: #25d366; display: flex; align-items: center; justify-content: center; padding: 2px;" title="Enviar WhatsApp">
+                        <button class="kanban-card-wa-btn" data-id="${lead.id}" onclick="event.stopPropagation(); window.WhatsApp?.openModalForLead('${lead.id}')" title="Enviar WhatsApp">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
                         </button>
                     </div>

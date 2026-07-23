@@ -19,6 +19,7 @@ import { Pricing } from "./pricing.js";
 import { Integrations } from "./integrations.js";
 import { connectRealtime, disconnectRealtime } from "./realtime.js";
 import { InspectionScheduler } from "./inspection-scheduler.js";
+import { Calendar } from "./calendar.js";
 import "./pdf-generator.js";
 
 // Elementos Globais DOM (Getters Dinâmicos para garantia de não-nulidade)
@@ -238,6 +239,8 @@ function navigateTo(viewName) {
         Forecast.init();
     } else if (viewName === "inspections") {
         Inspections.init();
+    } else if (viewName === "calendar") {
+        Calendar.init();
     } else if (viewName === "pricing") {
         Pricing.init();
     } else if (viewName === "integrations") {

@@ -106,6 +106,39 @@ export const Integrations = {
                         <button class="btn btn-outline" style="flex: 1;" id="btn-simulate-wa-incoming" ${config.connected ? '' : 'disabled style="opacity: 0.5; cursor: not-allowed;"'}>Simular Mensagem</button>
                     </div>
                 </div>
+
+                <!-- Google Gemini AI Card -->
+                <div class="card stat-card" style="display: flex; flex-direction: column; gap: 16px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 48px; height: 48px; border-radius: var(--radius-md); background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+                            🤖
+                        </div>
+                        <div>
+                            <h3 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0;">Google Gemini 2.0 AI</h3>
+                            <span style="font-size: 12px; color: var(--text-muted);">Lead Scoring & Análise Preditiva</span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; background: var(--bg-body); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label style="font-size: 11px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Chave API do Gemini (Google AI Studio)</label>
+                            <input type="password" id="gemini-api-key-input" class="form-control" style="font-size: 12px; height: 34px; padding: 6px 10px;" placeholder="AIzaSy..." value="${localStorage.getItem('vellia_gemini_api_key') || ''}">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--text-primary);">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>Status da Inteligência</span>
+                            <span id="gemini-status-badge" class="badge" style="${localStorage.getItem('vellia_gemini_api_key') ? 'background: #dcfce7; color: #16a34a;' : 'background: #e0f2fe; color: #0284c7;'} font-size: 11px;">
+                                ${localStorage.getItem('vellia_gemini_api_key') ? '⚡ Gemini 2.0 Ativo' : '🧠 Smart Rules Active'}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border-color); display: flex; gap: 10px;">
+                        <button class="btn btn-primary" style="flex: 1;" id="btn-save-gemini-key">Salvar Chave</button>
+                    </div>
+                </div>
             </div>
 
             <!-- AI AUTOPILOT CONSOLE -->
@@ -138,6 +171,22 @@ export const Integrations = {
     },
 
     bindEvents() {
+        const btnSaveGemini = document.getElementById("btn-save-gemini-key");
+        if (btnSaveGemini) {
+            btnSaveGemini.addEventListener("click", () => {
+                const keyInput = document.getElementById("gemini-api-key-input");
+                const val = keyInput ? keyInput.value.trim() : "";
+                if (val) {
+                    localStorage.setItem("vellia_gemini_api_key", val);
+                    alert("✅ Chave Gemini salvada com sucesso!");
+                } else {
+                    localStorage.removeItem("vellia_gemini_api_key");
+                    alert("ℹ️ Chave removida. Usando Engine Heurístico Vellia.");
+                }
+                this.init();
+            });
+        }
+
         const btnSave = document.getElementById("btn-save-wa-config");
         const btnSimulate = document.getElementById("btn-simulate-wa-incoming");
 

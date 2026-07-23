@@ -2,6 +2,7 @@ import { Store } from "./store.js";
 import { Auth } from "./auth.js";
 import { Audit } from "./audit.js";
 import { SDR } from "./sdr.js";
+import { LeadAIScore } from "./ai-score.js";
 
 let activeLeadId = null;
 let pendingStageChange = null;
@@ -643,6 +644,9 @@ export const CRM = {
                 this.updateChatUIState(lead);
             }
         }
+
+        // Renderizar Widget de AI Lead Score
+        LeadAIScore.render(lead);
 
         // Renderizar Widget de Cadência SDR
         SDR.renderCadenceWidget(lead.id);

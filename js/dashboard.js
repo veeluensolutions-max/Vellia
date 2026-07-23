@@ -73,6 +73,7 @@ export const Dashboard = {
         }
 
         this.renderKPIs(leads, proposals);
+        this.renderGoalsCommissionPanel();
         this.renderFunnelChart(leads);
         this.renderRevenueChart(proposals);
         this.renderConversionDonut(proposals);
@@ -1121,8 +1122,239 @@ export const Dashboard = {
         if (lastUpdate) {
             lastUpdate.textContent = "Atualizado em tempo real: " + new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
         }
+    },
+
+    // ===========================================================================
+    // PAINEL DE METAS & COMISSÕES DA EQUIPE COMERCIAL / VENDEDOR
+    // ===========================================================================
+    renderGoalsCommissionPanel() {
+        const container = document.getElementById("dashboard-goals-commissions-panel");
+        if (!container) return;
+
+        const user = Auth.getCurrentUser();
+        if (!user) return;
+
+        const rate = parseFloat(localStorage.getItem("comercial_commission_rate")) || 5.0; // 5% por padrão
+        const proposals = Store.getProposals();
+        const users = Store.getUsers();
+
+        // Mês atual
+        const now = new Date();
+        const currentPeriodStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        const monthName = now.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+        const monthNameFormatted = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+
+        // Obter metas salvas
+        const goalsConfig = JSON.parse(localStorage.getItem("comercial_goals_config")) || { meta_revenue: 50000 };
+        const defaultRevenueGoal = goalsConfig.meta_revenue || 50000;
+
+        // Lista de vendedores / gerentes
+        const sellers = users.filter(u => u.role === "seller" || u.role === "manager" || u.role === "admin");
+
+        // Calcular estatísticas por vendedor
+        const sellerStats = sellers.map(seller => {
+            const sellerProps = proposals.filter(p => {
+                const isWon = p.status === "Ganho";
+                const isOwner = p.createdBy === seller.email || p.ownerEmail === seller.email || p.userEmail === seller.email;
+                return isWon && isOwner;
+            });
+
+            const wonRevenue = sellerProps.reduce((sum, p) => sum + (Number(p.value) || 0), 0);
+            const commission = (wonRevenue * rate) / 100;
+            const targetRevenue = defaultRevenueGoal;
+            const pct = targetRevenue > 0 ? Math.min(100, Math.round((wonRevenue / targetRevenue) * 100)) : 0;
+
+            return {
+                email: seller.email,
+                name: seller.name,
+                avatar: seller.avatar || "👤",
+                role: seller.role,
+                wonRevenue,
+                commission,
+                targetRevenue,
+                pct,
+                wonCount: sellerProps.length
+            };
+        });
+
+        // Ordenar vendedores pelo faturamento ganho
+        sellerStats.sort((a, b) => b.wonRevenue - a.wonRevenue);
+
+        const totalWonRevenue = sellerStats.reduce((s, st) => s + st.wonRevenue, 0);
+        const totalTargetRevenue = sellerStats.reduce((s, st) => s + st.targetRevenue, 0);
+        const totalCommission = (totalWonRevenue * rate) / 100;
+        const totalPct = totalTargetRevenue > 0 ? Math.min(100, Math.round((totalWonRevenue / totalTargetRevenue) * 100)) : 0;
+
+        const isSellerOnly = user.role === "seller";
+
+        if (isSellerOnly) {
+            // Visão individual do vendedor
+            const myStat = sellerStats.find(s => s.email === user.email) || {
+                wonRevenue: 0,
+                commission: 0,
+                targetRevenue: defaultRevenueGoal,
+                pct: 0,
+                wonCount: 0
+            };
+
+            let badgeStatus = `<span class="badge badge-warning" style="background:#fef3c7; color:#d97706;">🟡 Em Andamento</span>`;
+            if (myStat.pct >= 100) {
+                badgeStatus = `<span class="badge badge-success" style="background:#dcfce7; color:#16a34a; font-weight:700;">🟢 Meta Batida! 🎉</span>`;
+            } else if (myStat.pct < 40) {
+                badgeStatus = `<span class="badge badge-danger" style="background:#fee2e2; color:#dc2626;">🔴 Abaixo da Meta</span>`;
+            }
+
+            container.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <h4 style="font-weight: 800; font-size: 15px; color: var(--text-primary); margin: 0 0 3px 0; display: flex; align-items: center; gap: 8px;">
+                            🎯 Meu Desempenho & Comissão — ${monthNameFormatted}
+                        </h4>
+                        <span style="font-size: 11.5px; color: var(--text-muted);">Acompanhe suas vendas fechadas e sua comissão acumulada no mês</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        ${badgeStatus}
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 18px;">
+                    <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px;">
+                        <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Faturamento Realizado</span>
+                        <div style="font-size: 22px; font-weight: 800; color: #10b981; margin-top: 4px;">R$ ${myStat.wonRevenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
+                        <span style="font-size: 11px; color: var(--text-muted);">Meta: R$ ${myStat.targetRevenue.toLocaleString("pt-BR")}</span>
+                    </div>
+
+                    <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px;">
+                        <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Comissão a Receber (${rate}%)</span>
+                        <div style="font-size: 22px; font-weight: 800; color: #8b5cf6; margin-top: 4px;">R$ ${myStat.commission.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
+                        <span style="font-size: 11px; color: #8b5cf6; font-weight: 600;">Calculado sobre vendas pagas</span>
+                    </div>
+
+                    <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px;">
+                        <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Atingimento da Meta</span>
+                        <div style="font-size: 22px; font-weight: 800; color: #1877F2; margin-top: 4px;">${myStat.pct}%</div>
+                        <span style="font-size: 11px; color: var(--text-muted);">${myStat.wonCount} contrato(s) fechado(s)</span>
+                    </div>
+                </div>
+
+                <div>
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">
+                        <span>Progresso da Meta Individual</span>
+                        <span>${myStat.pct}% Concluído</span>
+                    </div>
+                    <div style="width: 100%; height: 10px; background: var(--bg-app); border-radius: 99px; overflow: hidden; border: 1px solid var(--border-color);">
+                        <div style="width: ${myStat.pct}%; height: 100%; background: linear-gradient(90deg, #10b981, #059669); border-radius: 99px; transition: width 0.8s ease;"></div>
+                    </div>
+                </div>
+            `;
+        } else {
+            // Visão Gerente / Admin (Equipe Comercial Completa)
+            const rowsHtml = sellerStats.map(st => {
+                let badge = `<span class="badge badge-warning" style="background:#fef3c7; color:#d97706; font-size:11px;">🟡 Em Progresso</span>`;
+                if (st.pct >= 100) {
+                    badge = `<span class="badge badge-success" style="background:#dcfce7; color:#16a34a; font-weight:700; font-size:11px;">🟢 Meta Batida!</span>`;
+                } else if (st.pct < 40) {
+                    badge = `<span class="badge badge-danger" style="background:#fee2e2; color:#dc2626; font-size:11px;">🔴 Em Risco</span>`;
+                }
+
+                return `
+                    <tr style="border-bottom: 1px solid var(--border-color);">
+                        <td style="padding: 12px 16px; display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px;">
+                                ${st.avatar}
+                            </div>
+                            <div>
+                                <div style="font-weight: 700; font-size: 13px; color: var(--text-primary);">${st.name}</div>
+                                <div style="font-size: 11px; color: var(--text-muted);">${st.email}</div>
+                            </div>
+                        </td>
+                        <td style="padding: 12px 16px; font-weight: 700; color: #10b981;">R$ ${st.wonRevenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+                        <td style="padding: 12px 16px; color: var(--text-secondary);">R$ ${st.targetRevenue.toLocaleString("pt-BR")}</td>
+                        <td style="padding: 12px 16px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="width: 70px; height: 6px; background: var(--bg-app); border-radius: 99px; overflow: hidden; border: 1px solid var(--border-color);">
+                                    <div style="width: ${st.pct}%; height: 100%; background: #1877F2; border-radius: 99px;"></div>
+                                </div>
+                                <span style="font-weight: 700; font-size: 12px;">${st.pct}%</span>
+                            </div>
+                        </td>
+                        <td style="padding: 12px 16px; font-weight: 700; color: #8b5cf6;">R$ ${st.commission.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+                        <td style="padding: 12px 16px; text-align: center;">${badge}</td>
+                    </tr>
+                `;
+            }).join("");
+
+            container.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <h4 style="font-weight: 800; font-size: 15px; color: var(--text-primary); margin: 0 0 3px 0; display: flex; align-items: center; gap: 8px;">
+                            🎯 Metas & Comissões da Equipe Comercial — ${monthNameFormatted}
+                        </h4>
+                        <span style="font-size: 11.5px; color: var(--text-muted);">Monitoramento de metas batidas e cálculo de comissões por vendedor</span>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button class="btn btn-outline" style="font-size: 11.5px; padding: 5px 12px;" onclick="window.configureCommissionRate(${rate})">
+                            ⚙️ Taxa de Comissão: <strong>${rate}%</strong>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- KPI Cards Topo -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px;">
+                    <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px;">
+                        <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total Fechado (Mês)</span>
+                        <div style="font-size: 22px; font-weight: 800; color: #10b981; margin-top: 4px;">R$ ${totalWonRevenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
+                        <span style="font-size: 11px; color: var(--text-muted);">Meta Global: R$ ${totalTargetRevenue.toLocaleString("pt-BR")}</span>
+                    </div>
+
+                    <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px;">
+                        <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total Comissões Equipe</span>
+                        <div style="font-size: 22px; font-weight: 800; color: #8b5cf6; margin-top: 4px;">R$ ${totalCommission.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
+                        <span style="font-size: 11px; color: #8b5cf6; font-weight: 600;">${rate}% sobre vendas do mês</span>
+                    </div>
+
+                    <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px;">
+                        <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Progresso da Meta Global</span>
+                        <div style="font-size: 22px; font-weight: 800; color: #1877F2; margin-top: 4px;">${totalPct}%</div>
+                        <span style="font-size: 11px; color: var(--text-muted);">${sellerStats.filter(s => s.pct >= 100).length} de ${sellerStats.length} vendedores bateram a meta</span>
+                    </div>
+                </div>
+
+                <!-- Tabela da Equipe -->
+                <div class="table-responsive">
+                    <table class="custom-table" style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>Vendedor</th>
+                                <th>Fechado (Mês)</th>
+                                <th>Meta Individual</th>
+                                <th>Atingimento</th>
+                                <th>Comissão (${rate}%)</th>
+                                <th style="text-align: center;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
     }
 };
 
-// Expor globalmente para o botão de refresh no HTML
+// Expor globalmente para os botões no HTML
 window.refreshMetaAdsPanel = () => Dashboard.renderMetaAdsPanel();
+window.configureCommissionRate = function(currentRate) {
+    const input = prompt("Digite a porcentagem da taxa de comissão padrão para as vendas (ex: 5 para 5%):", currentRate || 5);
+    if (input !== null) {
+        const val = parseFloat(input.replace(",", "."));
+        if (!isNaN(val) && val >= 0) {
+            localStorage.setItem("comercial_commission_rate", val);
+            alert(`✅ Taxa de comissão alterada para ${val}% com sucesso!`);
+            Dashboard.renderAll();
+        } else {
+            alert("⚠️ Por favor insira um número válido.");
+        }
+    }
+};

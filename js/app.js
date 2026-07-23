@@ -18,6 +18,7 @@ import { WhatsApp } from "./whatsapp.js";
 import { Pricing } from "./pricing.js";
 import { Integrations } from "./integrations.js";
 import { connectRealtime, disconnectRealtime } from "./realtime.js";
+import { InspectionScheduler } from "./inspection-scheduler.js";
 
 // Elementos Globais DOM (Getters Dinâmicos para garantia de não-nulidade)
 const elements = {
@@ -88,12 +89,15 @@ function showAppShell(user) {
     const currentHash = window.location.hash.replace("#", "") || "dashboard";
     navigateTo(currentHash);
 
-    // Inicializar Notificações e Exportação
+    // Inicializar Notificacoes e Exportacao
     Notifications.init();
     DataExport.init();
 
     // Iniciar Supabase Realtime (WebSocket)
     connectRealtime();
+
+    // Ativar verificacao automatica de inspecoes vencendo
+    InspectionScheduler.schedulePeriodicCheck();
 }
 
 // Configura quais botões do menu lateral aparecem baseado nas regras do perfil

@@ -65,7 +65,7 @@ export const Notifications = {
             this.sendNativeNotification(leadTitle, leadMsg);
         });
 
-        // Ouvir notificações originadas pelos Agentes de IA
+        // Ouvir notificacoes originadas pelos Agentes de IA
         window.addEventListener("vellia:aiNotification", (e) => {
             const { id, title, message, type } = e.detail || {};
             if (!id || !title) return;
@@ -78,6 +78,51 @@ export const Notifications = {
                 timestamp: new Date()
             });
             this.sendNativeNotification(title, message);
+        });
+
+        // Ouvir alertas de inspecoes vencendo (gerados pelo InspectionScheduler)
+        window.addEventListener("vellia:inspectionAlert", (e) => {
+            const d = e.detail || {};
+            if (!d.notifId) return;
+
+            // Tipo de notif baseado na urgencia
+            const typeMap = {
+                expired  : "danger",
+                urgent   : "danger",
+                critical : "warning",
+                warning  : "info"
+            };
+            const notifType = typeMap[d.alertType] || "warning";
+
+            const title = `🔔 ${d.company} — ${d.alertLabel}`;
+            const message = `${d.serviceName} • Vencimento: ${d.formattedExpiry} (${d.urgencyText})`;
+
+            this.addItem({
+                id        : d.notifId,
+                title,
+                message,
+                type      : notifType,
+                read      : false,
+                timestamp : new Date(),
+                action    : {
+                    label        : d.alertType === "expired" ? "⚡ Renovar Agora" : "💬 Notificar via WhatsApp",
+                    leadId       : d.leadId,
+                    inspectionId : d.inspectionId,
+                    phone        : d.phone,
+                    contact      : d.contact,
+                    service      : d.serviceName,
+                    urgencyText  : d.urgencyText,
+                    expiryDate   : d.formattedExpiry
+                }
+            });
+
+            // Notificacao nativa do browser para casos urgentes/vencidos
+            if (d.alertType === "expired" || d.alertType === "urgent") {
+                this.sendNativeNotification(
+                    `🔴 Inspecao vencendo: ${d.company}`,
+                    `${d.serviceName} — ${d.urgencyText}`
+                );
+            }
         });
     },
 
@@ -129,6 +174,51 @@ export const Notifications = {
 
         if (this.list) {
             this.list.addEventListener("click", (e) => {
+                // Clique no botao de acao de inspecao
+                const actionBtn = e.target.closest(".notif-inspection-action");
+                if (actionBtn) {
+                    e.stopPropagation();
+                    const leadId       = actionBtn.dataset.leadId;
+                    const inspectionId = actionBtn.dataset.inspectionId;
+                    const phone        = actionBtn.dataset.phone;
+                    const contact      = actionBtn.dataset.contact;
+                    const service      = actionBtn.dataset.service;
+                    const urgencyText  = actionBtn.dataset.urgencyText;
+                    const expiryDate   = actionBtn.dataset.expiryDate;
+
+                    // Abrir notificacao de WhatsApp
+                    if (phone) {
+                        const phoneClean = phone.replace(/\D/g, "");
+                        const msg = encodeURIComponent(
+                            `Ol\u00e1, ${contact}! \ud83d\udca1\n\nPassando para te lembrar que a inspec\u00e3o anual de *${service}* ${urgencyText}.\n\nGostaria de agendar a nova vistoria? Temos hor\u00e1rios dispon\u00edveis. \u00d0\u009f\u00d0\u00b8\u00d0\u00b6\u00d1\u0083 no aguardo! \ud83d\ude0a`
+                        );
+                        window.open(`https://wa.me/${phoneClean}?text=${msg}`, "_blank");
+                    } else {
+                        // Sem telefone — navegar para a central de inspecoes
+                        window.location.hash = "#inspections";
+                    }
+
+                    // Marcar notificacao como lida
+                    const itemEl = actionBtn.closest(".notif-item");
+                    if (itemEl) {
+                        const notifId = itemEl.getAttribute("data-id");
+                        const item = this.items.find(i => i.id === notifId);
+                        if (item) { item.read = true; }
+                    }
+
+                    // Marcar inspecao como notificada no Supabase
+                    if (leadId && inspectionId) {
+                        import("./inspection-scheduler.js").then(m => {
+                            m.InspectionScheduler.markAsNotified(leadId, inspectionId);
+                        }).catch(() => {});
+                    }
+
+                    this.closePanel();
+                    this.render();
+                    return;
+                }
+
+                // Clique normal em item de notificacao
                 const itemEl = e.target.closest(".notif-item");
                 if (itemEl) {
                     const id = itemEl.getAttribute("data-id");
@@ -152,6 +242,9 @@ export const Notifications = {
                                 const tabBtn = document.querySelector('.subtab-btn[data-subtab="team-forecast"]');
                                 if (tabBtn) tabBtn.click();
                             }, 100);
+                        } else if (id.startsWith("insp_alert_")) {
+                            // Navegar para a central de inspecoes ao clicar numa inspecao
+                            window.location.hash = "#inspections";
                         }
                     }
                 }
@@ -269,20 +362,47 @@ export const Notifications = {
             return new Date(ts).toLocaleDateString("pt-BR");
         };
 
-        this.list.innerHTML = this.items.map(item => `
-            <div class="notif-item ${item.read ? '' : 'unread'}" data-id="${item.id}" style="cursor: pointer;">
-                <div class="notif-icon ${item.type}">
-                    ${this.getIcon(item.type)}
-                </div>
-                <div class="notif-content">
-                    <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px;">
-                        <h4>${item.title}</h4>
-                        <span class="notif-time">${formatTime(item.timestamp)}</span>
+        this.list.innerHTML = this.items.map(item => {
+            const actionHtml = item.action
+                ? `<button
+                        class="notif-inspection-action"
+                        data-lead-id="${item.action.leadId || ''}"
+                        data-inspection-id="${item.action.inspectionId || ''}"
+                        data-phone="${item.action.phone || ''}"
+                        data-contact="${item.action.contact || ''}"
+                        data-service="${item.action.service || ''}"
+                        data-urgency-text="${item.action.urgencyText || ''}"
+                        data-expiry-date="${item.action.expiryDate || ''}"
+                        style="
+                            display: inline-flex; align-items: center; gap: 6px;
+                            margin-top: 8px; padding: 6px 12px; border-radius: 8px;
+                            background: ${item.type === 'danger' ? '#25d366' : 'rgba(37,211,102,0.12)'};
+                            color: ${item.type === 'danger' ? '#fff' : '#25d366'};
+                            border: 1px solid rgba(37,211,102,0.4);
+                            font-size: 11.5px; font-weight: 700; cursor: pointer;
+                            transition: all 0.2s; white-space: nowrap;
+                        "
+                        onmouseover="this.style.opacity='0.85'"
+                        onmouseout="this.style.opacity='1'"
+                    >${item.action.label}</button>`
+                : "";
+
+            return `
+                <div class="notif-item ${item.read ? '' : 'unread'}" data-id="${item.id}" style="cursor: pointer;">
+                    <div class="notif-icon ${item.type}">
+                        ${this.getIcon(item.type)}
                     </div>
-                    <p style="margin-top: 3px;">${item.message}</p>
+                    <div class="notif-content">
+                        <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px;">
+                            <h4>${item.title}</h4>
+                            <span class="notif-time">${formatTime(item.timestamp)}</span>
+                        </div>
+                        <p style="margin-top: 3px;">${item.message}</p>
+                        ${actionHtml}
+                    </div>
                 </div>
-            </div>
-        `).join("");
+            `;
+        }).join("");
     },
 
     getIcon(type) {

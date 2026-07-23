@@ -2495,7 +2495,7 @@
     <!-- Modal: Edição de Lead -->
     <div id="edit-lead-modal" class="modal">
         <div class="modal-header">
-            <h3 style="font-weight: 700;">Editar Lead</h3>
+            <h3 style="font-weight: 700;">Editar Contato & Lead</h3>
             <button id="btn-close-edit-lead" class="drawer-close">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
@@ -2503,26 +2503,51 @@
         <form id="edit-lead-form" onsubmit="return false;">
             <input type="hidden" id="edit-lead-id">
             <div class="modal-body">
+                <!-- Linha 1: Empresa + Contato -->
                 <div class="grid-modal-2col" style="margin-bottom: 16px;">
                     <div class="form-group">
                         <label for="edit-lead-company">Empresa *</label>
                         <input type="text" id="edit-lead-company" class="form-control" style="padding: 10px 12px;" required>
                     </div>
                     <div class="form-group">
-                        <label for="edit-lead-contact">Contato *</label>
+                        <label for="edit-lead-contact">Nome do Contato *</label>
                         <input type="text" id="edit-lead-contact" class="form-control" style="padding: 10px 12px;" required>
                     </div>
                 </div>
+                <!-- Linha 2: Cargo + E-mail -->
                 <div class="grid-modal-2col" style="margin-bottom: 16px;">
+                    <div class="form-group">
+                        <label for="edit-lead-role">Cargo / Função</label>
+                        <input type="text" id="edit-lead-role" class="form-control" style="padding: 10px 12px;" placeholder="Ex: Gerente de Compras">
+                    </div>
                     <div class="form-group">
                         <label for="edit-lead-email">E-mail</label>
                         <input type="email" id="edit-lead-email" class="form-control" style="padding: 10px 12px;">
                     </div>
+                </div>
+                <!-- Linha 3: WhatsApp + Telefone -->
+                <div class="grid-modal-2col" style="margin-bottom: 16px;">
                     <div class="form-group">
-                        <label for="edit-lead-whatsapp">WhatsApp *</label>
-                        <input type="text" id="edit-lead-whatsapp" class="form-control" style="padding: 10px 12px;" required>
+                        <label for="edit-lead-whatsapp">WhatsApp</label>
+                        <input type="text" id="edit-lead-whatsapp" class="form-control" style="padding: 10px 12px;" placeholder="Ex: 11999998888">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-lead-phone">Telefone Fixo</label>
+                        <input type="text" id="edit-lead-phone" class="form-control" style="padding: 10px 12px;" placeholder="Ex: 1133334444">
                     </div>
                 </div>
+                <!-- Linha 4: Cidade + Estado -->
+                <div class="grid-modal-2col" style="margin-bottom: 16px;">
+                    <div class="form-group">
+                        <label for="edit-lead-city">Cidade</label>
+                        <input type="text" id="edit-lead-city" class="form-control" style="padding: 10px 12px;" placeholder="Ex: São Paulo">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-lead-state">Estado (UF)</label>
+                        <input type="text" id="edit-lead-state" class="form-control" style="padding: 10px 12px;" placeholder="Ex: SP" maxlength="2">
+                    </div>
+                </div>
+                <!-- Linha 5: Segmento + Origem -->
                 <div class="grid-modal-2col" style="margin-bottom: 16px;">
                     <div class="form-group">
                         <label for="edit-lead-segment">Segmento</label>
@@ -2531,7 +2556,9 @@
                             <option value="Construção Civil">Construção Civil</option>
                             <option value="Transportes">Transportes</option>
                             <option value="Saúde">Saúde</option>
+                            <option value="Indústria">Indústria</option>
                             <option value="Varejo">Varejo</option>
+                            <option value="Redes Sociais">Redes Sociais</option>
                             <option value="Outros">Outros</option>
                         </select>
                     </div>
@@ -2539,17 +2566,25 @@
                         <label for="edit-lead-source">Origem do Lead</label>
                         <select id="edit-lead-source" class="filter-control" style="height: 42px;">
                             <option value="Google Ads">Google Ads</option>
+                            <option value="Meta Ads">Meta Ads (Facebook/Instagram)</option>
                             <option value="Indicação">Indicação</option>
                             <option value="Outbound">Outbound / Cold Call</option>
                             <option value="Redes Sociais">Redes Sociais</option>
+                            <option value="WhatsApp">WhatsApp</option>
+                            <option value="Instagram Direct">Instagram Direct</option>
+                            <option value="Facebook Messenger">Facebook Messenger</option>
                             <option value="Evento">Evento</option>
+                            <option value="Site">Site</option>
                         </select>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" id="btn-cancel-edit-lead" class="btn btn-outline">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                <button type="submit" class="btn btn-primary" style="gap: 8px; display: inline-flex; align-items: center;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    Salvar Alterações
+                </button>
             </div>
         </form>
     </div>

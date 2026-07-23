@@ -520,13 +520,17 @@ export const CRM = {
         const lead = Store.getLeadById(activeLeadId);
         if (!lead) return;
 
-        document.getElementById("edit-lead-id").value = lead.id;
-        document.getElementById("edit-lead-company").value = lead.company;
-        document.getElementById("edit-lead-contact").value = lead.contact;
-        document.getElementById("edit-lead-email").value = lead.email || "";
+        document.getElementById("edit-lead-id").value    = lead.id;
+        document.getElementById("edit-lead-company").value = lead.company || "";
+        document.getElementById("edit-lead-contact").value = lead.contact || "";
+        document.getElementById("edit-lead-role").value    = lead.role || "";
+        document.getElementById("edit-lead-email").value   = lead.email || "";
         document.getElementById("edit-lead-whatsapp").value = lead.whatsapp || "";
+        document.getElementById("edit-lead-phone").value   = lead.phone || "";
+        document.getElementById("edit-lead-city").value    = lead.city || "";
+        document.getElementById("edit-lead-state").value   = lead.state || "";
         document.getElementById("edit-lead-segment").value = lead.segment || "Outros";
-        document.getElementById("edit-lead-source").value = lead.source || "Outbound";
+        document.getElementById("edit-lead-source").value  = lead.source || "Outbound";
 
         document.getElementById("edit-lead-modal").classList.add("open");
         document.getElementById("modal-overlay").style.display = "block";
@@ -543,22 +547,57 @@ export const CRM = {
 
     saveEditLead() {
         const id = document.getElementById("edit-lead-id").value;
+        if (!id) return;
+
         const updatedData = {
-            company: document.getElementById("edit-lead-company").value.trim(),
-            contact: document.getElementById("edit-lead-contact").value.trim(),
-            email: document.getElementById("edit-lead-email").value.trim(),
-            whatsapp: document.getElementById("edit-lead-whatsapp").value.trim(),
-            segment: document.getElementById("edit-lead-segment").value,
-            source: document.getElementById("edit-lead-source").value
+            company  : document.getElementById("edit-lead-company").value.trim(),
+            contact  : document.getElementById("edit-lead-contact").value.trim(),
+            role     : document.getElementById("edit-lead-role").value.trim(),
+            email    : document.getElementById("edit-lead-email").value.trim(),
+            whatsapp : document.getElementById("edit-lead-whatsapp").value.trim(),
+            phone    : document.getElementById("edit-lead-phone").value.trim(),
+            city     : document.getElementById("edit-lead-city").value.trim(),
+            state    : document.getElementById("edit-lead-state").value.trim().toUpperCase(),
+            segment  : document.getElementById("edit-lead-segment").value,
+            source   : document.getElementById("edit-lead-source").value
         };
+
+        if (!updatedData.company || !updatedData.contact) {
+            alert("Empresa e nome do contato são obrigatórios.");
+            return;
+        }
 
         const user = Auth.getCurrentUser();
         Store.updateLead(id, updatedData, user ? user.email : "sistema@vellia.com");
         
         this.closeEditLeadModal();
-        this.openLeadDrawer(id); // Reload drawer with new data
-        this.renderLeadsTable(); // Update list
-        alert("Lead atualizado com sucesso!");
+        this.openLeadDrawer(id);
+        this.renderLeadsTable();
+
+        // Toast de sucesso
+        const toast = document.createElement("div");
+        toast.style.cssText = `
+            position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+            background: var(--bg-card, #1e293b);
+            border: 1px solid rgba(16,185,129,0.4);
+            border-left: 4px solid #10b981;
+            border-radius: 12px;
+            padding: 14px 20px;
+            display: flex; align-items: center; gap: 12px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+            font-family: 'Inter', sans-serif;
+            animation: vellia-slide-in 0.3s ease;
+            min-width: 280px;
+        `;
+        toast.innerHTML = `
+            <span style="font-size: 20px;">✅</span>
+            <div>
+                <div style="font-weight: 700; color: var(--text-primary, #f1f5f9); font-size: 13px;">Contato atualizado!</div>
+                <div style="font-size: 11px; color: var(--text-muted, #64748b); margin-top: 2px;">${updatedData.company} — ${updatedData.contact}</div>
+            </div>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3500);
     },
     // ==========================================================================
     // CONTROLE DE DRAWERS (DETALHES DO LEAD)

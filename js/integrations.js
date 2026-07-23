@@ -629,7 +629,15 @@ window.openMetaConfigModal = function() {
                     </h4>
                     <p style="font-size: 11px; color: var(--text-muted); margin: 0;">Envie um POST contendo o payload de webhook simulado para o endpoint backend do VelliaCRM.</p>
                     
-                    <textarea id="meta-sandbox-payload" class="form-control" style="font-family: monospace; font-size: 11px; height: 75px; width: 100%; background: var(--bg-app); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 6px; resize: vertical;"></textarea>
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 4px;">
+                        <span style="font-size: 11px; font-weight: 600; color: var(--text-secondary);">Tipo de Evento Simulado:</span>
+                        <select id="meta-sandbox-payload-type" class="filter-control" style="height: 28px; padding: 2px 6px; font-size: 11px; border-radius: 6px; min-width: 180px;">
+                            <option value="leadgen">📋 Cadastro Lead Ads (Meta)</option>
+                            <option value="whatsapp">💬 Mensagem WhatsApp Recebida</option>
+                        </select>
+                    </div>
+
+                    <textarea id="meta-sandbox-payload" class="form-control" style="font-family: monospace; font-size: 11px; height: 110px; width: 100%; background: var(--bg-app); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 6px; resize: vertical;"></textarea>
                     
                     <div style="display: flex; gap: 8px;">
                         <button class="btn btn-outline" id="btn-fire-sandbox-webhook" style="flex: 1; font-size: 11px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--primary); color: var(--primary); background: transparent; cursor: pointer;">
@@ -791,31 +799,93 @@ window.openMetaConfigModal = function() {
     document.getElementById("map-phone").value = config.fields?.phone || "phone_number";
     document.getElementById("map-company").value = config.fields?.company || "company_name";
 
-    // Payload de exemplo atualizado
-    const mockPayload = {
-      "object": "page",
-      "entry": [
-        {
-          "id": "109283749283749",
-          "time": Math.floor(Date.now() / 1000),
-          "changes": [
+    // Payloads de exemplo dinâmicos
+    const getPayloads = () => {
+        const leadgenPayload = {
+          "object": "page",
+          "entry": [
             {
-              "field": "leadgen",
-              "value": {
-                "ad_id": "83749283749",
-                "adgroup_id": "28374982374",
-                "campaign_id": "19283749283",
-                "form_id": "form_simulado_" + Math.floor(100 + Math.random() * 900),
-                "leadgen_id": "leadgen_" + Date.now(),
-                "page_id": "109283749283749",
-                "created_time": Math.floor(Date.now() / 1000)
-              }
+              "id": "109283749283749",
+              "time": Math.floor(Date.now() / 1000),
+              "changes": [
+                {
+                  "field": "leadgen",
+                  "value": {
+                    "ad_id": "83749283749",
+                    "adgroup_id": "28374982374",
+                    "campaign_id": "19283749283",
+                    "form_id": "form_simulado_" + Math.floor(100 + Math.random() * 900),
+                    "leadgen_id": "leadgen_" + Date.now(),
+                    "page_id": "109283749283749",
+                    "created_time": Math.floor(Date.now() / 1000)
+                  }
+                }
+              ]
             }
           ]
-        }
-      ]
+        };
+
+        const whatsappPayload = {
+          "object": "whatsapp_business_account",
+          "entry": [
+            {
+              "id": "whatsapp_mock_entry",
+              "changes": [
+                {
+                  "field": "messages",
+                  "value": {
+                    "messaging_product": "whatsapp",
+                    "metadata": {
+                      "display_phone_number": "5511999999999",
+                      "phone_number_id": "mock_phone_id"
+                    },
+                    "contacts": [
+                      {
+                        "profile": {
+                          "name": "Ricardo Vanzin"
+                        },
+                        "wa_id": "5551988887777"
+                      }
+                    ],
+                    "messages": [
+                      {
+                        "from": "5551988887777",
+                        "id": "mock_message_" + Date.now(),
+                        "timestamp": Math.floor(Date.now() / 1000),
+                        "text": {
+                          "body": "Olá! Gostaria de saber como funciona o sistema e quais os valores da licença."
+                        },
+                        "type": "text"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        };
+
+        return { leadgen: leadgenPayload, whatsapp: whatsappPayload };
     };
-    document.getElementById("meta-sandbox-payload").value = JSON.stringify(mockPayload, null, 2);
+
+    const payloads = getPayloads();
+    const payloadTypeSelect = document.getElementById("meta-sandbox-payload-type");
+    const payloadTextarea = document.getElementById("meta-sandbox-payload");
+
+    if (payloadTextarea) {
+        payloadTextarea.value = JSON.stringify(payloads.leadgen, null, 2);
+    }
+
+    if (payloadTypeSelect && payloadTextarea) {
+        // Remover listeners anteriores para não acumular
+        const newSelect = payloadTypeSelect.cloneNode(true);
+        payloadTypeSelect.parentNode.replaceChild(newSelect, payloadTypeSelect);
+        
+        newSelect.addEventListener("change", (e) => {
+            const type = e.target.value;
+            payloadTextarea.value = JSON.stringify(payloads[type], null, 2);
+        });
+    }
 
     // Abrir modal
     document.getElementById("meta-config-modal").style.display = "block";

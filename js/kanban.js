@@ -118,7 +118,16 @@ export const Kanban = {
             }
 
             // Usar aiScore do SDR Agent (Store) com fallback para ctx
-            const aiScore = lead.aiScore != null ? lead.aiScore : (ctx.scoredLeads.find(l => l.id === lead.id)?._score || 0);
+            let aiScore = lead.aiScore != null ? lead.aiScore : (ctx.scoredLeads.find(l => l.id === lead.id)?._score || 0);
+            if (!aiScore && lead.interactions) {
+                const sdrInt = lead.interactions.find(i => i.description && i.description.includes("Score IA:"));
+                if (sdrInt) {
+                    const match = sdrInt.description.match(/Score IA:\s*(\d+)/i);
+                    if (match) {
+                        aiScore = parseInt(match[1]);
+                    }
+                }
+            }
 
             // Determinar estilo dinâmico com base no Score IA (Visual Premium e Curado)
             let cardColor = "var(--primary, #6366f1)";

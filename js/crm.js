@@ -252,7 +252,16 @@ export const CRM = {
             else if (lead.stage === "Cliente Perdido") stageBadgeClass = "badge-stage-cliente-perdido";
 
             // Badge de Score IA (SDR Agent)
-            const aiScore = lead.aiScore != null ? lead.aiScore : null;
+            let aiScore = lead.aiScore != null ? lead.aiScore : null;
+            if (aiScore === null && lead.interactions) {
+                const sdrInt = lead.interactions.find(i => i.description && i.description.includes("Score IA:"));
+                if (sdrInt) {
+                    const match = sdrInt.description.match(/Score IA:\s*(\d+)/i);
+                    if (match) {
+                        aiScore = parseInt(match[1]);
+                    }
+                }
+            }
             let scoreBadge = `<span style="font-size: 11px; color: var(--text-muted);">—</span>`;
             if (aiScore !== null) {
                 let icon, color, bg, gradStart, gradEnd;

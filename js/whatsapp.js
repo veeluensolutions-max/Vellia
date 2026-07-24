@@ -418,8 +418,22 @@ Retorne estritamente em formato JSON:
         let toastTitle = "";
         let emoji = "";
 
+        const sdrConfig = JSON.parse(localStorage.getItem("agent_sdr_config")) || {};
+
         if (type === "welcome") {
-            message = `Olá ${lead.contact || lead.company}, tudo bem? Aqui é o ${sellerName} da Vellia. Vi seu interesse no segmento de ${lead.segment || "serviços"} e gostaria de entender como podemos ajudar a alavancar seus negócios. Qual seria o melhor dia para uma rápida conversa?`;
+            if (sdrConfig.customGreeting) {
+                message = sdrConfig.customGreeting
+                    .replace(/\{contato\}/gi, lead.contact || lead.company)
+                    .replace(/\{empresa\}/gi, lead.company)
+                    .replace(/\{vendedor\}/gi, sellerName)
+                    .replace(/\{segmento\}/gi, lead.segment || "serviços");
+            } else {
+                let greetingPrefix = "Olá";
+                if (sdrConfig.tone === "casual") greetingPrefix = "Fala";
+                else if (sdrConfig.tone === "enthusiastic") greetingPrefix = "Olá! Excelente dia";
+
+                message = `${greetingPrefix} ${lead.contact || lead.company}, tudo bem? Aqui é o ${sellerName} da Vellia. Vi seu interesse no segmento de ${lead.segment || "serviços"} e gostaria de entender como podemos ajudar a alavancar seus negócios. Qual seria o melhor dia para uma rápida conversa?`;
+            }
             toastTitle = "🟢 Boas-vindas Enviada (WhatsApp)";
             emoji = "👋";
         } else if (type === "proposal" && meta.proposalId) {

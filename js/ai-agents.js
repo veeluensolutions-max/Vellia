@@ -504,9 +504,13 @@ export const AIAgents = {
                 titleEl.innerHTML = "<span>🤖</span> Configurar SDR Agent (Vellin)";
                 document.getElementById("config-fields-sdr").style.display = "block";
                 const c = JSON.parse(localStorage.getItem("agent_sdr_config") || '{"approach":"quick","tone":"formal","delay":"1"}');
-                document.getElementById("sdr-approach").value = c.approach;
-                document.getElementById("sdr-tone").value     = c.tone;
-                document.getElementById("sdr-delay").value    = c.delay;
+                document.getElementById("sdr-approach").value = c.approach || "quick";
+                document.getElementById("sdr-tone").value     = c.tone || "formal";
+                document.getElementById("sdr-delay").value    = c.delay || "1";
+                const customInstEl = document.getElementById("sdr-custom-instruction");
+                if (customInstEl) customInstEl.value = c.customInstruction || "";
+                const customGreetEl = document.getElementById("sdr-custom-greeting");
+                if (customGreetEl) customGreetEl.value = c.customGreeting || "";
             } else if (agentId === "copy") {
                 titleEl.innerHTML = "<span>✍️</span> Configurar Copywriter Agent";
                 document.getElementById("config-fields-copy").style.display = "block";
@@ -535,10 +539,17 @@ export const AIAgents = {
                 const agentId = agentIdInput.value;
 
                 if (agentId === "sdr") {
-                    const config = { approach: document.getElementById("sdr-approach").value, tone: document.getElementById("sdr-tone").value, delay: document.getElementById("sdr-delay").value };
+                    const config = {
+                        approach: document.getElementById("sdr-approach").value,
+                        tone: document.getElementById("sdr-tone").value,
+                        delay: document.getElementById("sdr-delay").value,
+                        customInstruction: document.getElementById("sdr-custom-instruction")?.value.trim() || "",
+                        customGreeting: document.getElementById("sdr-custom-greeting")?.value.trim() || ""
+                    };
                     localStorage.setItem("agent_sdr_config", JSON.stringify(config));
                     const approachMap = { quick: "Qualificação Rápida", consultative: "Consultiva", direct: "Direta" };
-                    this.addAgentLog("SDR Agent", `⚙️ Configuração salva: Abordagem '${approachMap[config.approach]}', tom '${config.tone}'. Reagendando ciclo.`, "success");
+                    const hasCustom = config.customInstruction ? " (com prompt personalizado)" : "";
+                    this.addAgentLog("SDR Agent", `⚙️ Configuração salva: Abordagem '${approachMap[config.approach]}', tom '${config.tone}'${hasCustom}. Reagendando ciclo.`, "success");
                     if (this.isAgentActive("sdr")) this.runSDRCycle(false);
                 } else if (agentId === "copy") {
                     const config = { style: document.getElementById("copy-style").value, length: document.getElementById("copy-length").value };

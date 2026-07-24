@@ -3404,13 +3404,24 @@
                             <option value="enthusiastic">Entusiasmado/Energético</option>
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" style="margin-bottom: 12px;">
                         <label for="sdr-delay">Tempo de Resposta Simulada</label>
                         <select id="sdr-delay" class="form-control" style="height: 42px;">
                             <option value="1">Imediato (1 minuto)</option>
                             <option value="5">Rápido (5 minutos)</option>
                             <option value="15">Humanizado (15 minutos)</option>
                         </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label for="sdr-custom-instruction">Instrução / Prompt Personalizado (Gemini IA)</label>
+                        <textarea id="sdr-custom-instruction" class="form-control" placeholder="Ex: Focar em enfatizar a importância da norma ABNT NR-10 e do laudo de SPDA para o cliente..." style="min-height: 65px; resize: vertical; padding: 10px; font-size: 12.5px;"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="sdr-custom-greeting">Mensagem Inicial Personalizada (WhatsApp)</label>
+                        <textarea id="sdr-custom-greeting" class="form-control" placeholder="Ex: Olá {contato}! Sou o assistente da Vellia. Vi que a {empresa} tem interesse..." style="min-height: 65px; resize: vertical; padding: 10px; font-size: 12.5px;"></textarea>
+                        <span style="font-size: 10.5px; color: var(--text-muted); margin-top: 4px; display: block;">
+                            Variáveis disponíveis: <code>{contato}</code>, <code>{empresa}</code>, <code>{vendedor}</code>, <code>{segmento}</code>
+                        </span>
                     </div>
                 </div>
 

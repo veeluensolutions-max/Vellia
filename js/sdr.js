@@ -30,8 +30,21 @@ export const SDR = {
                 detail: { leadId, stage: "scanning", text: `${getLogTime()} 🧠 Consultando modelo Gemini 2.5 Flash para abordagem personalizada...` } 
             }));
 
+            const sdrConfig = JSON.parse(localStorage.getItem("agent_sdr_config")) || {};
+            const approachMap = { quick: "Qualificação Rápida (foco em agendamento)", consultative: "Consultiva (foco em entender dores)", direct: "Direta/Agressiva (foco em proposta/valor)" };
+            const toneMap = { formal: "Corporativo/Formal", casual: "Amigável/Casual", enthusiastic: "Entusiasmado/Energético" };
+
+            const approachStr = approachMap[sdrConfig.approach] || "Consultiva";
+            const toneStr = toneMap[sdrConfig.tone] || "Corporativo/Formal";
+            const customInstructionStr = sdrConfig.customInstruction ? `- Instrução Específica do Usuário: "${sdrConfig.customInstruction}"` : "";
+
             const prompt = `
 Você é o Vellia AI SDR (Assistente de Pré-vendas).
+Diretrizes Comerciais Configuradas pelo Vendedor:
+- Estilo de Abordagem: ${approachStr}
+- Tom de Voz: ${toneStr}
+${customInstructionStr}
+
 Dados do Lead:
 - Empresa: ${lead.company}
 - Contato: ${lead.contact || lead.name || "Sem nome"}

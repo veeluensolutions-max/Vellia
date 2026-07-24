@@ -3178,6 +3178,70 @@
         </form>
     </div>
 
+    <!-- Modal: Agendar Vistoria / Evento -->
+    <div id="calendar-event-modal-overlay" class="modal-overlay" style="z-index:1100;"></div>
+    <div id="calendar-event-modal" class="modal" style="z-index:1101; max-width: 500px;">
+        <div class="modal-header">
+            <h3 class="modal-title">Agendar Compromisso / Vistoria</h3>
+            <button id="btn-close-calendar-event-modal" class="btn-icon-close" aria-label="Fechar">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <form id="calendar-event-form" class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="form-group">
+                <label for="cal-event-title">Título do Compromisso *</label>
+                <input type="text" id="cal-event-title" class="form-control" required placeholder="Ex: Vistoria Técnica de SPDA">
+            </div>
+
+            <div class="form-group">
+                <label for="cal-event-lead">Lead / Cliente Associado *</label>
+                <select id="cal-event-lead" class="form-control" required>
+                    <!-- Preenchido via JS com os leads ativos -->
+                </select>
+            </div>
+
+            <div class="grid-modal-2col">
+                <div class="form-group">
+                    <label for="cal-event-date">Data *</label>
+                    <input type="date" id="cal-event-date" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="cal-event-time">Horário *</label>
+                    <input type="time" id="cal-event-time" class="form-control" required value="10:00">
+                </div>
+            </div>
+
+            <div class="grid-modal-2col">
+                <div class="form-group">
+                    <label for="cal-event-type">Tipo de Compromisso</label>
+                    <select id="cal-event-type" class="form-control">
+                        <option value="inspecao">📋 Vistoria Técnica</option>
+                        <option value="followup">⏰ Follow-up</option>
+                        <option value="reuniao">💼 Reunião Comercial</option>
+                        <option value="vencimento">⚠️ Vencimento</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="cal-event-status">Status</label>
+                    <select id="cal-event-status" class="form-control">
+                        <option value="agendado">Pendente / Agendado</option>
+                        <option value="concluido">Concluído</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="cal-event-notes">Observações / Notas</label>
+                <textarea id="cal-event-notes" class="form-control" placeholder="Detalhes adicionais do compromisso..." style="min-height: 80px; resize: vertical; padding: 10px;"></textarea>
+            </div>
+
+            <div class="modal-footer" style="padding: 0; border: none; margin-top: 4px;">
+                <button type="button" id="btn-cancel-calendar-event" class="btn btn-outline">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar Compromisso</button>
+            </div>
+        </form>
+    </div>
+
     <!-- Modal: Configuração Dinâmica de Agente de IA -->
     <div id="agent-config-overlay" class="modal-overlay" style="z-index: 1200;"></div>
     <div id="agent-config-modal" class="modal" style="z-index: 1201; max-width: 500px;">

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Vellia — Agenda & Calendário Visual de Vistorias e Reuniões
  * Módulo de agendamento interativo com visão mensal/semanal e integração com Leads, Tarefas e Inspeções.
  */
@@ -360,34 +360,107 @@ export const Calendar = {
         if (btnNew) {
             btnNew.onclick = () => this.openNewEventModal();
         }
+
+        // Eventos para fechar o modal
+        const closeCalModal = () => {
+            const overlay = document.getElementById("calendar-event-modal-overlay");
+            const modal = document.getElementById("calendar-event-modal");
+            if (modal) modal.classList.remove("open");
+            setTimeout(() => {
+                if (modal) modal.style.display = "none";
+                if (overlay) overlay.style.display = "none";
+            }, 300);
+        };
+
+        const btnClose = document.getElementById("btn-close-calendar-event-modal");
+        if (btnClose) btnClose.onclick = closeCalModal;
+
+        const btnCancel = document.getElementById("btn-cancel-calendar-event");
+        if (btnCancel) btnCancel.onclick = closeCalModal;
+
+        const overlay = document.getElementById("calendar-event-modal-overlay");
+        if (overlay) overlay.onclick = closeCalModal;
+
+        // Submissão do Formulário de Agendamento
+        const form = document.getElementById("calendar-event-form");
+        if (form) {
+            form.onsubmit = (e) => {
+                e.preventDefault();
+                
+                const title = document.getElementById("cal-event-title").value;
+                const company = document.getElementById("cal-event-lead").value;
+                const dateVal = document.getElementById("cal-event-date").value;
+                const timeVal = document.getElementById("cal-event-time").value;
+                const typeVal = document.getElementById("cal-event-type").value;
+                const statusVal = document.getElementById("cal-event-status").value;
+                const notes = document.getElementById("cal-event-notes").value;
+                
+                const emojiMap = {
+                    inspecao: "📋",
+                    followup: "⏰",
+                    reuniao: "💼",
+                    vencimento: "⚠️"
+                };
+                const emoji = emojiMap[typeVal] || "📋";
+
+                const newEvent = {
+                    id: `evt_${Date.now()}`,
+                    title: `${emoji} ${title}`,
+                    company: company,
+                    date: dateVal,
+                    time: timeVal,
+                    type: typeVal,
+                    status: statusVal,
+                    notes: notes
+                };
+                
+                try {
+                    const customEvents = JSON.parse(localStorage.getItem("vellia_calendar_events")) || [];
+                    customEvents.push(newEvent);
+                    localStorage.setItem("vellia_calendar_events", JSON.stringify(customEvents));
+                    alert("✅ Compromisso agendado na Agenda!");
+                    
+                    closeCalModal();
+                    this.selectedDateStr = dateVal;
+                    this.render();
+                } catch (err) {
+                    console.error("Erro ao salvar agendamento:", err);
+                }
+            };
+        }
     },
 
     openNewEventModal() {
-        const title = prompt("Título da Vistoria ou Compromisso:");
-        if (!title || !title.trim()) return;
+        // 1. Popular dropdown de Leads
+        const leadSelect = document.getElementById("cal-event-lead");
+        if (leadSelect) {
+            const leads = Store.getLeads();
+            leadSelect.innerHTML = `
+                <option value="">-- Selecionar Cliente / Lead --</option>
+                ${leads.map(l => `<option value="${l.company}">${l.company} (${l.contact || 'Sem contato'})</option>`).join("")}
+                <option value="Cliente Geral">-- Outro Cliente (Não cadastrado) --</option>
+            `;
+        }
 
-        const company = prompt("Empresa / Cliente:") || "Cliente";
-        const dateStr = prompt("Data (AAAA-MM-DD):", this.selectedDateStr || new Date().toISOString().split("T")[0]);
-        if (!dateStr) return;
+        // 2. Data padrão
+        const dateInput = document.getElementById("cal-event-date");
+        if (dateInput) {
+            dateInput.value = this.selectedDateStr || new Date().toISOString().split("T")[0];
+        }
 
-        const newEvent = {
-            id: `evt_${Date.now()}`,
-            title: `📋 ${title}`,
-            company: company,
-            date: dateStr.trim(),
-            time: "10:00",
-            type: "inspecao",
-            status: "agendado",
-            notes: "Agendado via Agenda Vellia"
-        };
+        // 3. Limpar campos
+        const titleInput = document.getElementById("cal-event-title");
+        if (titleInput) titleInput.value = "";
+        const notesInput = document.getElementById("cal-event-notes");
+        if (notesInput) notesInput.value = "";
 
-        try {
-            const customEvents = JSON.parse(localStorage.getItem("vellia_calendar_events")) || [];
-            customEvents.push(newEvent);
-            localStorage.setItem("vellia_calendar_events", JSON.stringify(customEvents));
-            alert("✅ Compromisso agendado na Agenda!");
-            this.selectedDateStr = dateStr.trim();
-            this.render();
-        } catch (e) {}
+        // 4. Exibir Modal
+        const overlay = document.getElementById("calendar-event-modal-overlay");
+        const modal = document.getElementById("calendar-event-modal");
+        if (overlay) overlay.style.display = "block";
+        if (modal) {
+            modal.style.display = "flex";
+            setTimeout(() => modal.classList.add("open"), 10);
+        }
     }
 };

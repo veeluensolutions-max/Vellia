@@ -1,5 +1,7 @@
 import { Store } from "./store.js";
 import { PDFGenerator } from "./pdf-generator.js";
+import { Auth } from "./auth.js";
+import { Audit } from "./audit.js";
 
 const SUPABASE_URL = "https://ogrbsonpkiamoytxjshg.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Wi3eKJi5uyEzqihEDF6Eaw_-i0zcHe7";
@@ -40,6 +42,7 @@ export const Inspections = {
 
         this.render();
         this.setupListeners();
+        this.setupChecklistModal();
     },
 
     getInspections() {
@@ -88,7 +91,8 @@ export const Inspections = {
                             expiryDate: expiryDateStr,
                             daysRemaining: daysRemaining,
                             status: status,
-                            notes: item.meta?.notes || item.description
+                            notes: item.meta?.notes || item.description,
+                            score: item.meta?.score
                         });
                     }
                 });
@@ -178,13 +182,15 @@ export const Inspections = {
             const buttonText = item.status === "vencida" ? "⚡ Renovar Já" : "💬 Notificar Cliente";
             const buttonDisabled = item.status === "valida" ? "disabled" : "";
 
+            const scoreText = item.score !== undefined ? ` <span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: ${item.score >= 80 ? 'rgba(16,185,129,0.12)' : (item.score >= 50 ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)')}; color: ${item.score >= 80 ? '#10b981' : (item.score >= 50 ? '#d97706' : '#ef4444')}; font-weight: 700; margin-left: 6px; display: inline-flex; align-items: center; gap: 2px;">Score: ${item.score}%</span>` : '';
+
             return `
                 <tr style="${rowStyle} border-bottom: 1px solid var(--border-color); transition: all 0.2s;">
                     <td style="padding: 16px 20px;">
                         <div style="font-weight: 700; color: var(--text-primary); font-size: 13.5px;">${item.company}</div>
                         <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Contato: ${item.contact}</div>
                     </td>
-                    <td style="padding: 16px 20px; font-weight: 600; color: var(--text-primary);">${item.serviceName}</td>
+                    <td style="padding: 16px 20px; font-weight: 600; color: var(--text-primary);">${item.serviceName}${scoreText}</td>
                     <td style="padding: 16px 20px; color: var(--text-secondary);">${formatDate(item.executionDate)}</td>
                     <td style="padding: 16px 20px; color: var(--text-secondary); font-weight: 600;">${formatDate(item.expiryDate)}</td>
                     <td style="padding: 16px 20px;">${remainingText}</td>
@@ -315,6 +321,201 @@ export const Inspections = {
             console.log("🔄 [Inspections] Lead atualizado remotamente — re-renderizando central de inspeções.");
             this.render();
         });
+    },
+
+    setupChecklistModal() {
+        const btnOpen = document.getElementById("btn-open-checklist-modal");
+        const overlay = document.getElementById("inspection-checklist-modal-overlay");
+        const modal = document.getElementById("inspection-checklist-modal");
+        const btnCloseX = document.getElementById("btn-close-checklist-modal-x");
+        const btnCancel = document.getElementById("btn-cancel-checklist");
+        const form = document.getElementById("checklist-form");
+        const leadSelect = document.getElementById("checklist-lead-select");
+        const selectService = document.getElementById("checklist-service-select");
+        const inputExecDate = document.getElementById("checklist-date-exec");
+        const inputExpiryDate = document.getElementById("checklist-date-expiry");
+        const scoreVal = document.getElementById("checklist-score-val");
+        const scoreBar = document.getElementById("checklist-score-bar");
+        const itemSelects = document.querySelectorAll(".checklist-item-select");
+
+        const closeChecklistModal = () => {
+            const overlay = document.getElementById("inspection-checklist-modal-overlay");
+            const modal = document.getElementById("inspection-checklist-modal");
+            if (modal) modal.classList.remove("open");
+            setTimeout(() => {
+                if (modal) modal.style.display = "none";
+                if (overlay) overlay.style.display = "none";
+            }, 300);
+        };
+
+        if (btnOpen) {
+            btnOpen.onclick = () => {
+                const leads = Store.getLeads();
+                if (leadSelect) {
+                    leadSelect.innerHTML = `<option value="">-- Selecionar Cliente / Lead --</option>` +
+                        leads.map(l => `<option value="${l.id}">${l.company} (${l.contact || 'Sem contato'})</option>`).join("");
+                }
+
+                const todayStr = new Date().toISOString().split("T")[0];
+                if (inputExecDate) {
+                    inputExecDate.value = todayStr;
+                }
+                
+                const nextYear = new Date();
+                nextYear.setFullYear(nextYear.getFullYear() + 1);
+                if (inputExpiryDate) {
+                    inputExpiryDate.value = nextYear.toISOString().split("T")[0];
+                }
+
+                itemSelects.forEach(sel => sel.value = "Conforme");
+
+                const notesArea = document.getElementById("checklist-notes");
+                if (notesArea) notesArea.value = "";
+
+                calculateScore();
+
+                if (overlay) overlay.style.display = "block";
+                if (modal) {
+                    modal.style.display = "flex";
+                    setTimeout(() => modal.classList.add("open"), 10);
+                }
+            };
+        }
+
+        if (btnCloseX) btnCloseX.onclick = closeChecklistModal;
+        if (btnCancel) btnCancel.onclick = closeChecklistModal;
+        if (overlay) overlay.onclick = closeChecklistModal;
+
+        if (inputExecDate) {
+            inputExecDate.onchange = () => {
+                if (inputExecDate.value) {
+                    const d = new Date(inputExecDate.value + "T12:00:00");
+                    d.setFullYear(d.getFullYear() + 1);
+                    inputExpiryDate.value = d.toISOString().split("T")[0];
+                }
+            };
+        }
+
+        const calculateScore = () => {
+            let totalEvaluated = 0;
+            let conformeCount = 0;
+            itemSelects.forEach(sel => {
+                const val = sel.value;
+                if (val !== "N/A") {
+                    totalEvaluated++;
+                    if (val === "Conforme") {
+                        conformeCount++;
+                    }
+                }
+            });
+
+            const score = totalEvaluated > 0 ? Math.round((conformeCount / totalEvaluated) * 100) : 100;
+            
+            if (scoreVal) scoreVal.textContent = `${score}%`;
+            if (scoreBar) {
+                scoreBar.style.width = `${score}%`;
+                if (score >= 80) {
+                    scoreBar.style.background = "#10b981";
+                    scoreVal.style.color = "#10b981";
+                } else if (score >= 50) {
+                    scoreBar.style.background = "#f59e0b";
+                    scoreVal.style.color = "#f59e0b";
+                } else {
+                    scoreBar.style.background = "#ef4444";
+                    scoreVal.style.color = "#ef4444";
+                }
+            }
+            return score;
+        };
+
+        itemSelects.forEach(sel => {
+            sel.onchange = calculateScore;
+        });
+
+        if (form) {
+            form.onsubmit = async (e) => {
+                e.preventDefault();
+
+                const leadId = leadSelect.value;
+                if (!leadId) {
+                    alert("Selecione um Cliente / Lead.");
+                    return;
+                }
+
+                const lead = Store.getLeadById(leadId);
+                if (!lead) return;
+
+                const service = selectService.value;
+                const execDate = inputExecDate.value;
+                const expiryDate = inputExpiryDate.value;
+                const notes = document.getElementById("checklist-notes")?.value.trim() || "";
+                
+                const score = calculateScore();
+
+                const checklistPayload = [];
+                itemSelects.forEach(sel => {
+                    checklistPayload.push({
+                        name: sel.getAttribute("data-item-name"),
+                        status: sel.value
+                    });
+                });
+
+                const currentUser = Auth.getCurrentUser();
+                const userEmail = currentUser ? currentUser.email : "sistema@vellia.com";
+
+                const newInteraction = {
+                    id: "int_" + Date.now().toString(36),
+                    type: "Inspeção",
+                    timestamp: new Date().toISOString(),
+                    description: `Vistoria de ${service} concluída com ${score}% de conformidade. Parecer: ${notes.substring(0, 100)}...`,
+                    meta: {
+                        serviceName: service,
+                        score: score,
+                        executionDate: execDate,
+                        expiryDate: expiryDate,
+                        notes: notes,
+                        checklist: checklistPayload
+                    }
+                };
+
+                if (!lead.interactions) lead.interactions = [];
+                lead.interactions.push(newInteraction);
+                
+                try {
+                    const localLeads = JSON.parse(localStorage.getItem("comercial_leads")) || [];
+                    const updatedLocal = localLeads.map(l => l.id === lead.id ? lead : l);
+                    localStorage.setItem("comercial_leads", JSON.stringify(updatedLocal));
+
+                    const res = await fetch(`${SUPABASE_URL}/rest/v1/comercial_leads?id=eq.${lead.id}`, {
+                        method: "PATCH",
+                        headers: {
+                            "apikey": SUPABASE_KEY,
+                            "Authorization": `Bearer ${SUPABASE_KEY}`,
+                            "Content-Type": "application/json",
+                            "Prefer": "return=minimal"
+                        },
+                        body: JSON.stringify({
+                            interactions: lead.interactions
+                        })
+                    });
+
+                    if (res.ok) {
+                        console.log("✅ Vistoria registrada com sucesso no Supabase.");
+                    } else {
+                        console.warn("⚠️ Vistoria registrada localmente, falha ao subir no Supabase:", await res.text());
+                    }
+                } catch(err) {
+                    console.error("Erro ao salvar inspeção no Supabase:", err);
+                }
+
+                Audit.logStageChange(userEmail, lead.company, lead.stage, lead.stage, `Concluiu Checklist Técnico de ${service} (Score: ${score}%)`);
+
+                closeChecklistModal();
+                alert(`✅ Inspeção registrada com sucesso! Score de Conformidade: ${score}%`);
+                
+                this.init();
+            };
+        }
     }
 };
 

@@ -3,7 +3,7 @@ const puppeteer = require('puppeteer');
 (async () => {
     try {
         console.log("Iniciando teste de login detalhado na porta 3000...");
-        const browser = await puppeteer.launch({ headless: "new" });
+        const browser = await puppeteer.launch({ headless: true });
         const page = await browser.newPage();
 
         page.on('console', msg => console.log('LOG DO NAVEGADOR:', msg.type(), msg.text()));
@@ -14,7 +14,7 @@ const puppeteer = require('puppeteer');
             }
         });
 
-        await page.goto('http://localhost:3000', { waitUntil: 'networkidle0' });
+        await page.goto('http://localhost:3000/#dashboard', { waitUntil: 'networkidle2' });
 
         console.log("Preenchendo e-mail e senha...");
         await page.waitForSelector('#login-email');

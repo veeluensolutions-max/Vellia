@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Vellia — Gerador de Laudos e Relatórios de Inspeção em PDF
  * Emissão de Laudos Técnicos Oficiais com impressão / download PDF nativo
  */
@@ -32,6 +32,28 @@ export const PDFGenerator = {
 
         const codeAuth = `VEL-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
         const issueDate = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+
+        const score = inspection.meta?.score;
+        let badgeColor = "#16a34a";
+        let badgeBg = "#dcfce7";
+        let badgeBorder = "#86efac";
+        let badgeText = "🟢 LAUDO REGULAR";
+
+        if (score !== undefined) {
+            if (score >= 80) {
+                badgeText = `🟢 APROVADO (${score}%)`;
+            } else if (score >= 50) {
+                badgeText = `🟡 ALERTA TÉCNICO (${score}%)`;
+                badgeColor = "#d97706";
+                badgeBg = "#fef3c7";
+                badgeBorder = "#fcd34d";
+            } else {
+                badgeText = `🔴 REPROVADO (${score}%)`;
+                badgeColor = "#dc2626";
+                badgeBg = "#fee2e2";
+                badgeBorder = "#fca5a5";
+            }
+        }
 
         const htmlContent = `
 <!DOCTYPE html>
@@ -242,12 +264,45 @@ export const PDFGenerator = {
         <div class="info-card">
             <div class="info-label">Status da Validade</div>
             <div class="info-val">
-                <span class="status-badge">🟢 LAUDO REGULAR</span>
+                <span class="status-badge" style="background: ${badgeBg}; color: ${badgeColor}; border: 1px solid ${badgeBorder}; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 99px;">${badgeText}</span>
             </div>
         </div>
     </div>
 
-    <div class="section-heading">3. Parecer Técnico & Resumo da Vistoria</div>
+    ${inspection.meta?.checklist ? `
+    <div class="section-heading" style="font-size: 13px; font-weight: 700; color: #1877F2; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin: 24px 0 12px 0;">3. Checklist de Itens Inspecionados</div>
+    <table style="width: 100%; border-collapse: collapse; margin-top: 8px; margin-bottom: 24px; font-size: 11px;">
+        <thead>
+            <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569;">
+                <th style="padding: 10px; text-align: left; font-weight: bold; width: 70%;">Critério de Avaliação Técnica</th>
+                <th style="padding: 10px; text-align: center; font-weight: bold; width: 30%;">Parecer da Inspeção</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${inspection.meta.checklist.map(item => {
+                let color = "#16a34a";
+                let bg = "#dcfce7";
+                if (item.status === "Não Conforme") {
+                    color = "#dc2626";
+                    bg = "#fee2e2";
+                } else if (item.status === "N/A") {
+                    color = "#64748b";
+                    bg = "#f1f5f9";
+                }
+                return `
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                    <td style="padding: 10px; font-weight: 600; color: #334155;">${item.name}</td>
+                    <td style="padding: 10px; text-align: center;">
+                        <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 10px; color: ${color}; background: ${bg};">${item.status}</span>
+                    </td>
+                </tr>
+                `;
+            }).join("")}
+        </tbody>
+    </table>
+    ` : ''}
+
+    <div class="section-heading">${inspection.meta?.checklist ? '4' : '3'}. Parecer Técnico & Resumo da Vistoria</div>
     <div class="notes-box">
 ${inspection.meta?.notes || inspection.description || "Inspeção técnica realizada em conformidade com as normas vigentes. Equipamento e instalações aprovados na avaliação periódica."}
     </div>

@@ -1978,7 +1978,10 @@
                                 <h3 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0;">Central de Inspeções & Renovações</h3>
                                 <p style="font-size: 12px; color: var(--text-muted); margin: 4px 0 0 0;">Monitore os serviços executados e notifique os clientes antes do vencimento anual das vistorias e laudos.</p>
                             </div>
-                            <div>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn btn-primary" id="btn-open-checklist-modal" style="font-size: 12px; padding: 7px 14px; gap: 6px; display: inline-flex; align-items: center; cursor: pointer;">
+                                    📋 Nova Inspeção / Checklist
+                                </button>
                                 <button class="btn btn-outline" style="font-size: 12px; padding: 7px 14px; gap: 6px; display: inline-flex; align-items: center; border-color: var(--primary); color: var(--primary); font-weight: 700; cursor: pointer;" onclick="window.exportInspectionsSummaryPDF()">
                                     📄 Relatório Geral (PDF)
                                 </button>
@@ -3246,6 +3249,124 @@
             <div class="modal-footer" style="padding: 0; border: none; margin-top: 4px;">
                 <button type="button" id="btn-cancel-calendar-event" class="btn btn-outline">Cancelar</button>
                 <button type="submit" class="btn btn-primary">Salvar Compromisso</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Modal: Checklist de Inspeção Técnica -->
+    <div id="inspection-checklist-modal-overlay" class="modal-overlay" style="z-index:1100;"></div>
+    <div id="inspection-checklist-modal" class="modal" style="z-index:1101; max-width: 550px;">
+        <div class="modal-header">
+            <h3 class="modal-title">📋 Checklist de Inspeção Técnica</h3>
+            <button id="btn-close-checklist-modal-x" class="btn-icon-close" aria-label="Fechar">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <form id="checklist-form" class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="form-group">
+                <label for="checklist-lead-select">Empresa / Lead *</label>
+                <select id="checklist-lead-select" class="form-control" required>
+                    <!-- Preenchido via JS -->
+                </select>
+            </div>
+
+            <div class="grid-modal-2col">
+                <div class="form-group">
+                    <label for="checklist-service-select">Serviço Inspecionado *</label>
+                    <select id="checklist-service-select" class="form-control" required>
+                        <option value="Laudo de SPDA">⚡ Sistema de Proteção contra Descargas Atmosféricas (SPDA)</option>
+                        <option value="Laudo de Incêndio (AVCB)">🔥 Prevenção e Combate a Incêndio (AVCB)</option>
+                        <option value="Laudo de Instalações Elétricas (NR-10)">🔌 Instalações Elétricas (NR-10)</option>
+                        <option value="Laudo de Gás (GN/GLP)">🛢️ Instalações de Gás Combustível (GN/GLP)</option>
+                        <option value="Vistoria Predial Geral">🏢 Vistoria Predial Geral de Conservação</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="checklist-date-exec">Data da Execução *</label>
+                    <input type="date" id="checklist-date-exec" class="form-control" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="checklist-date-expiry">Previsão de Vencimento *</label>
+                <input type="date" id="checklist-date-expiry" class="form-control" required>
+            </div>
+
+            <!-- Seção de Critérios do Checklist -->
+            <div style="background: var(--bg-body); padding: 14px; border-radius: 8px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 12px;">
+                <h4 style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin: 0 0 4px 0; letter-spacing: 0.5px;">
+                    📋 Itens de Conformidade Regulamentar
+                </h4>
+
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <!-- Item 1 -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 12.5px;">
+                        <span style="font-weight: 600; color: var(--text-primary);">1. Estado dos Equipamentos e Conexões</span>
+                        <select class="form-control checklist-item-select" data-item-name="Estado dos Equipamentos e Conexões" style="width: 140px; padding: 4px 8px; height: 30px; font-size: 12px; border-radius: 6px;">
+                            <option value="Conforme">Conforme</option>
+                            <option value="Não Conforme">Não Conforme</option>
+                            <option value="N/A">Não Aplicável (N/A)</option>
+                        </select>
+                    </div>
+                    <!-- Item 2 -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 12.5px;">
+                        <span style="font-weight: 600; color: var(--text-primary);">2. Sinalização e Isolamento de Segurança</span>
+                        <select class="form-control checklist-item-select" data-item-name="Sinalização e Isolamento de Segurança" style="width: 140px; padding: 4px 8px; height: 30px; font-size: 12px; border-radius: 6px;">
+                            <option value="Conforme">Conforme</option>
+                            <option value="Não Conforme">Não Conforme</option>
+                            <option value="N/A">Não Aplicável (N/A)</option>
+                        </select>
+                    </div>
+                    <!-- Item 3 -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 12.5px;">
+                        <span style="font-weight: 600; color: var(--text-primary);">3. Testes de Aterramento / Resistência</span>
+                        <select class="form-control checklist-item-select" data-item-name="Testes de Aterramento / Resistência" style="width: 140px; padding: 4px 8px; height: 30px; font-size: 12px; border-radius: 6px;">
+                            <option value="Conforme">Conforme</option>
+                            <option value="Não Conforme">Não Conforme</option>
+                            <option value="N/A">Não Aplicável (N/A)</option>
+                        </select>
+                    </div>
+                    <!-- Item 4 -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 12.5px;">
+                        <span style="font-weight: 600; color: var(--text-primary);">4. Conformidade Geral de Normas ABNT</span>
+                        <select class="form-control checklist-item-select" data-item-name="Conformidade Geral de Normas ABNT" style="width: 140px; padding: 4px 8px; height: 30px; font-size: 12px; border-radius: 6px;">
+                            <option value="Conforme">Conforme</option>
+                            <option value="Não Conforme">Não Conforme</option>
+                            <option value="N/A">Não Aplicável (N/A)</option>
+                        </select>
+                    </div>
+                    <!-- Item 5 -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 12.5px;">
+                        <span style="font-weight: 600; color: var(--text-primary);">5. Documentação & Histórico Técnico</span>
+                        <select class="form-control checklist-item-select" data-item-name="Documentação & Histórico Técnico" style="width: 140px; padding: 4px 8px; height: 30px; font-size: 12px; border-radius: 6px;">
+                            <option value="Conforme">Conforme</option>
+                            <option value="Não Conforme">Não Conforme</option>
+                            <option value="N/A">Não Aplicável (N/A)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Pontuação Dinâmica -->
+                <div style="margin-top: 6px; padding-top: 10px; border-top: 1px dashed var(--border-color); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                    <div style="display: flex; flex-direction: column;">
+                        <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Pontuação de Conformidade</span>
+                        <span id="checklist-score-val" style="font-size: 20px; font-weight: 800; color: #10b981; margin-top: 2px;">100%</span>
+                    </div>
+                    <!-- Barra de progresso visual -->
+                    <div style="flex: 1; min-width: 160px; height: 8px; background: rgba(255,255,255,0.07); border-radius: 99px; overflow: hidden; border: 1px solid var(--border-color);">
+                        <div id="checklist-score-bar" style="width: 100%; height: 100%; background: #10b981; border-radius: 99px; transition: all 0.3s ease;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="checklist-notes">Parecer Técnico / Observações</label>
+                <textarea id="checklist-notes" class="form-control" placeholder="Descreva os pontos críticos identificados..." style="min-height: 80px; resize: vertical; padding: 10px;"></textarea>
+            </div>
+
+            <div class="modal-footer" style="padding: 0; border: none; margin-top: 4px;">
+                <button type="button" id="btn-cancel-checklist" class="btn btn-outline">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar e Concluir Vistoria</button>
             </div>
         </form>
     </div>

@@ -1,4 +1,4 @@
-﻿import { Store } from "./store.js";
+import { Store } from "./store.js";
 import { Auth } from "./auth.js";
 
 // =============================================================================
@@ -283,7 +283,7 @@ function generateResponse(userInput, ctx) {
                   ? `💡 **Recomendação:** Faltam **${formatCurrency(remaining)}** para bater a meta física. Concentre-se nas propostas comerciais ativas com maior probabilidade de conversão para consolidar a meta!`
                   : `🏆 **Meta batida!** O faturamento atual de **${formatCurrency(monthRevenue)}** já superou a meta de **${formatCurrency(metaRevenue)}**. Parabéns ao time comercial!`),
             type: "analysis",
-            action: { label: "Ver Previsões Completas", route: "forecast" }
+            action: { label: "Ver Equipe Comercial", route: "team" }
         };
     }
 

@@ -239,7 +239,7 @@ export const Notifications = {
                         } else if (id === "cold_leads") {
                             window.location.hash = "#team";
                             setTimeout(() => {
-                                const tabBtn = document.querySelector('.subtab-btn[data-subtab="team-forecast"]');
+                                const tabBtn = document.querySelector('.subtab-btn[data-subtab="team-metas"]');
                                 if (tabBtn) tabBtn.click();
                             }, 100);
                         } else if (id.startsWith("insp_alert_")) {

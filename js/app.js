@@ -7,7 +7,6 @@ import { Proposals } from "./proposals.js";
 import { Dashboard } from "./dashboard.js";
 import { Goals } from "./goals.js";
 import { Services } from "./services.js";
-import { Forecast } from "./forecast.js";
 import { analyzeContext } from "./ai.js";
 import { Inspections } from "./inspections.js";
 import { Notifications } from "./notifications.js";
@@ -118,8 +117,8 @@ function configureSidebarMenu(role) {
             // Gerente Comercial vê CRM, Kanban, Propostas, Equipe Comercial, IA. Não vê logs, users e integrations.
             isVisible = !["logs", "users", "integrations"].includes(viewName);
         } else if (role === "seller") {
-            // Vendedor vê CRM, Kanban, Propostas e IA. Não vê Logs, Equipe, Serviços, Forecast, Integrações e Usuários.
-            isVisible = !["logs", "team", "services", "forecast", "integrations", "users"].includes(viewName);
+            // Vendedor vê CRM, Kanban, Propostas e IA. Não vê Logs, Equipe, Serviços, Integrações e Usuários.
+            isVisible = !["logs", "team", "services", "integrations", "users"].includes(viewName);
         }
 
         // Elementos HTML específicos
@@ -143,14 +142,6 @@ function navigateTo(viewName) {
         window.location.hash = "#team";
         setTimeout(() => {
             const tabBtn = document.querySelector('.subtab-btn[data-subtab="team-graficos"]');
-            if (tabBtn) tabBtn.click();
-        }, 100);
-        return;
-    }
-    if (viewName === "forecast") {
-        window.location.hash = "#team";
-        setTimeout(() => {
-            const tabBtn = document.querySelector('.subtab-btn[data-subtab="team-forecast"]');
             if (tabBtn) tabBtn.click();
         }, 100);
         return;
@@ -235,8 +226,6 @@ function navigateTo(viewName) {
         Goals.init();
     } else if (viewName === "services") {
         Services.init();
-    } else if (viewName === "forecast") {
-        Forecast.init();
     } else if (viewName === "inspections") {
         Inspections.init();
     } else if (viewName === "calendar") {

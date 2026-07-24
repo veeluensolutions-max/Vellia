@@ -1,7 +1,6 @@
 import { Store } from "./store.js";
 import { Auth } from "./auth.js";
 import { Performance } from "./performance.js";
-import { Forecast } from "./forecast.js";
 import { Services } from "./services.js";
 import { Goals } from "./goals.js";
 
@@ -62,8 +61,6 @@ export const Team = {
                 // Initialize specific module for sub-tab
                 if (target === "team-graficos") {
                     Performance.init();
-                } else if (target === "team-forecast") {
-                    Forecast.init();
                 } else if (target === "team-servicos") {
                     Services.init();
                 } else if (target === "team-metas-adv") {

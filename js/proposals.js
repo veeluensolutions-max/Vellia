@@ -481,6 +481,13 @@ export const Proposals = {
         this.renderTable();
         this.renderLossAnalysis();
 
+        // Disparar automação de proposta enviada
+        const leads = Store.getLeads();
+        const lead = leads.find(l => l.company.toLowerCase() === company.toLowerCase());
+        if (lead && typeof window.WhatsApp?.sendAutomatedMessage === "function") {
+            window.WhatsApp.sendAutomatedMessage(lead.id, "proposal", { proposalId: proposal.id });
+        }
+
         isSaving = false;
     },
 

@@ -405,6 +405,159 @@ Retorne estritamente em formato JSON:
                 }
             }
         } catch(e) {}
+    },
+
+    async sendAutomatedMessage(leadId, type, meta = {}) {
+        const lead = Store.getLeadById(leadId);
+        if (!lead) return;
+
+        const currentUser = Auth.getCurrentUser();
+        const sellerName = currentUser ? currentUser.name : "Consultor Vellia";
+
+        let message = "";
+        let toastTitle = "";
+        let emoji = "";
+
+        if (type === "welcome") {
+            message = `Olá ${lead.contact || lead.company}, tudo bem? Aqui é o ${sellerName} da Vellia. Vi seu interesse no segmento de ${lead.segment || "serviços"} e gostaria de entender como podemos ajudar a alavancar seus negócios. Qual seria o melhor dia para uma rápida conversa?`;
+            toastTitle = "🟢 Boas-vindas Enviada (WhatsApp)";
+            emoji = "👋";
+        } else if (type === "proposal" && meta.proposalId) {
+            const proposal = Store.getProposalById(meta.proposalId);
+            const valueStr = proposal ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(proposal.value) : "R$ 0,00";
+            message = `Olá ${lead.contact || lead.company}, tudo bem? Acabei de te enviar a nossa proposta comercial para o serviço de ${proposal?.service || "Serviço"} no valor de ${valueStr}. Fico à disposição para esclarecer qualquer dúvida!`;
+            toastTitle = "📄 Proposta Enviada (WhatsApp)";
+            emoji = "📄";
+        } else if (type === "inspection_confirm") {
+            message = `Olá ${lead.contact || lead.company}! Confirmando o agendamento da nossa vistoria técnica na ${lead.company}. Nosso engenheiro responsável estará no local conforme o horário combinado. Qualquer ajuste de horário, por favor me avise por aqui! 📋`;
+            toastTitle = "📋 Confirmação de Vistoria (WhatsApp)";
+            emoji = "📋";
+        } else {
+            return;
+        }
+
+        const userEmail = currentUser ? currentUser.email : "sistema@vellia.com";
+
+        // Formatação inteligente de telefone
+        let rawPhone = lead.whatsapp || lead.phone || "";
+        let cleanPhone = rawPhone.replace(/\D/g, "");
+        if (cleanPhone.length === 10 || cleanPhone.length === 11) {
+            cleanPhone = "55" + cleanPhone;
+        }
+
+        // 1. Gravar interação
+        Store.addLeadInteraction(lead.id, {
+            type: "WhatsApp",
+            description: `🤖 Automação SDR: Mensagem automática de ${type}: "${message.substring(0, 70)}..."`
+        }, userEmail);
+
+        // 2. Gravar auditoria
+        Audit.logLeadUpdate(userEmail, lead.company, `Automação de WhatsApp (${type}) disparada.`);
+
+        // 3. Gerar link de WhatsApp
+        let waLink = "";
+        if (cleanPhone) {
+            waLink = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
+        }
+
+        // 4. Executar envio real via API se conectado
+        const waConfig = JSON.parse(localStorage.getItem("comercial_wa_api_config")) || {};
+        let realSent = false;
+        if (waConfig.connected && waConfig.apiUrl) {
+            try {
+                const res = await fetch("/api/send-whatsapp", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        phone: cleanPhone,
+                        message: message,
+                        config: waConfig
+                    })
+                });
+                const data = await res.json();
+                if (data.success && data.provider !== "Deep Link Nativo") {
+                    realSent = true;
+                }
+            } catch(e) {
+                console.error("Erro no disparo automático de WhatsApp:", e);
+            }
+        }
+
+        // 5. Exibir Toast Notificação Premium na tela do CRM
+        this.showAutomationToast(toastTitle, lead, message, waLink, realSent, emoji);
+    },
+
+    showAutomationToast(titleText, lead, messageText, waLink, realSent, emoji) {
+        const old = document.getElementById("vellia-wa-automation-toast");
+        if (old) old.remove();
+
+        const toast = document.createElement("div");
+        toast.id = "vellia-wa-automation-toast";
+        toast.style.cssText = `
+            position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+            background: var(--bg-card, #1e293b);
+            border: 1px solid #25d366;
+            border-left: 4px solid #25d366;
+            border-radius: 12px;
+            padding: 14px 18px;
+            min-width: 320px; max-width: 400px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+            display: flex; align-items: flex-start; gap: 12px;
+            animation: vellia-slide-in 0.4s cubic-bezier(0.4,0,0.2,1);
+            font-family: 'Inter', sans-serif;
+        `;
+
+        const icon = document.createElement("div");
+        icon.style.cssText = `
+            width: 36px; height: 36px; border-radius: 8px;
+            background: rgba(37, 211, 102, 0.15); flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center; font-size: 18px;
+        `;
+        icon.textContent = emoji || "🤖";
+
+        const body = document.createElement("div");
+        body.style.flex = "1";
+
+        const title = document.createElement("div");
+        title.style.cssText = "font-weight: 700; font-size: 13px; color: var(--text-primary, #f1f5f9); margin-bottom: 3px;";
+        title.textContent = titleText;
+
+        const sub = document.createElement("div");
+        sub.style.cssText = "font-size: 12px; color: var(--text-muted, #64748b); line-height: 1.4;";
+        sub.textContent = `Mensagem para ${lead.contact || lead.company}: "${messageText.substring(0, 60)}..."`;
+
+        const footer = document.createElement("div");
+        footer.style.cssText = "display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 10px;";
+        
+        const badge = document.createElement("span");
+        badge.style.cssText = `padding: 2px 6px; border-radius: 4px; font-weight: 700; background: ${realSent ? 'rgba(37,211,102,0.15)' : 'rgba(245,158,11,0.15)'}; color: ${realSent ? '#25d366' : '#f59e0b'};`;
+        badge.textContent = realSent ? "Enviado via API" : "Simulado / Local";
+
+        footer.appendChild(badge);
+
+        if (waLink) {
+            const link = document.createElement("a");
+            link.href = waLink;
+            link.target = "_blank";
+            link.style.cssText = "color: #25d366; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 2px;";
+            link.innerHTML = "Abrir Conversa ➔";
+            footer.appendChild(link);
+        }
+
+        body.appendChild(title);
+        body.appendChild(sub);
+        body.appendChild(footer);
+        toast.appendChild(icon);
+        toast.appendChild(body);
+
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.style.animation = "vellia-slide-out 0.35s cubic-bezier(0.4,0,0.2,1) forwards";
+                setTimeout(() => toast.remove(), 350);
+            }
+        }, 8000);
     }
 };
 

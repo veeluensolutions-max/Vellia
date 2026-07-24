@@ -420,6 +420,15 @@ export const Calendar = {
                     localStorage.setItem("vellia_calendar_events", JSON.stringify(customEvents));
                     alert("✅ Compromisso agendado na Agenda!");
                     
+                    // Disparar automação de confirmação de vistoria se for tipo "inspecao"
+                    if (typeVal === "inspecao" && typeof window.WhatsApp?.sendAutomatedMessage === "function") {
+                        const leads = Store.getLeads();
+                        const lead = leads.find(l => l.company.toLowerCase() === company.toLowerCase());
+                        if (lead) {
+                            window.WhatsApp.sendAutomatedMessage(lead.id, "inspection_confirm");
+                        }
+                    }
+                    
                     closeCalModal();
                     this.selectedDateStr = dateVal;
                     this.render();

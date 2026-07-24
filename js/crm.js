@@ -1231,6 +1231,11 @@ export const CRM = {
         // Fechar e recarregar
         this.closeNewLeadModal();
         this.renderLeadsTable();
+
+        // Disparar automação de boas-vindas
+        if (typeof window.WhatsApp?.sendAutomatedMessage === "function") {
+            window.WhatsApp.sendAutomatedMessage(newLead.id, "welcome");
+        }
         
         // Atualizar contadores
         const dashboardView = document.getElementById("view-dashboard");

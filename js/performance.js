@@ -42,7 +42,7 @@ export const Performance = {
             let countQual = 0;
 
             leads.forEach(l => {
-                if (l.createdAt.startsWith(dateStr)) countLeads++;
+                if (l.createdAt && l.createdAt.startsWith(dateStr)) countLeads++;
                 if (l.qualification && l.qualification.updatedAt && l.qualification.updatedAt.startsWith(dateStr)) {
                     countQual++;
                 }

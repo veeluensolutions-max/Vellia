@@ -274,6 +274,7 @@ export const Notifications = {
                 this.sendNativeNotification(item.title, item.message);
                 sentNotifications.push(item.id);
                 updated = true;
+                this.showToastAlert(item.title, item.message, item.type);
             }
         };
 
@@ -412,10 +413,87 @@ export const Notifications = {
         return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
     },
 
+    showToastAlert(title, message, type) {
+        let container = document.getElementById("toast-container");
+        if (!container) {
+            container = document.createElement("div");
+            container.id = "toast-container";
+            container.style.position = "fixed";
+            container.style.top = "20px";
+            container.style.right = "20px";
+            container.style.zIndex = "99999";
+            container.style.display = "flex";
+            container.style.flexDirection = "column";
+            container.style.gap = "10px";
+            document.body.appendChild(container);
+        }
+
+        const toast = document.createElement("div");
+        toast.style.background = "rgba(15, 23, 42, 0.9)";
+        toast.style.backdropFilter = "blur(12px)";
+        toast.style.border = "1px solid rgba(255, 255, 255, 0.08)";
+        toast.style.borderRadius = "12px";
+        toast.style.padding = "14px 18px";
+        toast.style.minWidth = "280px";
+        toast.style.maxWidth = "360px";
+        toast.style.boxShadow = "0 10px 30px rgba(0, 0, 0, 0.25)";
+        toast.style.color = "#ffffff";
+        toast.style.display = "flex";
+        toast.style.alignItems = "flex-start";
+        toast.style.gap = "12px";
+        toast.style.transform = "translateX(120%)";
+        toast.style.transition = "transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease";
+        toast.style.opacity = "0";
+
+        let icon = "🔔";
+        let accentColor = "#6366f1";
+        if (type === "danger") {
+            accentColor = "#ef4444";
+            icon = "🚨";
+        } else if (type === "warning") {
+            accentColor = "#f59e0b";
+            icon = "⚠️";
+        } else if (type === "lead") {
+            accentColor = "#10b981";
+            icon = "🎉";
+        }
+
+        toast.style.borderLeft = `4px solid ${accentColor}`;
+
+        toast.innerHTML = `
+            <div style="font-size: 18px; line-height: 1; margin-top: 1px;">${icon}</div>
+            <div style="flex-grow: 1;">
+                <h5 style="margin: 0; font-size: 13px; font-weight: 700; color: #ffffff; text-align: left;">${title}</h5>
+                <p style="margin: 3px 0 0 0; font-size: 11.5px; color: #cbd5e1; line-height: 1.4; text-align: left;">${message}</p>
+            </div>
+            <button style="background: none; border: none; color: #94a3b8; font-size: 16px; cursor: pointer; padding: 0; line-height: 1; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94a3b8'">×</button>
+        `;
+
+        container.appendChild(toast);
+
+        requestAnimationFrame(() => {
+            toast.style.transform = "translateX(0)";
+            toast.style.opacity = "1";
+        });
+
+        const closeToast = () => {
+            toast.style.transform = "translateX(120%)";
+            toast.style.opacity = "0";
+            setTimeout(() => {
+                toast.remove();
+            }, 350);
+        };
+
+        toast.querySelector("button").onclick = closeToast;
+
+        setTimeout(closeToast, 5000);
+    },
+
     addItem(item) {
         if (this.items.find(i => i.id === item.id)) return;
         this.items.unshift({ ...item, read: false });
         this.render();
+        this.showToastAlert(item.title, item.message, item.type);
     },
 
     checkFollowupReminders() {

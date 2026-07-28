@@ -169,7 +169,6 @@ export const Team = {
         this.renderPodium(stats);
         this.renderTable(stats);
         this.renderPersonalProgress(stats);
-        this.renderBonusCalculator();
     },
 
     renderTable(stats) {
@@ -308,7 +307,7 @@ export const Team = {
         // 2º Colocado
         if (second) {
             colsHtml += `
-                <div class="card" style="position: relative; border-top: 4px solid #cbd5e1; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 20px; order: 1;">
+                <div class="card podium-card podium-card-second" style="position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 20px;">
                     <div style="position: absolute; top: -14px; background: #cbd5e1; color: #0f172a; font-weight: 800; font-size: 10px; padding: 4px 10px; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.5px; z-index: 1;">🥈 2º Colocado</div>
                     <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--bg-surface-hover); border: 2.5px solid #cbd5e1; color: var(--text-primary); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; margin-bottom: 12px;">
                         ${second.avatar}
@@ -324,7 +323,7 @@ export const Team = {
         // 1º Colocado (Vendedor do Mês)
         if (first) {
             colsHtml += `
-                <div class="card" style="position: relative; border: 2px solid #fbbf24; box-shadow: 0 0 20px rgba(251, 191, 36, 0.15); display: flex; flex-direction: column; align-items: center; text-align: center; padding: 24px; order: 2; transform: scale(1.02); z-index: 2;">
+                <div class="card podium-card podium-card-first" style="position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 24px;">
                     <div style="position: absolute; top: -14px; background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #0f172a; font-weight: 900; font-size: 11px; padding: 5px 14px; border-radius: 99px; text-transform: uppercase; box-shadow: 0 4px 10px rgba(245, 158, 11, 0.25); letter-spacing: 0.5px; z-index: 3;">👑 Vendedor do Mês</div>
                     <div style="width: 68px; height: 68px; border-radius: 50%; background: linear-gradient(135deg, #fef3c7, #fde68a); border: 3px solid #fbbf24; color: #92400e; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 800; margin-bottom: 12px; box-shadow: 0 0 15px rgba(251, 191, 36, 0.35);">
                         ${first.avatar}
@@ -341,7 +340,7 @@ export const Team = {
         // 3º Colocado
         if (third) {
             colsHtml += `
-                <div class="card" style="position: relative; border-top: 4px solid #b45309; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 20px; order: 3;">
+                <div class="card podium-card podium-card-third" style="position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 20px;">
                     <div style="position: absolute; top: -14px; background: #b45309; color: white; font-weight: 800; font-size: 10px; padding: 4px 10px; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.5px; z-index: 1;">🥉 3º Colocado</div>
                     <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--bg-surface-hover); border: 2.5px solid #b45309; color: var(--text-primary); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; margin-bottom: 12px;">
                         ${third.avatar}
@@ -355,58 +354,13 @@ export const Team = {
         }
 
         container.innerHTML = `
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; align-items: stretch;">
+            <div class="podium-container">
                 ${colsHtml}
             </div>
         `;
     },
 
-    renderBonusCalculator() {
-        const container = document.getElementById("team-bonus-section");
-        if (!container) return;
 
-        container.innerHTML = `
-            <div style="background: rgba(139, 92, 246, 0.05); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 12px; padding: 20px;">
-                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; margin-top: 0;">Simule sua bonificação com base no atingimento de metas e taxa de comissão.</p>
-                <div style="display: flex; gap: 12px; margin-bottom: 16px;">
-                    <div style="flex: 1;">
-                        <label style="font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; display: block;">Vendas Estimadas (R$)</label>
-                        <input type="number" id="calc-sales" class="input-control" value="30000" style="width: 100%;">
-                    </div>
-                    <div style="width: 100px;">
-                        <label style="font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; display: block;">Comissão (%)</label>
-                        <input type="number" id="calc-pct" class="input-control" value="5" style="width: 100%;">
-                    </div>
-                </div>
-                <button id="btn-calc-bonus" class="btn btn-primary" style="width: 100%; justify-content: center; background: linear-gradient(90deg, #8b5cf6, #6d28d9); border: none;">
-                    Calcular Projeção
-                </button>
-                <div id="calc-result" style="margin-top: 20px; text-align: center; display: none;">
-                    <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Bônus Projetado</div>
-                    <div id="calc-value" style="font-size: 28px; font-weight: 800; color: #10b981; margin-top: 4px;">R$ 0,00</div>
-                </div>
-            </div>
-        `;
-
-        const btn = document.getElementById("btn-calc-bonus");
-        if (btn) {
-            btn.addEventListener("click", () => {
-                const sales = parseFloat(document.getElementById("calc-sales").value) || 0;
-                const pct = parseFloat(document.getElementById("calc-pct").value) || 0;
-                const bonus = sales * (pct / 100);
-                
-                const resultDiv = document.getElementById("calc-result");
-                const valDiv = document.getElementById("calc-value");
-                
-                resultDiv.style.display = "block";
-                valDiv.textContent = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(bonus);
-                
-                valDiv.style.transform = "scale(1.1)";
-                valDiv.style.transition = "transform 0.2s ease";
-                setTimeout(() => { valDiv.style.transform = "scale(1)"; }, 200);
-            });
-        }
-    },
 
     renderMetasAdv() {
         const users = Store.getUsers();

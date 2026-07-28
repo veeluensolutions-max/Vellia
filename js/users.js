@@ -349,6 +349,15 @@ export const Users = {
             const status = document.getElementById("user-status").value;
             const password = document.getElementById("user-password").value;
 
+            // Validar força da senha se informada (cadastro ou edição)
+            if (password) {
+                const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.\-_#$])[A-Za-z\d@$!%*?&.\-_#$]{8,}$/;
+                if (!passwordRegex.test(password)) {
+                    alert("Segurança da Senha:\nA senha deve conter pelo menos:\n- 8 caracteres\n- 1 letra maiúscula\n- 1 letra minúscula\n- 1 número\n- 1 caractere especial (ex: @$!%*?&.-_#)");
+                    return;
+                }
+            }
+
             const users = Store.getUsers();
 
             if (userId) {
@@ -504,6 +513,13 @@ export const Users = {
 
             if (newPwd !== confirmNewPwd) {
                 alert("A nova senha e a confirmação não conferem!");
+                return;
+            }
+
+            // Validar força da nova senha
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.\-_#$])[A-Za-z\d@$!%*?&.\-_#$]{8,}$/;
+            if (!passwordRegex.test(newPwd)) {
+                alert("Segurança da Senha:\nA nova senha deve conter pelo menos:\n- 8 caracteres\n- 1 letra maiúscula\n- 1 letra minúscula\n- 1 número\n- 1 caractere especial (ex: @$!%*?&.-_#)");
                 return;
             }
 

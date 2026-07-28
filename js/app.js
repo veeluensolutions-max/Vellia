@@ -47,6 +47,95 @@ const elements = {
 };
 
 // ==========================================================================
+// SEGURANÇA: BRUTE FORCE LOCKOUT & INATIVIDADE
+// ==========================================================================
+
+let lockoutInterval = null;
+let inactivityTimer = null;
+const INACTIVITY_LIMIT = 10 * 60 * 1000; // 10 minutos de inatividade
+
+function checkLockout() {
+    const email = elements.loginEmail ? elements.loginEmail.value.trim().toLowerCase() : "";
+    if (!email) return false;
+
+    const lockoutKey = `lockout_${email}`;
+    const lockoutUntil = localStorage.getItem(lockoutKey);
+    
+    if (lockoutUntil) {
+        const remaining = Math.ceil((new Date(lockoutUntil) - new Date()) / 1000);
+        if (remaining > 0) {
+            // Desativar inputs e botão
+            const btnSubmit = document.getElementById("btn-login-submit");
+            if (btnSubmit) btnSubmit.disabled = true;
+            if (elements.loginEmail) elements.loginEmail.disabled = true;
+            if (elements.loginPassword) elements.loginPassword.disabled = true;
+
+            // Mostrar mensagem de erro
+            if (elements.loginError && elements.loginErrorText) {
+                elements.loginError.style.display = "flex";
+                elements.loginErrorText.textContent = `Muitas tentativas incorretas. Login bloqueado por ${remaining}s.`;
+            }
+
+            // Iniciar contagem regressiva se não houver intervalo ativo
+            if (!lockoutInterval) {
+                lockoutInterval = setInterval(() => {
+                    const rem = Math.ceil((new Date(lockoutUntil) - new Date()) / 1000);
+                    if (rem > 0) {
+                        if (elements.loginErrorText) {
+                            elements.loginErrorText.textContent = `Muitas tentativas incorretas. Login bloqueado por ${rem}s.`;
+                        }
+                    } else {
+                        clearInterval(lockoutInterval);
+                        lockoutInterval = null;
+                        localStorage.removeItem(lockoutKey);
+                        if (btnSubmit) btnSubmit.disabled = false;
+                        if (elements.loginEmail) elements.loginEmail.disabled = false;
+                        if (elements.loginPassword) elements.loginPassword.disabled = false;
+                        if (elements.loginError) elements.loginError.style.display = "none";
+                    }
+                }, 1000);
+            }
+            return true;
+        }
+    }
+    
+    // Se não estiver bloqueado, garantir que os campos estejam liberados
+    const btnSubmit = document.getElementById("btn-login-submit");
+    if (btnSubmit && !lockoutInterval) btnSubmit.disabled = false;
+    if (elements.loginEmail && !lockoutInterval) elements.loginEmail.disabled = false;
+    if (elements.loginPassword && !lockoutInterval) elements.loginPassword.disabled = false;
+    return false;
+}
+
+function resetInactivityTimer() {
+    if (inactivityTimer) clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(() => {
+        logoutDueToInactivity();
+    }, INACTIVITY_LIMIT);
+}
+
+function logoutDueToInactivity() {
+    localStorage.setItem("login_reason", "inactivity");
+    Auth.logout();
+}
+
+function startInactivityTracking() {
+    resetInactivityTimer();
+    const events = ["mousemove", "mousedown", "keypress", "scroll", "touchstart"];
+    events.forEach(event => {
+        window.addEventListener(event, resetInactivityTimer);
+    });
+}
+
+function stopInactivityTracking() {
+    if (inactivityTimer) clearTimeout(inactivityTimer);
+    const events = ["mousemove", "mousedown", "keypress", "scroll", "touchstart"];
+    events.forEach(event => {
+        window.removeEventListener(event, resetInactivityTimer);
+    });
+}
+
+// ==========================================================================
 // INICIALIZAÇÃO E CONTROLE DE SESSÃO
 // ==========================================================================
 
@@ -64,6 +153,15 @@ function checkSession() {
         showAppShell(user);
     } else {
         showLoginScreen();
+        
+        // Verificar se foi deslogado por inatividade
+        if (localStorage.getItem("login_reason") === "inactivity") {
+            localStorage.removeItem("login_reason");
+            if (elements.loginError && elements.loginErrorText) {
+                elements.loginError.style.display = "flex";
+                elements.loginErrorText.textContent = "Sessão encerrada por inatividade. Por segurança, faça login novamente.";
+            }
+        }
     }
 }
 
@@ -72,6 +170,8 @@ function showLoginScreen() {
     elements.loginScreen.style.display = "flex";
     elements.loginError.style.display = "none";
     elements.loginForm.reset();
+    
+    stopInactivityTracking();
 }
 
 function showAppShell(user) {
@@ -99,6 +199,9 @@ function showAppShell(user) {
 
     // Ativar verificacao automatica de inspecoes vencendo
     InspectionScheduler.schedulePeriodicCheck();
+    
+    // Iniciar monitoramento de inatividade
+    startInactivityTracking();
 }
 
 // Configura quais botões do menu lateral aparecem baseado nas regras do perfil
@@ -1022,6 +1125,8 @@ function setupSellerQuickActions() {
 function setupEventListeners() {
     // Form de Login
     const executeLogin = () => {
+        if (checkLockout()) return;
+
         const email = elements.loginEmail ? elements.loginEmail.value.trim() : "";
         const password = elements.loginPassword ? elements.loginPassword.value : "";
         
@@ -1032,6 +1137,8 @@ function setupEventListeners() {
             elements.loginErrorText.textContent = result.error;
             elements.loginError.style.display = "flex";
             elements.loginError.classList.add("animate-fade-in");
+            
+            checkLockout();
         }
     };
 
@@ -1048,6 +1155,12 @@ function setupEventListeners() {
             e.preventDefault();
             executeLogin();
         });
+    }
+
+    // Adicionar listeners para verificar lockout ao digitar o email
+    if (elements.loginEmail) {
+        elements.loginEmail.addEventListener("input", checkLockout);
+        elements.loginEmail.addEventListener("blur", checkLockout);
     }
 
     // Logout

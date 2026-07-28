@@ -3390,6 +3390,73 @@ input:checked + .switch-slider::before {
     line-height: 1.3;
 }
 
+/* ==========================================================================
+   TEAM PODIUM RESPONSIVE & VISUAL FIXES
+   ========================================================================== */
+
+.podium-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 24px;
+    align-items: stretch;
+    margin-bottom: 24px;
+}
+
+.podium-card {
+    overflow: visible !important;
+}
+
+.podium-card-first {
+    border: 2px solid #fbbf24 !important;
+    box-shadow: 0 10px 25px rgba(251, 191, 36, 0.15);
+    order: 2;
+    transform: scale(1.03);
+    z-index: 2;
+}
+
+.podium-card-second {
+    border-top: 4px solid #cbd5e1 !important;
+    order: 1;
+}
+
+.podium-card-third {
+    border-top: 4px solid #b45309 !important;
+    order: 3;
+}
+
+/* Adjust layout on hover to not overlap other cards when scale changes */
+.podium-card-first:hover {
+    transform: scale(1.05) translateY(-4px) !important;
+}
+
+@media (max-width: 800px) {
+    .podium-container {
+        grid-template-columns: 1fr !important;
+        gap: 28px; /* Extra gap to prevent badge overlap between stacked cards */
+    }
+    
+    .podium-card-first {
+        order: 1 !important;
+        transform: scale(1) !important;
+        z-index: 1;
+    }
+    
+    .podium-card-second {
+        order: 2 !important;
+        z-index: 1;
+    }
+    
+    .podium-card-third {
+        order: 3 !important;
+        z-index: 1;
+    }
+    
+    .podium-card-first:hover {
+        transform: translateY(-4px) !important;
+    }
+}
+
+
 
 
 

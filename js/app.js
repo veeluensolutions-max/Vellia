@@ -20,6 +20,7 @@ import { connectRealtime, disconnectRealtime } from "./realtime.js";
 import { InspectionScheduler } from "./inspection-scheduler.js";
 import { Calendar } from "./calendar.js";
 import "./pdf-generator.js";
+import { Copilot } from "./copilot.js";
 
 // Elementos Globais DOM (Getters Dinâmicos para garantia de não-nulidade)
 const elements = {
@@ -195,6 +196,7 @@ function initApp() {
     setupTheme();
     WhatsApp.init();
     Pricing.init();
+    Copilot.init();
     checkSession();
 }
 

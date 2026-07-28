@@ -11,7 +11,7 @@ const puppeteer = require('puppeteer');
         page.on('console', msg => console.log('LOG DO NAVEGADOR:', msg.text()));
         page.on('pageerror', err => console.log('ERRO DO NAVEGADOR:', err.toString()));
 
-        await page.goto('https://velliacrm-qf1x5xgcf-veeluensolutions-maxs-projects.vercel.app', { waitUntil: 'domcontentloaded' });
+        await page.goto('https://velliacrm.vercel.app', { waitUntil: 'domcontentloaded' });
 
         console.log("Preenchendo e-mail e senha...");
         await page.waitForSelector('#login-email');

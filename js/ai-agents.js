@@ -22,6 +22,7 @@ export const AIAgents = {
         this.renderStrategyHistory();
         this.loadManualStrategy();
         this.renderMonthlyComparisonPanel();
+        this.populateCopywriterLeads();
 
         // Configurar PDF.js worker
         if (typeof pdfjsLib !== 'undefined') {
@@ -471,6 +472,67 @@ export const AIAgents = {
 
         // Expor para o escopo global do window para deletar arquivos ou interações
         window.deleteGuruFile = (idx) => this.deleteGuruFile(idx);
+
+        // --- COPYWRITER AGENT BINDINGS ---
+        const btnOpenCopy = document.getElementById("btn-open-copywriter-panel");
+        const btnCloseCopy = document.getElementById("btn-close-copywriter-panel");
+        const copyPanel = document.getElementById("copywriter-strategic-panel");
+
+        if (btnOpenCopy && copyPanel) {
+            btnOpenCopy.onclick = () => {
+                copyPanel.style.display = "block";
+                this.populateCopywriterLeads();
+                copyPanel.scrollIntoView({ behavior: "smooth" });
+            };
+        }
+
+        if (btnCloseCopy && copyPanel) {
+            btnCloseCopy.onclick = () => {
+                copyPanel.style.display = "none";
+            };
+        }
+
+        const btnGenCopyAi = document.getElementById("btn-generate-copy-ai");
+        if (btnGenCopyAi) {
+            btnGenCopyAi.onclick = () => this.generateCopywriterText();
+        }
+
+        const btnCopyCopy = document.getElementById("btn-copywriter-copy");
+        if (btnCopyCopy) {
+            btnCopyCopy.onclick = () => {
+                const textEl = document.getElementById("copywriter-result-text");
+                if (textEl && textEl.value.trim()) {
+                    navigator.clipboard.writeText(textEl.value.trim());
+                    alert("✅ Texto copiado para a área de transferência!");
+                } else {
+                    alert("Nenhum texto gerado para copiar.");
+                }
+            };
+        }
+
+        const btnCopyWa = document.getElementById("btn-copywriter-whatsapp");
+        if (btnCopyWa) {
+            btnCopyWa.onclick = () => this.sendCopywriterWhatsApp();
+        }
+
+        const btnCopyRefine = document.getElementById("btn-copywriter-refine");
+        if (btnCopyRefine) {
+            btnCopyRefine.onclick = () => this.refineCopywriterText();
+        }
+
+        const selectChannel = document.getElementById("copy-channel");
+        if (selectChannel) {
+            selectChannel.onchange = () => {
+                this.updateCopywriterUI();
+            };
+        }
+
+        const selectCopyLead = document.getElementById("copy-lead-select");
+        if (selectCopyLead) {
+            selectCopyLead.onchange = () => {
+                this.updateCopywriterUI();
+            };
+        }
 
         this._bindConfigModal();
     },
@@ -1777,5 +1839,234 @@ Crie 3 a 4 tags [TAREFA_VENDEDOR: ...]. Escreva de forma motivadora e comercial.
         link.click();
         document.body.removeChild(link);
         this.addAgentLog("Guru de Estratégias", "Dados comparativos exportados em CSV.", "success");
+    },
+
+    populateCopywriterLeads() {
+        const select = document.getElementById("copy-lead-select");
+        if (!select) return;
+
+        const currentVal = select.value;
+        select.innerHTML = '<option value="">-- NENHUM LEAD SELECIONADO --</option>';
+
+        const leads = Store.getLeads();
+        leads.forEach(lead => {
+            const opt = document.createElement("option");
+            opt.value = lead.id;
+            opt.textContent = `${lead.company} (${lead.contact || 'Sem contato'})`;
+            select.appendChild(opt);
+        });
+
+        if (currentVal) select.value = currentVal;
+    },
+
+    updateCopywriterUI() {
+        const channel = document.getElementById("copy-channel")?.value || "whatsapp";
+        const leadId = document.getElementById("copy-lead-select")?.value;
+        const btnWa = document.getElementById("btn-copywriter-whatsapp");
+
+        if (btnWa) {
+            if (channel === "whatsapp" && leadId) {
+                const lead = Store.getLeadById(leadId);
+                if (lead && (lead.whatsapp || lead.phone)) {
+                    btnWa.style.display = "inline-flex";
+                    return;
+                }
+            }
+            btnWa.style.display = "none";
+        }
+    },
+
+    sendCopywriterWhatsApp() {
+        const text = document.getElementById("copywriter-result-text")?.value || "";
+        const leadId = document.getElementById("copy-lead-select")?.value;
+        if (!leadId) return;
+
+        const lead = Store.getLeadById(leadId);
+        if (!lead) return;
+
+        let rawPhone = lead.whatsapp || lead.phone || "";
+        let cleanPhone = rawPhone.replace(/\D/g, "");
+        if (cleanPhone.length === 10 || cleanPhone.length === 11) {
+            cleanPhone = "55" + cleanPhone;
+        }
+
+        if (!cleanPhone) {
+            alert("Este lead não possui um número de WhatsApp cadastrado.");
+            return;
+        }
+
+        const currentUser = Auth.getCurrentUser();
+        const userEmail = currentUser ? currentUser.email : "copywriter@vellia.com";
+        Store.addLeadInteraction(lead.id, {
+            type: "WhatsApp",
+            description: `Mensagem gerada pelo Copywriter Agent enviada: "${text.substring(0, 60)}..."`
+        }, userEmail);
+
+        Audit.logLeadUpdate(userEmail, lead.company, "Mensagem gerada pelo Copywriter Agent enviada via WhatsApp.");
+
+        const deepLink = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(text)}`;
+        window.open(deepLink, "_blank");
+    },
+
+    async generateCopywriterText() {
+        const channel = document.getElementById("copy-channel")?.value || "whatsapp";
+        const objective = document.getElementById("copy-objective")?.value || "intro";
+        const leadId = document.getElementById("copy-lead-select")?.value;
+        const customContext = document.getElementById("copy-custom-context")?.value || "";
+        
+        const btn = document.getElementById("btn-generate-copy-ai");
+        const resultEl = document.getElementById("copywriter-result-text");
+        const refineBox = document.getElementById("copywriter-refine-box");
+        
+        if (!btn || !resultEl) return;
+
+        const originalBtnText = btn.innerHTML;
+        btn.innerHTML = '<span>⏳</span> Processando...';
+        btn.disabled = true;
+        resultEl.value = "Gerando texto de alta conversão...";
+
+        let leadContext = "";
+        let companyName = "Cliente";
+        let contactName = "Prezado";
+        let segment = "Serviços de Engenharia";
+        
+        if (leadId) {
+            const lead = Store.getLeadById(leadId);
+            if (lead) {
+                companyName = lead.company;
+                contactName = lead.contact || lead.company;
+                segment = lead.segment || "Serviços";
+                leadContext = `- Empresa do Cliente: ${lead.company}
+- Contato do Cliente: ${lead.contact || 'Não informado'}
+- Cargo: ${lead.role || 'Não informado'}
+- Segmento: ${lead.segment || 'Não informado'}
+- Estágio Atual no CRM: ${lead.stage || 'Contato'}
+- Histórico de interações recentes:
+${(lead.interactions || []).slice(-3).map(i => `  * ${i.date}: ${i.description}`).join('\n')}`;
+            }
+        }
+
+        const currentUser = Auth.getCurrentUser();
+        const sellerName = currentUser ? currentUser.name : "Consultor Vellia";
+
+        const copyPrefs = JSON.parse(localStorage.getItem("agent_copy_config") || '{"style":"persuasive","length":"medium"}');
+        const writeStyle = copyPrefs.style || "persuasive";
+        const writeLength = copyPrefs.length || "medium";
+
+        let prompt = `Você é o Copywriter Agent oficial da Vellia (sistema comercial inteligente para serviços de engenharia, laudos técnicos, vistorias e NR-13).
+Sua tarefa é escrever um texto de abordagem comercial persuasivo com as seguintes configurações:
+
+- Canal: ${channel.toUpperCase()}
+- Objetivo da mensagem: ${
+    objective === 'intro' ? 'Apresentação comercial inicial' :
+    objective === 'followup' ? 'Follow-up de negociação/proposta em aberto' :
+    objective === 'reengage' ? 'Reengajar um contato frio que parou de responder' :
+    objective === 'closing' ? 'Urgência comercial e chamada para fechamento rápido' :
+    'Agradecimento de pós-venda e solicitação de feedback'
+}
+- Tom e Estilo de escrita: ${
+    writeStyle === 'persuasive' ? 'Altamente persuasivo, focado em valor e gatilhos mentais' :
+    writeStyle === 'technical' ? 'Técnico e detalhado, focando em especificações, escopos e autoridade' :
+    'Curto, direto ao ponto e objetivo'
+}
+- Comprimento: ${
+    writeLength === 'short' ? 'Mínimo de caracteres possível, muito conciso' :
+    writeLength === 'long' ? 'Mais formal e detalhado' :
+    'Tamanho padrão comercial ideal'
+}
+- Remetente (Vendedor): ${sellerName}
+
+Informações do Lead:
+${leadContext ? leadContext : `- Nome do Lead/Empresa: ${companyName}\n- Contato: ${contactName}`}
+
+${customContext ? `Instruções Adicionais do Vendedor:\n"${customContext}"` : ''}
+
+Diretrizes Críticas:
+1. NÃO adicione aspas no início ou fim do texto.
+2. NÃO adicione introduções explicativas como "Aqui está sua mensagem:".
+3. Retorne APENAS o texto pronto para ser enviado diretamente ao cliente.
+4. Para WhatsApp, use quebras de linha e emojis de forma moderada. Para e-mail, inclua Linha de Assunto ("Assunto: [Tema]") no topo e o corpo estruturado.`;
+
+        try {
+            const res = await fetch("/api/gemini-proxy", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: "gemini-2.5-flash",
+                    contents: [{ parts: [{ text: prompt }] }]
+                })
+            });
+
+            if (!res.ok) throw new Error("HTTP error: " + res.status);
+            const data = await res.json();
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Erro ao processar resposta do redator.";
+
+            resultEl.value = text.trim();
+            
+            if (refineBox) refineBox.style.display = "flex";
+            this.updateCopywriterUI();
+
+            this.addAgentLog("Copywriter Agent", `✍️ Texto gerado para ${companyName} (${channel})`, "success");
+        } catch (e) {
+            console.error("Erro na geração do copywriter:", e);
+            resultEl.value = "Não foi possível gerar a cópia comercial devido a um erro na API.";
+        } finally {
+            btn.innerHTML = originalBtnText;
+            btn.disabled = false;
+        }
+    },
+
+    async refineCopywriterText() {
+        const refineInput = document.getElementById("copywriter-refine-input");
+        const textEl = document.getElementById("copywriter-result-text");
+        const btn = document.getElementById("btn-copywriter-refine");
+
+        if (!refineInput || !textEl || !btn || !refineInput.value.trim() || !textEl.value.trim()) return;
+
+        const originalBtnText = btn.textContent;
+        btn.textContent = "Ajustando...";
+        btn.disabled = true;
+
+        const originalText = textEl.value.trim();
+        const instruction = refineInput.value.trim();
+
+        const prompt = `Você é o Copywriter Agent oficial da Vellia.
+Recebemos o seguinte texto de abordagem comercial:
+
+---
+${originalText}
+---
+
+Por favor, reescreva ou ajuste este texto seguindo estritamente as instruções abaixo:
+"${instruction}"
+
+Diretrizes:
+1. Retorne APENAS o texto final ajustado, sem introduções explicativas e sem aspas.
+2. Mantenha o formato original (se for e-mail com assunto, mantenha o assunto; se for WhatsApp, mantenha amigável).`;
+
+        try {
+            const res = await fetch("/api/gemini-proxy", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: "gemini-2.5-flash",
+                    contents: [{ parts: [{ text: prompt }] }]
+                })
+            });
+
+            if (!res.ok) throw new Error("HTTP error: " + res.status);
+            const data = await res.json();
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text || originalText;
+
+            textEl.value = text.trim();
+            refineInput.value = "";
+            this.addAgentLog("Copywriter Agent", `🔄 Texto refinado com a instrução: "${instruction}"`, "success");
+        } catch (e) {
+            console.error("Erro ao refinar cópia:", e);
+            alert("Não foi possível refinar o texto devido a um erro técnico.");
+        } finally {
+            btn.textContent = originalBtnText;
+            btn.disabled = false;
+        }
     }
 };

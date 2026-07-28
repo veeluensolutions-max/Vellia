@@ -421,16 +421,169 @@ function toggleTheme() {
     if (user) {
         Audit.logConfigChange(user.email, "THEME_TOGGLE", `Tema alterado para ${newTheme === 'dark' ? 'Escuro' : 'Claro'}.`);
     }
+
+    // Recarregar os gráficos para adaptar as cores das fontes e grades ao tema ativo
+    const currentHash = window.location.hash.replace("#", "") || "dashboard";
+    if (currentHash === "logs") {
+        renderLogs();
+    }
 }
 
 // ==========================================================================
 // VIEW: LOGS DE AUDITORIA & SEGURANÇA
 // ==========================================================================
 
+let logDistributionChart = null;
+let logTimelineChart = null;
+
+function renderLogsDashboard(allLogs) {
+    const totalEl = document.getElementById("log-stat-total");
+    const alertsEl = document.getElementById("log-stat-alerts");
+    const criticalEl = document.getElementById("log-stat-critical");
+
+    if (!totalEl) return;
+
+    // 1. Calcular métricas
+    const total = allLogs.length;
+    const alerts = allLogs.filter(l => l.status === "WARN" || l.status === "ERROR").length;
+    const critical = allLogs.filter(l => [
+        "PASSWORD_CHANGE", "USER_DELETED", "USER_CREATED", "ACCESS_DENIED", 
+        "LOGIN_LOCKOUT", "USER_LOGIN"
+    ].includes(l.action) || l.action.toUpperCase().includes("DELETE") || l.action.toUpperCase().includes("DENIED")).length;
+
+    totalEl.textContent = total;
+    alertsEl.textContent = alerts;
+    criticalEl.textContent = critical;
+
+    // 2. Agrupar por categorias para o gráfico de pizza
+    let catSecurity = 0;
+    let catSdr = 0;
+    let catSales = 0;
+    let catOthers = 0;
+
+    allLogs.forEach(log => {
+        const act = log.action.toUpperCase();
+        if (act.includes("LOGIN") || act.includes("LOGOUT") || act.includes("PASSWORD") || act.includes("ACCESS") || act.includes("USER_") || act.includes("LOCKOUT")) {
+            catSecurity++;
+        } else if (act.includes("SDR") || act.includes("WHATSAPP") || act.includes("WA_") || act.includes("MENSAGEM")) {
+            catSdr++;
+        } else if (act.includes("PROPOSAL") || act.includes("LEAD") || act.includes("SALE") || act.includes("CRM") || act.includes("KANBAN")) {
+            catSales++;
+        } else {
+            catOthers++;
+        }
+    });
+
+    // Destruir gráficos anteriores se existirem
+    if (logDistributionChart) logDistributionChart.destroy();
+    if (logTimelineChart) logTimelineChart.destroy();
+
+    const ctxDist = document.getElementById("chart-log-distribution")?.getContext("2d");
+    if (ctxDist) {
+        const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+        logDistributionChart = new Chart(ctxDist, {
+            type: 'doughnut',
+            data: {
+                labels: ['Segurança', 'SDR & WhatsApp', 'Vendas & CRM', 'Outros'],
+                datasets: [{
+                    data: [catSecurity, catSdr, catSales, catOthers],
+                    backgroundColor: [
+                        '#6366f1',
+                        '#10b981',
+                        '#f59e0b',
+                        '#94a3b8'
+                    ],
+                    borderWidth: isDark ? 2 : 1,
+                    borderColor: isDark ? '#0d0f17' : '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: isDark ? '#64748b' : '#0f172a',
+                            font: { size: 10, weight: 600 },
+                            boxWidth: 12
+                        }
+                    }
+                },
+                cutout: '65%'
+            }
+        });
+    }
+
+    // 3. Agrupar por data para o gráfico de linha (últimos 7 dias)
+    const timelineData = [];
+    const timelineLabels = [];
+    
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const label = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+        timelineLabels.push(label);
+        
+        const count = allLogs.filter(log => {
+            const logDate = new Date(log.timestamp);
+            return logDate.getDate() === d.getDate() &&
+                   logDate.getMonth() === d.getMonth() &&
+                   logDate.getFullYear() === d.getFullYear();
+        }).length;
+        
+        timelineData.push(count);
+    }
+
+    const ctxTime = document.getElementById("chart-log-timeline")?.getContext("2d");
+    if (ctxTime) {
+        const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+        logTimelineChart = new Chart(ctxTime, {
+            type: 'line',
+            data: {
+                labels: timelineLabels,
+                datasets: [{
+                    label: 'Eventos',
+                    data: timelineData,
+                    borderColor: '#8b5cf6',
+                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true,
+                    pointBackgroundColor: '#8b5cf6',
+                    pointRadius: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: isDark ? '#64748b' : '#94a3b8', font: { size: 10 } }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)' },
+                        ticks: { color: isDark ? '#64748b' : '#94a3b8', font: { size: 10 }, stepSize: 1 }
+                    }
+                }
+            }
+        });
+    }
+}
+
 function renderLogs() {
     if (!elements.logsTableBody) return;
     
     const logs = Store.getLogs();
+    
+    // Renderizar métricas e gráficos do dashboard
+    renderLogsDashboard(logs);
+    
     const searchQuery = elements.logSearch.value.toLowerCase().trim();
     const filter = window.activeLogFilter || "all";
     

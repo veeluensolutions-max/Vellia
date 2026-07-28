@@ -3183,6 +3183,22 @@
         </form>
     </div>
 
+    <!-- Modal: Alerta de Inatividade (Segurança) -->
+    <div id="inactivity-modal-overlay" class="modal-overlay" style="z-index:9000;"></div>
+    <div id="inactivity-modal" class="modal" style="z-index:9001; max-width: 420px; text-align: center; padding: 32px 24px;">
+        <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(245, 158, 11, 0.1); color: var(--warning); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; font-size: 28px;">
+            ⚠️
+        </div>
+        <h3 class="modal-title" style="margin-bottom: 12px; font-weight: 800; font-size: 18px; color: var(--text-primary);">Sua sessão está expirando</h3>
+        <p style="font-size: 13.5px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 24px;">
+            Por motivos de segurança e inatividade, sua sessão será encerrada em <strong id="inactivity-countdown" style="color: var(--danger); font-size: 16px;">60</strong> segundos. Deseja continuar conectado?
+        </p>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+            <button type="button" id="btn-inactivity-logout" class="btn btn-outline" style="min-width: 120px; justify-content: center;">Sair Agora</button>
+            <button type="button" id="btn-inactivity-keep" class="btn btn-primary" style="min-width: 160px; justify-content: center; background: linear-gradient(90deg, var(--primary), #8b5cf6); border: none;">Continuar Conectado</button>
+        </div>
+    </div>
+
     <!-- Modal: Agendar Vistoria / Evento -->
     <div id="calendar-event-modal-overlay" class="modal-overlay" style="z-index:1100;"></div>
     <div id="calendar-event-modal" class="modal" style="z-index:1101; max-width: 500px;">

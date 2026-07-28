@@ -52,7 +52,10 @@ const elements = {
 
 let lockoutInterval = null;
 let inactivityTimer = null;
-const INACTIVITY_LIMIT = 10 * 60 * 1000; // 10 minutos de inatividade
+let inactivityCountdownInterval = null;
+let inactivityModalOpen = false;
+const INACTIVITY_WARN_TIME = 9 * 60 * 1000; // 9 minutos de inatividade antes do aviso
+const COUNTDOWN_DURATION = 60; // 60 segundos de contagem regressiva
 
 function checkLockout() {
     const email = elements.loginEmail ? elements.loginEmail.value.trim().toLowerCase() : "";
@@ -108,10 +111,52 @@ function checkLockout() {
 }
 
 function resetInactivityTimer() {
+    if (inactivityModalOpen) return;
+
     if (inactivityTimer) clearTimeout(inactivityTimer);
+    if (inactivityCountdownInterval) clearInterval(inactivityCountdownInterval);
+
     inactivityTimer = setTimeout(() => {
-        logoutDueToInactivity();
-    }, INACTIVITY_LIMIT);
+        showInactivityWarning();
+    }, INACTIVITY_WARN_TIME);
+}
+
+function showInactivityWarning() {
+    inactivityModalOpen = true;
+    
+    // Abrir modal na tela
+    const overlay = document.getElementById("inactivity-modal-overlay");
+    const modal = document.getElementById("inactivity-modal");
+    const countdownEl = document.getElementById("inactivity-countdown");
+    
+    if (overlay && modal) {
+        overlay.style.display = "block";
+        modal.classList.add("open");
+    }
+
+    let timeLeft = COUNTDOWN_DURATION;
+    if (countdownEl) countdownEl.textContent = timeLeft;
+
+    inactivityCountdownInterval = setInterval(() => {
+        timeLeft--;
+        if (countdownEl) countdownEl.textContent = timeLeft;
+
+        if (timeLeft <= 0) {
+            clearInterval(inactivityCountdownInterval);
+            closeInactivityModal();
+            logoutDueToInactivity();
+        }
+    }, 1000);
+}
+
+function closeInactivityModal() {
+    const overlay = document.getElementById("inactivity-modal-overlay");
+    const modal = document.getElementById("inactivity-modal");
+    if (overlay && modal) {
+        overlay.style.display = "none";
+        modal.classList.remove("open");
+    }
+    inactivityModalOpen = false;
 }
 
 function logoutDueToInactivity() {
@@ -120,7 +165,10 @@ function logoutDueToInactivity() {
 }
 
 function startInactivityTracking() {
+    inactivityModalOpen = false;
+    closeInactivityModal();
     resetInactivityTimer();
+    
     const events = ["mousemove", "mousedown", "keypress", "scroll", "touchstart"];
     events.forEach(event => {
         window.addEventListener(event, resetInactivityTimer);
@@ -129,6 +177,9 @@ function startInactivityTracking() {
 
 function stopInactivityTracking() {
     if (inactivityTimer) clearTimeout(inactivityTimer);
+    if (inactivityCountdownInterval) clearInterval(inactivityCountdownInterval);
+    closeInactivityModal();
+    
     const events = ["mousemove", "mousedown", "keypress", "scroll", "touchstart"];
     events.forEach(event => {
         window.removeEventListener(event, resetInactivityTimer);
@@ -1167,6 +1218,23 @@ function setupEventListeners() {
     elements.btnLogout.addEventListener("click", () => {
         Auth.logout();
     });
+
+    // Modal de Inatividade (Continuar Conectado / Sair Agora)
+    const btnInactivityKeep = document.getElementById("btn-inactivity-keep");
+    if (btnInactivityKeep) {
+        btnInactivityKeep.addEventListener("click", () => {
+            closeInactivityModal();
+            resetInactivityTimer();
+        });
+    }
+
+    const btnInactivityLogout = document.getElementById("btn-inactivity-logout");
+    if (btnInactivityLogout) {
+        btnInactivityLogout.addEventListener("click", () => {
+            closeInactivityModal();
+            Auth.logout();
+        });
+    }
 
     // Alterar Minha Senha
     const btnChangePwd = document.getElementById("btn-change-password");

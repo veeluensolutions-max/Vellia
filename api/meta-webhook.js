@@ -548,21 +548,37 @@ Retorne obrigatoriamente um formato JSON válido contendo a resposta que o SDR d
                     // Fallback se falhar ou se for simulação
                     if (!leadData) {
                         console.log("Gerando lead de teste devido a:", fetchError);
-                        const mockNames = ["Ricardo Vanzin", "Mariana Silveira", "Alexandre Pires", "Caroline Schultz", "Felipe Alcantara"];
-                        const mockCompanies = ["Vanzin Distribuidora", "Silveira Tech", "Pires & Associados", "Schultz Indústrias", "Alcantara Soluções"];
-                        const randIdx = Math.floor(Math.random() * mockNames.length);
+                        
+                        const raw = changeEvent?.value?.raw_fields;
+                        if (raw) {
+                            leadData = {
+                                id: leadgenId || `mock_${Date.now()}`,
+                                created_time: new Date().toISOString(),
+                                field_data: [
+                                    { name: config.fields?.name || "full_name", values: [raw.full_name || "Vitor Hugo Silva"] },
+                                    { name: config.fields?.email || "email", values: [raw.email || "vitor@exemplo.com"] },
+                                    { name: config.fields?.phone || "phone_number", values: [raw.phone_number || "(11) 99999-8888"] },
+                                    { name: config.fields?.company || "company_name", values: [raw.company_name || "Meta Teste Ltda"] },
+                                    { name: "segment", values: ["Tecnologia"] }
+                                ]
+                            };
+                        } else {
+                            const mockNames = ["Ricardo Vanzin", "Mariana Silveira", "Alexandre Pires", "Caroline Schultz", "Felipe Alcantara"];
+                            const mockCompanies = ["Vanzin Distribuidora", "Silveira Tech", "Pires & Associados", "Schultz Indústrias", "Alcantara Soluções"];
+                            const randIdx = Math.floor(Math.random() * mockNames.length);
 
-                        leadData = {
-                            id: leadgenId || `mock_${Date.now()}`,
-                            created_time: new Date().toISOString(),
-                            field_data: [
-                                { name: config.fields?.name || "full_name", values: [mockNames[randIdx]] },
-                                { name: config.fields?.email || "email", values: [mockNames[randIdx].toLowerCase().replace(/[^a-z]/g, "") + "@exemplo.com"] },
-                                { name: config.fields?.phone || "phone_number", values: ["(11) 99" + Math.floor(1000 + Math.random() * 9000) + "-" + Math.floor(1000 + Math.random() * 9000)] },
-                                { name: config.fields?.company || "company_name", values: [mockCompanies[randIdx]] },
-                                { name: "segment", values: ["Tecnologia"] }
-                            ]
-                        };
+                            leadData = {
+                                id: leadgenId || `mock_${Date.now()}`,
+                                created_time: new Date().toISOString(),
+                                field_data: [
+                                    { name: config.fields?.name || "full_name", values: [mockNames[randIdx]] },
+                                    { name: config.fields?.email || "email", values: [mockNames[randIdx].toLowerCase().replace(/[^a-z]/g, "") + "@exemplo.com"] },
+                                    { name: config.fields?.phone || "phone_number", values: ["(11) 99" + Math.floor(1000 + Math.random() * 9000) + "-" + Math.floor(1000 + Math.random() * 9000)] },
+                                    { name: config.fields?.company || "company_name", values: [mockCompanies[randIdx]] },
+                                    { name: "segment", values: ["Tecnologia"] }
+                                ]
+                            };
+                        }
                     }
 
                     // Parsear campos do formulário

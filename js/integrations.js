@@ -165,9 +165,254 @@ export const Integrations = {
                     <div class="autopilot-step" id="step-done">5. Concluído</div>
                 </div>
             </div>
+
+            <!-- Webhook Sandbox Panel -->
+            <div class="card" style="margin-top: 24px; padding: 24px; border-left: 4px solid var(--primary); display: flex; flex-direction: column; gap: 16px;">
+                <div>
+                    <h3 style="font-weight: 800; font-size: 15px; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <span>🛠️</span> Meta Webhook Developer Sandbox (Simulador de Endpoints)
+                    </h3>
+                    <p style="font-size: 12px; color: var(--text-muted); margin: 4px 0 0 0;">Simule o recebimento real de webhooks disparando requisições HTTP POST para o endpoint do backend (/api/meta-webhook).</p>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 20px; flex-wrap: wrap;">
+                    <!-- Configurações -->
+                    <div style="display: flex; flex-direction: column; gap: 12px; padding: 16px; background: var(--bg-body); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                        <div class="form-group" style="margin-bottom: 8px;">
+                            <label style="font-size: 11.5px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Tipo de Evento</label>
+                            <select id="webhook-sandbox-event" class="form-control" style="font-size: 12px; height: 34px;">
+                                <option value="leadgen">👤 Lead Ads (Formulário do Facebook)</option>
+                                <option value="messenger">💬 Mensagem no Facebook Messenger</option>
+                                <option value="whatsapp">📲 Mensagem de Texto do WhatsApp</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 8px;">
+                            <label style="font-size: 11.5px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Nome do Contato</label>
+                            <input type="text" id="webhook-sandbox-name" class="form-control" style="font-size: 12px; height: 32px;" value="Vitor Hugo Silva">
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 8px;" id="webhook-sandbox-email-group">
+                            <label style="font-size: 11.5px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">E-mail do Lead</label>
+                            <input type="text" id="webhook-sandbox-email" class="form-control" style="font-size: 12px; height: 32px;" value="vitor.silva@metateste.com.br">
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 8px;" id="webhook-sandbox-company-group">
+                            <label style="font-size: 11.5px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Empresa / Organização</label>
+                            <input type="text" id="webhook-sandbox-company" class="form-control" style="font-size: 12px; height: 32px;" value="Engenharia Sul S.A.">
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 8px;" id="webhook-sandbox-text-group">
+                            <label id="webhook-sandbox-text-label" style="font-size: 11.5px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Texto da Mensagem</label>
+                            <input type="text" id="webhook-sandbox-text" class="form-control" style="font-size: 12px; height: 32px;" value="Olá! Gostaria de saber os preços e planos de vocês.">
+                        </div>
+
+                        <button class="btn btn-primary" id="btn-fire-webhook-sandbox" style="margin-top: 6px; width: 100%; height: 38px; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; font-size: 12.5px;">
+                            <span>🚀</span> Disparar Webhook POST
+                        </button>
+                    </div>
+
+                    <!-- JSON e Resposta -->
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <label style="font-size: 11.5px; font-weight: 700; color: var(--text-secondary);">JSON Payload:</label>
+                            <span style="font-size: 10.5px; color: var(--text-muted); font-family: monospace;">POST /api/meta-webhook</span>
+                        </div>
+                        <textarea id="webhook-sandbox-json" class="form-control" style="font-family: monospace; font-size: 11px; line-height: 1.4; background: var(--bg-app); color: var(--text-primary); border: 1px dashed var(--border-color); flex-grow: 1; min-height: 180px; resize: none; padding: 12px;" readonly></textarea>
+                        
+                        <div id="webhook-sandbox-response" style="padding: 12px 14px; border-radius: 8px; font-size: 11.5px; display: none; font-family: system-ui, sans-serif;"></div>
+                    </div>
+                </div>
+            </div>
         `;
 
+        this.setupWebhookSandbox();
         this.bindEvents();
+    },
+
+    setupWebhookSandbox() {
+        const evSelect = document.getElementById("webhook-sandbox-event");
+        const nameInput = document.getElementById("webhook-sandbox-name");
+        const emailInput = document.getElementById("webhook-sandbox-email");
+        const companyInput = document.getElementById("webhook-sandbox-company");
+        const textInput = document.getElementById("webhook-sandbox-text");
+        const jsonArea = document.getElementById("webhook-sandbox-json");
+        const btnFire = document.getElementById("btn-fire-webhook-sandbox");
+        const responseDiv = document.getElementById("webhook-sandbox-response");
+
+        if (!evSelect || !jsonArea || !btnFire) return;
+
+        const updateUI = () => {
+            const ev = evSelect.value;
+            const name = nameInput.value;
+            const email = emailInput.value;
+            const company = companyInput.value;
+            const text = textInput.value;
+
+            const emailGroup = document.getElementById("webhook-sandbox-email-group");
+            const companyGroup = document.getElementById("webhook-sandbox-company-group");
+            const textGroup = document.getElementById("webhook-sandbox-text-group");
+            const textLabel = document.getElementById("webhook-sandbox-text-label");
+
+            if (ev === "leadgen") {
+                if (emailGroup) emailGroup.style.display = "block";
+                if (companyGroup) companyGroup.style.display = "block";
+                if (textGroup) textGroup.style.display = "none";
+            } else if (ev === "messenger") {
+                if (emailGroup) emailGroup.style.display = "none";
+                if (companyGroup) companyGroup.style.display = "none";
+                if (textGroup) textGroup.style.display = "block";
+                if (textLabel) textLabel.textContent = "Mensagem do Messenger";
+            } else if (ev === "whatsapp") {
+                if (emailGroup) emailGroup.style.display = "none";
+                if (companyGroup) companyGroup.style.display = "none";
+                if (textGroup) textGroup.style.display = "block";
+                if (textLabel) textLabel.textContent = "Mensagem do WhatsApp";
+            }
+
+            let payload = {};
+            if (ev === "leadgen") {
+                payload = {
+                    object: "page",
+                    entry: [
+                        {
+                            id: "page_id_simulated",
+                            time: Math.floor(Date.now() / 1000),
+                            changes: [
+                                {
+                                    field: "leadgen",
+                                    value: {
+                                        leadgen_id: `mock_lead_${Date.now()}`,
+                                        form_id: "form_simulated_123",
+                                        ad_id: "ad_simulated_123",
+                                        campaign_id: "campaign_simulated_123",
+                                        raw_fields: {
+                                            full_name: name,
+                                            email: email,
+                                            company_name: company
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                };
+            } else if (ev === "messenger") {
+                payload = {
+                    object: "page",
+                    entry: [
+                        {
+                            id: "page_id_simulated",
+                            time: Math.floor(Date.now() / 1000),
+                            messaging: [
+                                {
+                                    sender: { id: `fb_user_${Math.floor(1000 + Math.random() * 9000)}` },
+                                    recipient: { id: "page_id_simulated" },
+                                    timestamp: Date.now(),
+                                    message: {
+                                        mid: `mid_${Date.now()}`,
+                                        text: text
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                };
+            } else if (ev === "whatsapp") {
+                const cleanPhone = `55119${Math.floor(1000 + Math.random() * 9000)}${Math.floor(1000 + Math.random() * 9000)}`;
+                payload = {
+                    object: "whatsapp_business_account",
+                    entry: [
+                        {
+                            id: "wa_account_simulated",
+                            changes: [
+                                {
+                                    field: "messages",
+                                    value: {
+                                        messaging_product: "whatsapp",
+                                        metadata: {
+                                            display_phone_number: "15550000000",
+                                            phone_id: "phone_id_simulated"
+                                        },
+                                        contacts: [
+                                            {
+                                                profile: { name: name },
+                                                wa_id: cleanPhone
+                                            }
+                                        ],
+                                        messages: [
+                                            {
+                                                from: cleanPhone,
+                                                id: `mock_wa_${Date.now()}`,
+                                                timestamp: Math.floor(Date.now() / 1000).toString(),
+                                                text: { body: text },
+                                                type: "text"
+                                            }
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                };
+            }
+
+            jsonArea.value = JSON.stringify(payload, null, 2);
+        };
+
+        evSelect.addEventListener("change", updateUI);
+        nameInput.addEventListener("input", updateUI);
+        if (emailInput) emailInput.addEventListener("input", updateUI);
+        if (companyInput) companyInput.addEventListener("input", updateUI);
+        if (textInput) textInput.addEventListener("input", updateUI);
+
+        updateUI();
+
+        btnFire.addEventListener("click", async () => {
+            btnFire.disabled = true;
+            btnFire.textContent = "Enviando...";
+            responseDiv.style.display = "none";
+
+            try {
+                const res = await fetch("/api/meta-webhook", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: jsonArea.value
+                });
+
+                const text = await res.text();
+                responseDiv.style.display = "block";
+                btnFire.disabled = false;
+                btnFire.innerHTML = "<span>🚀</span> Disparar Webhook POST";
+
+                if (res.ok) {
+                    responseDiv.style.background = "rgba(16, 185, 129, 0.15)";
+                    responseDiv.style.color = "#10b981";
+                    responseDiv.style.border = "1px solid rgba(16, 185, 129, 0.3)";
+                    responseDiv.innerHTML = `<strong>Sucesso [Status ${res.status}]</strong><br>O Webhook processou o evento. Novos leads ou logs foram gravados no Supabase e sincronizados!`;
+                    
+                    setTimeout(() => {
+                        import("./store.js").then(m => m.Store.syncFromSupabase());
+                    }, 1000);
+                } else {
+                    responseDiv.style.background = "rgba(239, 68, 68, 0.15)";
+                    responseDiv.style.color = "#ef4444";
+                    responseDiv.style.border = "1px solid rgba(239, 68, 68, 0.3)";
+                    responseDiv.innerHTML = `<strong>Falha [Status ${res.status}]</strong><br>${text}`;
+                }
+            } catch (err) {
+                console.error("Sandbox failure:", err);
+                btnFire.disabled = false;
+                btnFire.innerHTML = "<span>🚀</span> Disparar Webhook POST";
+                responseDiv.style.display = "block";
+                responseDiv.style.background = "rgba(239, 68, 68, 0.15)";
+                responseDiv.style.color = "#ef4444";
+                responseDiv.style.border = "1px solid rgba(239, 68, 68, 0.3)";
+                responseDiv.innerHTML = `<strong>Erro de Conexão</strong><br>${err.message}`;
+            }
+        });
     },
 
     bindEvents() {

@@ -102,7 +102,85 @@ const INITIAL_LEADS = [
         createdAt: new Date().toISOString()
     }
 ];
-const INITIAL_PROPOSALS = [];
+const INITIAL_PROPOSALS = [
+    {
+        id: "prop_mock_1",
+        leadId: "lead_1",
+        company: "TechSolutions Brasil",
+        contact: "Carlos Eduardo",
+        title: "Implantação de ERP Corporativo",
+        service: "Sistema de Gestão (ERP)",
+        value: 45000,
+        status: "Ganho",
+        sentAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), // 10 dias atrás
+        closedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 dias atrás
+        validUntil: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString(),
+        notes: "Proposta técnica para licenciamento e implantação completa do ERP da Vellia com suporte a multi-filiais e módulos fiscais inclusos. Prazo estimado: 90 dias.",
+        createdBy: "vendedor@vellia.com"
+    },
+    {
+        id: "prop_mock_2",
+        leadId: "lead_2",
+        company: "Inovações Varejo",
+        contact: "Mariana Costa",
+        title: "Desenvolvimento de App Mobile",
+        service: "Aplicativo Mobile",
+        value: 78000,
+        status: "Em Negociação",
+        sentAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 dias atrás
+        closedAt: null,
+        validUntil: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000).toISOString(),
+        notes: "Proposta para criação do aplicativo móvel de vendas (Android/iOS) integrado ao sistema de fidelização da loja varejista. Escopo de prototipação já aprovado.",
+        createdBy: "vendedor@vellia.com"
+    },
+    {
+        id: "prop_mock_3",
+        leadId: "lead_3",
+        company: "Supermercados Alvorada",
+        contact: "Roberto Mendes",
+        title: "Consultoria e Implantação de PDV",
+        service: "Ponto de Venda (PDV)",
+        value: 32000,
+        status: "Enviada",
+        sentAt: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(), // 12 dias atrás
+        closedAt: null,
+        validUntil: new Date(Date.now() + 18 * 24 * 60 * 60 * 1000).toISOString(),
+        notes: "Renovação e implantação de novos PDVs nas 4 lojas da rede Alvorada com treinamento operacional para equipes de caixa.",
+        createdBy: "gerente@vellia.com"
+    },
+    {
+        id: "prop_mock_4",
+        leadId: "lead_4",
+        company: "Logística Global S.A.",
+        contact: "Fernanda Lima",
+        title: "Plataforma SaaS de Rastreamento",
+        service: "Consultoria e Implantação",
+        value: 120000,
+        status: "Ganho",
+        sentAt: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(), // 25 dias atrás
+        closedAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), // 15 dias atrás
+        validUntil: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+        notes: "Implantação de SaaS de telemetria avançada e inteligência logística para roteirização e otimização de frotas pesadas.",
+        createdBy: "admin@vellia.com"
+    },
+    {
+        id: "prop_mock_5",
+        leadId: "lead_1",
+        company: "TechSolutions Brasil",
+        contact: "Carlos Eduardo",
+        title: "Consultoria de Infraestrutura Cloud",
+        service: "Consultoria e Implantação",
+        value: 15000,
+        status: "Perdido",
+        sentAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
+        closedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+        validUntil: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+        competitor: "AWS Professional Services",
+        lossReason: "Preço",
+        notes: "O cliente preferiu o concorrente direto pelo renome internacional e suporte especializado nativo da AWS, apesar de nosso custo ser menor.",
+        createdBy: "vendedor@vellia.com"
+    }
+];
 
 const INITIAL_SERVICES = [
     {

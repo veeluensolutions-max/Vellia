@@ -1151,6 +1151,12 @@ export const Dashboard = {
         // Lista de vendedores / gerentes
         const sellers = users.filter(u => u.role === "seller" || u.role === "manager" || u.role === "admin");
 
+        // Inicializar valor de simulação se não existir
+        if (this._simulatedValue === undefined) {
+            this._simulatedValue = 0;
+        }
+        const simVal = this._simulatedValue;
+
         // Calcular estatísticas por vendedor
         const sellerStats = sellers.map(seller => {
             const sellerProps = proposals.filter(p => {
@@ -1197,10 +1203,15 @@ export const Dashboard = {
                 wonCount: 0
             };
 
+            // Aplicar simulação
+            const wonRevenueSim = myStat.wonRevenue + simVal;
+            const commissionSim = myStat.commission + (simVal * rate) / 100;
+            const pctSim = myStat.targetRevenue > 0 ? Math.min(100, Math.round((wonRevenueSim / myStat.targetRevenue) * 100)) : 0;
+
             let badgeStatus = `<span class="badge badge-warning" style="background:#fef3c7; color:#d97706;">🟡 Em Andamento</span>`;
-            if (myStat.pct >= 100) {
+            if (pctSim >= 100) {
                 badgeStatus = `<span class="badge badge-success" style="background:#dcfce7; color:#16a34a; font-weight:700;">🟢 Meta Batida! 🎉</span>`;
-            } else if (myStat.pct < 40) {
+            } else if (pctSim < 40) {
                 badgeStatus = `<span class="badge badge-danger" style="background:#fee2e2; color:#dc2626;">🔴 Abaixo da Meta</span>`;
             }
 
@@ -1208,7 +1219,7 @@ export const Dashboard = {
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
                     <div>
                         <h4 style="font-weight: 800; font-size: 15px; color: var(--text-primary); margin: 0 0 3px 0; display: flex; align-items: center; gap: 8px;">
-                            🎯 Meu Desempenho & Comissão — ${monthNameFormatted}
+                            🎯 Meu Desempenho & Comissão — ${monthNameFormatted} ${simVal > 0 ? `<span style="font-size:10px; padding:2px 6px; background:var(--primary); color:white; border-radius:4px; font-weight:normal;">Simulado</span>` : ""}
                         </h4>
                         <span style="font-size: 11.5px; color: var(--text-muted);">Acompanhe suas vendas fechadas e sua comissão acumulada no mês</span>
                     </div>
@@ -1220,35 +1231,49 @@ export const Dashboard = {
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 18px;">
                     <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px;">
                         <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Faturamento Realizado</span>
-                        <div style="font-size: 22px; font-weight: 800; color: #10b981; margin-top: 4px;">R$ ${myStat.wonRevenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
+                        <div style="font-size: 22px; font-weight: 800; color: #10b981; margin-top: 4px;">R$ ${wonRevenueSim.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
                         <span style="font-size: 11px; color: var(--text-muted);">Meta: R$ ${myStat.targetRevenue.toLocaleString("pt-BR")}</span>
                     </div>
 
                     <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px;">
                         <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Comissão a Receber (${rate}%)</span>
-                        <div style="font-size: 22px; font-weight: 800; color: #8b5cf6; margin-top: 4px;">R$ ${myStat.commission.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
+                        <div style="font-size: 22px; font-weight: 800; color: #8b5cf6; margin-top: 4px;">R$ ${commissionSim.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
                         <span style="font-size: 11px; color: #8b5cf6; font-weight: 600;">Calculado sobre vendas pagas</span>
                     </div>
 
                     <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px;">
                         <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Atingimento da Meta</span>
-                        <div style="font-size: 22px; font-weight: 800; color: #1877F2; margin-top: 4px;">${myStat.pct}%</div>
+                        <div style="font-size: 22px; font-weight: 800; color: #1877F2; margin-top: 4px;">${pctSim}%</div>
                         <span style="font-size: 11px; color: var(--text-muted);">${myStat.wonCount} contrato(s) fechado(s)</span>
                     </div>
                 </div>
 
-                <div>
+                <div style="margin-bottom: 18px;">
                     <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">
                         <span>Progresso da Meta Individual</span>
-                        <span>${myStat.pct}% Concluído</span>
+                        <span>${pctSim}% Concluído</span>
                     </div>
                     <div style="width: 100%; height: 10px; background: var(--bg-app); border-radius: 99px; overflow: hidden; border: 1px solid var(--border-color);">
-                        <div style="width: ${myStat.pct}%; height: 100%; background: linear-gradient(90deg, #10b981, #059669); border-radius: 99px; transition: width 0.8s ease;"></div>
+                        <div style="width: ${pctSim}%; height: 100%; background: linear-gradient(90deg, #10b981, #059669); border-radius: 99px; transition: width 0.8s ease;"></div>
                     </div>
+                </div>
+
+                <div style="margin-top: 18px; padding-top: 16px; border-top: 1px dashed var(--border-color); display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                        <span style="font-size: 12px; font-weight: 700; color: var(--text-primary);">
+                            🧮 Simular Vendas Adicionais: <strong style="color: var(--primary);">R$ ${simVal.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</strong>
+                        </span>
+                        <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Comissão extra estimada: R$ ${((simVal * rate) / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                    </div>
+                    <input type="range" id="goals-simulation-slider" min="0" max="150000" step="5000" value="${simVal}" style="width: 100%; accent-color: var(--primary); cursor: pointer;">
                 </div>
             `;
         } else {
             // Visão Gerente / Admin (Equipe Comercial Completa)
+            const totalWonRevenueSim = totalWonRevenue + simVal;
+            const totalCommissionSim = totalCommission + (simVal * rate) / 100;
+            const totalPctSim = totalTargetRevenue > 0 ? Math.min(100, Math.round((totalWonRevenueSim / totalTargetRevenue) * 100)) : 0;
+
             const rowsHtml = sellerStats.map(st => {
                 let badge = `<span class="badge badge-warning" style="background:#fef3c7; color:#d97706; font-size:11px;">🟡 Em Progresso</span>`;
                 if (st.pct >= 100) {
@@ -1288,7 +1313,7 @@ export const Dashboard = {
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 10px;">
                     <div>
                         <h4 style="font-weight: 800; font-size: 15px; color: var(--text-primary); margin: 0 0 3px 0; display: flex; align-items: center; gap: 8px;">
-                            🎯 Metas & Comissões da Equipe Comercial — ${monthNameFormatted}
+                            🎯 Metas & Comissões da Equipe Comercial — ${monthNameFormatted} ${simVal > 0 ? `<span style="font-size:10px; padding:2px 6px; background:var(--primary); color:white; border-radius:4px; font-weight:normal;">Simulado</span>` : ""}
                         </h4>
                         <span style="font-size: 11.5px; color: var(--text-muted);">Monitoramento de metas batidas e cálculo de comissões por vendedor</span>
                     </div>
@@ -1303,25 +1328,25 @@ export const Dashboard = {
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px;">
                     <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px;">
                         <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total Fechado (Mês)</span>
-                        <div style="font-size: 22px; font-weight: 800; color: #10b981; margin-top: 4px;">R$ ${totalWonRevenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
+                        <div style="font-size: 22px; font-weight: 800; color: #10b981; margin-top: 4px;">R$ ${totalWonRevenueSim.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
                         <span style="font-size: 11px; color: var(--text-muted);">Meta Global: R$ ${totalTargetRevenue.toLocaleString("pt-BR")}</span>
                     </div>
 
                     <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px;">
                         <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total Comissões Equipe</span>
-                        <div style="font-size: 22px; font-weight: 800; color: #8b5cf6; margin-top: 4px;">R$ ${totalCommission.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
+                        <div style="font-size: 22px; font-weight: 800; color: #8b5cf6; margin-top: 4px;">R$ ${totalCommissionSim.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
                         <span style="font-size: 11px; color: #8b5cf6; font-weight: 600;">${rate}% sobre vendas do mês</span>
                     </div>
 
                     <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px;">
                         <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Progresso da Meta Global</span>
-                        <div style="font-size: 22px; font-weight: 800; color: #1877F2; margin-top: 4px;">${totalPct}%</div>
+                        <div style="font-size: 22px; font-weight: 800; color: #1877F2; margin-top: 4px;">${totalPctSim}%</div>
                         <span style="font-size: 11px; color: var(--text-muted);">${sellerStats.filter(s => s.pct >= 100).length} de ${sellerStats.length} vendedores bateram a meta</span>
                     </div>
                 </div>
 
                 <!-- Tabela da Equipe -->
-                <div class="table-responsive">
+                <div class="table-responsive" style="margin-bottom: 18px;">
                     <table class="custom-table" style="width: 100%;">
                         <thead>
                             <tr>
@@ -1338,7 +1363,26 @@ export const Dashboard = {
                         </tbody>
                     </table>
                 </div>
+
+                <div style="margin-top: 18px; padding-top: 16px; border-top: 1px dashed var(--border-color); display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                        <span style="font-size: 12px; font-weight: 700; color: var(--text-primary); justify-content: flex-start;">
+                            🧮 Simular Vendas Adicionais Equipe: <strong style="color: var(--primary);">R$ ${simVal.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</strong>
+                        </span>
+                        <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Comissão extra estimada: R$ ${((simVal * rate) / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                    </div>
+                    <input type="range" id="goals-simulation-slider" min="0" max="300000" step="10000" value="${simVal}" style="width: 100%; accent-color: var(--primary); cursor: pointer;">
+                </div>
             `;
+        }
+
+        // Vincular escuta ao slider de simulação imediatamente após renderizar
+        const slider = document.getElementById("goals-simulation-slider");
+        if (slider) {
+            slider.addEventListener("input", (e) => {
+                this._simulatedValue = Number(e.target.value);
+                this.renderGoalsCommissionPanel();
+            });
         }
     }
 };

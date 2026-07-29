@@ -135,6 +135,14 @@ export const Proposals = {
 
         const btnGenEditAI = document.getElementById("btn-generate-edit-notes-ai");
         if (btnGenEditAI) btnGenEditAI.addEventListener("click", () => this.generateProposalNotesAI("edit"));
+
+        // Botão Exportar PDF da Proposta
+        const btnPropPdf = document.getElementById("btn-proposal-pdf");
+        if (btnPropPdf) {
+            btnPropPdf.addEventListener("click", () => {
+                if (activeProposalId) this.exportProposalToPDF(activeProposalId);
+            });
+        }
     },
 
     // ==========================================================================
@@ -769,5 +777,191 @@ Seja profissional, direto e use uma linguagem persuasiva focada em fechamento co
             btn.innerHTML = originalBtnText;
             btn.disabled = false;
         }
+    },
+
+    exportProposalToPDF(id) {
+        const jsPDFLib = window.jspdf;
+        if (!jsPDFLib || !jsPDFLib.jsPDF) {
+            alert("Biblioteca jsPDF não carregada. Recarregue a página e tente novamente.");
+            return;
+        }
+        const { jsPDF } = jsPDFLib;
+
+        const proposal = Store.getProposalById(id);
+        if (!proposal) {
+            alert("Proposta não encontrada.");
+            return;
+        }
+
+        const leads = Store.getLeads();
+        const lead = leads.find(l => l.company.toLowerCase() === proposal.company.toLowerCase());
+
+        const doc = new jsPDF({ unit: "mm", format: "a4" });
+        const pageW = 210;
+        const pageH = 297;
+
+        const BRAND_COLOR = [59, 130, 246];
+        const DARK_COLOR  = [15, 23, 42];
+        const GRAY_COLOR  = [100, 116, 139];
+        const WHITE       = [255, 255, 255];
+        const GREEN_COLOR = [16, 185, 129];
+
+        // 1. HEADER BANNER
+        doc.setFillColor(...DARK_COLOR);
+        doc.rect(0, 0, pageW, 40, "F");
+
+        // Brand Logo
+        doc.setFillColor(...BRAND_COLOR);
+        doc.roundedRect(14, 10, 26, 20, 3, 3, "F");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(13);
+        doc.setTextColor(...WHITE);
+        doc.text("Vellia", 17, 22);
+        doc.setFontSize(7);
+        doc.text("CRM", 31, 22);
+
+        // Title and sub info
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(15);
+        doc.setTextColor(...WHITE);
+        doc.text("PROPOSTA COMERCIAL", 48, 19);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5);
+        doc.setTextColor(148, 163, 184);
+        doc.text(`Proposta Nº: ${proposal.id.substring(0, 8).toUpperCase()}   •   Status: ${proposal.status.toUpperCase()}`, 48, 28);
+
+        // 2. METADATA & CLIENT CARDS
+        let y = 52;
+        
+        // Client Card
+        doc.setFillColor(248, 250, 252);
+        doc.setDrawColor(226, 232, 240);
+        doc.roundedRect(14, y, 88, 38, 3, 3, "FD");
+        // Accent Left
+        doc.setFillColor(...BRAND_COLOR);
+        doc.rect(14, y, 3, 38, "F");
+        
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8);
+        doc.setTextColor(...GRAY_COLOR);
+        doc.text("CLIENTE PROPONENTE", 21, y + 8);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.setTextColor(...DARK_COLOR);
+        doc.text(proposal.company || "—", 21, y + 17);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5);
+        doc.setTextColor(...GRAY_COLOR);
+        doc.text(`Contato: ${proposal.contact || "—"}`, 21, y + 25);
+        if (lead) {
+            doc.text(`Tel: ${lead.whatsapp || lead.phone || "—"}`, 21, y + 31);
+        }
+
+        // Proposal Info Card
+        doc.setFillColor(248, 250, 252);
+        doc.setDrawColor(226, 232, 240);
+        doc.roundedRect(108, y, 88, 38, 3, 3, "FD");
+        // Accent Left
+        doc.setFillColor(...GREEN_COLOR);
+        doc.rect(108, y, 3, 38, "F");
+        
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8);
+        doc.setTextColor(...GRAY_COLOR);
+        doc.text("CONDIÇÕES COMERCIAIS", 115, y + 8);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5);
+        doc.setTextColor(...GRAY_COLOR);
+        doc.text(`Data de Emissão: ${proposal.sentAt ? new Date(proposal.sentAt).toLocaleDateString("pt-BR") : "—"}`, 115, y + 16);
+        doc.text(`Válida até: ${proposal.validUntil ? new Date(proposal.validUntil).toLocaleDateString("pt-BR") : "A combinar"}`, 115, y + 22);
+        doc.text(`Serviço: ${proposal.service || "Serviço Técnico"}`, 115, y + 28);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.setTextColor(...GREEN_COLOR);
+        const fmtVal = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(proposal.value || 0);
+        doc.text(`Valor Total: ${fmtVal}`, 115, y + 34);
+
+        // 3. SCOPE & NOTES SECTION
+        y = 100;
+        doc.setFillColor(...BRAND_COLOR);
+        doc.rect(14, y, 3, 6, "F");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.setTextColor(...DARK_COLOR);
+        doc.text("Detalhamento do Escopo e Observações", 20, y + 4.5);
+        
+        y += 12;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9.5);
+        doc.setTextColor(51, 65, 85); // Slate 700
+        
+        const notesText = proposal.notes || "Nenhuma observação ou escopo específico anexado.";
+        const lines = doc.splitTextToSize(notesText, pageW - 28);
+        
+        for (const line of lines) {
+            if (y > pageH - 45) {
+                doc.addPage();
+                y = 20;
+            }
+            doc.text(line, 14, y);
+            y += 6; // line spacing
+        }
+
+        // 4. SIGNATURES
+        if (y > pageH - 55) {
+            doc.addPage();
+            y = 30;
+        } else {
+            y += 20;
+        }
+
+        const sigW = 75;
+        const sigY = y + 15;
+
+        doc.setDrawColor(148, 163, 184);
+        doc.setLineWidth(0.3);
+
+        // Proponente
+        doc.line(14, sigY, 14 + sigW, sigY);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.setTextColor(...DARK_COLOR);
+        doc.text("Vellia Comercial & Engenharia", 14, sigY + 5);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(...GRAY_COLOR);
+        doc.text("Responsável Técnico/Vendas", 14, sigY + 9);
+
+        // Cliente
+        doc.line(pageW - 14 - sigW, sigY, pageW - 14, sigY);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.setTextColor(...DARK_COLOR);
+        doc.text(proposal.company || "O Cliente", pageW - 14 - sigW, sigY + 5);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(...GRAY_COLOR);
+        doc.text("Aceito e De Acordo", pageW - 14 - sigW, sigY + 9);
+
+        // 5. FOOTER STYLING
+        const totalPages = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+            doc.setPage(i);
+            
+            // Draw a bottom accent line or full banner
+            doc.setFillColor(...DARK_COLOR);
+            doc.rect(0, pageH - 12, pageW, 12, "F");
+            
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8);
+            doc.setTextColor(148, 163, 184);
+            doc.text("Vellia CRM — Sistema Comercial Inteligente  •  Documento confidencial", 14, pageH - 4.5);
+            
+            doc.setTextColor(...WHITE);
+            doc.text(`Página ${i} de ${totalPages}`, pageW - 28, pageH - 4.5);
+        }
+
+        const safeName = (proposal.company || "Cliente").replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "").substring(0, 20);
+        doc.save(`Proposta_${safeName}_${proposal.id.substring(0, 8)}.pdf`);
     }
 };

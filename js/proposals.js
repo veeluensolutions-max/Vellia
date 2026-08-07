@@ -143,6 +143,11 @@ export const Proposals = {
                 if (activeProposalId) this.exportProposalToPDF(activeProposalId);
             });
         }
+
+        const btnGenDocs = document.getElementById("btn-proposal-generate-docs");
+        if (btnGenDocs) {
+            btnGenDocs.addEventListener("click", () => this.generateDocsFromProposal());
+        }
     },
 
     // ==========================================================================
@@ -537,6 +542,87 @@ export const Proposals = {
 
         document.getElementById("proposal-detail-modal")?.classList.add("open");
         document.getElementById("proposal-detail-overlay").style.display = "block";
+    },
+
+    async generateDocsFromProposal() {
+        if (!activeProposalId) return;
+        const proposal = Store.getProposalById(activeProposalId);
+        if (!proposal) return;
+
+        const btn = document.getElementById("btn-proposal-generate-docs");
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = "Processando...";
+        }
+
+        try {
+            const apiUrl = localStorage.getItem("vellia_docs_api_url") || "http://localhost:3001";
+            const frontendUrl = localStorage.getItem("vellia_docs_frontend_url") || "http://localhost:3000";
+
+            // Encontrar lead correspondente
+            const leads = Store.getLeads();
+            const lead = leads.find(l => l.company.toLowerCase() === proposal.company.toLowerCase());
+
+            // Usar o id do lead se existir, senão usar o id da própria proposta
+            const contactId = lead ? lead.id : `prop_${proposal.id}`;
+            const name = proposal.company || "Sem Nome";
+            const contactPerson = proposal.contact || "";
+
+            // Sincronizar o contato para garantir que ele exista no Vellia Docs
+            const contactPayload = {
+                contact_id: contactId,
+                name: name,
+                status: "Lead Qualificado",
+                email: "",
+                phone: "",
+                contact_person: contactPerson,
+                segment: proposal.service || ""
+            };
+
+            // 1. Verificar se existe
+            const checkRes = await fetch(`${apiUrl}/v1/contacts/${contactId}`, {
+                headers: { "x-client-id": "admin@veeluen.ai" }
+            });
+
+            if (checkRes.ok) {
+                // Atualizar
+                await fetch(`${apiUrl}/v1/contacts/${contactId}`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "x-client-id": "admin@veeluen.ai"
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        contact_person: contactPerson,
+                        segment: proposal.service || ""
+                    })
+                });
+            } else {
+                // Criar
+                await fetch(`${apiUrl}/v1/contacts`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "x-client-id": "admin@veeluen.ai"
+                    },
+                    body: JSON.stringify(contactPayload)
+                });
+            }
+
+            // 2. Abrir o Vellia Docs na tela de criação de propostas com o clientId
+            const targetUrl = `${frontendUrl}/documents/new?clientId=${contactId}`;
+            window.open(targetUrl, "_blank");
+
+        } catch (err) {
+            console.error("Erro ao gerar proposta no Vellia Docs:", err);
+            alert("Erro ao conectar ao Vellia Docs. Verifique se o servidor está rodando.");
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = "📄 Gerar no Vellia Docs";
+            }
+        }
     },
 
     closeDetailModal() {

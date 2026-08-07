@@ -139,6 +139,43 @@ export const Integrations = {
                         <button class="btn btn-primary" style="flex: 1;" id="btn-save-gemini-key">Salvar Chave</button>
                     </div>
                 </div>
+
+                <!-- Vellia Docs Card -->
+                <div class="card stat-card" style="display: flex; flex-direction: column; gap: 16px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 48px; height: 48px; border-radius: var(--radius-md); background: #f5f3ff; color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+                            📄
+                        </div>
+                        <div>
+                            <h3 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0;">Vellia Docs</h3>
+                            <span style="font-size: 12px; color: var(--text-muted);">Geração de Propostas e Contratos</span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; background: var(--bg-body); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                        <div class="form-group" style="margin-bottom: 8px;">
+                            <label style="font-size: 11px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">URL da API do Vellia Docs</label>
+                            <input type="text" id="docs-api-url-input" class="form-control" style="font-size: 12px; height: 32px; padding: 6px 10px;" value="${localStorage.getItem('vellia_docs_api_url') || 'http://localhost:3001'}" placeholder="http://localhost:3001">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label style="font-size: 11px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">URL do Frontend Vellia Docs</label>
+                            <input type="text" id="docs-frontend-url-input" class="form-control" style="font-size: 12px; height: 32px; padding: 6px 10px;" value="${localStorage.getItem('vellia_docs_frontend_url') || 'http://localhost:3000'}" placeholder="http://localhost:3000">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--text-primary);">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>Status da Integração</span>
+                            <span id="docs-status-badge" class="badge" style="background: #dcfce7; color: #16a34a; font-size: 11px;">
+                                🟢 Ativo
+                            </span>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px;">
+                        <button class="btn btn-primary" style="width: 100%;" id="btn-sync-leads-to-docs">🔄 Sincronizar Leads</button>
+                    </div>
+                </div>
             </div>
 
             <!-- AI AUTOPILOT CONSOLE -->
@@ -501,6 +538,103 @@ export const Integrations = {
                 import('./audit.js').then(module => {
                     module.Audit.logConfigChange("sistema@vellia.com", "SDR_AI_TOGGLE", `SDR AI automático alterado para ${toggleSdr.checked ? "ATIVO" : "INATIVO"}.`);
                 });
+            });
+        }
+
+        // Configurações do Vellia Docs
+        const docsApiInput = document.getElementById("docs-api-url-input");
+        const docsFrontendInput = document.getElementById("docs-frontend-url-input");
+        if (docsApiInput) {
+            docsApiInput.addEventListener("change", () => {
+                localStorage.setItem("vellia_docs_api_url", docsApiInput.value.trim());
+            });
+        }
+        if (docsFrontendInput) {
+            docsFrontendInput.addEventListener("change", () => {
+                localStorage.setItem("vellia_docs_frontend_url", docsFrontendInput.value.trim());
+            });
+        }
+
+        const btnSyncDocs = document.getElementById("btn-sync-leads-to-docs");
+        if (btnSyncDocs) {
+            btnSyncDocs.addEventListener("click", async () => {
+                btnSyncDocs.disabled = true;
+                btnSyncDocs.textContent = "Sincronizando...";
+                
+                try {
+                    const apiUrl = localStorage.getItem("vellia_docs_api_url") || "http://localhost:3001";
+                    
+                    // Importar leads do CRM Store
+                    const storeModule = await import("./store.js");
+                    const leads = storeModule.Store.getLeads();
+                    
+                    if (leads.length === 0) {
+                        alert("Nenhum lead encontrado no CRM para sincronizar.");
+                        btnSyncDocs.disabled = false;
+                        btnSyncDocs.textContent = "🔄 Sincronizar Leads";
+                        return;
+                    }
+                    
+                    let successCount = 0;
+                    for (const lead of leads) {
+                        const contactPayload = {
+                            contact_id: lead.id,
+                            name: lead.company || lead.contact || "Sem Nome",
+                            status: lead.stage || "Lead Qualificado",
+                            email: lead.email || "",
+                            phone: lead.phone || lead.whatsapp || "",
+                            contact_person: lead.contact || "",
+                            segment: lead.segment || ""
+                        };
+                        
+                        try {
+                            // 1. Verificar se o contato já existe no Vellia Docs
+                            const checkRes = await fetch(`${apiUrl}/v1/contacts/${lead.id}`, {
+                                headers: { "x-client-id": "admin@veeluen.ai" }
+                            });
+                            
+                            if (checkRes.ok) {
+                                // 2. Já existe, então atualiza (PUT)
+                                await fetch(`${apiUrl}/v1/contacts/${lead.id}`, {
+                                    method: "PUT",
+                                    headers: {
+                                        "Content-Type": "application/json",
+                                        "x-client-id": "admin@veeluen.ai"
+                                    },
+                                    body: JSON.stringify({
+                                        name: lead.company || lead.contact || "Sem Nome",
+                                        status: lead.stage || "Lead Qualificado",
+                                        email: lead.email || "",
+                                        phone: lead.phone || lead.whatsapp || "",
+                                        contact_person: lead.contact || "",
+                                        segment: lead.segment || ""
+                                    })
+                                });
+                            } else {
+                                // 3. Não existe, então cria (POST)
+                                await fetch(`${apiUrl}/v1/contacts`, {
+                                    method: "POST",
+                                    headers: {
+                                        "Content-Type": "application/json",
+                                        "x-client-id": "admin@veeluen.ai"
+                                    },
+                                    body: JSON.stringify(contactPayload)
+                                });
+                            }
+                            successCount++;
+                        } catch (e) {
+                            console.error(`Falha ao sincronizar lead ${lead.id}:`, e);
+                        }
+                    }
+                    
+                    alert(`Sincronização concluída! ${successCount} de ${leads.length} leads sincronizados com o Vellia Docs.`);
+                } catch (err) {
+                    console.error("Erro na sincronização:", err);
+                    alert("Erro ao sincronizar com o Vellia Docs. Verifique se o servidor da API do Docs está rodando.");
+                } finally {
+                    btnSyncDocs.disabled = false;
+                    btnSyncDocs.textContent = "🔄 Sincronizar Leads";
+                }
             });
         }
 

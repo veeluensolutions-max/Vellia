@@ -185,6 +185,86 @@ export const CRM = {
                 this.saveLeadInspection();
             });
         }
+
+        const btnGenDocs = document.getElementById("btn-generate-docs-proposal");
+        if (btnGenDocs) {
+            btnGenDocs.addEventListener("click", () => this.generateDocsProposal());
+        }
+    },
+
+    async generateDocsProposal() {
+        if (!activeLeadId) return;
+        const lead = Store.getLeadById(activeLeadId);
+        if (!lead) return;
+
+        const btn = document.getElementById("btn-generate-docs-proposal");
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = "Processando...";
+        }
+
+        try {
+            const apiUrl = localStorage.getItem("vellia_docs_api_url") || "http://localhost:3001";
+            const frontendUrl = localStorage.getItem("vellia_docs_frontend_url") || "http://localhost:3000";
+
+            // Sincronizar o contato para garantir que ele exista no Vellia Docs
+            const contactPayload = {
+                contact_id: lead.id,
+                name: lead.company || lead.contact || "Sem Nome",
+                status: lead.stage || "Lead Qualificado",
+                email: lead.email || "",
+                phone: lead.phone || lead.whatsapp || "",
+                contact_person: lead.contact || "",
+                segment: lead.segment || ""
+            };
+
+            // 1. Verificar se existe
+            const checkRes = await fetch(`${apiUrl}/v1/contacts/${lead.id}`, {
+                headers: { "x-client-id": "admin@veeluen.ai" }
+            });
+
+            if (checkRes.ok) {
+                // Atualizar
+                await fetch(`${apiUrl}/v1/contacts/${lead.id}`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "x-client-id": "admin@veeluen.ai"
+                    },
+                    body: JSON.stringify({
+                        name: lead.company || lead.contact || "Sem Nome",
+                        status: lead.stage || "Lead Qualificado",
+                        email: lead.email || "",
+                        phone: lead.phone || lead.whatsapp || "",
+                        contact_person: lead.contact || "",
+                        segment: lead.segment || ""
+                    })
+                });
+            } else {
+                // Criar
+                await fetch(`${apiUrl}/v1/contacts`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "x-client-id": "admin@veeluen.ai"
+                    },
+                    body: JSON.stringify(contactPayload)
+                });
+            }
+
+            // 2. Abrir o Vellia Docs na tela de criação de propostas com o clientId
+            const targetUrl = `${frontendUrl}/documents/new?clientId=${lead.id}`;
+            window.open(targetUrl, "_blank");
+
+        } catch (err) {
+            console.error("Erro ao gerar proposta no Vellia Docs:", err);
+            alert("Erro ao conectar ao Vellia Docs. Verifique se o servidor está rodando.");
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = "📄 Gerar Proposta no Vellia Docs";
+            }
+        }
     },
 
     // ==========================================================================

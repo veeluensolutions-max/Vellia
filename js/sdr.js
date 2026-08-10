@@ -368,10 +368,10 @@ Retorne a resposta estritamente no seguinte formato JSON:
 
         // Registrar execução do passo
         const desc = `🔄 **Passo ${stepInfo.step} da Cadência SDR Executado:** ${stepInfo.title} (${stepInfo.type}).`;
-        Store.addLeadInteraction(lead.id, {
+        Store.addLeadInteraction(lead.id, "sdr-ai@vellia.com", {
             type: "WhatsApp",
             description: desc
-        }, "sdr-ai@vellia.com");
+        });
 
         lead.cadenceStep = currentStep + 1;
         if (lead.cadenceStep > 4) lead.cadenceActive = false;

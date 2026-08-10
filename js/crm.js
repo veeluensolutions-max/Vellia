@@ -1030,7 +1030,7 @@ export const CRM = {
 
             const markerClass = item.type === "stage-change" 
                 ? "stage-change" 
-                : `interaction-${item.intType.replace(" ", "-")}`;
+                : `interaction-${(item.intType || "Outros").replace(" ", "-")}`;
 
             return `
                 <div class="timeline-item ${markerClass}">

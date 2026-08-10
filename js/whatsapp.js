@@ -181,10 +181,10 @@ export const WhatsApp = {
 
         // 1. Gravar interação na linha do tempo do Lead
         const activityDesc = `${isSimulated ? "Simulado: " : ""}Mensagem de WhatsApp para ${lead.contact || lead.company}: "${messageText.substring(0, 70)}..."`;
-        Store.addLeadInteraction(lead.id, {
+        Store.addLeadInteraction(lead.id, userEmail, {
             type: "WhatsApp",
             description: activityDesc
-        }, userEmail);
+        });
 
         // 2. Gravar auditoria
         Audit.logLeadUpdate(userEmail, lead.company, `Mensagem de WhatsApp ${isSimulated ? "simulada" : "real"} enviada para ${lead.contact || lead.company}.`);
@@ -460,10 +460,10 @@ Retorne estritamente em formato JSON:
         }
 
         // 1. Gravar interação
-        Store.addLeadInteraction(lead.id, {
+        Store.addLeadInteraction(lead.id, userEmail, {
             type: "WhatsApp",
             description: `🤖 Automação SDR: Mensagem automática de ${type}: "${message.substring(0, 70)}..."`
-        }, userEmail);
+        });
 
         // 2. Gravar auditoria
         Audit.logLeadUpdate(userEmail, lead.company, `Automação de WhatsApp (${type}) disparada.`);

@@ -431,16 +431,24 @@ export const Store = {
     },
 
     addLeadInteraction(leadId, userEmail, interaction) {
+        // Tratar caso onde os parâmetros de e-mail e interação foram invertidos
+        if (userEmail && typeof userEmail === "object" && (!interaction || typeof interaction === "string")) {
+            const temp = userEmail;
+            userEmail = interaction || "sistema@vellia.com";
+            interaction = temp;
+        }
+
         const leads = this.getLeads();
         const index = leads.findIndex(l => l.id === leadId);
         if (index !== -1) {
             const newInteraction = {
                 id: `int_${Date.now()}`,
-                type: interaction.type, // Ligação, WhatsApp, Reunião, etc.
-                description: interaction.description,
+                type: interaction?.type || "WhatsApp", // Ligação, WhatsApp, Reunião, etc.
+                description: interaction?.description || "",
                 timestamp: new Date().toISOString(),
                 userEmail
             };
+            leads[index].interactions = leads[index].interactions || [];
             leads[index].interactions.push(newInteraction);
             localStorage.setItem("comercial_leads", JSON.stringify(leads));
             upsertSupabase("comercial_leads", leads[index]);

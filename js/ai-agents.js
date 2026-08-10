@@ -1897,10 +1897,10 @@ Crie 3 a 4 tags [TAREFA_VENDEDOR: ...]. Escreva de forma motivadora e comercial.
 
         const currentUser = Auth.getCurrentUser();
         const userEmail = currentUser ? currentUser.email : "copywriter@vellia.com";
-        Store.addLeadInteraction(lead.id, {
+        Store.addLeadInteraction(lead.id, userEmail, {
             type: "WhatsApp",
             description: `Mensagem gerada pelo Copywriter Agent enviada: "${text.substring(0, 60)}..."`
-        }, userEmail);
+        });
 
         Audit.logLeadUpdate(userEmail, lead.company, "Mensagem gerada pelo Copywriter Agent enviada via WhatsApp.");
 

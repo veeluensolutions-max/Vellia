@@ -207,11 +207,19 @@ export const Inspections = {
                             </button>
                             <button 
                                 class="btn btn-outline btn-sm"
+                                style="padding: 8px 12px; border-radius: 8px; font-size: 11.5px; border-color: #3b82f6; color: #3b82f6; background: transparent; font-weight: 700; cursor: pointer;"
+                                onclick="window.scheduleGoogleCalendar('${item.leadId}', '${item.id}')"
+                                title="Adicionar lembrete no Google Agenda"
+                            >
+                                📅 Agendar
+                            </button>
+                            <button 
+                                class="btn btn-outline btn-sm"
                                 style="padding: 8px 12px; border-radius: 8px; font-size: 11.5px; border-color: var(--primary); color: var(--primary); background: transparent; font-weight: 700; cursor: pointer;"
                                 onclick="window.generateInspectionPDF('${item.leadId}', '${item.id}')"
                                 title="Gerar Laudo Oficial em PDF"
                             >
-                                📄 Laudo PDF
+                                📄 Laudo
                             </button>
                         </div>
                     </td>
@@ -616,4 +624,47 @@ Fico no aguardo! 😊`;
         type: "WhatsApp",
         description: `📢 **Notificação de Vencimento de Inspeção iniciada:** "${serviceName}".`
     });
+};
+
+// ============================================================================
+// INTEGRAÇÃO: GOOGLE CALENDAR
+// ============================================================================
+window.scheduleGoogleCalendar = function(leadId, inspectionId) {
+    const lead = Store.getLeadById(leadId);
+    if (!lead || !lead.interactions) return;
+
+    const item = lead.interactions.find(i => i.id === inspectionId);
+    if (!item) return;
+
+    const serviceName = item.meta?.serviceName || "Vistoria Geral";
+    const company = lead.company || "Cliente";
+    const contactName = lead.contact || "";
+    const phone = lead.whatsapp || lead.phone || "";
+    const notes = item.meta?.notes || item.description || "";
+    const targetDate = item.meta?.expiryDate || item.meta?.executionDate; // Prefere a data de vencimento/renovação
+
+    if (!targetDate) {
+        alert("Nenhuma data definida para agendar.");
+        return;
+    }
+
+    // Formatar data (adiciona hora padrão: 09:00 - 10:00)
+    const dt = new Date(targetDate + "T09:00:00");
+    const dtEnd = new Date(targetDate + "T10:00:00");
+
+    const formatGCalDate = (d) => {
+        return d.toISOString().replace(/-|:|\.\d+/g, "");
+    };
+
+    const title = encodeURIComponent(`Vistoria/Renovação: ${company} - ${serviceName}`);
+    const details = encodeURIComponent(`Contato: ${contactName}
+Telefone: ${phone}
+Serviço: ${serviceName}
+Notas: ${notes}
+
+Gerado automaticamente via VelliaCRM`);
+    const dates = `${formatGCalDate(dt)}/${formatGCalDate(dtEnd)}`;
+
+    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&dates=${dates}`;
+    window.open(url, '_blank');
 };

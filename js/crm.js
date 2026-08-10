@@ -21,6 +21,7 @@ export const CRM = {
             // Atualização em tempo real ao receber leads via Meta Ads / Facebook / WhatsApp
             window.addEventListener("vellia:metaLeadReceived", () => this.renderLeadsTable());
             window.addEventListener("vellia:waSent", () => this.renderLeadsTable());
+            window.addEventListener("vellia:leadDeleted", () => this.renderLeadsTable());
             this._realtimeListenersBound = true;
         }
     },
@@ -41,6 +42,7 @@ export const CRM = {
             stageReasonForm: document.getElementById("stage-reason-form"),
             btnCancelStageReason: document.getElementById("btn-cancel-stage-reason"),
             btnEditLead: document.getElementById("btn-edit-lead"),
+            btnDeleteLead: document.getElementById("btn-delete-lead"),
             btnCloseEditLead: document.getElementById("btn-close-edit-lead"),
             btnCancelEditLead: document.getElementById("btn-cancel-edit-lead"),
             editLeadForm: document.getElementById("edit-lead-form")
@@ -59,6 +61,7 @@ export const CRM = {
 
         // Modal Edição de Lead
         if (elements.btnEditLead) elements.btnEditLead.addEventListener("click", () => this.openEditLeadModal());
+        if (elements.btnDeleteLead) elements.btnDeleteLead.addEventListener("click", () => this.deleteLead());
         if (elements.btnCloseEditLead) elements.btnCloseEditLead.addEventListener("click", () => this.closeEditLeadModal());
         if (elements.btnCancelEditLead) elements.btnCancelEditLead.addEventListener("click", () => this.closeEditLeadModal());
         if (elements.editLeadForm) {
@@ -685,6 +688,55 @@ export const CRM = {
         `;
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3500);
+    },
+
+    async deleteLead() {
+        if (!activeLeadId) return;
+        const lead = Store.getLeadById(activeLeadId);
+        if (!lead) return;
+
+        const confirmDelete = confirm(`Tem certeza que deseja excluir permanentemente o lead da empresa "${lead.company}"? Esta ação não poderá ser desfeita.`);
+        if (!confirmDelete) return;
+
+        const currentUser = Auth.getCurrentUser();
+        const userEmail = currentUser ? currentUser.email : "sistema@vellia.com";
+
+        // Registrar na auditoria ANTES de excluir
+        Store.addLog(userEmail, "LEAD_DELETE", `Lead "${lead.company}" (Contato: ${lead.contact}) foi excluído permanentemente do sistema por ${currentUser?.name || userEmail}.`, "SUCCESS");
+
+        // Excluir lead do banco local e Supabase
+        Store.deleteLead(activeLeadId);
+
+        // Toast de sucesso
+        const toast = document.createElement("div");
+        toast.style.cssText = `
+            position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+            background: var(--bg-card, #1e293b);
+            border: 1px solid rgba(239,68,68,0.4);
+            border-left: 4px solid #ef4444;
+            border-radius: 12px;
+            padding: 14px 20px;
+            display: flex; align-items: center; gap: 12px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+            font-family: 'Inter', sans-serif;
+            animation: vellia-slide-in 0.3s ease;
+            min-width: 280px;
+        `;
+        toast.innerHTML = `
+            <span style="font-size: 20px;">🗑️</span>
+            <div>
+                <div style="font-weight: 700; color: var(--text-primary, #f1f5f9); font-size: 13px;">Lead excluído!</div>
+                <div style="font-size: 11px; color: var(--text-muted, #64748b); margin-top: 2px;">${lead.company} foi removido do sistema.</div>
+            </div>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3500);
+
+        // Fechar gaveta
+        this.closeLeadDrawer();
+
+        // Disparar evento global para atualizar a UI do app (CRM, Kanban, Dashboard, etc.)
+        window.dispatchEvent(new CustomEvent("vellia:leadDeleted", { detail: { leadId: activeLeadId } }));
     },
     // ==========================================================================
     // CONTROLE DE DRAWERS (DETALHES DO LEAD)

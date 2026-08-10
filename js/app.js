@@ -972,6 +972,9 @@ function setupDailyTaskEvents(userEmail) {
     };
     window.addEventListener("storage", handleTasksUpdate);
     window.addEventListener("vellia:tasksChanged", handleTasksUpdate);
+    window.addEventListener("vellia:leadDeleted", () => {
+        updateDashboardCounters();
+    });
 }
 
 // Notificação push: detecta novos leads atribuídos desde o último check

@@ -380,6 +380,12 @@ export const Store = {
         return this.getLeads().find(l => l.id === id);
     },
 
+    deleteLead(leadId) {
+        const leads = this.getLeads().filter(l => l.id !== leadId);
+        localStorage.setItem("comercial_leads", JSON.stringify(leads));
+        deleteSupabase("comercial_leads", `?id=eq.${leadId}`);
+    },
+
     addLead(lead, userEmail = "sistema@vellia.com") {
         const leads = this.getLeads();
         const newLead = {

@@ -12,175 +12,12 @@ const DEFAULT_USERS = [
         avatar: "AG",
         status: "active",
         lastLoginAt: null
-    },
-    {
-        id: "usr_gerente",
-        name: "Carlos Gerente",
-        email: "gerente@vellia.com",
-        password: "123456",
-        role: "manager",
-        avatar: "CG",
-        status: "active",
-        lastLoginAt: null
-    },
-    {
-        id: "usr_vendedor",
-        name: "Lucas Vendedor",
-        email: "vendedor@vellia.com",
-        password: "123456",
-        role: "seller",
-        avatar: "LV",
-        status: "active",
-        lastLoginAt: null
     }
 ];
 
 const INITIAL_LOGS = [];
-const INITIAL_LEADS = [
-    {
-        id: "lead_1",
-        company: "TechSolutions Brasil",
-        contact: "Carlos Eduardo",
-        role: "CTO",
-        email: "carlos.eduardo@techsolutions.com.br",
-        phone: "(11) 98765-4321",
-        whatsapp: "+5511987654321",
-        segment: "Tecnologia",
-        source: "Inbound Website",
-        stage: "Lead Qualificado",
-        owner: "vendedor@vellia.com",
-        aiScore: 85,
-        estimatedValue: 45000,
-        createdAt: new Date().toISOString()
-    },
-    {
-        id: "lead_2",
-        company: "Inovações Varejo",
-        contact: "Mariana Costa",
-        role: "Diretora Comercial",
-        email: "mariana.costa@inovacoesvarejo.com",
-        phone: "(21) 99887-6655",
-        whatsapp: "+5521998876655",
-        segment: "Varejo",
-        source: "WhatsApp Copilot",
-        stage: "Negociação",
-        owner: "vendedor@vellia.com",
-        aiScore: 92,
-        estimatedValue: 78000,
-        createdAt: new Date().toISOString()
-    },
-    {
-        id: "lead_3",
-        company: "Supermercados Alvorada",
-        contact: "Roberto Mendes",
-        role: "Gerente Operacional",
-        email: "roberto@superalvorada.com.br",
-        phone: "(31) 98877-1122",
-        whatsapp: "+5531988771122",
-        segment: "Alimentos",
-        source: "Google Ads",
-        stage: "Proposta Enviada",
-        owner: "gerente@vellia.com",
-        aiScore: 68,
-        estimatedValue: 32000,
-        createdAt: new Date().toISOString()
-    },
-    {
-        id: "lead_4",
-        company: "Logística Global S.A.",
-        contact: "Fernanda Lima",
-        role: "Head de Inovação",
-        email: "fernanda.lima@logglobal.com.br",
-        phone: "(41) 97654-3210",
-        whatsapp: "+5541976543210",
-        segment: "Logística",
-        source: "Indicação Direct",
-        stage: "Cliente Fechado",
-        owner: "admin@vellia.com",
-        aiScore: 95,
-        estimatedValue: 120000,
-        createdAt: new Date().toISOString()
-    }
-];
-const INITIAL_PROPOSALS = [
-    {
-        id: "prop_mock_1",
-        leadId: "lead_1",
-        company: "TechSolutions Brasil",
-        contact: "Carlos Eduardo",
-        title: "Implantação de ERP Corporativo",
-        service: "Sistema de Gestão (ERP)",
-        value: 45000,
-        status: "Ganho",
-        sentAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), // 10 dias atrás
-        closedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 dias atrás
-        validUntil: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString(),
-        notes: "Proposta técnica para licenciamento e implantação completa do ERP da Vellia com suporte a multi-filiais e módulos fiscais inclusos. Prazo estimado: 90 dias.",
-        createdBy: "vendedor@vellia.com"
-    },
-    {
-        id: "prop_mock_2",
-        leadId: "lead_2",
-        company: "Inovações Varejo",
-        contact: "Mariana Costa",
-        title: "Desenvolvimento de App Mobile",
-        service: "Aplicativo Mobile",
-        value: 78000,
-        status: "Em Negociação",
-        sentAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 dias atrás
-        closedAt: null,
-        validUntil: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000).toISOString(),
-        notes: "Proposta para criação do aplicativo móvel de vendas (Android/iOS) integrado ao sistema de fidelização da loja varejista. Escopo de prototipação já aprovado.",
-        createdBy: "vendedor@vellia.com"
-    },
-    {
-        id: "prop_mock_3",
-        leadId: "lead_3",
-        company: "Supermercados Alvorada",
-        contact: "Roberto Mendes",
-        title: "Consultoria e Implantação de PDV",
-        service: "Ponto de Venda (PDV)",
-        value: 32000,
-        status: "Enviada",
-        sentAt: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(), // 12 dias atrás
-        closedAt: null,
-        validUntil: new Date(Date.now() + 18 * 24 * 60 * 60 * 1000).toISOString(),
-        notes: "Renovação e implantação de novos PDVs nas 4 lojas da rede Alvorada com treinamento operacional para equipes de caixa.",
-        createdBy: "gerente@vellia.com"
-    },
-    {
-        id: "prop_mock_4",
-        leadId: "lead_4",
-        company: "Logística Global S.A.",
-        contact: "Fernanda Lima",
-        title: "Plataforma SaaS de Rastreamento",
-        service: "Consultoria e Implantação",
-        value: 120000,
-        status: "Ganho",
-        sentAt: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(), // 25 dias atrás
-        closedAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), // 15 dias atrás
-        validUntil: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-        notes: "Implantação de SaaS de telemetria avançada e inteligência logística para roteirização e otimização de frotas pesadas.",
-        createdBy: "admin@vellia.com"
-    },
-    {
-        id: "prop_mock_5",
-        leadId: "lead_1",
-        company: "TechSolutions Brasil",
-        contact: "Carlos Eduardo",
-        title: "Consultoria de Infraestrutura Cloud",
-        service: "Consultoria e Implantação",
-        value: 15000,
-        status: "Perdido",
-        sentAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
-        closedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-        validUntil: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-        competitor: "AWS Professional Services",
-        lossReason: "Preço",
-        notes: "O cliente preferiu o concorrente direto pelo renome internacional e suporte especializado nativo da AWS, apesar de nosso custo ser menor.",
-        createdBy: "vendedor@vellia.com"
-    }
-];
+const INITIAL_LEADS = [];
+const INITIAL_PROPOSALS = [];
 
 const INITIAL_SERVICES = [
     {
@@ -213,26 +50,7 @@ const INITIAL_SERVICES = [
     }
 ];
 
-const INITIAL_GOALS = [
-    {
-        userEmail: "vendedor@vellia.com",
-        period: "2026-07",
-        targets: {
-            revenue: 150000,
-            proposals: 20,
-            leadsQualified: 30
-        }
-    },
-    {
-        userEmail: "gerente@vellia.com",
-        period: "2026-07",
-        targets: {
-            revenue: 300000,
-            proposals: 50,
-            leadsQualified: 80
-        }
-    }
-];
+const INITIAL_GOALS = [];
 
 // Credenciais e API REST do Supabase
 const SUPABASE_URL = "https://ogrbsonpkiamoytxjshg.supabase.co";
@@ -447,15 +265,14 @@ function initStorage() {
     if (!localStorage.getItem("comercial_logs")) {
         localStorage.setItem("comercial_logs", JSON.stringify(INITIAL_LOGS));
     }
-    const leadsVal = localStorage.getItem("comercial_leads");
-    if (!leadsVal || leadsVal === "[]") {
-        localStorage.setItem("comercial_leads", JSON.stringify(INITIAL_LEADS));
+    if (!localStorage.getItem("comercial_leads")) {
+        localStorage.setItem("comercial_leads", JSON.stringify([]));
     }
-    if (!localStorage.getItem("comercial_proposals") || localStorage.getItem("comercial_proposals") === "[]") {
-        localStorage.setItem("comercial_proposals", JSON.stringify(INITIAL_PROPOSALS));
+    if (!localStorage.getItem("comercial_proposals")) {
+        localStorage.setItem("comercial_proposals", JSON.stringify([]));
     }
-    if (!localStorage.getItem("comercial_goals") || localStorage.getItem("comercial_goals") === "[]") {
-        localStorage.setItem("comercial_goals", JSON.stringify(INITIAL_GOALS));
+    if (!localStorage.getItem("comercial_goals")) {
+        localStorage.setItem("comercial_goals", JSON.stringify([]));
     }
     if (!localStorage.getItem("comercial_services") || localStorage.getItem("comercial_services") === "[]") {
         localStorage.setItem("comercial_services", JSON.stringify(INITIAL_SERVICES));

@@ -22,6 +22,7 @@ export const CRM = {
             window.addEventListener("vellia:metaLeadReceived", () => this.renderLeadsTable());
             window.addEventListener("vellia:waSent", () => this.renderLeadsTable());
             window.addEventListener("vellia:leadDeleted", () => this.renderLeadsTable());
+            window.addEventListener("vellia:leadRestored", () => this.renderLeadsTable());
             this._realtimeListenersBound = true;
         }
     },
@@ -695,19 +696,19 @@ export const CRM = {
         const lead = Store.getLeadById(activeLeadId);
         if (!lead) return;
 
-        const confirmDelete = confirm(`Tem certeza que deseja excluir permanentemente o lead da empresa "${lead.company}"? Esta ação não poderá ser desfeita.`);
+        const confirmDelete = confirm(`Mover o lead da empresa "${lead.company}" para a lixeira?\n\nEle ficará disponível por 30 dias e poderá ser restaurado. Administradores e gerentes podem excluí-lo definitivamente.`);
         if (!confirmDelete) return;
 
         const currentUser = Auth.getCurrentUser();
         const userEmail = currentUser ? currentUser.email : "sistema@vellia.com";
 
-        // Registrar na auditoria ANTES de excluir
-        Store.addLog(userEmail, "LEAD_DELETE", `Lead "${lead.company}" (Contato: ${lead.contact}) foi excluído permanentemente do sistema por ${currentUser?.name || userEmail}.`, "SUCCESS");
+        // Registrar na auditoria ANTES de mover
+        Store.addLog(userEmail, "LEAD_TRASHED", `Lead "${lead.company}" (Contato: ${lead.contact}) movido para a lixeira por ${currentUser?.name || userEmail}.`, "SUCCESS");
 
-        // Excluir lead do banco local e Supabase
-        Store.deleteLead(activeLeadId);
+        // Mover para lixeira (não exclui permanentemente)
+        Store.moveToTrash(activeLeadId, userEmail);
 
-        // Toast de sucesso
+        // Toast de aviso
         const toast = document.createElement("div");
         toast.style.cssText = `
             position: fixed; bottom: 24px; right: 24px; z-index: 9999;
@@ -725,12 +726,12 @@ export const CRM = {
         toast.innerHTML = `
             <span style="font-size: 20px;">🗑️</span>
             <div>
-                <div style="font-weight: 700; color: var(--text-primary, #f1f5f9); font-size: 13px;">Lead excluído!</div>
-                <div style="font-size: 11px; color: var(--text-muted, #64748b); margin-top: 2px;">${lead.company} foi removido do sistema.</div>
+                <div style="font-weight: 700; color: var(--text-primary, #f1f5f9); font-size: 13px;">Lead movido para a lixeira</div>
+                <div style="font-size: 11px; color: var(--text-muted, #64748b); margin-top: 2px;">${lead.company} — disponível por 30 dias.</div>
             </div>
         `;
         document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3500);
+        setTimeout(() => toast.remove(), 4000);
 
         // Fechar gaveta
         this.closeLeadDrawer();

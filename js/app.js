@@ -21,6 +21,7 @@ import { InspectionScheduler } from "./inspection-scheduler.js";
 import { Calendar } from "./calendar.js";
 import "./pdf-generator.js";
 import { Copilot } from "./copilot.js";
+import { Trash } from "./trash.js";
 
 // Elementos Globais DOM (Getters Dinâmicos para garantia de não-nulidade)
 const elements = {
@@ -255,6 +256,9 @@ function showAppShell(user) {
     
     // Iniciar monitoramento de inatividade
     startInactivityTracking();
+
+    // Atualizar badge da lixeira
+    updateTrashBadge();
 }
 
 // Configura quais botões do menu lateral aparecem baseado nas regras do perfil
@@ -394,6 +398,8 @@ function navigateTo(viewName) {
         import('./users.js').then(m => m.Users.init());
     } else if (viewName === "ai-agents") {
         import('./ai-agents.js').then(m => m.AIAgents.init());
+    } else if (viewName === "trash") {
+        Trash.init();
     }
 }
 
@@ -974,7 +980,20 @@ function setupDailyTaskEvents(userEmail) {
     window.addEventListener("vellia:tasksChanged", handleTasksUpdate);
     window.addEventListener("vellia:leadDeleted", () => {
         updateDashboardCounters();
+        updateTrashBadge();
     });
+    window.addEventListener("vellia:leadRestored", () => {
+        updateDashboardCounters();
+        updateTrashBadge();
+    });
+}
+
+function updateTrashBadge() {
+    const badge = document.getElementById("trash-count");
+    if (!badge) return;
+    const count = Store.getTrashLeads().length;
+    badge.textContent = count;
+    badge.style.display = count > 0 ? "inline-block" : "none";
 }
 
 // Notificação push: detecta novos leads atribuídos desde o último check

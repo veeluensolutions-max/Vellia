@@ -47,10 +47,11 @@ export const Kanban = {
             if (columns[stage]) columns[stage].innerHTML = "";
             if (counters[stage]) counters[stage].textContent = "0";
         });
-        // Rerrenderizar ao receber update de score dos agentes ou exclusão de lead
+        // Rerrenderizar ao receber update de score dos agentes, exclusão ou restauração de lead
         if (!this._scoreListenerBound) {
             window.addEventListener("vellia:agentScoreUpdated", () => this.renderKanban());
             window.addEventListener("vellia:leadDeleted", () => this.renderKanban());
+            window.addEventListener("vellia:leadRestored", () => this.renderKanban());
             this._scoreListenerBound = true;
         }
 

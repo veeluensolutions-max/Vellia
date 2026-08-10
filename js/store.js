@@ -353,7 +353,25 @@ export const Store = {
 
     // LEADS (CRM)
     getLeads() {
+        // Retorna apenas leads ativos (sem deleted_at), excluindo itens da lixeira
+        const allLeads = JSON.parse(localStorage.getItem("comercial_leads")) || [];
+        return allLeads.filter(l => !l.deleted_at);
+    },
+
+    getAllLeadsRaw() {
+        // Retorna TODOS os leads incluindo os que estão na lixeira
         return JSON.parse(localStorage.getItem("comercial_leads")) || [];
+    },
+
+    getTrashLeads() {
+        // Retorna apenas leads que estão na lixeira (com deleted_at definido)
+        const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+        const now = Date.now();
+        return this.getAllLeadsRaw().filter(l => {
+            if (!l.deleted_at) return false;
+            const deletedTs = new Date(l.deleted_at).getTime();
+            return (now - deletedTs) < THIRTY_DAYS_MS; // Dentro dos 30 dias
+        });
     },
 
     saveLeads(leads) {
@@ -377,12 +395,49 @@ export const Store = {
     },
 
     getLeadById(id) {
-        return this.getLeads().find(l => l.id === id);
+        // Busca em TODOS os leads (ativos + lixeira) para operações de restauração
+        return this.getAllLeadsRaw().find(l => l.id === id);
+    },
+
+    moveToTrash(leadId, userEmail = "sistema@vellia.com") {
+        // Move o lead para a lixeira sem excluir permanentemente
+        const allLeads = this.getAllLeadsRaw();
+        const index = allLeads.findIndex(l => l.id === leadId);
+        if (index === -1) return false;
+        allLeads[index].deleted_at = new Date().toISOString();
+        allLeads[index].deleted_by = userEmail;
+        localStorage.setItem("comercial_leads", JSON.stringify(allLeads));
+        upsertSupabase("comercial_leads", allLeads[index]);
+        return true;
+    },
+
+    restoreLead(leadId, userEmail = "sistema@vellia.com") {
+        // Remove os campos de lixeira restaurando o lead ao CRM ativo
+        const allLeads = this.getAllLeadsRaw();
+        const index = allLeads.findIndex(l => l.id === leadId);
+        if (index === -1) return false;
+        delete allLeads[index].deleted_at;
+        delete allLeads[index].deleted_by;
+        localStorage.setItem("comercial_leads", JSON.stringify(allLeads));
+        upsertSupabase("comercial_leads", allLeads[index]);
+        this.addLog(userEmail, "LEAD_RESTORED", `Lead "${allLeads[index].company}" restaurado da lixeira por ${userEmail}.`, "SUCCESS");
+        return allLeads[index];
+    },
+
+    purgeLeads(leadIds, userEmail = "sistema@vellia.com") {
+        // Exclui definitivamente os leads do banco (uso exclusivo de admins/gerentes)
+        const allLeads = this.getAllLeadsRaw().filter(l => !leadIds.includes(l.id));
+        localStorage.setItem("comercial_leads", JSON.stringify(allLeads));
+        for (const id of leadIds) {
+            deleteSupabase("comercial_leads", `?id=eq.${id}`);
+        }
+        this.addLog(userEmail, "LEAD_PURGED", `${leadIds.length} lead(s) excluído(s) definitivamente da lixeira por ${userEmail}.`, "SUCCESS");
     },
 
     deleteLead(leadId) {
-        const leads = this.getLeads().filter(l => l.id !== leadId);
-        localStorage.setItem("comercial_leads", JSON.stringify(leads));
+        // Mantido para compatibilidade retroativa - agora chama purgeLeads
+        const allLeads = this.getAllLeadsRaw().filter(l => l.id !== leadId);
+        localStorage.setItem("comercial_leads", JSON.stringify(allLeads));
         deleteSupabase("comercial_leads", `?id=eq.${leadId}`);
     },
 

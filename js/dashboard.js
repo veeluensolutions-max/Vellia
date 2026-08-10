@@ -137,66 +137,162 @@ export const Dashboard = {
     // FUNIL DE VENDAS (CHART.JS)
     // ===========================================================================
     renderFunnelChart(leads) {
-        const canvas = document.getElementById("chart-funnel");
-        if (!canvas) return;
+        const container = document.getElementById("funnel-conversion");
+        if (!container) return;
 
-        if (charts.funnel) {
-            charts.funnel.destroy();
-        }
-
-        const stages = [
-            { label: "Contato", color: "#94a3b8" },
-            { label: "Lead Gerado", color: "#6366f1" },
-            { label: "Lead Qualificado", color: "#8b5cf6" },
-            { label: "Proposta Enviada", color: "#f59e0b" },
-            { label: "Negociação", color: "#f97316" },
-            { label: "Cliente Fechado", color: "#10b981" },
-            { label: "Cliente Perdido", color: "#ef4444" }
+        // Estágios do funil (ordem do pipeline, excluindo "Cliente Perdido")
+        const funnelStages = [
+            { label: "Contato",           color: "#94a3b8", emoji: "🔵" },
+            { label: "Lead Gerado",       color: "#6366f1", emoji: "🟣" },
+            { label: "Lead Qualificado",  color: "#8b5cf6", emoji: "🟣" },
+            { label: "Proposta Enviada",  color: "#f59e0b", emoji: "🟡" },
+            { label: "Negociação",        color: "#f97316", emoji: "🟠" },
+            { label: "Cliente Fechado",   color: "#10b981", emoji: "✅" }
         ];
 
-        const labels = stages.map(s => s.label);
-        const data = stages.map(s => leads.filter(l => l.stage === s.label).length);
-
-        const ctx = canvas.getContext('2d');
-        const bgColors = stages.map(s => {
-            const grad = ctx.createLinearGradient(0, 0, canvas.width || 300, 0);
-            grad.addColorStop(0, s.color);
-            grad.addColorStop(1, s.color + '44');
-            return grad;
+        // Contar leads por estágio
+        const counts = {};
+        funnelStages.forEach(s => {
+            counts[s.label] = leads.filter(l => l.stage === s.label).length;
         });
+        const lostCount = leads.filter(l => l.stage === "Cliente Perdido").length;
 
-        charts.funnel = new Chart(canvas, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Leads',
-                    data: data,
-                    backgroundColor: bgColors,
-                    borderRadius: 6,
-                    borderSkipped: false
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    x: { display: false, grid: { display: false } },
-                    y: { 
-                        grid: { display: false },
-                        ticks: {
-                            color: '#64748b',
-                            font: { family: 'Inter, sans-serif', weight: 500, size: 12 }
-                        }
-                    }
-                }
+        // O estágio com mais leads define 100% da largura
+        const maxCount = Math.max(...Object.values(counts), 1);
+
+        // Calcular taxa de conversão entre estágios consecutivos
+        const conversionRates = [];
+        for (let i = 0; i < funnelStages.length - 1; i++) {
+            const from = counts[funnelStages[i].label];
+            const to   = counts[funnelStages[i + 1].label];
+            const rate = from > 0 ? Math.round((to / from) * 100) : 0;
+            conversionRates.push(rate);
+        }
+
+        // Calcular tempo médio por estágio usando stageHistory
+        function avgDaysInStage(stageLabel) {
+            const durations = [];
+            leads.forEach(lead => {
+                if (!Array.isArray(lead.stageHistory)) return;
+                const idx = lead.stageHistory.findIndex(h => h.stage === stageLabel);
+                if (idx === -1) return;
+                const entryTs = new Date(lead.stageHistory[idx].timestamp).getTime();
+                const exitTs  = idx + 1 < lead.stageHistory.length
+                    ? new Date(lead.stageHistory[idx + 1].timestamp).getTime()
+                    : Date.now();
+                const days = Math.round((exitTs - entryTs) / (1000 * 60 * 60 * 24));
+                if (!isNaN(days) && days >= 0) durations.push(days);
+            });
+            return durations.length > 0
+                ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length)
+                : null;
+        }
+
+        // Badge de taxa colorido
+        function rateBadge(rate) {
+            let color, bg, label;
+            if (rate >= 60)      { color = "#10b981"; bg = "rgba(16,185,129,0.13)"; label = "Bom"; }
+            else if (rate >= 30) { color = "#f59e0b"; bg = "rgba(245,158,11,0.13)"; label = "Médio"; }
+            else                  { color = "#ef4444"; bg = "rgba(239,68,68,0.13)";  label = "Crítico"; }
+            return `<span style="
+                display:inline-flex; align-items:center; gap:4px;
+                background:${bg}; color:${color};
+                border:1px solid ${color}33; border-radius:12px;
+                font-size:11px; font-weight:700; padding:2px 9px;
+            ">${rate}%</span>`;
+        }
+
+        // Gerar HTML das linhas do funil
+        let html = `<div style="padding: 4px 0; display:flex; flex-direction:column; gap:0;">`;
+
+        funnelStages.forEach((stage, i) => {
+            const count    = counts[stage.label];
+            const pct      = maxCount > 0 ? Math.round((count / maxCount) * 100) : 0;
+            const avgDays  = avgDaysInStage(stage.label);
+            const daysText = avgDays !== null ? `· ${avgDays}d médio` : "";
+
+            // Tooltip nativo via title
+            const tooltipTxt = `${stage.label}: ${count} lead(s) | ${pct}% do topo do funil${avgDays !== null ? ` | Média: ${avgDays} dias` : ""}`;
+
+            html += `
+            <div style="margin-bottom: 4px;">
+                <div title="${tooltipTxt}" style="
+                    display:flex; align-items:center; gap: 10px; cursor:default;
+                    padding: 5px 0;
+                ">
+                    <div style="width:130px; flex-shrink:0; display:flex; align-items:center; gap:6px;">
+                        <span style="font-size:13px;">${stage.emoji}</span>
+                        <span style="font-size:12px; font-weight:600; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${stage.label}</span>
+                    </div>
+                    <div style="flex:1; background:rgba(148,163,184,0.1); border-radius:8px; height:26px; overflow:hidden; position:relative;">
+                        <div style="
+                            width:${pct}%; height:100%;
+                            background: linear-gradient(90deg, ${stage.color}, ${stage.color}88);
+                            border-radius:8px;
+                            transition: width 0.6s ease;
+                            min-width:${count > 0 ? '4px' : '0'};
+                        "></div>
+                    </div>
+                    <div style="width:110px; flex-shrink:0; display:flex; align-items:center; justify-content:flex-end; gap:6px;">
+                        <span style="font-size:12px; font-weight:700; color:var(--text-primary);">${count}</span>
+                        <span style="font-size:11px; color:var(--text-muted);">${daysText}</span>
+                    </div>
+                </div>`;
+
+            // Linha de conversão (entre estágios, exceto após o último)
+            if (i < funnelStages.length - 1) {
+                const rate = conversionRates[i];
+                html += `
+                <div style="display:flex; align-items:center; gap:10px; padding: 0 0 0 136px; margin-bottom: 2px;">
+                    <div style="flex:1; border-left: 2px dashed rgba(148,163,184,0.2); height:16px; margin-left:6px;"></div>
+                    <div style="width:110px; flex-shrink:0; display:flex; justify-content:flex-end; align-items:center; gap:4px;">
+                        <span style="font-size:10px; color:var(--text-muted);">↓ conv.</span>
+                        ${rateBadge(rate)}
+                    </div>
+                </div>`;
             }
+
+            html += `</div>`;
         });
+
+        // "Cliente Perdido" separado
+        if (lostCount > 0) {
+            const lostPct = maxCount > 0 ? Math.round((lostCount / maxCount) * 100) : 0;
+            html += `
+            <div style="margin-top:12px; padding-top:12px; border-top:1px dashed rgba(239,68,68,0.2);">
+                <div title="Cliente Perdido: ${lostCount} lead(s)" style="display:flex; align-items:center; gap:10px; cursor:default; padding:5px 0;">
+                    <div style="width:130px; flex-shrink:0; display:flex; align-items:center; gap:6px;">
+                        <span style="font-size:13px;">❌</span>
+                        <span style="font-size:12px; font-weight:600; color:#ef4444;">Cliente Perdido</span>
+                    </div>
+                    <div style="flex:1; background:rgba(239,68,68,0.06); border-radius:8px; height:26px; overflow:hidden;">
+                        <div style="
+                            width:${lostPct}%; height:100%;
+                            background: linear-gradient(90deg, #ef4444, #ef444488);
+                            border-radius:8px; min-width:${lostCount > 0 ? '4px' : '0'};
+                        "></div>
+                    </div>
+                    <div style="width:110px; flex-shrink:0; display:flex; align-items:center; justify-content:flex-end;">
+                        <span style="font-size:12px; font-weight:700; color:#ef4444;">${lostCount}</span>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        // Legenda de cores
+        html += `
+            <div style="display:flex; gap:16px; margin-top:14px; padding-top:10px; border-top:1px solid var(--border-color);">
+                <span style="font-size:11px; color:var(--text-muted);">Taxa de conversão:</span>
+                <span style="font-size:11px; color:#10b981; font-weight:600;">● &ge;60% Boa</span>
+                <span style="font-size:11px; color:#f59e0b; font-weight:600;">● 30–60% Média</span>
+                <span style="font-size:11px; color:#ef4444; font-weight:600;">● &lt;30% Crítica</span>
+            </div>
+        </div>`;
+
+        container.innerHTML = html;
     },
+
+
 
     // ===========================================================================
     // GRÁFICO DE RECEITA MENSAL (CHART.JS)

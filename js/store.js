@@ -71,7 +71,7 @@ async function supabaseFetch(table) {
 
 const TABLE_SCHEMAS = {
     comercial_users: ['id', 'name', 'email', 'password', 'role', 'avatar', 'status', 'lastLoginAt'],
-    comercial_leads: ['id', 'company', 'contact', 'role', 'phone', 'whatsapp', 'email', 'city', 'state', 'segment', 'source', 'stage', 'owner', 'interactions', 'stageHistory'],
+    comercial_leads: ['id', 'company', 'contact', 'role', 'phone', 'whatsapp', 'email', 'city', 'state', 'segment', 'source', 'stage', 'owner', 'interactions', 'stageHistory', 'phone2', 'email2', 'notes'],
     comercial_proposals: ['id', 'leadId', 'company', 'contact', 'title', 'value', 'status', 'sentAt', 'closedAt', 'validUntil', 'competitor', 'lossReason', 'notes', 'createdBy'],
     comercial_logs: ['id', 'timestamp', 'userEmail', 'action', 'details', 'status'],
     comercial_services: ['id', 'name', 'category', 'baseMargin', 'isActive'],
@@ -389,6 +389,9 @@ export const Store = {
             role: lead.role || "",
             phone: lead.phone || "",
             whatsapp: lead.whatsapp || "",
+            phone2: lead.phone2 || "",
+            email2: lead.email2 || "",
+            notes: lead.notes || "",
             email: lead.email || "",
             city: lead.city || "",
             state: lead.state || "",

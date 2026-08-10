@@ -2335,8 +2335,16 @@
                         <span class="info-value" id="drawer-lead-email">-</span>
                     </div>
                     <div class="info-item">
+                        <span class="info-label">E-mail 2</span>
+                        <span class="info-value" id="drawer-lead-email2">-</span>
+                    </div>
+                    <div class="info-item">
                         <span class="info-label">WhatsApp</span>
                         <span class="info-value" id="drawer-lead-whatsapp">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Telefone 2</span>
+                        <span class="info-value" id="drawer-lead-phone2">-</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">Localização</span>
@@ -2346,6 +2354,14 @@
                         <span class="info-label">Segmento / Origem</span>
                         <span class="info-value" id="drawer-lead-source">-</span>
                     </div>
+                </div>
+            </div>
+
+            <!-- Seção 1.5: Observações -->
+            <div class="drawer-section" style="border-top: 1px solid var(--border-color); padding-top: 16px;">
+                <span class="drawer-section-title">Observações</span>
+                <div style="font-size: 13px; line-height: 1.5; color: var(--text-primary); background: var(--bg-body); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); white-space: pre-wrap; word-break: break-word;" id="drawer-lead-notes">
+                    Sem observações.
                 </div>
             </div>
 
@@ -2583,6 +2599,17 @@
 
                 <div class="grid-modal-2col" style="margin-bottom: 16px;">
                     <div class="form-group">
+                        <label for="lead-phone2">Telefone 2</label>
+                        <input type="text" id="lead-phone2" class="form-control" style="padding: 10px 12px;" placeholder="(00) 00000-0000">
+                    </div>
+                    <div class="form-group">
+                        <label for="lead-email2">E-mail 2</label>
+                        <input type="email" id="lead-email2" class="form-control" style="padding: 10px 12px;" placeholder="contato2@empresa.com">
+                    </div>
+                </div>
+
+                <div class="grid-modal-2col" style="margin-bottom: 16px;">
+                    <div class="form-group">
                         <label for="lead-city">Cidade</label>
                         <input type="text" id="lead-city" class="form-control" style="padding: 10px 12px;" placeholder="Ex: São Paulo">
                     </div>
@@ -2614,6 +2641,11 @@
                             <option value="Evento">Evento</option>
                         </select>
                     </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label for="lead-notes">Observação</label>
+                    <textarea id="lead-notes" class="form-control" style="padding: 10px 12px; min-height: 80px; resize: vertical;" placeholder="Observações e detalhes sobre o lead..."></textarea>
                 </div>
 
                 <div class="form-group">
@@ -2680,6 +2712,18 @@
                         <input type="text" id="edit-lead-phone" class="form-control" style="padding: 10px 12px;" placeholder="Ex: 1133334444">
                     </div>
                 </div>
+
+                <!-- Linha 3.5: Telefone 2 + E-mail 2 -->
+                <div class="grid-modal-2col" style="margin-bottom: 16px;">
+                    <div class="form-group">
+                        <label for="edit-lead-phone2">Telefone 2</label>
+                        <input type="text" id="edit-lead-phone2" class="form-control" style="padding: 10px 12px;" placeholder="Ex: 11999998888">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-lead-email2">E-mail 2</label>
+                        <input type="email" id="edit-lead-email2" class="form-control" style="padding: 10px 12px;" placeholder="Ex: comercial@empresa.com">
+                    </div>
+                </div>
                 <!-- Linha 4: Cidade + Estado -->
                 <div class="grid-modal-2col" style="margin-bottom: 16px;">
                     <div class="form-group">
@@ -2721,6 +2765,12 @@
                             <option value="Site">Site</option>
                         </select>
                     </div>
+                </div>
+
+                <!-- Linha 6: Observação -->
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label for="edit-lead-notes">Observação</label>
+                    <textarea id="edit-lead-notes" class="form-control" style="padding: 10px 12px; min-height: 80px; resize: vertical;" placeholder="Observações e detalhes sobre o lead..."></textarea>
                 </div>
             </div>
             <div class="modal-footer">

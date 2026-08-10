@@ -608,6 +608,9 @@ export const CRM = {
         document.getElementById("edit-lead-email").value   = lead.email || "";
         document.getElementById("edit-lead-whatsapp").value = lead.whatsapp || "";
         document.getElementById("edit-lead-phone").value   = lead.phone || "";
+        document.getElementById("edit-lead-phone2").value  = lead.phone2 || "";
+        document.getElementById("edit-lead-email2").value  = lead.email2 || "";
+        document.getElementById("edit-lead-notes").value   = lead.notes || "";
         document.getElementById("edit-lead-city").value    = lead.city || "";
         document.getElementById("edit-lead-state").value   = lead.state || "";
         document.getElementById("edit-lead-segment").value = lead.segment || "Outros";
@@ -637,6 +640,9 @@ export const CRM = {
             email    : document.getElementById("edit-lead-email").value.trim(),
             whatsapp : document.getElementById("edit-lead-whatsapp").value.trim(),
             phone    : document.getElementById("edit-lead-phone").value.trim(),
+            phone2   : document.getElementById("edit-lead-phone2").value.trim(),
+            email2   : document.getElementById("edit-lead-email2").value.trim(),
+            notes    : document.getElementById("edit-lead-notes").value.trim(),
             city     : document.getElementById("edit-lead-city").value.trim(),
             state    : document.getElementById("edit-lead-state").value.trim().toUpperCase(),
             segment  : document.getElementById("edit-lead-segment").value,
@@ -695,7 +701,10 @@ export const CRM = {
         document.getElementById("drawer-lead-contact").textContent = lead.contact;
         document.getElementById("drawer-lead-role").textContent = lead.role || "Não preenchido";
         document.getElementById("drawer-lead-email").textContent = lead.email || "Não informado";
+        document.getElementById("drawer-lead-email2").textContent = lead.email2 || "Não informado";
         document.getElementById("drawer-lead-whatsapp").textContent = lead.whatsapp || "Não informado";
+        document.getElementById("drawer-lead-phone2").textContent = lead.phone2 || "Não informado";
+        document.getElementById("drawer-lead-notes").textContent = lead.notes || "Sem observações.";
         document.getElementById("drawer-lead-location").textContent = `${lead.city || "-"} / ${lead.state || "-"}`;
         document.getElementById("drawer-lead-source").textContent = `${lead.segment} (${lead.source})`;
 
@@ -1267,6 +1276,9 @@ export const CRM = {
         const email = getVal("lead-email");
         const phone = getVal("lead-phone");
         const whatsapp = getVal("lead-whatsapp");
+        const phone2 = getVal("lead-phone2");
+        const email2 = getVal("lead-email2");
+        const notes = getVal("lead-notes");
         const city = getVal("lead-city");
         const state = getVal("lead-state");
         const segment = getVal("lead-segment");
@@ -1290,6 +1302,9 @@ export const CRM = {
             email,
             phone,
             whatsapp,
+            phone2,
+            email2,
+            notes,
             city,
             state,
             segment,

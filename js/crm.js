@@ -1336,7 +1336,7 @@ export const CRM = {
         const state = getVal("lead-state");
         const segment = getVal("lead-segment");
         const source = getVal("lead-source");
-        const stage = getVal("lead-stage-init");
+        let stage = getVal("lead-stage-init");
 
         if (!company || !contact || !whatsapp) {
             alert("Por favor, preencha todos os campos obrigatórios (*).");
@@ -1346,6 +1346,12 @@ export const CRM = {
 
         const currentUser = Auth.getCurrentUser();
         const userEmail = currentUser ? currentUser.email : "sistema@vellia.com";
+        const role = currentUser ? currentUser.role : "seller";
+
+        // Regra de negócio: Contatos adicionados por vendedores entram automaticamente como 'Lead Gerado' (Etapa 2)
+        if (role === "seller" && stage === "Contato") {
+            stage = "Lead Gerado";
+        }
 
         // Salvar lead
         const newLead = Store.addLead({

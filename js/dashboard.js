@@ -237,15 +237,17 @@ export const Dashboard = {
             const avgDays  = avgDaysInStage(stage.label);
             const daysText = avgDays !== null ? `· ${avgDays}d médio` : "";
 
+            const rowId    = `funnel-row-${stage.label.replace(/\s+/g, '-')}`;
+
             // Tooltip nativo via title
-            const tooltipTxt = `${stage.label}: ${count} lead(s) | ${pct}% do topo do funil${avgDays !== null ? ` | Média: ${avgDays} dias` : ""}`;
+            const tooltipTxt = `Clique para ver os vendedores responsáveis por estes leads`;
 
             html += `
             <div style="margin-bottom: 4px;">
-                <div title="${tooltipTxt}" style="
-                    display:flex; align-items:center; gap: 10px; cursor:default;
-                    padding: 5px 0;
-                ">
+                <div id="${rowId}" title="${tooltipTxt}" style="
+                    display:flex; align-items:center; gap: 10px; cursor:pointer;
+                    padding: 5px 6px; border-radius: 6px; transition: background 0.2s;
+                " onmouseover="this.style.background='rgba(0,0,0,0.04)'" onmouseout="this.style.background='transparent'">
                     <div style="width:130px; flex-shrink:0; display:flex; align-items:center; gap:6px;">
                         <span style="font-size:13px;">${stage.emoji}</span>
                         <span style="font-size:12px; font-weight:600; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${stage.label}</span>
@@ -316,9 +318,102 @@ export const Dashboard = {
         </div>`;
 
         container.innerHTML = html;
+
+        // Adicionar eventos de clique no funil para abrir o modal de vendedores
+        funnelStages.forEach((stage) => {
+            const rowId = `funnel-row-${stage.label.replace(/\s+/g, '-')}`;
+            const rowEl = document.getElementById(rowId);
+            if (rowEl) {
+                rowEl.addEventListener('click', () => {
+                    this.showFunnelStageDetails(leads, stage.label, funnelStages);
+                });
+            }
+        });
     },
 
+    showFunnelStageDetails(leads, stageLabel, funnelStages) {
+        // Encontrar os leads que compõem o número mostrado no funil (cumulativo)
+        const currentIdx = funnelStages.findIndex(fs => fs.label === stageLabel);
+        
+        const stageLeads = leads.filter(lead => {
+            let reachedStages = new Set();
+            if (lead.stageHistory && Array.isArray(lead.stageHistory)) {
+                lead.stageHistory.forEach(h => reachedStages.add(h.stage));
+            }
+            reachedStages.add(lead.stage);
+            
+            return reachedStages.has(stageLabel) || 
+                   (currentIdx !== -1 && funnelStages.findIndex(fs => fs.label === lead.stage) >= currentIdx) || 
+                   (lead.stage === "Cliente Fechado");
+        });
+        
+        const users = JSON.parse(localStorage.getItem("comercial_users")) || [];
+        
+        const sellerCounts = {};
+        stageLeads.forEach(l => {
+            let ownerName = l.owner;
+            const u = users.find(u => u.email === l.owner);
+            if (u && u.name) ownerName = u.name;
+            
+            if (!sellerCounts[ownerName]) sellerCounts[ownerName] = { count: 0, names: [] };
+            sellerCounts[ownerName].count++;
+            sellerCounts[ownerName].names.push(l.company || l.contact || 'Sem Nome');
+        });
 
+        let html = `<div style="padding: 24px;">
+            <h3 style="margin-top:0; margin-bottom: 5px; color:var(--text-dark); font-size:18px;">Leads na Etapa: ${stageLabel}</h3>
+            <p style="color:var(--text-muted); font-size:13px; margin-bottom:24px;">
+                Total: ${stageLeads.length} lead(s) contabilizados
+            </p>
+        `;
+
+        if (Object.keys(sellerCounts).length === 0) {
+            html += `<p style="font-size:14px; color:var(--text-muted);">Nenhum lead nesta etapa no momento.</p>`;
+        } else {
+            // Ordenar por quem tem mais leads
+            const sortedSellers = Object.entries(sellerCounts).sort((a,b) => b[1].count - a[1].count);
+            
+            sortedSellers.forEach(([ownerName, data]) => {
+                html += `
+                    <div style="margin-bottom:16px; border-left:4px solid var(--primary); padding-left:14px; background: rgba(0,0,0,0.02); padding-top: 10px; padding-bottom: 10px; border-radius: 0 6px 6px 0;">
+                        <strong style="font-size:15px; color:var(--text-dark);">Vendedor: ${ownerName}</strong>
+                        <div style="font-size:13px; color:var(--text-muted); margin-top:8px; line-height: 1.5;">
+                            <span style="font-weight:600; color:var(--primary);">${data.count} lead(s):</span> 
+                            ${data.names.join(', ')}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        html += `</div>`;
+
+        const modalId = "dynamic-funnel-modal";
+        let modalEl = document.getElementById(modalId);
+        if (!modalEl) {
+            modalEl = document.createElement('div');
+            modalEl.id = modalId;
+            modalEl.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 99999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(3px); animation: fadeIn 0.2s;';
+            modalEl.addEventListener('click', (e) => {
+                if (e.target === modalEl) modalEl.remove();
+            });
+            document.body.appendChild(modalEl);
+        }
+
+        const modalBox = document.createElement('div');
+        modalBox.style.cssText = 'background: #fff; width: 450px; max-width: 90%; max-height: 85vh; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); overflow-y: auto; position: relative; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);';
+
+        const closeBtn = document.createElement('button');
+        closeBtn.innerHTML = '×';
+        closeBtn.style.cssText = 'position: absolute; top: 12px; right: 16px; background: none; border: none; font-size: 26px; cursor: pointer; color: #999; line-height: 1; transition: color 0.2s;';
+        closeBtn.onmouseover = () => closeBtn.style.color = '#333';
+        closeBtn.onmouseout = () => closeBtn.style.color = '#999';
+        closeBtn.onclick = () => modalEl.remove();
+
+        modalBox.innerHTML = html;
+        modalBox.appendChild(closeBtn);
+        modalEl.innerHTML = '';
+        modalEl.appendChild(modalBox);
+    },
 
     // ===========================================================================
     // GRÁFICO DE RECEITA MENSAL (CHART.JS)

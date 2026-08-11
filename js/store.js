@@ -355,6 +355,31 @@ export const Store = {
     getLeads() {
         // Retorna apenas leads ativos (sem deleted_at), excluindo itens da lixeira
         const allLeads = JSON.parse(localStorage.getItem("comercial_leads")) || [];
+        const users = JSON.parse(localStorage.getItem("comercial_users")) || [];
+        
+        let needsSave = false;
+        
+        allLeads.forEach(l => {
+            if (l.stage === "Contato" && !l.deleted_at) {
+                const ownerUser = users.find(u => u.email === l.owner);
+                if (ownerUser && (ownerUser.role === "seller" || ownerUser.role === "manager")) {
+                    l.stage = "Lead Gerado";
+                    if (!l.stageHistory) l.stageHistory = [];
+                    l.stageHistory.push({
+                        stage: "Lead Gerado",
+                        userEmail: "sistema@vellia.com",
+                        timestamp: new Date().toISOString(),
+                        reason: "Migração automática: Leads de vendedores atualizados para Lead Gerado."
+                    });
+                    needsSave = true;
+                }
+            }
+        });
+        
+        if (needsSave) {
+            localStorage.setItem("comercial_leads", JSON.stringify(allLeads));
+        }
+
         return allLeads.filter(l => !l.deleted_at);
     },
 

@@ -1346,10 +1346,10 @@ export const CRM = {
 
         const currentUser = Auth.getCurrentUser();
         const userEmail = currentUser ? currentUser.email : "sistema@vellia.com";
-        const role = currentUser ? currentUser.role : "seller";
+        const userRole = currentUser ? currentUser.role : "seller";
 
         // Regra de negócio: Contatos adicionados por vendedores entram automaticamente como 'Lead Gerado' (Etapa 2)
-        if (role === "seller" && stage === "Contato") {
+        if (userRole === "seller" && stage === "Contato") {
             stage = "Lead Gerado";
         }
 

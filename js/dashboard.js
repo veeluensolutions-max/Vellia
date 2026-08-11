@@ -150,10 +150,36 @@ export const Dashboard = {
             { label: "Cliente Fechado",   color: "#10b981", emoji: "✅" }
         ];
 
-        // Contar leads por estágio
+        // Contar leads por estágio (CUMULATIVO - para funil de conversão real)
         const counts = {};
-        funnelStages.forEach(s => {
-            counts[s.label] = leads.filter(l => l.stage === s.label).length;
+        funnelStages.forEach(s => counts[s.label] = 0);
+
+        leads.forEach(lead => {
+            // Identificar todos os estágios pelos quais o lead já passou
+            let reachedStages = new Set();
+            
+            // 1. A partir do histórico
+            if (lead.stageHistory && Array.isArray(lead.stageHistory)) {
+                lead.stageHistory.forEach(h => reachedStages.add(h.stage));
+            }
+            // 2. Estágio atual
+            reachedStages.add(lead.stage);
+
+            // 3. Preenchimento cumulativo reverso (se o lead está num estágio avançado, ele passou pelos anteriores)
+            const currentIdx = funnelStages.findIndex(fs => fs.label === lead.stage);
+            
+            funnelStages.forEach((s, idx) => {
+                // Conta se o lead já passou explicitamente por essa etapa,
+                // Ou se a etapa atual do lead é maior que essa etapa no funil (pulou etapa),
+                // Ou se é Cliente Fechado (passou por todas).
+                if (
+                    reachedStages.has(s.label) || 
+                    (currentIdx !== -1 && idx <= currentIdx) || 
+                    (lead.stage === "Cliente Fechado" && idx <= 5)
+                ) {
+                    counts[s.label]++;
+                }
+            });
         });
         const lostCount = leads.filter(l => l.stage === "Cliente Perdido").length;
 

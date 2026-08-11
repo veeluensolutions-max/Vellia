@@ -13,6 +13,26 @@ export const Dashboard = {
         window.addEventListener("vellia:leadAdded", () => {
             this.renderMetaAdsPanel();
         });
+
+        // Atualização em tempo real (Real-time) do painel de Atividades Recentes
+        setInterval(() => {
+            if (document.hidden) return;
+            const viewDashboard = document.getElementById("view-dashboard");
+            
+            // Só consome processamento se o usuário estiver de fato com a aba Dashboard aberta
+            if (viewDashboard && viewDashboard.style.display !== "none") {
+                let currentLeads = Store.getLeads();
+                let currentProposals = Store.getProposals();
+                const session = JSON.parse(localStorage.getItem("comercial_session"));
+                
+                if (session && session.role === "seller") {
+                    currentLeads = currentLeads.filter(l => l.owner === session.email);
+                    currentProposals = currentProposals.filter(p => p.authorEmail === session.email);
+                }
+                
+                this.renderRecentActivity(currentLeads, currentProposals);
+            }
+        }, 5000); // A cada 5 segundos
     },
 
     bindEvents() {

@@ -279,8 +279,22 @@ async function syncFromSupabase() {
 
 // Inicialização segura do localStorage
 function initStorage() {
-    if (!localStorage.getItem("comercial_users")) {
-        localStorage.setItem("comercial_users", JSON.stringify(DEFAULT_USERS));
+    let existingUsers = [];
+    try {
+        existingUsers = JSON.parse(localStorage.getItem("comercial_users")) || [];
+    } catch(e) {}
+    
+    // Forçar injeção dos DEFAULT_USERS se eles não existirem na store
+    let usersChanged = false;
+    DEFAULT_USERS.forEach(defUser => {
+        if (!existingUsers.some(u => u.email.toLowerCase() === defUser.email.toLowerCase())) {
+            existingUsers.push(defUser);
+            usersChanged = true;
+        }
+    });
+
+    if (usersChanged || existingUsers.length === 0) {
+        localStorage.setItem("comercial_users", JSON.stringify(existingUsers.length > 0 ? existingUsers : DEFAULT_USERS));
     }
     if (!localStorage.getItem("comercial_logs")) {
         localStorage.setItem("comercial_logs", JSON.stringify(INITIAL_LOGS));

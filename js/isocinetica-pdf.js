@@ -114,7 +114,7 @@ const IsocineticaPDF = {
         doc.line(margin, yPos, margin + 80, yPos);
         yPos += 5;
         doc.setFont("helvetica", "bold");
-        doc.text("Veeluen Solutions", margin, yPos);
+        doc.text("Excelência Ambiental", margin, yPos);
         setNormalStyle();
         yPos += 5;
         doc.text("Departamento Comercial", margin, yPos);
@@ -125,7 +125,7 @@ const IsocineticaPDF = {
             doc.setPage(i);
             doc.setFontSize(9);
             doc.setTextColor(148, 163, 184);
-            doc.text(`Página ${i} de ${totalPages} - Veeluen Solutions`, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: "center" });
+            doc.text(`Página ${i} de ${totalPages} - Excelência Ambiental`, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: "center" });
         }
 
         // Salvar Arquivo

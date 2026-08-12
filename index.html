@@ -6,6 +6,7 @@
     <title>Vellia - Sistema Comercial Inteligente</title>
     <!-- CSS Customizado -->
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/isocinetica.css">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- jsPDF (Geração de PDF) -->
@@ -174,6 +175,12 @@
                             <a href="#proposals">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                                 <span>Propostas & Vendas</span>
+                            </a>
+                        </li>
+                        <li class="menu-item" data-view="isocinetica" id="menu-isocinetica">
+                            <a href="#isocinetica">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                                <span>Isocinética</span>
                             </a>
                         </li>
                         <li class="menu-item" data-view="team" id="menu-team">
@@ -1840,6 +1847,193 @@
                         </div>
                         <div id="loss-analysis-container">
                             <p style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 32px 0;">Nenhuma perda registrada ainda.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==========================================================
+                     VIEW: CALCULADORA ISOCINÉTICA
+                     ========================================================== -->
+                <div id="view-isocinetica" class="spa-view isocinetica-hidden" style="display: none;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 24px;">
+                        <div>
+                            <h2 style="font-size: 20px; font-weight: 800; color: var(--text-primary); margin: 0;">🧪 Calculadora de Isocinética</h2>
+                            <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Gerador de Orçamentos e Propostas Comerciais</p>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn-primary-new" id="btn-isocinetica-new" style="padding: 8px 14px; border-radius: 8px; font-size: 13px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Novo Orçamento
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="isocinetica-list-view">
+                        <p style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 32px 0;">Nenhum orçamento cadastrado.</p>
+                    </div>
+
+                    <!-- Formulário e Calculadora (Oculto inicialmente) -->
+                    <div id="isocinetica-form-view" class="isocinetica-hidden isocinetica-grid">
+                        <!-- Esquerda: Inputs -->
+                        <div class="isocinetica-form-panel">
+                            <div style="display:flex; justify-content: space-between; align-items:center;">
+                                <h3 style="font-size: 18px; margin: 0; color: var(--text-main);">Nova Proposta</h3>
+                                <button class="btn-ghost" id="btn-isocinetica-back" style="font-size: 12px; padding: 4px 8px;">← Voltar</button>
+                            </div>
+                            
+                            <form id="isocinetica-calc-form" onsubmit="return false;">
+                                
+                                <div class="isocinetica-form-section">
+                                    <div class="isocinetica-section-title">👤 Identificação</div>
+                                    <div class="isocinetica-input-grid">
+                                        <div class="form-group-new">
+                                            <label>Cliente / Razão Social</label>
+                                            <input type="text" id="iso-client" class="form-control-new" placeholder="Ex: Veeluen Solutions" required>
+                                        </div>
+                                        <div class="form-group-new">
+                                            <label>Contato</label>
+                                            <input type="text" id="iso-contact" class="form-control-new" placeholder="Nome do Contato">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="isocinetica-form-section">
+                                    <div class="isocinetica-section-title">🚚 Tipo de Deslocamento</div>
+                                    <div class="isocinetica-travel-modes">
+                                        <button type="button" class="travel-mode-btn active" data-mode="WITH_OVERNIGHT">Com Pernoite</button>
+                                        <button type="button" class="travel-mode-btn" data-mode="WITHOUT_OVERNIGHT">Sem Pernoite</button>
+                                    </div>
+                                    <input type="hidden" id="iso-travel-mode" value="WITH_OVERNIGHT">
+
+                                    <div class="isocinetica-input-grid">
+                                        <div class="form-group-new">
+                                            <label>Distância Ida/Volta (km)</label>
+                                            <input type="number" id="iso-distance" class="form-control-new" value="0" min="0" step="1">
+                                        </div>
+                                        <div class="form-group-new">
+                                            <label>Dias Previstos</label>
+                                            <input type="number" id="iso-days" class="form-control-new" value="1" min="1" step="1">
+                                        </div>
+                                        <div class="form-group-new">
+                                            <label>Tamanho da Equipe</label>
+                                            <input type="number" id="iso-employees" class="form-control-new" value="1" min="1" step="1">
+                                        </div>
+                                        <div class="form-group-new">
+                                            <label>Quant. de Chaminés</label>
+                                            <input type="number" id="iso-stacks" class="form-control-new" value="1" min="1" step="1">
+                                        </div>
+                                    </div>
+
+                                    <!-- Campos Específicos: Com Pernoite -->
+                                    <div class="isocinetica-input-grid" id="iso-group-overnight" style="margin-top: 16px;">
+                                        <div class="form-group-new">
+                                            <label>Diária de Hotel (por funcionário)</label>
+                                            <input type="number" id="iso-hotel-rate" class="form-control-new" value="100.00" min="0" step="0.01">
+                                        </div>
+                                        <div class="form-group-new">
+                                            <label>Alimentação (diária p/ func.)</label>
+                                            <input type="number" id="iso-food-rate" class="form-control-new" value="100.00" min="0" step="0.01">
+                                        </div>
+                                    </div>
+
+                                    <!-- Campos Específicos: Sem Pernoite -->
+                                    <div class="isocinetica-input-grid isocinetica-hidden" id="iso-group-no-overnight" style="margin-top: 16px; display: none;">
+                                        <div class="form-group-new">
+                                            <label>Total de Refeições (p/ func.)</label>
+                                            <input type="number" id="iso-meals-count" class="form-control-new" value="1" min="0" step="1">
+                                        </div>
+                                        <div class="form-group-new">
+                                            <label>Valor da Refeição (Unitário)</label>
+                                            <input type="number" id="iso-meal-price" class="form-control-new" value="50.00" min="0" step="0.01">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="isocinetica-form-section">
+                                    <div class="isocinetica-section-title">⚙️ Custos & Taxas Ocultas (%)</div>
+                                    <div class="isocinetica-input-grid">
+                                        <div class="form-group-new">
+                                            <label>Consumo Veículo (km/l)</label>
+                                            <input type="number" id="iso-consumption" class="form-control-new" value="8" min="0.1" step="0.1">
+                                        </div>
+                                        <div class="form-group-new">
+                                            <label>Preço Combustível (R$)</label>
+                                            <input type="number" id="iso-fuel-price" class="form-control-new" value="5.90" min="0.1" step="0.01">
+                                        </div>
+                                        <div class="form-group-new">
+                                            <label>Adicional p/ Chaminé</label>
+                                            <input type="number" id="iso-stack-rate" class="form-control-new" value="15" min="0" step="0.1">
+                                        </div>
+                                        <div class="form-group-new">
+                                            <label>Manutenção Veículo</label>
+                                            <input type="number" id="iso-maint-rate" class="form-control-new" value="10" min="0" step="0.1">
+                                        </div>
+                                        <div class="form-group-new">
+                                            <label>Custos Admin</label>
+                                            <input type="number" id="iso-admin-rate" class="form-control-new" value="25" min="0" step="0.1">
+                                        </div>
+                                        <div class="form-group-new">
+                                            <label>Impostos</label>
+                                            <input type="number" id="iso-tax-rate" class="form-control-new" value="23.5" min="0" step="0.1">
+                                        </div>
+                                        <div class="form-group-new">
+                                            <label>Margem de Lucro</label>
+                                            <input type="number" id="iso-profit-rate" class="form-control-new" value="100" min="0" step="0.1">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="isocinetica-actions">
+                                    <button type="button" class="btn-primary-new" id="btn-iso-save" style="border-radius: 8px;">💾 Salvar Orçamento</button>
+                                    <button type="button" class="btn-secondary-new" id="btn-iso-generate-pdf" style="border-radius: 8px;">📄 Visualizar PDF</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Direita: Resumo e Memória de Cálculo -->
+                        <div class="isocinetica-summary-panel">
+                            <h3 style="font-size: 16px; margin: 0 0 16px 0; color: var(--text-main); display:flex; align-items:center; gap:8px;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> 
+                                Memória de Cálculo
+                            </h3>
+                            
+                            <div class="summary-section-title">Deslocamento (Custos)</div>
+                            <div class="summary-row">
+                                <span>Combustível (<span id="res-liters">0.00</span> L)</span>
+                                <span id="res-fuel-cost">R$ 0,00</span>
+                            </div>
+                            <div class="summary-row">
+                                <span>Hospedagem</span>
+                                <span id="res-hotel-cost">R$ 0,00</span>
+                            </div>
+                            <div class="summary-row">
+                                <span>Alimentação</span>
+                                <span id="res-food-cost">R$ 0,00</span>
+                            </div>
+                            <div class="summary-row" style="font-weight:600;">
+                                <span>Subtotal Deslocamento</span>
+                                <span id="res-travel-subtotal">R$ 0,00</span>
+                            </div>
+
+                            <div class="summary-section-title">Setup de Campo</div>
+                            <div class="summary-row">
+                                <span>Adicional Chaminés</span>
+                                <span id="res-stacks-add">R$ 0,00</span>
+                            </div>
+                            
+                            <div class="summary-row total">
+                                <span>Total de Custos Base</span>
+                                <span id="res-total-costs">R$ 0,00</span>
+                            </div>
+
+                            <div class="summary-section-title">Formação de Preço</div>
+                            <div class="summary-row">
+                                <span>Acréscimos (<span id="res-pricing-pct">0</span>%)</span>
+                                <span id="res-pricing-inc">R$ 0,00</span>
+                            </div>
+                            <div class="summary-row highlight" style="font-size: 18px; margin-top: 16px; border-top: 2px solid var(--border-light); padding-top: 16px;">
+                                <span>Preço Comercial Final</span>
+                                <span id="res-final-price">R$ 0,00</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -3988,6 +4182,9 @@
     </div>
 
     <!-- Script Principal da Aplicação -->
+    <script src="js/isocinetica-calculator.js"></script>
+    <script src="js/isocinetica-pdf.js"></script>
+    <script type="module" src="js/isocinetica-ui.js"></script>
     <script type="module" src="js/app.js"></script>
 </body>
 </html>

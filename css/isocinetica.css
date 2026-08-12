@@ -1,0 +1,164 @@
+/*
+ * Estilos para o Gerador de Propostas de Isocinética
+ * Segue o padrão Glassmorphism do Veeluen Docs
+ */
+
+#view-isocinetica {
+    padding: var(--spacing-6);
+    animation: fade-in 0.3s ease-out;
+}
+
+/* Grid Layout da Calculadora */
+.isocinetica-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: var(--spacing-6);
+    margin-top: var(--spacing-6);
+}
+
+@media (max-width: 1024px) {
+    .isocinetica-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Painel de Formulário */
+.isocinetica-form-panel {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-6);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-6);
+}
+
+.isocinetica-form-section {
+    border-bottom: 1px solid var(--border-light);
+    padding-bottom: var(--spacing-6);
+}
+
+.isocinetica-form-section:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.isocinetica-section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: var(--spacing-4);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.isocinetica-input-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-4);
+}
+
+/* Campos de Rádio Dinâmicos */
+.isocinetica-travel-modes {
+    display: flex;
+    gap: var(--spacing-4);
+    margin-bottom: var(--spacing-4);
+}
+
+.travel-mode-btn {
+    flex: 1;
+    padding: var(--spacing-3);
+    text-align: center;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+.travel-mode-btn.active {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+/* Painel de Resumo / Memória de Cálculo */
+.isocinetica-summary-panel {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-6);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    position: sticky;
+    top: var(--spacing-6);
+    height: fit-content;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    color: var(--text-muted);
+    font-size: 14px;
+    border-bottom: 1px dashed rgba(255,255,255,0.1);
+}
+
+.summary-row:last-child {
+    border-bottom: none;
+}
+
+.summary-row.total {
+    font-weight: 700;
+    color: var(--text-main);
+    font-size: 16px;
+    border-top: 1px solid var(--border-light);
+    margin-top: 8px;
+    padding-top: 12px;
+}
+
+.summary-row.highlight {
+    color: var(--success);
+    font-weight: 600;
+}
+
+.summary-section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 16px 0 8px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Modais Específicos */
+#isocinetica-settings-modal .modal-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-4);
+}
+
+/* Ações */
+.isocinetica-actions {
+    display: flex;
+    gap: var(--spacing-3);
+    margin-top: var(--spacing-6);
+}
+
+.isocinetica-actions button {
+    flex: 1;
+}
+
+/* Esconder sections dinâmicas */
+.isocinetica-hidden {
+    display: none !important;
+}

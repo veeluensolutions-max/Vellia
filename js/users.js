@@ -21,6 +21,12 @@ const ROLE_STYLES = {
         bg: "rgba(100, 116, 139, 0.10)",
         color: "var(--text-secondary)",
         border: "rgba(100, 116, 139, 0.2)"
+    },
+    operacional: {
+        label: "Operacional",
+        bg: "rgba(245, 158, 11, 0.12)",
+        color: "#d97706",
+        border: "rgba(245, 158, 11, 0.25)"
     }
 };
 
@@ -28,7 +34,8 @@ const ROLE_STYLES = {
 const AVATAR_GRADIENTS = {
     admin: "linear-gradient(135deg, #7c3aed, #a855f7)",
     manager: "linear-gradient(135deg, #1d4ed8, #3b82f6)",
-    seller: "linear-gradient(135deg, #0ea5e9, #06b6d4)"
+    seller: "linear-gradient(135deg, #0ea5e9, #06b6d4)",
+    operacional: "linear-gradient(135deg, #f59e0b, #d97706)"
 };
 
 export const Users = {

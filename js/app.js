@@ -324,6 +324,9 @@ function configureSidebarMenu(role) {
         } else if (role === "seller") {
             // Vendedor vê CRM, Kanban, Propostas e IA. Não vê Logs, Equipe, Serviços, Integrações e Usuários.
             isVisible = !["logs", "team", "services", "integrations", "users"].includes(viewName);
+        } else if (role === "operacional") {
+            // Operacional vê apenas o Calendário e Dashboard
+            isVisible = ["calendar", "dashboard"].includes(viewName);
         }
 
         // Elementos HTML específicos

@@ -198,6 +198,13 @@ function initApp() {
     WhatsApp.init();
     Pricing.init();
     Copilot.init();
+    
+    // Inicializar Workspace
+    const savedCompany = localStorage.getItem("activeCompany") || "Veeluen Solutions";
+    if (window.switchCompany) {
+        window.switchCompany(savedCompany);
+    }
+    
     checkSession();
 }
 
@@ -1536,3 +1543,37 @@ window.Auth = Auth;
 window.Audit = Audit;
 window.CRM = CRM;
 window.Kanban = Kanban;
+
+// ==========================================================================
+// WORKSPACE / COMPANY SWITCHER
+// ==========================================================================
+window.switchCompany = function(companyName) {
+    localStorage.setItem("activeCompany", companyName);
+    
+    // Atualiza Texto no Dropdown
+    const currentCompanyNameEl = document.getElementById("current-company-name");
+    if (currentCompanyNameEl) {
+        currentCompanyNameEl.textContent = companyName;
+    }
+
+    // Fecha o menu dropdown
+    const workspaceMenu = document.getElementById("workspace-menu");
+    if (workspaceMenu) {
+        workspaceMenu.classList.remove("show");
+    }
+
+    // Processa Exclusividades (data-company)
+    const specificElements = document.querySelectorAll("[data-company]");
+    specificElements.forEach(el => {
+        if (el.getAttribute("data-company") === companyName) {
+            el.style.display = el.tagName === "DIV" ? "flex" : "block"; // ou conforme o caso
+            
+            // Para o btn-isocinetica-card, flexbox é ideal
+            if (el.id === "btn-isocinetica-card") {
+                el.style.display = "flex";
+            }
+        } else {
+            el.style.display = "none";
+        }
+    });
+};

@@ -7,9 +7,9 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Elementos da UI
     const viewIsocinetica = document.getElementById("view-isocinetica");
-    const menuIsocinetica = document.getElementById("menu-isocinetica");
+    const btnIsocineticaCard = document.getElementById("btn-isocinetica-card");
     
-    if (!viewIsocinetica || !menuIsocinetica) return;
+    if (!viewIsocinetica) return;
 
     const btnNew = document.getElementById("btn-isocinetica-new");
     const btnBack = document.getElementById("btn-isocinetica-back");
@@ -30,12 +30,16 @@ document.addEventListener("DOMContentLoaded", () => {
         "iso-admin-rate", "iso-tax-rate", "iso-profit-rate"
     ];
 
-    // Listeners para abrir a tela (Integração com o SPA)
-    menuIsocinetica.addEventListener("click", (e) => {
-        // A lógica do app.js vai lidar com o toggle das views, mas garantimos o reset aqui
-        listView.classList.remove("isocinetica-hidden");
-        formView.classList.add("isocinetica-hidden");
-    });
+    // Listeners para abrir a tela a partir do Card em Propostas & Vendas
+    if (btnIsocineticaCard) {
+        btnIsocineticaCard.addEventListener("click", (e) => {
+            // Garante o reset da view interna
+            listView.classList.remove("isocinetica-hidden");
+            formView.classList.add("isocinetica-hidden");
+            // Navega para a view principal da Isocinética
+            window.location.hash = "#isocinetica";
+        });
+    }
 
     btnNew.addEventListener("click", () => {
         listView.classList.add("isocinetica-hidden");

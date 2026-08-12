@@ -247,8 +247,17 @@ function showAppShell(user) {
     // Configurar Itens da Sidebar conforme Permissões
     configureSidebarMenu(user.role);
 
-    // Ir para a view ativa atual ou padrão (dashboard)
-    const currentHash = window.location.hash.replace("#", "") || "dashboard";
+    // Ir para a view ativa atual ou padrão (dashboard/calendar)
+    let defaultView = "dashboard";
+    if (user.role === "operacional") defaultView = "calendar";
+    
+    let currentHash = window.location.hash.replace("#", "") || defaultView;
+    
+    // Fallback de segurança caso tente acessar rota proibida no refresh
+    if (!Auth.canAccessRoute(user.role, currentHash)) {
+        currentHash = defaultView;
+    }
+
     navigateTo(currentHash);
 
     // Inicializar Notificacoes e Exportacao

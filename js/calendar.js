@@ -159,6 +159,8 @@ export const Calendar = {
                 if (ev.type === "vencimento") badgeBg = "#ef4444";
                 if (ev.type === "followup") badgeBg = "#f59e0b";
                 if (ev.type === "reuniao") badgeBg = "#8b5cf6";
+                if (ev.status === "bloqueado") badgeBg = "#475569";
+                if (ev.status === "pendente") badgeBg = "#f97316";
 
                 return `
                     <div class="calendar-event-pill" style="background:${badgeBg}; color:#fff;" title="${ev.title}">
@@ -221,6 +223,7 @@ export const Calendar = {
                         <option value="reuniao" ${this.filterType === 'reuniao' ? 'selected' : ''}>💼 Reuniões</option>
                     </select>
 
+                    ${Auth.getCurrentUser()?.role === 'operacional' ? `<button onclick="window.Calendar.blockDateModal()" class="btn btn-outline" style="gap:6px; display:inline-flex; align-items:center; border-color:#ef4444; color:#ef4444;"><span>🚫 Bloquear Data</span></button>` : ''}
                     <button id="btn-open-new-event-modal" class="btn btn-primary" style="gap:6px; display:inline-flex; align-items:center;">
                         <span>➕ Agendar Vistoria / Evento</span>
                     </button>
@@ -282,7 +285,7 @@ export const Calendar = {
                 Nenhum compromisso agendado para o dia ${formattedDate}.
             </div>
         ` : dayEvents.map(ev => `
-            <div style="background:var(--bg-body); border:1px solid var(--border-color); border-left:4px solid ${ev.type === 'inspecao' ? '#10b981' : (ev.type === 'vencimento' ? '#ef4444' : '#1877F2')}; border-radius:8px; padding:12px 16px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div style="background:var(--bg-body); border:1px solid var(--border-color); border-left:4px solid ${ev.status === 'bloqueado' ? '#475569' : (ev.status === 'pendente' ? '#f97316' : (ev.type === 'inspecao' ? '#10b981' : (ev.type === 'vencimento' ? '#ef4444' : '#1877F2')))}; border-radius:8px; padding:12px 16px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                 <div>
                     <div style="font-weight:700; font-size:13.5px; color:var(--text-primary);">${ev.title}</div>
                     <div style="font-size:11.5px; color:var(--text-muted); margin-top:2px;">
@@ -291,6 +294,10 @@ export const Calendar = {
                     ${ev.notes ? `<div style="font-size:11px; color:var(--text-secondary); margin-top:4px;">📝 ${ev.notes}</div>` : ''}
                 </div>
                 <div style="display:flex; gap:6px;">
+                    ${ev.status === 'pendente' && Auth.getCurrentUser()?.role === 'operacional' ? `
+                        <button onclick="window.Calendar.approveEvent('${ev.id}')" class="btn btn-sm" style="background:#10b981; color:#fff; font-size:11px; padding:4px 8px; font-weight:700; border:none; border-radius:6px; cursor:pointer;">✅ Aprovar</button>
+                        <button onclick="window.Calendar.rejectEvent('${ev.id}')" class="btn btn-sm" style="background:#ef4444; color:#fff; font-size:11px; padding:4px 8px; font-weight:700; border:none; border-radius:6px; cursor:pointer;">❌ Recusar</button>
+                    ` : ''}
                     ${ev.phone ? `<a href="https://wa.me/${ev.phone.replace(/\D/g,'')}" target="_blank" class="btn btn-sm" style="background:#25d366; color:#fff; font-size:11px; padding:4px 8px; font-weight:700; border:none; text-decoration:none; border-radius:6px;">💬 WhatsApp</a>` : ''}
                     ${ev.leadId ? `<button onclick="window.location.hash='#crm'; setTimeout(()=>window.openLeadDrawerFromExt('${ev.leadId}'),300)" class="btn btn-outline btn-sm" style="font-size:11px; padding:4px 8px;">🔍 Ver Lead</button>` : ''}
                 </div>
@@ -392,8 +399,30 @@ export const Calendar = {
                 const dateVal = document.getElementById("cal-event-date").value;
                 const timeVal = document.getElementById("cal-event-time").value;
                 const typeVal = document.getElementById("cal-event-type").value;
-                const statusVal = document.getElementById("cal-event-status").value;
+                let statusVal = document.getElementById("cal-event-status").value;
                 const notes = document.getElementById("cal-event-notes").value;
+                
+                const user = Auth.getCurrentUser();
+                if (user && user.role !== "operacional" && user.role !== "admin") {
+                    statusVal = "pendente"; // Vendedor agenda como pendente
+                }
+
+                // Validação de Duplicidade / Bloqueio
+                const customEventsCheck = JSON.parse(localStorage.getItem("vellia_calendar_events")) || [];
+                const conflict = customEventsCheck.find(e => e.date === dateVal && (e.status === "bloqueado" || e.status === "agendado"));
+                if (conflict) {
+                    if (conflict.status === "bloqueado") {
+                        alert("❌ Esta data está bloqueada pela equipe Operacional. Escolha outra data.");
+                        return;
+                    } else if (conflict.status === "agendado" && statusVal !== "pendente") {
+                        // Apenas avisa se não for pendente, ou se for pendente tb barra pra não dar overbooking
+                        alert("⚠️ Já existe um compromisso confirmado para esta data. Por favor, escolha outra data.");
+                        return;
+                    } else if (conflict.status === "agendado" && statusVal === "pendente") {
+                        alert("⚠️ Ops! Já existe um compromisso aprovado para esta data. Fale com a equipe operacional.");
+                        return;
+                    }
+                }
                 
                 const emojiMap = {
                     inspecao: "📋",
@@ -471,5 +500,52 @@ export const Calendar = {
             modal.style.display = "flex";
             setTimeout(() => modal.classList.add("open"), 10);
         }
+    },
+
+    blockDateModal() {
+        const dateStr = this.selectedDateStr || new Date().toISOString().split("T")[0];
+        const reason = prompt(`Bloquear a data ${dateStr.split('-').reverse().join('/')}?\n\nInforme o motivo (ex: Feriado, Equipe Ocupada, Manutenção):`, "Indisponível");
+        if (reason) {
+            const customEvents = JSON.parse(localStorage.getItem("vellia_calendar_events")) || [];
+            customEvents.push({
+                id: `blk_${Date.now()}`,
+                title: `🚫 Bloqueado: ${reason}`,
+                company: "Sistema",
+                date: dateStr,
+                time: "00:00",
+                type: "reuniao",
+                status: "bloqueado",
+                notes: reason
+            });
+            localStorage.setItem("vellia_calendar_events", JSON.stringify(customEvents));
+            alert("✅ Data bloqueada com sucesso!");
+            this.render();
+        }
+    },
+
+    approveEvent(id) {
+        if(confirm("Confirmar e aprovar este agendamento?")) {
+            const customEvents = JSON.parse(localStorage.getItem("vellia_calendar_events")) || [];
+            const ev = customEvents.find(e => e.id === id);
+            if(ev) {
+                ev.status = "agendado";
+                localStorage.setItem("vellia_calendar_events", JSON.stringify(customEvents));
+                this.render();
+            }
+        }
+    },
+
+    rejectEvent(id) {
+        if(confirm("Tem certeza que deseja recusar este agendamento? Ele será cancelado.")) {
+            let customEvents = JSON.parse(localStorage.getItem("vellia_calendar_events")) || [];
+            const ev = customEvents.find(e => e.id === id);
+            if(ev) {
+                ev.status = "recusado"; // Mantém histórico mas não bloqueia mais
+                localStorage.setItem("vellia_calendar_events", JSON.stringify(customEvents));
+                this.render();
+            }
+        }
     }
 };
+
+window.Calendar = Calendar;

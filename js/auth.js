@@ -116,7 +116,8 @@ export const Auth = {
         const labels = {
             admin: "Administrador",
             manager: "Gerente Comercial",
-            seller: "Vendedor"
+            seller: "Vendedor",
+            operacional: "Operações"
         };
         return labels[role] || role;
     },
@@ -126,7 +127,8 @@ export const Auth = {
         const permissions = {
             admin: ["*"], // Administrador acessa tudo
             manager: ["dashboard", "crm", "kanban", "proposals", "calculators", "isocinetica", "team", "goals", "services", "inspections", "calendar", "ai-agents"],
-            seller: ["dashboard", "crm", "kanban", "proposals", "calculators", "isocinetica", "goals", "inspections", "calendar", "ai-agents"]
+            seller: ["dashboard", "crm", "kanban", "proposals", "calculators", "isocinetica", "goals", "inspections", "calendar", "ai-agents"],
+            operacional: ["calendar"]
         };
 
         if (role === "admin") return true;

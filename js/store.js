@@ -12,6 +12,26 @@ const DEFAULT_USERS = [
         avatar: "AG",
         status: "active",
         lastLoginAt: null
+    },
+    {
+        id: "usr_operacoes",
+        name: "Controle Operacional",
+        email: "operacoes@vellia.com",
+        password: "123",
+        role: "operacional",
+        avatar: "OP",
+        status: "active",
+        lastLoginAt: null
+    },
+    {
+        id: "usr_seller",
+        name: "Vendedor Teste",
+        email: "vendedor@vellia.com",
+        password: "123",
+        role: "seller",
+        avatar: "VT",
+        status: "active",
+        lastLoginAt: null
     }
 ];
 

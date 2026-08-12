@@ -121,28 +121,19 @@
                     </div>
                     
                     <!-- Workspace Switcher -->
-                    <div class="workspace-switcher" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="document.getElementById('workspace-menu').classList.toggle('show')">
-                        <div style="display: flex; flex-direction: column;">
-                            <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Empresa Atual</span>
-                            <span id="current-company-name" style="font-size: 13px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;">Veeluen Solutions</span>
-                        </div>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-                        
-                        <!-- Dropdown Menu -->
-                        <div id="workspace-menu" class="workspace-dropdown" style="display: none; position: absolute; top: 125px; left: 15px; right: 15px; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 1000; overflow: hidden;">
-                            <a href="#" onclick="window.switchCompany('Veeluen Solutions'); return false;" style="display: block; padding: 12px 15px; color: #fff; text-decoration: none; font-size: 13px; font-weight: 600; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
-                                Veeluen Solutions
-                            </a>
-                            <a href="#" onclick="window.switchCompany('Excelência Ambiental'); return false;" style="display: block; padding: 12px 15px; color: #fff; text-decoration: none; font-size: 13px; font-weight: 600; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
-                                Excelência Ambiental
-                            </a>
+                    <div class="workspace-switcher" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 4px;">
+                        <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Empresa Atual</span>
+                        <div style="position: relative; display: flex; align-items: center;">
+                            <select id="workspace-select" onchange="window.switchCompany(this.value)" style="appearance: none; -webkit-appearance: none; background: transparent; border: none; color: #fff; font-size: 13px; font-weight: 600; width: 100%; outline: none; cursor: pointer; padding-right: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                <option value="Veeluen Solutions" style="background: #1e293b; color: #fff;">Veeluen Solutions</option>
+                                <option value="Excelência Ambiental" style="background: #1e293b; color: #fff;">Excelência Ambiental</option>
+                            </select>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2" style="position: absolute; right: 0; pointer-events: none;"><path d="M6 9l6 6 6-6"/></svg>
                         </div>
                     </div>
                     <style>
-                        .workspace-switcher { position: relative; transition: border-color 0.2s; }
+                        .workspace-switcher { transition: border-color 0.2s; }
                         .workspace-switcher:hover { border-color: rgba(255,255,255,0.2) !important; }
-                        .workspace-dropdown.show { display: block !important; animation: fadeIn 0.2s ease-out; }
-                        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
                     </style>
                 </div>
 

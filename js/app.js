@@ -1550,16 +1550,10 @@ window.Kanban = Kanban;
 window.switchCompany = function(companyName) {
     localStorage.setItem("activeCompany", companyName);
     
-    // Atualiza Texto no Dropdown
-    const currentCompanyNameEl = document.getElementById("current-company-name");
-    if (currentCompanyNameEl) {
-        currentCompanyNameEl.textContent = companyName;
-    }
-
-    // Fecha o menu dropdown
-    const workspaceMenu = document.getElementById("workspace-menu");
-    if (workspaceMenu) {
-        workspaceMenu.classList.remove("show");
+    // Atualiza o Select Nativo
+    const workspaceSelect = document.getElementById("workspace-select");
+    if (workspaceSelect && workspaceSelect.value !== companyName) {
+        workspaceSelect.value = companyName;
     }
 
     // Processa Exclusividades (data-company)

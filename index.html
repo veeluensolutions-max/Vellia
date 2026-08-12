@@ -7,7 +7,8 @@
     <!-- CSS Customizado -->
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/isocinetica.css">
-    <!-- Chart.js -->
+    <link rel="stylesheet" href="css/calculators.css">
+    <!-- Chart.js para dashboards -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- jsPDF (Geração de PDF) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -175,6 +176,12 @@
                             <a href="#proposals">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                                 <span>Propostas & Vendas</span>
+                            </a>
+                        </li>
+                        <li class="menu-item" data-view="calculators" id="menu-calculators">
+                            <a href="#calculators">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="16" y1="18" x2="16" y2="18"/><line x1="12" y1="18" x2="12" y2="18"/><line x1="8" y1="18" x2="8" y2="18"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="8" y1="10" x2="8" y2="10"/></svg>
+                                <span>Calculadoras</span>
                             </a>
                         </li>
 
@@ -1712,18 +1719,7 @@
                             </div>
                         </div>
                         
-                        <!-- CARD ISOCINÉTICA (Apenas Excelência Ambiental) -->
-                        <div id="btn-isocinetica-card" class="card stat-card company-specific" data-company="Excelência Ambiental" style="display: none; cursor: pointer; border: 1px solid var(--primary); background: rgba(99, 102, 241, 0.05); transition: transform 0.2s; align-items: center; justify-content: center;">
-                            <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
-                                <div class="stat-icon-box" style="background: var(--primary); color: #fff;">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-                                </div>
-                                <div class="stat-info">
-                                    <span class="stat-label" style="color: var(--primary); font-weight: 700; margin-bottom: 2px;">Ferramenta Exclusiva</span>
-                                    <span style="font-size: 14px; font-weight: 600; color: var(--text-main);">Gerador de Isocinética</span>
-                                </div>
-                            </div>
-                        </div>
+                        <!-- O Card de Isocinética foi movido para o Hub de Calculadoras -->
                         <div class="card stat-card">
                             <div class="stat-info">
                                 <span class="stat-label">Aguardando Retorno</span>
@@ -1862,6 +1858,94 @@
                 <!-- ==========================================================
                      VIEW: CALCULADORA ISOCINÉTICA
                      ========================================================== -->
+                <!-- ==========================================================
+                     VIEW: HUB DE CALCULADORAS DE ORÇAMENTOS
+                     ========================================================== -->
+                <div id="view-calculators" class="spa-view" style="display: none;">
+                    <div class="calc-hub-header">
+                        <h2>Calculadora de Orçamentos</h2>
+                        <p>Selecione o módulo de serviço para realizar dimensionamentos e gerar propostas comerciais automáticas</p>
+                    </div>
+
+                    <div class="calculators-grid">
+                        
+                        <!-- CARD: Energia Solar Fotovoltaica (EM BREVE) -->
+                        <div class="calc-card">
+                            <span class="calc-card-status tag-coming">EM BREVE</span>
+                            <div class="calc-card-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                            </div>
+                            <h3>Energia Solar Fotovoltaica</h3>
+                            <p>Dimensionamento técnico e comercial completo para projetos de energia solar.</p>
+                        </div>
+
+                        <!-- CARD: Gestão de ETE (EM BREVE) -->
+                        <div class="calc-card">
+                            <span class="calc-card-status tag-coming">EM BREVE</span>
+                            <div class="calc-card-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+                            </div>
+                            <h3>Gestão de ETE</h3>
+                            <p>Estações de Tratamento de Efluentes com cálculos químicos e biológicos.</p>
+                        </div>
+
+                        <!-- CARD: Consultoria Ambiental (EM BREVE) -->
+                        <div class="calc-card">
+                            <span class="calc-card-status tag-coming">EM BREVE</span>
+                            <div class="calc-card-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                            </div>
+                            <h3>Consultoria Ambiental</h3>
+                            <p>Licenciamento, laudos técnicos, relatórios de impacto e gestão integrada.</p>
+                        </div>
+
+                        <!-- CARD: Transporte de Resíduos (EM BREVE) -->
+                        <div class="calc-card">
+                            <span class="calc-card-status tag-coming">EM BREVE</span>
+                            <div class="calc-card-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                            </div>
+                            <h3>Transporte de Resíduos</h3>
+                            <p>Logística reversa, rotas seguras e transporte especializado de materiais.</p>
+                        </div>
+
+                        <!-- CARD: NR-13 (EM BREVE) -->
+                        <div class="calc-card">
+                            <span class="calc-card-status tag-coming">EM BREVE</span>
+                            <div class="calc-card-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            </div>
+                            <h3>NR-13</h3>
+                            <p>Inspeção de caldeiras, vasos de pressão e tubulações industriais.</p>
+                        </div>
+
+                        <!-- CARD: ESG & Carbono (EM BREVE) -->
+                        <div class="calc-card">
+                            <span class="calc-card-status tag-coming">EM BREVE</span>
+                            <div class="calc-card-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                            </div>
+                            <h3>ESG & Carbono</h3>
+                            <p>Relatórios de sustentabilidade e inventário de gases de efeito estufa.</p>
+                        </div>
+
+                        <!-- CARD: ISOCINÉTICA (ATIVO) -->
+                        <div id="btn-isocinetica-card" class="calc-card active company-specific" data-company="Excelência Ambiental" style="display: none;">
+                            <span class="calc-card-status tag-active">ATIVO</span>
+                            <div class="calc-card-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                            </div>
+                            <h3>Isocinética</h3>
+                            <p>Ferramenta exclusiva da Excelência Ambiental para amostragem de chaminés.</p>
+                            <div class="calc-card-action">
+                                Acessar calculadora
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
                 <div id="view-isocinetica" class="spa-view" style="display: none;">
                     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 24px;">
                         <div>

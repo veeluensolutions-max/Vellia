@@ -431,7 +431,12 @@ export const Store = {
             localStorage.setItem("comercial_leads", JSON.stringify(allLeads));
         }
 
-        return allLeads.filter(l => !l.deleted_at);
+        const activeCompany = localStorage.getItem("activeCompany") || "Veeluen Solutions";
+        return allLeads.filter(l => {
+            if(l.deleted_at) return false;
+            const w = l.workspace || "Veeluen Solutions";
+            return w === activeCompany;
+        });
     },
 
     getAllLeadsRaw() {
@@ -440,20 +445,36 @@ export const Store = {
     },
 
     getTrashLeads() {
-        // Retorna apenas leads que estão na lixeira (com deleted_at definido)
         const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
         const now = Date.now();
+        const activeCompany = localStorage.getItem("activeCompany") || "Veeluen Solutions";
         return this.getAllLeadsRaw().filter(l => {
             if (!l.deleted_at) return false;
+            if (l.workspace && l.workspace !== activeCompany && activeCompany !== "Veeluen Solutions") return false;
+            // Legacy items without workspace go to Veeluen
+            if (!l.workspace && activeCompany !== "Veeluen Solutions") return false;
+            
             const deletedTs = new Date(l.deleted_at).getTime();
-            return (now - deletedTs) < THIRTY_DAYS_MS; // Dentro dos 30 dias
+            return (now - deletedTs) < THIRTY_DAYS_MS; 
         });
     },
 
-    saveLeads(leads) {
-        localStorage.setItem("comercial_leads", JSON.stringify(leads));
-        if (Array.isArray(leads)) {
-            for (const lead of leads) {
+    saveLeads(workspaceLeads) {
+        let allLeads = this.getAllLeadsRaw();
+        const activeCompany = localStorage.getItem("activeCompany") || "Veeluen Solutions";
+        
+        // Remove leads from active company from allLeads
+        allLeads = allLeads.filter(l => {
+            const w = l.workspace || "Veeluen Solutions";
+            return w !== activeCompany;
+        });
+        
+        // Add updated leads
+        allLeads = allLeads.concat(workspaceLeads);
+        
+        localStorage.setItem("comercial_leads", JSON.stringify(allLeads));
+        if (Array.isArray(workspaceLeads)) {
+            for (const lead of workspaceLeads) {
                 upsertSupabase("comercial_leads", lead);
             }
         }
@@ -518,7 +539,7 @@ export const Store = {
     },
 
     addLead(lead, userEmail = "sistema@vellia.com") {
-        const leads = this.getLeadsRaw();
+        const leads = this.getAllLeadsRaw();
         const newLead = {
             id: `lead_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
             workspace: localStorage.getItem('activeCompany') || 'Veeluen Solutions',
@@ -559,7 +580,7 @@ export const Store = {
 
 
     updateLead(leadId, updatedData, userEmail = "sistema@vellia.com") {
-        const leads = this.getLeadsRaw();
+        const leads = this.getAllLeadsRaw();
         const index = leads.findIndex(l => l.id === leadId);
         if (index !== -1) {
             leads[index] = { ...leads[index], ...updatedData };
@@ -579,7 +600,7 @@ export const Store = {
             interaction = temp;
         }
 
-        const leads = this.getLeadsRaw();
+        const leads = this.getAllLeadsRaw();
         const index = leads.findIndex(l => l.id === leadId);
         if (index !== -1) {
             const newInteraction = {
@@ -599,7 +620,7 @@ export const Store = {
     },
 
     updateLeadStage(leadId, newStage, userEmail, reason = "") {
-        const leads = this.getLeadsRaw();
+        const leads = this.getAllLeadsRaw();
         const index = leads.findIndex(l => l.id === leadId);
         if (index !== -1) {
             const oldStage = leads[index].stage;
@@ -658,7 +679,7 @@ export const Store = {
     },
 
     getLeadById(leadId) {
-        const leads = this.getLeadsRaw();
+        const leads = this.getAllLeadsRaw();
         return leads.find(l => l.id === leadId) || null;
     },
 
@@ -807,7 +828,7 @@ export const Store = {
     // COMENTÁRIOS INTERNOS POR LEAD
     // ==========================================
     addLeadComment(leadId, userEmail, text) {
-        const leads = this.getLeadsRaw();
+        const leads = this.getAllLeadsRaw();
         const index = leads.findIndex(l => l.id === leadId);
         if (index === -1) return null;
         const comments = leads[index].comments || [];
@@ -953,7 +974,7 @@ export const Store = {
         const yStr = String(year);
         const periodKey = `${yStr}-${mStr}`;
 
-        const leads = this.getLeadsRaw();
+        const leads = this.getAllLeadsRaw();
         const proposals = this.getProposalsRaw();
         const users = this.getUsers();
         const logs = JSON.parse(localStorage.getItem("comercial_logs") || "[]");

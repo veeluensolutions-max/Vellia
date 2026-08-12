@@ -91,13 +91,13 @@ async function supabaseFetch(table) {
 
 const TABLE_SCHEMAS = {
     comercial_users: ['id', 'name', 'email', 'password', 'role', 'avatar', 'status', 'lastLoginAt'],
-    comercial_leads: ['id', 'company', 'contact', 'role', 'phone', 'whatsapp', 'email', 'city', 'state', 'segment', 'source', 'stage', 'owner', 'interactions', 'stageHistory', 'phone2', 'email2', 'notes'],
-    comercial_proposals: ['id', 'leadId', 'company', 'contact', 'title', 'value', 'status', 'sentAt', 'closedAt', 'validUntil', 'competitor', 'lossReason', 'notes', 'createdBy'],
+    comercial_leads: ['id', 'workspace', 'company', 'contact', 'role', 'phone', 'whatsapp', 'email', 'city', 'state', 'segment', 'source', 'stage', 'owner', 'interactions', 'stageHistory', 'phone2', 'email2', 'notes'],
+    comercial_proposals: ['id', 'workspace', 'leadId', 'company', 'contact', 'title', 'value', 'status', 'sentAt', 'closedAt', 'validUntil', 'competitor', 'lossReason', 'notes', 'createdBy'],
     comercial_logs: ['id', 'timestamp', 'userEmail', 'action', 'details', 'status'],
     comercial_services: ['id', 'name', 'category', 'baseMargin', 'isActive'],
     comercial_goals: ['userEmail', 'period', 'targets'],
-    comercial_tasks: ['id', 'owner', 'text', 'done', 'date', 'priority', 'assignedBy'],
-    comercial_calendar_events: ['id', 'title', 'company', 'date', 'time', 'type', 'status', 'notes', 'phone', 'contact', 'leadId']
+    comercial_tasks: ['id', 'workspace', 'owner', 'text', 'done', 'date', 'priority', 'assignedBy'],
+    comercial_calendar_events: ['id', 'workspace', 'title', 'company', 'date', 'time', 'type', 'status', 'notes', 'phone', 'contact', 'leadId']
 };
 
 async function upsertSupabase(table, data) {
@@ -518,9 +518,10 @@ export const Store = {
     },
 
     addLead(lead, userEmail = "sistema@vellia.com") {
-        const leads = this.getLeads();
+        const leads = this.getLeadsRaw();
         const newLead = {
             id: `lead_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+            workspace: localStorage.getItem('activeCompany') || 'Veeluen Solutions',
             company: lead.company,
             contact: lead.contact,
             role: lead.role || "",
@@ -558,7 +559,7 @@ export const Store = {
 
 
     updateLead(leadId, updatedData, userEmail = "sistema@vellia.com") {
-        const leads = this.getLeads();
+        const leads = this.getLeadsRaw();
         const index = leads.findIndex(l => l.id === leadId);
         if (index !== -1) {
             leads[index] = { ...leads[index], ...updatedData };
@@ -578,7 +579,7 @@ export const Store = {
             interaction = temp;
         }
 
-        const leads = this.getLeads();
+        const leads = this.getLeadsRaw();
         const index = leads.findIndex(l => l.id === leadId);
         if (index !== -1) {
             const newInteraction = {
@@ -598,7 +599,7 @@ export const Store = {
     },
 
     updateLeadStage(leadId, newStage, userEmail, reason = "") {
-        const leads = this.getLeads();
+        const leads = this.getLeadsRaw();
         const index = leads.findIndex(l => l.id === leadId);
         if (index !== -1) {
             const oldStage = leads[index].stage;
@@ -657,7 +658,7 @@ export const Store = {
     },
 
     getLeadById(leadId) {
-        const leads = this.getLeads();
+        const leads = this.getLeadsRaw();
         return leads.find(l => l.id === leadId) || null;
     },
 
@@ -671,9 +672,10 @@ export const Store = {
     },
 
     addProposal(data) {
-        const proposals = this.getProposals();
+        const proposals = this.getProposalsRaw();
         const newProposal = {
             id: `prop_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+            workspace: localStorage.getItem('activeCompany') || 'Veeluen Solutions',
             leadId: data.leadId || "",
             company: data.company || "",
             contact: data.contact || "",
@@ -696,7 +698,7 @@ export const Store = {
     },
 
     updateProposal(id, updates, userEmail = "sistema@vellia.com") {
-        const proposals = this.getProposals();
+        const proposals = this.getProposalsRaw();
         const index = proposals.findIndex(p => p.id === id);
         if (index !== -1) {
             proposals[index] = { ...proposals[index], ...updates };
@@ -805,7 +807,7 @@ export const Store = {
     // COMENTÁRIOS INTERNOS POR LEAD
     // ==========================================
     addLeadComment(leadId, userEmail, text) {
-        const leads = this.getLeads();
+        const leads = this.getLeadsRaw();
         const index = leads.findIndex(l => l.id === leadId);
         if (index === -1) return null;
         const comments = leads[index].comments || [];
@@ -951,8 +953,8 @@ export const Store = {
         const yStr = String(year);
         const periodKey = `${yStr}-${mStr}`;
 
-        const leads = this.getLeads();
-        const proposals = this.getProposals();
+        const leads = this.getLeadsRaw();
+        const proposals = this.getProposalsRaw();
         const users = this.getUsers();
         const logs = JSON.parse(localStorage.getItem("comercial_logs") || "[]");
         const guruHistory = JSON.parse(localStorage.getItem("guru_strategy_history") || "[]");

@@ -229,6 +229,12 @@ window.switchCompany = function(companyName) {
             el.style.display = "none";
         }
     });
+
+    // Se a página já carregou e o usuário mudou a empresa via UI, forçar o reload 
+    // para limpar os caches (memória) de variáveis e refazer as consultas.
+    if (document.readyState === "complete") {
+        window.location.reload();
+    }
 };
 
 function checkSession() {

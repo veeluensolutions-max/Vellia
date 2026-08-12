@@ -96,7 +96,8 @@ const TABLE_SCHEMAS = {
     comercial_logs: ['id', 'timestamp', 'userEmail', 'action', 'details', 'status'],
     comercial_services: ['id', 'name', 'category', 'baseMargin', 'isActive'],
     comercial_goals: ['userEmail', 'period', 'targets'],
-    comercial_tasks: ['id', 'owner', 'text', 'done', 'date', 'priority', 'assignedBy']
+    comercial_tasks: ['id', 'owner', 'text', 'done', 'date', 'priority', 'assignedBy'],
+    comercial_calendar_events: ['id', 'title', 'company', 'date', 'time', 'type', 'status', 'notes', 'phone', 'contact', 'leadId']
 };
 
 async function upsertSupabase(table, data) {
@@ -193,6 +194,21 @@ async function syncFromSupabase() {
     } catch (e) { console.log("Users sync fallback:", e.message); }
 
     try {
+        const remoteGoals = await supabaseFetch("comercial_goals") || [];
+        localStorage.setItem("comercial_goals", JSON.stringify(remoteGoals));
+    } catch (e) { console.log("Goals sync fallback:", e.message); }
+
+    try {
+        const remoteEvents = await supabaseFetch("comercial_calendar_events") || [];
+        // Merge calendar events using ID
+        const localEvents = JSON.parse(localStorage.getItem("vellia_calendar_events")) || [];
+        const eventMap = new Map();
+        localEvents.forEach(e => eventMap.set(e.id, e));
+        remoteEvents.forEach(e => eventMap.set(e.id, e));
+        localStorage.setItem("vellia_calendar_events", JSON.stringify(Array.from(eventMap.values())));
+    } catch (e) { console.log("Calendar events sync fallback:", e.message); }
+
+    try {
         const leads = await supabaseFetch("comercial_leads");
         if (Array.isArray(leads)) localStorage.setItem("comercial_leads", JSON.stringify(leads));
     } catch (e) { console.log("Leads sync fallback:", e.message); }
@@ -230,27 +246,6 @@ async function syncFromSupabase() {
             upsertSupabase("comercial_services", mergedServices);
         }
     } catch (e) { console.log("Services sync fallback:", e.message); }
-
-    try {
-        const remoteGoals = await supabaseFetch("comercial_goals") || [];
-        const localGoals = JSON.parse(localStorage.getItem("comercial_goals")) || INITIAL_GOALS;
-        
-        let mergedGoals = [...remoteGoals];
-        let needsUpsert = false;
-        
-        localGoals.forEach(localG => {
-            const exists = mergedGoals.some(g => g.userEmail.toLowerCase() === localG.userEmail.toLowerCase() && g.period === localG.period);
-            if (!exists) {
-                mergedGoals.push(localG);
-                needsUpsert = true;
-            }
-        });
-        
-        localStorage.setItem("comercial_goals", JSON.stringify(mergedGoals));
-        if (needsUpsert) {
-            upsertSupabase("comercial_goals", mergedGoals);
-        }
-    } catch (e) { console.log("Goals sync fallback:", e.message); }
 
     // Sincronizar Tarefas dos Vendedores
     try {
@@ -311,6 +306,9 @@ function initStorage() {
     if (!localStorage.getItem("comercial_services") || localStorage.getItem("comercial_services") === "[]") {
         localStorage.setItem("comercial_services", JSON.stringify(INITIAL_SERVICES));
     }
+    if (!localStorage.getItem("vellia_calendar_events")) {
+        localStorage.setItem("vellia_calendar_events", JSON.stringify([]));
+    }
 }
 
 // Polling de fallback (60s) — o Supabase Realtime (WebSocket) é o mecanismo primário.
@@ -363,6 +361,25 @@ syncFromSupabase();
 startSyncPolling();
 
 export const Store = {
+    // TAREFAS
+    getTasks(email) {
+        let tasks = JSON.parse(localStorage.getItem("comercial_tasks")) || [];
+        return tasks.filter(t => t.owner === email);
+    },
+    saveTasks(tasks) {
+        localStorage.setItem("comercial_tasks", JSON.stringify(tasks));
+        upsertSupabase("comercial_tasks", tasks);
+    },
+
+    // CALENDÁRIO
+    getCalendarEvents() {
+        return JSON.parse(localStorage.getItem("vellia_calendar_events")) || [];
+    },
+    saveCalendarEvents(events) {
+        localStorage.setItem("vellia_calendar_events", JSON.stringify(events));
+        upsertSupabase("comercial_calendar_events", events);
+    },
+
     // USUÁRIOS
     getUsers() {
         return JSON.parse(localStorage.getItem("comercial_users")) || [];
@@ -1043,6 +1060,15 @@ export const Store = {
                 conversionDiff: mA.conversionRate - mB.conversionRate
             }
         };
+    },
+
+    // CALENDÁRIO
+    getCalendarEvents() {
+        return JSON.parse(localStorage.getItem("vellia_calendar_events")) || [];
+    },
+    saveCalendarEvents(events) {
+        localStorage.setItem("vellia_calendar_events", JSON.stringify(events));
+        upsertSupabase("comercial_calendar_events", events);
     },
 
     // Métodos utilitários para resetar banco se necessário

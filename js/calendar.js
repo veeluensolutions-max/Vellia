@@ -92,7 +92,7 @@ export const Calendar = {
 
         // 3. Compromissos Personalizados da Agenda
         try {
-            const customEvents = JSON.parse(localStorage.getItem("vellia_calendar_events")) || [];
+            const customEvents = Store.getCalendarEvents();
             customEvents.forEach(e => events.push(e));
         } catch (e) {}
 
@@ -408,7 +408,7 @@ export const Calendar = {
                 }
 
                 // Validação de Duplicidade / Bloqueio
-                const customEventsCheck = JSON.parse(localStorage.getItem("vellia_calendar_events")) || [];
+                const customEventsCheck = Store.getCalendarEvents();
                 const conflict = customEventsCheck.find(e => e.date === dateVal && (e.status === "bloqueado" || e.status === "agendado"));
                 if (conflict) {
                     if (conflict.status === "bloqueado") {
@@ -444,9 +444,9 @@ export const Calendar = {
                 };
                 
                 try {
-                    const customEvents = JSON.parse(localStorage.getItem("vellia_calendar_events")) || [];
+                    const customEvents = Store.getCalendarEvents();
                     customEvents.push(newEvent);
-                    localStorage.setItem("vellia_calendar_events", JSON.stringify(customEvents));
+                    Store.saveCalendarEvents(customEvents);
                     alert("✅ Compromisso agendado na Agenda!");
                     
                     // Disparar automação de confirmação de vistoria se for tipo "inspecao"
@@ -506,7 +506,7 @@ export const Calendar = {
         const dateStr = this.selectedDateStr || new Date().toISOString().split("T")[0];
         const reason = prompt(`Bloquear a data ${dateStr.split('-').reverse().join('/')}?\n\nInforme o motivo (ex: Feriado, Equipe Ocupada, Manutenção):`, "Indisponível");
         if (reason) {
-            const customEvents = JSON.parse(localStorage.getItem("vellia_calendar_events")) || [];
+            const customEvents = Store.getCalendarEvents();
             customEvents.push({
                 id: `blk_${Date.now()}`,
                 title: `🚫 Bloqueado: ${reason}`,
@@ -517,7 +517,7 @@ export const Calendar = {
                 status: "bloqueado",
                 notes: reason
             });
-            localStorage.setItem("vellia_calendar_events", JSON.stringify(customEvents));
+            Store.saveCalendarEvents(customEvents);
             alert("✅ Data bloqueada com sucesso!");
             this.render();
         }
@@ -525,11 +525,11 @@ export const Calendar = {
 
     approveEvent(id) {
         if(confirm("Confirmar e aprovar este agendamento?")) {
-            const customEvents = JSON.parse(localStorage.getItem("vellia_calendar_events")) || [];
+            const customEvents = Store.getCalendarEvents();
             const ev = customEvents.find(e => e.id === id);
             if(ev) {
                 ev.status = "agendado";
-                localStorage.setItem("vellia_calendar_events", JSON.stringify(customEvents));
+                Store.saveCalendarEvents(customEvents);
                 this.render();
             }
         }
@@ -537,11 +537,11 @@ export const Calendar = {
 
     rejectEvent(id) {
         if(confirm("Tem certeza que deseja recusar este agendamento? Ele será cancelado.")) {
-            let customEvents = JSON.parse(localStorage.getItem("vellia_calendar_events")) || [];
+            let customEvents = Store.getCalendarEvents();
             const ev = customEvents.find(e => e.id === id);
             if(ev) {
                 ev.status = "recusado"; // Mantém histórico mas não bloqueia mais
-                localStorage.setItem("vellia_calendar_events", JSON.stringify(customEvents));
+                Store.saveCalendarEvents(customEvents);
                 this.render();
             }
         }

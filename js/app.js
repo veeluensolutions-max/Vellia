@@ -201,12 +201,35 @@ function initApp() {
     
     // Inicializar Workspace
     const savedCompany = localStorage.getItem("activeCompany") || "Veeluen Solutions";
-    if (window.switchCompany) {
-        window.switchCompany(savedCompany);
-    }
+    window.switchCompany(savedCompany);
     
     checkSession();
 }
+
+window.switchCompany = function(companyName) {
+    localStorage.setItem("activeCompany", companyName);
+    
+    // Atualiza o Select Nativo
+    const workspaceSelect = document.getElementById("workspace-select");
+    if (workspaceSelect && workspaceSelect.value !== companyName) {
+        workspaceSelect.value = companyName;
+    }
+
+    // Processa Exclusividades (data-company)
+    const specificElements = document.querySelectorAll("[data-company]");
+    specificElements.forEach(el => {
+        if (el.getAttribute("data-company") === companyName) {
+            el.style.display = el.tagName === "DIV" ? "flex" : "block"; // ou conforme o caso
+            
+            // Para o btn-isocinetica-card, flexbox é ideal
+            if (el.id === "btn-isocinetica-card") {
+                el.style.display = "flex";
+            }
+        } else {
+            el.style.display = "none";
+        }
+    });
+};
 
 function checkSession() {
     if (Auth.isAuthenticated()) {
@@ -1556,27 +1579,5 @@ window.Kanban = Kanban;
 // ==========================================================================
 // WORKSPACE / COMPANY SWITCHER
 // ==========================================================================
-window.switchCompany = function(companyName) {
-    localStorage.setItem("activeCompany", companyName);
-    
-    // Atualiza o Select Nativo
-    const workspaceSelect = document.getElementById("workspace-select");
-    if (workspaceSelect && workspaceSelect.value !== companyName) {
-        workspaceSelect.value = companyName;
-    }
-
-    // Processa Exclusividades (data-company)
-    const specificElements = document.querySelectorAll("[data-company]");
-    specificElements.forEach(el => {
-        if (el.getAttribute("data-company") === companyName) {
-            el.style.display = el.tagName === "DIV" ? "flex" : "block"; // ou conforme o caso
-            
-            // Para o btn-isocinetica-card, flexbox é ideal
-            if (el.id === "btn-isocinetica-card") {
-                el.style.display = "flex";
-            }
-        } else {
-            el.style.display = "none";
-        }
-    });
-};
+// WORKSPACE / COMPANY SWITCHER (Movido para cima para evitar problemas de escopo no initApp)
+// ==========================================================================

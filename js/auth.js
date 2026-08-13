@@ -93,16 +93,20 @@ export const Auth = {
 
     // Verificação de permissão simples baseada em rotas
     canAccessRoute(role, route) {
+        if (!role) return false;
+        const roleLower = role.toLowerCase();
+        if (roleLower === "admin") return true;
+
         const permissions = {
             admin: ["*"], // Administrador acessa tudo
             manager: ["dashboard", "crm", "kanban", "proposals", "calculators", "isocinetica", "team", "goals", "services", "inspections", "calendar", "ai-agents"],
+            gerente: ["dashboard", "crm", "kanban", "proposals", "calculators", "isocinetica", "team", "goals", "services", "inspections", "calendar", "ai-agents"],
             seller: ["dashboard", "crm", "kanban", "proposals", "calculators", "isocinetica", "goals", "inspections", "calendar", "ai-agents"],
-            operacional: ["calendar"]
+            vendedor: ["dashboard", "crm", "kanban", "proposals", "calculators", "isocinetica", "goals", "inspections", "calendar", "ai-agents"],
+            operacional: ["dashboard", "calendar"]
         };
 
-        if (role === "admin") return true;
-
-        const allowed = permissions[role] || [];
+        const allowed = permissions[roleLower] || [];
         return allowed.includes(route);
     }
 };

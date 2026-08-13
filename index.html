@@ -2635,6 +2635,7 @@
                                         <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);">Usuário</th>
                                         <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);">E-mail</th>
                                         <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);">Permissão</th>
+                                        <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);">Acesso Empresa</th>
                                         <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);">Status</th>
                                         <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);">Último Login</th>
                                         <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);">Leads</th>
@@ -3710,6 +3711,16 @@
                         <option value="inactive">Inativo</option>
                     </select>
                 </div>
+            </div>
+
+            <div class="form-group">
+                <label for="user-companyAccess">Acesso a Empresa</label>
+                <select id="user-companyAccess" class="form-control">
+                    <option value="Ambas">Ambas as Empresas (Acesso Total)</option>
+                    <option value="Excelência Ambiental">Somente Excelência Ambiental</option>
+                    <option value="Veeluen Solutions">Somente Veeluen Solutions</option>
+                </select>
+                <span style="font-size: 11px; color: var(--text-muted);">Usuários com acesso a uma única empresa não poderão alternar de visualização.</span>
             </div>
 
             <div class="form-group" id="password-field-group">

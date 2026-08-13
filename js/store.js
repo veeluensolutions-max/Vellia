@@ -11,6 +11,7 @@ const DEFAULT_USERS = [
         role: "admin",
         avatar: "AG",
         status: "active",
+        companyAccess: "Ambas",
         lastLoginAt: null
     },
     {
@@ -21,6 +22,7 @@ const DEFAULT_USERS = [
         role: "operacional",
         avatar: "OP",
         status: "active",
+        companyAccess: "Ambas",
         lastLoginAt: null
     },
     {
@@ -31,6 +33,7 @@ const DEFAULT_USERS = [
         role: "seller",
         avatar: "VT",
         status: "active",
+        companyAccess: "Ambas",
         lastLoginAt: null
     }
 ];
@@ -90,7 +93,7 @@ async function supabaseFetch(table) {
 }
 
 const TABLE_SCHEMAS = {
-    comercial_users: ['id', 'name', 'email', 'password', 'role', 'avatar', 'status', 'lastLoginAt'],
+    comercial_users: ['id', 'name', 'email', 'password', 'role', 'avatar', 'status', 'companyAccess', 'lastLoginAt'],
     comercial_leads: ['id', 'workspace', 'company', 'contact', 'role', 'phone', 'whatsapp', 'email', 'city', 'state', 'segment', 'source', 'stage', 'owner', 'interactions', 'stageHistory', 'phone2', 'email2', 'notes'],
     comercial_proposals: ['id', 'workspace', 'leadId', 'company', 'contact', 'title', 'value', 'status', 'sentAt', 'closedAt', 'validUntil', 'competitor', 'lossReason', 'notes', 'createdBy'],
     comercial_logs: ['id', 'timestamp', 'userEmail', 'action', 'details', 'status'],

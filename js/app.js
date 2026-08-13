@@ -276,6 +276,31 @@ function showAppShell(user) {
     // Configurar Itens da Sidebar conforme Permissões
     configureSidebarMenu(user.role);
 
+    // Enforçar restrição de Empresa
+    const companyAccess = user.companyAccess || "Ambas";
+    const workspaceSelect = document.getElementById("workspace-select");
+    
+    if (companyAccess !== "Ambas") {
+        if (workspaceSelect) {
+            workspaceSelect.style.display = "none";
+            // Se houver um ícone ou container junto do select que precise ser ocultado, também ocultamos
+            const parent = workspaceSelect.closest('.company-selector-container');
+            if (parent) parent.style.display = "none";
+        }
+        // Força a navegação apenas nos dados desta empresa
+        window.switchCompany(companyAccess);
+    } else {
+        if (workspaceSelect) {
+            workspaceSelect.style.display = "block";
+            const parent = workspaceSelect.closest('.company-selector-container');
+            if (parent) parent.style.display = "flex";
+            
+            // Restaura o valor atual do localStorage caso esteja voltando
+            const savedCompany = localStorage.getItem("activeCompany") || "Veeluen Solutions";
+            window.switchCompany(savedCompany);
+        }
+    }
+
     // Ir para a view ativa atual ou padrão (dashboard/calendar)
     let defaultView = "dashboard";
     if (user.role === "operacional") defaultView = "calendar";

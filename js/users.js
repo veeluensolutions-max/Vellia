@@ -135,6 +135,24 @@ export const Users = {
             `;
             tr.appendChild(tdRole);
 
+            // Coluna de Empresa Acesso
+            const tdCompanyAccess = document.createElement("td");
+            tdCompanyAccess.style.cssText = "padding: 14px 16px;";
+            const userCompany = user.companyAccess || "Ambas";
+            let companyColor = "var(--text-secondary)";
+            let companyBg = "rgba(0,0,0,0.05)";
+            if (userCompany === "Veeluen Solutions") { companyColor = "#2563eb"; companyBg = "rgba(37,99,235,0.1)"; }
+            if (userCompany === "Excelência Ambiental") { companyColor = "#16a34a"; companyBg = "rgba(22,163,74,0.1)"; }
+            
+            tdCompanyAccess.innerHTML = `
+                <span style="
+                    display: inline-block; padding: 4px 10px; border-radius: 6px;
+                    font-size: 11px; font-weight: 600; color: ${companyColor}; background: ${companyBg};
+                    white-space: nowrap;
+                ">${userCompany}</span>
+            `;
+            tr.appendChild(tdCompanyAccess);
+
             // Coluna de Status
             const tdStatus = document.createElement("td");
             tdStatus.style.cssText = "padding: 14px 16px;";
@@ -355,6 +373,7 @@ export const Users = {
             const role = document.getElementById("user-role").value;
             const status = document.getElementById("user-status").value;
             const password = document.getElementById("user-password").value;
+            const companyAccess = document.getElementById("user-companyAccess").value;
 
             // Validar força da senha se informada (cadastro ou edição)
             if (password) {
@@ -374,6 +393,7 @@ export const Users = {
                     users[idx].name = name;
                     users[idx].role = role;
                     users[idx].status = status;
+                    users[idx].companyAccess = companyAccess;
                     if (password) users[idx].password = password;
                     Store.saveUsers(users);
                     Store.addLog(Auth.getCurrentUser().email, "USER_MANAGEMENT", `Usuário ${name} (${email}) editado pelo Admin.`, "SUCCESS");
@@ -392,6 +412,7 @@ export const Users = {
                     email,
                     role,
                     status,
+                    companyAccess,
                     password: password || "123456",
                     avatar: name.substring(0, 2).toUpperCase(),
                     lastLoginAt: null
@@ -420,6 +441,7 @@ export const Users = {
         document.getElementById("user-email").setAttribute("readonly", "readonly");
         document.getElementById("user-role").value = user.role;
         document.getElementById("user-status").value = user.status || "active";
+        document.getElementById("user-companyAccess").value = user.companyAccess || "Ambas";
         document.getElementById("user-password").removeAttribute("required");
 
         const title = document.getElementById("user-modal-title");

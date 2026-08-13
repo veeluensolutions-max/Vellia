@@ -298,6 +298,9 @@ export const Calendar = {
                         <button onclick="window.Calendar.approveEvent('${ev.id}')" class="btn btn-sm" style="background:#10b981; color:#fff; font-size:11px; padding:4px 8px; font-weight:700; border:none; border-radius:6px; cursor:pointer;">✅ Aprovar</button>
                         <button onclick="window.Calendar.rejectEvent('${ev.id}')" class="btn btn-sm" style="background:#ef4444; color:#fff; font-size:11px; padding:4px 8px; font-weight:700; border:none; border-radius:6px; cursor:pointer;">❌ Recusar</button>
                     ` : ''}
+                    ${ev.status === 'bloqueado' && ['operacional', 'admin'].includes(Auth.getCurrentUser()?.role) ? `
+                        <button onclick="window.Calendar.unlockDate('${ev.id}')" class="btn btn-sm" style="background:#ef4444; color:#fff; font-size:11px; padding:4px 8px; font-weight:700; border:none; border-radius:6px; cursor:pointer;">🔓 Destravar</button>
+                    ` : ''}
                     ${ev.phone ? `<a href="https://wa.me/${ev.phone.replace(/\D/g,'')}" target="_blank" class="btn btn-sm" style="background:#25d366; color:#fff; font-size:11px; padding:4px 8px; font-weight:700; border:none; text-decoration:none; border-radius:6px;">💬 WhatsApp</a>` : ''}
                     ${ev.leadId ? `<button onclick="window.location.hash='#crm'; setTimeout(()=>window.openLeadDrawerFromExt('${ev.leadId}'),300)" class="btn btn-outline btn-sm" style="font-size:11px; padding:4px 8px;">🔍 Ver Lead</button>` : ''}
                 </div>
@@ -544,6 +547,16 @@ export const Calendar = {
                 Store.saveCalendarEvents(customEvents);
                 this.render();
             }
+        }
+    },
+
+    unlockDate(id) {
+        if(confirm("Tem certeza que deseja destravar esta data?")) {
+            let customEvents = Store.getCalendarEvents();
+            customEvents = customEvents.filter(e => e.id !== id);
+            Store.saveCalendarEvents(customEvents);
+            alert("✅ Data destravada com sucesso!");
+            this.render();
         }
     }
 };

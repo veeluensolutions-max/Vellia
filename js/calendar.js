@@ -224,7 +224,7 @@ export const Calendar = {
                     </select>
 
                     ${(() => {
-                        if (!['operacional', 'admin'].includes(Auth.getCurrentUser()?.role)) return '';
+                        if (!Auth.getCurrentUser()?.role || !['operacional', 'admin'].includes(Auth.getCurrentUser().role.toLowerCase())) return '';
                         const dateToBlock = this.selectedDateStr || new Date().toISOString().split("T")[0];
                         const blockedEvent = allEvents.find(e => e.date === dateToBlock && e.status === "bloqueado");
                         if (blockedEvent) {
@@ -302,11 +302,11 @@ export const Calendar = {
                     ${ev.notes ? `<div style="font-size:11px; color:var(--text-secondary); margin-top:4px;">📝 ${ev.notes}</div>` : ''}
                 </div>
                 <div style="display:flex; gap:6px;">
-                    ${ev.status === 'pendente' && ['operacional', 'admin'].includes(Auth.getCurrentUser()?.role) ? `
+                    ${ev.status === 'pendente' && Auth.getCurrentUser()?.role && ['operacional', 'admin'].includes(Auth.getCurrentUser().role.toLowerCase()) ? `
                         <button onclick="window.Calendar.approveEvent('${ev.id}')" class="btn btn-sm" style="background:#10b981; color:#fff; font-size:11px; padding:4px 8px; font-weight:700; border:none; border-radius:6px; cursor:pointer;">✅ Aprovar</button>
                         <button onclick="window.Calendar.rejectEvent('${ev.id}')" class="btn btn-sm" style="background:#ef4444; color:#fff; font-size:11px; padding:4px 8px; font-weight:700; border:none; border-radius:6px; cursor:pointer;">❌ Recusar</button>
                     ` : ''}
-                    ${ev.status === 'bloqueado' && ['operacional', 'admin'].includes(Auth.getCurrentUser()?.role) ? `
+                    ${ev.status === 'bloqueado' && Auth.getCurrentUser()?.role && ['operacional', 'admin'].includes(Auth.getCurrentUser().role.toLowerCase()) ? `
                         <button onclick="window.Calendar.unlockDate('${ev.id}')" class="btn btn-sm" style="background:#ef4444; color:#fff; font-size:11px; padding:4px 8px; font-weight:700; border:none; border-radius:6px; cursor:pointer;">🔓 Destravar</button>
                     ` : ''}
                     ${ev.phone ? `<a href="https://wa.me/${ev.phone.replace(/\D/g,'')}" target="_blank" class="btn btn-sm" style="background:#25d366; color:#fff; font-size:11px; padding:4px 8px; font-weight:700; border:none; text-decoration:none; border-radius:6px;">💬 WhatsApp</a>` : ''}
@@ -414,7 +414,7 @@ export const Calendar = {
                 const notes = document.getElementById("cal-event-notes").value;
                 
                 const user = Auth.getCurrentUser();
-                if (user && user.role !== "operacional" && user.role !== "admin") {
+                if (user && user.role && user.role.toLowerCase() !== "operacional" && user.role.toLowerCase() !== "admin") {
                     statusVal = "pendente"; // Vendedor agenda como pendente
                 }
 

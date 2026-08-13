@@ -95,7 +95,7 @@ export const Dashboard = {
         const execDash = document.getElementById("dashboard-exec");
         const opDash = document.getElementById("dashboard-operacional");
 
-        if (user.role === "operacional") {
+        if (user.role && user.role.toLowerCase() === "operacional") {
             if (execDash) execDash.style.display = "none";
             if (opDash) {
                 opDash.style.display = "flex";
@@ -105,7 +105,7 @@ export const Dashboard = {
             // Admin, Manager or Seller
             if (execDash) execDash.style.display = "flex";
             
-            if (user.role === "admin") {
+            if (user.role && user.role.toLowerCase() === "admin") {
                 if (opDash) {
                     opDash.style.display = "flex";
                     this.renderOperacionalDashboard(proposals, leads);
@@ -1745,9 +1745,5 @@ window.configureCommissionRate = function(currentRate) {
             alert("⚠️ Por favor insira um número válido.");
         }
     }
-};
-w i n d o w . D a s h b o a r d   =   D a s h b o a r d ; 
- 
- 
 };
 window.Dashboard = Dashboard;

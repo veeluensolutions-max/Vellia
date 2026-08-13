@@ -1746,5 +1746,8 @@ window.configureCommissionRate = function(currentRate) {
         }
     }
 };
-w i n d o w . D a s h b o a r d   =   D a s h b o a r d ;  
+w i n d o w . D a s h b o a r d   =   D a s h b o a r d ; 
  
+ 
+};
+window.Dashboard = Dashboard;

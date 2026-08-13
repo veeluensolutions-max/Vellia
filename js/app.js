@@ -4,7 +4,7 @@ import { Audit } from "./audit.js";
 import { CRM } from "./crm.js";
 import { Kanban } from "./kanban.js";
 import { Proposals } from "./proposals.js";
-import { Dashboard } from "./dashboard.js?v=5";
+import { Dashboard } from "./dashboard.js?v=6";
 import { Goals } from "./goals.js";
 import { Services } from "./services.js";
 import { analyzeContext } from "./ai.js";
@@ -18,7 +18,7 @@ import { Pricing } from "./pricing.js";
 import { Integrations } from "./integrations.js";
 import { connectRealtime, disconnectRealtime } from "./realtime.js";
 import { InspectionScheduler } from "./inspection-scheduler.js";
-import { Calendar } from "./calendar.js?v=5";
+import { Calendar } from "./calendar.js?v=6";
 import "./pdf-generator.js";
 import { Copilot } from "./copilot.js";
 import { Trash } from "./trash.js";
@@ -60,55 +60,19 @@ const INACTIVITY_WARN_TIME = 9 * 60 * 1000; // 9 minutos de inatividade antes do
 const COUNTDOWN_DURATION = 60; // 60 segundos de contagem regressiva
 
 function checkLockout() {
-    const email = elements.loginEmail ? elements.loginEmail.value.trim().toLowerCase() : "";
-    if (!email) return false;
-
-    const lockoutKey = `lockout_${email}`;
-    const lockoutUntil = localStorage.getItem(lockoutKey);
-    
-    if (lockoutUntil) {
-        const remaining = Math.ceil((new Date(lockoutUntil) - new Date()) / 1000);
-        if (remaining > 0) {
-            // Desativar inputs e botão
-            const btnSubmit = document.getElementById("btn-login-submit");
-            if (btnSubmit) btnSubmit.disabled = true;
-            if (elements.loginEmail) elements.loginEmail.disabled = true;
-            if (elements.loginPassword) elements.loginPassword.disabled = true;
-
-            // Mostrar mensagem de erro
-            if (elements.loginError && elements.loginErrorText) {
-                elements.loginError.style.display = "flex";
-                elements.loginErrorText.textContent = `Muitas tentativas incorretas. Login bloqueado por ${remaining}s.`;
+    // Limpeza de bloqueios residuais
+    try {
+        Object.keys(localStorage).forEach(k => {
+            if (k.startsWith("lockout_") || k.startsWith("attempts_")) {
+                localStorage.removeItem(k);
             }
+        });
+    } catch(e) {}
 
-            // Iniciar contagem regressiva se não houver intervalo ativo
-            if (!lockoutInterval) {
-                lockoutInterval = setInterval(() => {
-                    const rem = Math.ceil((new Date(lockoutUntil) - new Date()) / 1000);
-                    if (rem > 0) {
-                        if (elements.loginErrorText) {
-                            elements.loginErrorText.textContent = `Muitas tentativas incorretas. Login bloqueado por ${rem}s.`;
-                        }
-                    } else {
-                        clearInterval(lockoutInterval);
-                        lockoutInterval = null;
-                        localStorage.removeItem(lockoutKey);
-                        if (btnSubmit) btnSubmit.disabled = false;
-                        if (elements.loginEmail) elements.loginEmail.disabled = false;
-                        if (elements.loginPassword) elements.loginPassword.disabled = false;
-                        if (elements.loginError) elements.loginError.style.display = "none";
-                    }
-                }, 1000);
-            }
-            return true;
-        }
-    }
-    
-    // Se não estiver bloqueado, garantir que os campos estejam liberados
     const btnSubmit = document.getElementById("btn-login-submit");
-    if (btnSubmit && !lockoutInterval) btnSubmit.disabled = false;
-    if (elements.loginEmail && !lockoutInterval) elements.loginEmail.disabled = false;
-    if (elements.loginPassword && !lockoutInterval) elements.loginPassword.disabled = false;
+    if (btnSubmit) btnSubmit.disabled = false;
+    if (elements.loginEmail) elements.loginEmail.disabled = false;
+    if (elements.loginPassword) elements.loginPassword.disabled = false;
     return false;
 }
 
@@ -1424,7 +1388,7 @@ function setupSellerQuickActions() {
 function setupEventListeners() {
     // Form de Login
     const executeLogin = async () => {
-        if (checkLockout()) return;
+        checkLockout();
 
         const email = elements.loginEmail ? elements.loginEmail.value.trim() : "";
         const password = elements.loginPassword ? elements.loginPassword.value : "";
@@ -1443,8 +1407,6 @@ function setupEventListeners() {
                 elements.loginErrorText.textContent = result.error;
                 elements.loginError.style.display = "flex";
                 elements.loginError.classList.add("animate-fade-in");
-                
-                checkLockout();
             }
         } catch(e) {
             console.error("Login error:", e);
@@ -1455,6 +1417,8 @@ function setupEventListeners() {
             }
         }
     };
+
+    window.executeLogin = executeLogin;
 
     if (elements.loginForm) {
         elements.loginForm.addEventListener("submit", (e) => {

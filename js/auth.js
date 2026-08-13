@@ -9,18 +9,6 @@ export const Auth = {
 
         const emailLower = email.toLowerCase().trim();
 
-        // Verificar se há lockout ativo
-        const lockoutUntil = localStorage.getItem(`lockout_${emailLower}`);
-        if (lockoutUntil) {
-            const remaining = Math.ceil((new Date(lockoutUntil) - new Date()) / 1000);
-            if (remaining > 0) {
-                Store.addLog(emailLower, "LOGIN_ATTEMPT", `Tentativa de login bloqueada: lockout ativo (${remaining}s restantes).`, "WARN");
-                return { success: false, error: `Muitas tentativas incorretas. Login bloqueado por ${remaining}s.` };
-            } else {
-                localStorage.removeItem(`lockout_${emailLower}`);
-            }
-        }
-
         let user = Store.getUserByEmail(emailLower);
 
         if (!user) {
@@ -31,37 +19,11 @@ export const Auth = {
         }
 
         if (!user) {
-            // Incrementar tentativas falhas
-            let attempts = parseInt(localStorage.getItem(`attempts_${emailLower}`)) || 0;
-            attempts++;
-            localStorage.setItem(`attempts_${emailLower}`, attempts);
-
-            if (attempts >= 3) {
-                const lockoutTime = new Date(Date.now() + 30 * 1000).toISOString();
-                localStorage.setItem(`lockout_${emailLower}`, lockoutTime);
-                localStorage.removeItem(`attempts_${emailLower}`);
-                Store.addLog(emailLower, "LOGIN_LOCKOUT", "Muitas tentativas de login incorretas. Conta temporariamente bloqueada por 30s.", "SECURITY");
-                return { success: false, error: "Muitas tentativas incorretas. Login bloqueado por 30 segundos." };
-            }
-
             Store.addLog(emailLower, "LOGIN_ATTEMPT", `Tentativa de login falhou: e-mail não cadastrado.`, "WARN");
             return { success: false, error: "Usuário ou senha incorretos." };
         }
 
         if (user.password !== password) {
-            // Incrementar tentativas falhas
-            let attempts = parseInt(localStorage.getItem(`attempts_${emailLower}`)) || 0;
-            attempts++;
-            localStorage.setItem(`attempts_${emailLower}`, attempts);
-
-            if (attempts >= 3) {
-                const lockoutTime = new Date(Date.now() + 30 * 1000).toISOString();
-                localStorage.setItem(`lockout_${emailLower}`, lockoutTime);
-                localStorage.removeItem(`attempts_${emailLower}`);
-                Store.addLog(emailLower, "LOGIN_LOCKOUT", "Muitas tentativas de login incorretas. Conta temporariamente bloqueada por 30s.", "SECURITY");
-                return { success: false, error: "Muitas tentativas incorretas. Login bloqueado por 30 segundos." };
-            }
-
             Store.addLog(emailLower, "LOGIN_ATTEMPT", `Tentativa de login falhou: senha incorreta.`, "WARN");
             return { success: false, error: "Usuário ou senha incorretos." };
         }

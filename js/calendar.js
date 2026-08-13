@@ -223,7 +223,16 @@ export const Calendar = {
                         <option value="reuniao" ${this.filterType === 'reuniao' ? 'selected' : ''}>💼 Reuniões</option>
                     </select>
 
-                    ${['operacional', 'admin'].includes(Auth.getCurrentUser()?.role) ? `<button onclick="window.Calendar.blockDateModal()" class="btn btn-outline" style="gap:6px; display:inline-flex; align-items:center; border-color:#ef4444; color:#ef4444;"><span>🚫 Bloquear Data</span></button>` : ''}
+                    ${(() => {
+                        if (!['operacional', 'admin'].includes(Auth.getCurrentUser()?.role)) return '';
+                        const dateToBlock = this.selectedDateStr || new Date().toISOString().split("T")[0];
+                        const dayEvts = eventsByDate[dateToBlock] || [];
+                        const blockedEvent = dayEvts.find(e => e.status === "bloqueado");
+                        if (blockedEvent) {
+                            return `<button onclick="window.Calendar.unlockDate('${blockedEvent.id}')" class="btn btn-outline" style="gap:6px; display:inline-flex; align-items:center; border-color:#10b981; color:#10b981;"><span>🔓 Destravar Data</span></button>`;
+                        }
+                        return `<button onclick="window.Calendar.blockDateModal()" class="btn btn-outline" style="gap:6px; display:inline-flex; align-items:center; border-color:#ef4444; color:#ef4444;"><span>🚫 Bloquear Data</span></button>`;
+                    })()}
                     <button id="btn-open-new-event-modal" class="btn btn-primary" style="gap:6px; display:inline-flex; align-items:center;">
                         <span>➕ Agendar Vistoria / Evento</span>
                     </button>

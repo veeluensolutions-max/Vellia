@@ -105,7 +105,7 @@ export const Dashboard = {
             // Admin, Manager or Seller
             if (execDash) execDash.style.display = "flex";
             
-            if (user.role && user.role.toLowerCase() === "admin") {
+            if (user.role && ["admin", "manager", "gerente", "operacional"].includes(user.role.toLowerCase())) {
                 if (opDash) {
                     opDash.style.display = "flex";
                     this.renderOperacionalDashboard(proposals, leads);
@@ -136,7 +136,7 @@ export const Dashboard = {
         const container = document.getElementById("dashboard-operacional");
         if (!container) return;
 
-        const awaiting = proposals.filter(p => p.status === "Aguardando Agendamento");
+        const awaiting = proposals.filter(p => p.status === "Aguardando Agendamento" || p.status === "Ganho");
         const scheduled = proposals.filter(p => p.status === "Agendada");
 
         const renderList = (list, title, color, isAwaiting) => {

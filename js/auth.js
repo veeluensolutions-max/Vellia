@@ -1,7 +1,7 @@
 import { Store } from "./store.js";
 
 export const Auth = {
-    login(email, password) {
+    async login(email, password) {
         if (!email || !password) {
             Store.addLog(email || "desconhecido", "LOGIN_ATTEMPT", "Tentativa de login sem preencher e-mail ou senha.", "WARN");
             return { success: false, error: "Por favor, preencha todos os campos." };
@@ -21,7 +21,14 @@ export const Auth = {
             }
         }
 
-        const user = Store.getUserByEmail(emailLower);
+        let user = Store.getUserByEmail(emailLower);
+
+        if (!user) {
+            try {
+                await Store.syncFromSupabase();
+                user = Store.getUserByEmail(emailLower);
+            } catch(e) {}
+        }
 
         if (!user) {
             // Incrementar tentativas falhas

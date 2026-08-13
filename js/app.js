@@ -4,7 +4,7 @@ import { Audit } from "./audit.js";
 import { CRM } from "./crm.js";
 import { Kanban } from "./kanban.js";
 import { Proposals } from "./proposals.js";
-import { Dashboard } from "./dashboard.js?v=4";
+import { Dashboard } from "./dashboard.js?v=5";
 import { Goals } from "./goals.js";
 import { Services } from "./services.js";
 import { analyzeContext } from "./ai.js";
@@ -18,7 +18,7 @@ import { Pricing } from "./pricing.js";
 import { Integrations } from "./integrations.js";
 import { connectRealtime, disconnectRealtime } from "./realtime.js";
 import { InspectionScheduler } from "./inspection-scheduler.js";
-import { Calendar } from "./calendar.js?v=4";
+import { Calendar } from "./calendar.js?v=5";
 import "./pdf-generator.js";
 import { Copilot } from "./copilot.js";
 import { Trash } from "./trash.js";
@@ -206,7 +206,7 @@ function initApp() {
     checkSession();
 }
 
-window.switchCompany = function(companyName) {
+window.switchCompany = function(companyName, shouldReload = false) {
     localStorage.setItem("activeCompany", companyName);
     
     // Atualiza o Select Nativo
@@ -230,9 +230,7 @@ window.switchCompany = function(companyName) {
         }
     });
 
-    // Se a página já carregou e o usuário mudou a empresa via UI, forçar o reload 
-    // para limpar os caches (memória) de variáveis e refazer as consultas.
-    if (document.readyState === "complete") {
+    if (shouldReload) {
         window.location.reload();
     }
 };
@@ -1425,21 +1423,36 @@ function setupSellerQuickActions() {
 
 function setupEventListeners() {
     // Form de Login
-    const executeLogin = () => {
+    const executeLogin = async () => {
         if (checkLockout()) return;
 
         const email = elements.loginEmail ? elements.loginEmail.value.trim() : "";
         const password = elements.loginPassword ? elements.loginPassword.value : "";
         
-        const result = Auth.login(email, password);
-        if (result.success) {
-            showAppShell(result.user);
-        } else if (elements.loginErrorText && elements.loginError) {
-            elements.loginErrorText.textContent = result.error;
-            elements.loginError.style.display = "flex";
-            elements.loginError.classList.add("animate-fade-in");
-            
-            checkLockout();
+        const btnSubmit = document.getElementById("btn-login-submit");
+        if (btnSubmit) {
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = `<span>Entrando...</span>`;
+        }
+
+        try {
+            const result = await Auth.login(email, password);
+            if (result.success) {
+                showAppShell(result.user);
+            } else if (elements.loginErrorText && elements.loginError) {
+                elements.loginErrorText.textContent = result.error;
+                elements.loginError.style.display = "flex";
+                elements.loginError.classList.add("animate-fade-in");
+                
+                checkLockout();
+            }
+        } catch(e) {
+            console.error("Login error:", e);
+        } finally {
+            if (btnSubmit) {
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = `<span>Acessar Plataforma</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`;
+            }
         }
     };
 

@@ -996,7 +996,7 @@ export const Store = {
         });
 
         const proposalsCount = monthProposals.length;
-        const wonProposals = monthProposals.filter(p => p.status === "Ganho");
+        const wonProposals = monthProposals.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status));
         const wonCount = wonProposals.length;
         const revenue = wonProposals.reduce((sum, p) => sum + (Number(p.value) || 0), 0);
 

@@ -81,8 +81,8 @@ export const Goals = {
             myProposals = periodProposals.filter(p => p.createdBy === user.email);
         }
 
-        const myRevenue = myProposals.filter(p => p.status === "Ganho").reduce((s, p) => s + (p.value || 0), 0);
-        const myWon = myProposals.filter(p => p.status === "Ganho").length;
+        const myRevenue = myProposals.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)).reduce((s, p) => s + (p.value || 0), 0);
+        const myWon = myProposals.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)).length;
 
         // Calcular interações (ligações e reuniões)
         let myInteractions = { Ligação: 0, Reunião: 0 };
@@ -261,8 +261,8 @@ export const Goals = {
 
         const ranking = sellers.map(u => {
             const myProps = periodProposals.filter(p => p.createdBy === u.email);
-            const won = myProps.filter(p => p.status === "Ganho").length;
-            const revenue = myProps.filter(p => p.status === "Ganho").reduce((s, p) => s + (p.value || 0), 0);
+            const won = myProps.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)).length;
+            const revenue = myProps.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)).reduce((s, p) => s + (p.value || 0), 0);
             const sent = myProps.length;
             const convRate = sent > 0 ? Math.round((won / sent) * 100) : 0;
             const goalPct = goals.meta_revenue > 0 ? Math.min(Math.round((revenue / goals.meta_revenue) * 100), 100) : 0;
@@ -424,8 +424,8 @@ export const Goals = {
 
         const fmt = v => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
-        const totalRevenue = periodProposals.filter(p => p.status === "Ganho").reduce((s, p) => s + (p.value || 0), 0);
-        const totalWon = periodProposals.filter(p => p.status === "Ganho").length;
+        const totalRevenue = periodProposals.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)).reduce((s, p) => s + (p.value || 0), 0);
+        const totalWon = periodProposals.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)).length;
         const totalLost = periodProposals.filter(p => p.status === "Perdido").length;
         const totalSent = periodProposals.length;
         const avgTicket = totalWon > 0 ? Math.round(totalRevenue / totalWon) : 0;

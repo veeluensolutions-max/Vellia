@@ -157,10 +157,10 @@ export const Proposals = {
         const proposals = Store.getProposals();
         const total = proposals.length;
         const sent = proposals.filter(p => p.status === "Enviada").length;
-        const won = proposals.filter(p => p.status === "Ganho").length;
+        const won = proposals.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)).length;
         const lost = proposals.filter(p => p.status === "Perdido").length;
         const totalRevenue = proposals
-            .filter(p => p.status === "Ganho")
+            .filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status))
             .reduce((sum, p) => sum + (p.value || 0), 0);
         const convRate = total > 0 ? Math.round((won / total) * 100) : 0;
 
@@ -263,6 +263,8 @@ export const Proposals = {
             "Enviada": `<span class="badge badge-info">Enviada</span>`,
             "Em Negociação": `<span class="badge badge-warning">Em Negociação</span>`,
             "Ganho": `<span class="badge badge-success">✅ Ganho</span>`,
+            "Aguardando Agendamento": `<span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3);">⏳ Aguardando Agendamento</span>`,
+            "Agendada": `<span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);">🗓️ Agendada</span>`,
             "Perdido": `<span class="badge badge-danger">❌ Perdido</span>`,
             "Cancelada": `<span class="badge" style="background: var(--bg-surface); color: var(--text-muted); border: 1px solid var(--border-color);">Cancelada</span>`
         };
@@ -728,7 +730,7 @@ export const Proposals = {
         const executionDate = document.getElementById("win-execution").value;
 
         Store.updateProposal(activeProposalId, {
-            status: "Ganho",
+            status: "Aguardando Agendamento",
             service: service,
             value: finalValue,
             executionDate: executionDate || null,

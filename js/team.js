@@ -142,8 +142,8 @@ export const Team = {
                 return d >= new Date(start) && d <= new Date(end) && p.createdBy === seller.email;
             });
             const proposalsSent = sellerProposals.length;
-            const proposalsWon = sellerProposals.filter(p => p.status === "Ganho").length;
-            const revenue = sellerProposals.filter(p => p.status === "Ganho").reduce((s, p) => s + (p.value || 0), 0);
+            const proposalsWon = sellerProposals.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)).length;
+            const revenue = sellerProposals.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)).reduce((s, p) => s + (p.value || 0), 0);
             
             const goalsConfig = JSON.parse(localStorage.getItem("comercial_goals_config")) || DEFAULT_GOALS;
             const sellerRevenueGoal = goalsConfig["meta_revenue_" + seller.email] !== undefined ? parseFloat(goalsConfig["meta_revenue_" + seller.email]) : parseFloat(goalsConfig.meta_revenue || DEFAULT_GOALS.meta_revenue);
@@ -389,7 +389,7 @@ export const Team = {
 
         const sellerData = sellers.map(seller => {
             // Propostas ganhas deste vendedor
-            const sellerProps = proposals.filter(p => p.createdBy === seller.email && p.status === "Ganho");
+            const sellerProps = proposals.filter(p => p.createdBy === seller.email && ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status));
 
             // Faturamento do mês
             const monthlyRevenue = sellerProps

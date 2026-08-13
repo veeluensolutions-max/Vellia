@@ -329,6 +329,11 @@
                      VIEW: DASHBOARD (PADRÃO)
                      ========================================================== -->
                 <div id="view-dashboard" class="spa-view">
+                    <!-- Dashboard Operacional -->
+                    <div id="dashboard-operacional" style="display: none; flex-direction: column;">
+                        <!-- Preenchido via dashboard.js -->
+                    </div>
+
                     <!-- Dashboard Gerente / Admin (Executivo) — ETAPA 5 -->
                     <div id="dashboard-exec" style="display: flex; flex-direction: column;">
 
@@ -1780,6 +1785,8 @@
                                 <option value="all">Todos</option>
                                 <option value="Enviada">Enviada</option>
                                 <option value="Em Negociação">Em Negociação</option>
+                                <option value="Aguardando Agendamento">Aguardando Agendamento</option>
+                                <option value="Agendada">Agendada</option>
                                 <option value="Ganho">Ganho</option>
                                 <option value="Perdido">Perdido</option>
                                 <option value="Cancelada">Cancelada</option>

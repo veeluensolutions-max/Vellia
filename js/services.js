@@ -45,7 +45,7 @@ export const Services = {
         });
 
         proposals.forEach(p => {
-            if (p.status !== "Ganho") return;
+            if (!["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)) return;
             
             const titleLower = p.title.toLowerCase();
             let srvId = "srv_4"; 

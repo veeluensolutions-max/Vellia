@@ -93,7 +93,7 @@ export function generatePerformancePDF(userEmail) {
     const goalObj = Store.getGoalByUserAndPeriod(userEmail, periodKey);
     const targets = goalObj?.targets || { revenue: 0, proposals: 0, leadsQualified: 0 };
 
-    const wonProps   = userProposals.filter(p => p.status === "Ganho");
+    const wonProps   = userProposals.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status));
     const lostProps  = userProposals.filter(p => p.status === "Perdido");
     const totalRevenue = wonProps.reduce((s, p) => s + (p.value || 0), 0);
     const leadsQualified = userLeads.filter(l => !["Contato", "Cliente Perdido"].includes(l.stage)).length;

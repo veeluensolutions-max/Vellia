@@ -101,7 +101,7 @@ export const Performance = {
             labels.push(d.toLocaleDateString("pt-BR", { month: 'short' }));
 
             const rev = proposals
-                .filter(p => p.status === "Ganho" && p.closedAt && p.closedAt.startsWith(monthStr))
+                .filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status) && p.closedAt && p.closedAt.startsWith(monthStr))
                 .reduce((sum, p) => sum + (p.value || 0), 0);
             
             dataRevenue.push(rev);
@@ -134,7 +134,7 @@ export const Performance = {
         const contatos = leads.length;
         const qualificados = leads.filter(l => l.stage !== "Lead Novo" && l.stage !== "Contato").length;
         const propostas = proposals.length;
-        const clientes = proposals.filter(p => p.status === "Ganho").length;
+        const clientes = proposals.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)).length;
 
         charts.funnel = new Chart(ctx, {
             type: 'bar',
@@ -175,7 +175,7 @@ export const Performance = {
         proposals.forEach(p => {
             if (p.status === "Enviada" || p.status === "Em Negociação") {
                 valuePendente += p.value || 0;
-            } else if (p.status === "Ganho") {
+            } else if (["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)) {
                 valueGanho += p.value || 0;
             } else if (p.status === "Perdido") {
                 valuePerdido += p.value || 0;

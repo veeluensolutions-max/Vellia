@@ -64,7 +64,7 @@ export const LeadAIScore = {
         const proposals = Store.getProposals ? Store.getProposals().filter(p => p.leadId === lead.id || (p.company && p.company.toLowerCase() === (lead.company || "").toLowerCase())) : [];
         if (proposals.length > 0) {
             const openProp = proposals.find(p => p.status === "Enviada" || p.status === "Em Negociação");
-            const wonProp = proposals.find(p => p.status === "Ganho");
+            const wonProp = proposals.find(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status));
             if (wonProp) score = Math.max(score, 95);
             else if (openProp) {
                 score += 10;

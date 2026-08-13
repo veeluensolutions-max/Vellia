@@ -92,18 +92,116 @@ export const Dashboard = {
             proposals = proposals.filter(p => p.authorEmail === session.email);
         }
 
-        this.renderKPIs(leads, proposals);
-        this.renderGoalsCommissionPanel();
-        this.renderFunnelChart(leads);
-        this.renderRevenueChart(proposals);
-        this.renderConversionDonut(proposals);
-        this.renderSegmentBreakdown(leads);
-        this.renderSourcesChart(leads);
-        this.renderVendorRanking(proposals);
-        this.renderRecentActivity(leads, proposals);
-        this.renderTasksWeekChart();
-        this.renderMetaAdsPanel();
-        this.renderChannelRoiMatrix(leads, proposals);
+        const execDash = document.getElementById("dashboard-exec");
+        const opDash = document.getElementById("dashboard-operacional");
+
+        if (user.role === "operacional") {
+            if (execDash) execDash.style.display = "none";
+            if (opDash) {
+                opDash.style.display = "flex";
+                this.renderOperacionalDashboard(proposals, leads);
+            }
+        } else {
+            if (opDash) opDash.style.display = "none";
+            if (execDash) execDash.style.display = "flex";
+
+            this.renderKPIs(leads, proposals);
+            this.renderGoalsCommissionPanel();
+            this.renderFunnelChart(leads);
+            this.renderRevenueChart(proposals);
+            this.renderConversionDonut(proposals);
+            this.renderSegmentBreakdown(leads);
+            this.renderSourcesChart(leads);
+            this.renderVendorRanking(proposals);
+            this.renderRecentActivity(leads, proposals);
+            this.renderTasksWeekChart();
+            this.renderMetaAdsPanel();
+            this.renderChannelRoiMatrix(leads, proposals);
+        }
+    },
+
+    // ===========================================================================
+    // DASHBOARD OPERACIONAL
+    // ===========================================================================
+    renderOperacionalDashboard(proposals, leads) {
+        const container = document.getElementById("dashboard-operacional");
+        if (!container) return;
+
+        const awaiting = proposals.filter(p => p.status === "Aguardando Agendamento");
+        const scheduled = proposals.filter(p => p.status === "Agendada");
+
+        const renderList = (list, title, color, isAwaiting) => {
+            if (list.length === 0) {
+                return `
+                <div class="card" style="padding: 20px; flex: 1; border-top: 4px solid ${color};">
+                    <h4 style="font-weight: 700; margin-bottom: 16px; font-size: 14px; color: var(--text-primary);">
+                        ${title} (0)
+                    </h4>
+                    <p style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px 0;">
+                        Nenhuma proposta encontrada.
+                    </p>
+                </div>`;
+            }
+
+            const items = list.map(p => {
+                const lead = leads.find(l => l.id === p.leadId);
+                const leadName = lead ? (lead.company || lead.contact) : "Lead Desconhecido";
+                
+                return `
+                <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <div style="font-weight: 700; font-size: 14px; color: var(--text-primary); margin-bottom: 4px;">
+                            ${leadName} - ${p.service}
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-muted);">
+                            Proposta: #${p.id.substring(0,8)} • Vendedor: ${p.authorEmail}
+                        </div>
+                    </div>
+                    <div>
+                        ${isAwaiting ? `
+                            <button onclick="window.Dashboard.markProposalScheduled('${p.id}')" class="btn btn-primary btn-sm" style="font-size: 11px; padding: 6px 12px;">
+                                ✅ Marcar como Agendada
+                            </button>
+                        ` : `
+                            <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);">🗓️ Agendada</span>
+                        `}
+                    </div>
+                </div>`;
+            }).join("");
+
+            return `
+            <div class="card" style="padding: 20px; flex: 1; border-top: 4px solid ${color};">
+                <h4 style="font-weight: 700; margin-bottom: 16px; font-size: 14px; color: var(--text-primary);">
+                    ${title} (${list.length})
+                </h4>
+                <div style="max-height: 500px; overflow-y: auto; padding-right: 4px;">
+                    ${items}
+                </div>
+            </div>`;
+        };
+
+        container.innerHTML = `
+            <h2 style="font-size: 20px; font-weight: 800; color: var(--text-primary); margin-bottom: 20px;">
+                Painel de Agendamentos (Operacional)
+            </h2>
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                ${renderList(awaiting, "⏳ Aguardando Agendamento", "#f59e0b", true)}
+                ${renderList(scheduled, "✅ Já Agendadas", "#10b981", false)}
+            </div>
+        `;
+    },
+
+    markProposalScheduled(proposalId) {
+        if(confirm("Confirma que esta proposta já foi agendada na agenda principal?")) {
+            const proposals = Store.getProposals();
+            const p = proposals.find(x => x.id === proposalId);
+            if(p) {
+                p.status = "Agendada";
+                Store.saveProposals(proposals);
+                this.renderAll();
+                alert("Proposta marcada como Agendada!");
+            }
+        }
     },
 
     // ===========================================================================
@@ -114,9 +212,9 @@ export const Dashboard = {
         const activeLeads = leads.filter(l => l.stage !== "Cliente Fechado" && l.stage !== "Cliente Perdido").length;
         const closedLeads = leads.filter(l => l.stage === "Cliente Fechado").length;
         const totalProposals = proposals.length;
-        const wonProposals = proposals.filter(p => p.status === "Ganho").length;
+        const wonProposals = proposals.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)).length;
         const lostProposals = proposals.filter(p => p.status === "Perdido").length;
-        const revenue = proposals.filter(p => p.status === "Ganho").reduce((s, p) => s + (p.value || 0), 0);
+        const revenue = proposals.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)).reduce((s, p) => s + (p.value || 0), 0);
         const pipeline = proposals.filter(p => p.status === "Enviada" || p.status === "Em Negociação").reduce((s, p) => s + (p.value || 0), 0);
         const convRate = totalProposals > 0 ? Math.round((wonProposals / totalProposals) * 100) : 0;
         const avgTicket = wonProposals > 0 ? Math.round(revenue / wonProposals) : 0;
@@ -460,7 +558,7 @@ export const Dashboard = {
         const labels = months.map(m => m.label);
         const data = months.map(m => {
             return proposals
-                .filter(p => p.status === "Ganho" && p.closedAt)
+                .filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status) && p.closedAt)
                 .filter(p => {
                     const d = new Date(p.closedAt);
                     return d.getMonth() === m.month && d.getFullYear() === m.year;
@@ -538,7 +636,7 @@ export const Dashboard = {
         }
 
         const total = proposals.length;
-        const won = proposals.filter(p => p.status === "Ganho").length;
+        const won = proposals.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)).length;
         const lost = proposals.filter(p => p.status === "Perdido").length;
         const pending = total - won - lost;
 
@@ -752,8 +850,8 @@ export const Dashboard = {
 
         const ranking = sellers.map(u => {
             const myProps = proposals.filter(p => p.createdBy === u.email);
-            const won = myProps.filter(p => p.status === "Ganho").length;
-            const revenue = myProps.filter(p => p.status === "Ganho").reduce((s, p) => s + (p.value || 0), 0);
+            const won = myProps.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)).length;
+            const revenue = myProps.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)).reduce((s, p) => s + (p.value || 0), 0);
             const convRate = myProps.length > 0 ? Math.round((won / myProps.length) * 100) : 0;
             return { ...u, totalProposals: myProps.length, won, revenue, convRate };
         }).sort((a, b) => b.revenue - a.revenue);
@@ -818,7 +916,7 @@ export const Dashboard = {
                 sub: `${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(p.value)}`,
                 color: "var(--primary)"
             });
-            if (p.closedAt && p.status === "Ganho") {
+            if (p.closedAt && ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)) {
                 events.push({
                     timestamp: new Date(p.closedAt),
                     leadId,
@@ -1122,7 +1220,7 @@ export const Dashboard = {
         // Receita gerada pelos leads Meta que viraram clientes
         const proposals = Store.getProposals();
         const metaRevenue = proposals
-            .filter(p => p.status === "Ganho" && metaLeads.some(l => l.id === p.leadId))
+            .filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status) && metaLeads.some(l => l.id === p.leadId))
             .reduce((sum, p) => sum + (p.value || 0), 0);
 
         const fmt = v => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
@@ -1290,7 +1388,7 @@ export const Dashboard = {
             
             // Somar receita de propostas ganhas ou estimativa do lead
             const wonRevenue = proposals
-                .filter(p => p.status === "Ganho" && chLeads.some(l => l.id === p.leadId || l.company === p.company))
+                .filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status) && chLeads.some(l => l.id === p.leadId || l.company === p.company))
                 .reduce((s, p) => s + (p.value || 0), 0) || wonLeads.reduce((s, l) => s + (l.estimatedValue || 0), 0);
 
             const convRate = totalCount > 0 ? Math.round((wonCount / totalCount) * 100) : 0;
@@ -1397,7 +1495,7 @@ export const Dashboard = {
         // Calcular estatísticas por vendedor
         const sellerStats = sellers.map(seller => {
             const sellerProps = proposals.filter(p => {
-                const isWon = p.status === "Ganho";
+                const isWon = ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status);
                 const isOwner = p.createdBy === seller.email || p.ownerEmail === seller.email || p.userEmail === seller.email;
                 return isWon && isOwner;
             });
@@ -1639,3 +1737,5 @@ window.configureCommissionRate = function(currentRate) {
         }
     }
 };
+w i n d o w . D a s h b o a r d   =   D a s h b o a r d ;  
+ 

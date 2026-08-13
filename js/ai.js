@@ -18,9 +18,9 @@ function analyzeContext() {
     const ONE_DAY = 1000 * 60 * 60 * 24;
 
     // Métricas calculadas
-    const wonProps = proposals.filter(p => p.status === "Ganho");
+    const wonProps = proposals.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status));
     const lostProps = proposals.filter(p => p.status === "Perdido");
-    const openProps = proposals.filter(p => !["Ganho", "Perdido"].includes(p.status));
+    const openProps = proposals.filter(p => !["Ganho", "Aguardando Agendamento", "Agendada", "Perdido"].includes(p.status));
     const totalRevenue = wonProps.reduce((s, p) => s + (p.value || 0), 0);
     const avgTicket = wonProps.length > 0 ? Math.round(totalRevenue / wonProps.length) : 0;
     const convRate = proposals.length > 0 ? wonProps.length / proposals.length : 0;

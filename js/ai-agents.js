@@ -149,7 +149,7 @@ export const AIAgents = {
         const fmt  = v => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(v);
         const now  = new Date();
         const open = proposals.filter(p => ["Enviada", "Em Negociação"].includes(p.status));
-        const won  = proposals.filter(p => p.status === "Ganho");
+        const won  = proposals.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status));
         const totalOpen = open.reduce((s, p) => s + (p.value || 0), 0);
         const totalWon  = won.reduce((s, p) => s + (p.value || 0), 0);
         const convRate  = proposals.length > 0 ? Math.round((won.length / proposals.length) * 100) : 0;

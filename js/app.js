@@ -731,10 +731,10 @@ function updateDashboardCounters() {
 
         // Calcular KPIs globais/executivos
         const revenue = proposals
-            .filter(p => p.status === "Ganho" || p.status === "Cliente Fechado")
+            .filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status) || p.status === "Cliente Fechado")
             .reduce((acc, curr) => acc + (parseFloat(curr.value) || 0), 0);
 
-        const wins = proposals.filter(p => p.status === "Ganho" || p.status === "Cliente Fechado").length;
+        const wins = proposals.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status) || p.status === "Cliente Fechado").length;
         const totalProposals = proposals.length;
         const conversion = totalProposals > 0 ? Math.round((wins / totalProposals) * 100) : 0;
 
@@ -761,7 +761,7 @@ function updateDashboardCounters() {
             });
 
             const myRevenue = proposals
-                .filter(p => (p.status === "Ganho" || p.status === "Cliente Fechado") && p.ownerEmail === currentUser.email)
+                .filter(p => (["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status) || p.status === "Cliente Fechado") && p.ownerEmail === currentUser.email)
                 .reduce((acc, curr) => acc + (parseFloat(curr.value) || 0), 0);
 
             // Preencher KPIs

@@ -223,7 +223,7 @@ export const Calendar = {
                         <option value="reuniao" ${this.filterType === 'reuniao' ? 'selected' : ''}>💼 Reuniões</option>
                     </select>
 
-                    ${Auth.getCurrentUser()?.role === 'operacional' ? `<button onclick="window.Calendar.blockDateModal()" class="btn btn-outline" style="gap:6px; display:inline-flex; align-items:center; border-color:#ef4444; color:#ef4444;"><span>🚫 Bloquear Data</span></button>` : ''}
+                    ${['operacional', 'admin'].includes(Auth.getCurrentUser()?.role) ? `<button onclick="window.Calendar.blockDateModal()" class="btn btn-outline" style="gap:6px; display:inline-flex; align-items:center; border-color:#ef4444; color:#ef4444;"><span>🚫 Bloquear Data</span></button>` : ''}
                     <button id="btn-open-new-event-modal" class="btn btn-primary" style="gap:6px; display:inline-flex; align-items:center;">
                         <span>➕ Agendar Vistoria / Evento</span>
                     </button>
@@ -294,7 +294,7 @@ export const Calendar = {
                     ${ev.notes ? `<div style="font-size:11px; color:var(--text-secondary); margin-top:4px;">📝 ${ev.notes}</div>` : ''}
                 </div>
                 <div style="display:flex; gap:6px;">
-                    ${ev.status === 'pendente' && Auth.getCurrentUser()?.role === 'operacional' ? `
+                    ${ev.status === 'pendente' && ['operacional', 'admin'].includes(Auth.getCurrentUser()?.role) ? `
                         <button onclick="window.Calendar.approveEvent('${ev.id}')" class="btn btn-sm" style="background:#10b981; color:#fff; font-size:11px; padding:4px 8px; font-weight:700; border:none; border-radius:6px; cursor:pointer;">✅ Aprovar</button>
                         <button onclick="window.Calendar.rejectEvent('${ev.id}')" class="btn btn-sm" style="background:#ef4444; color:#fff; font-size:11px; padding:4px 8px; font-weight:700; border:none; border-radius:6px; cursor:pointer;">❌ Recusar</button>
                     ` : ''}

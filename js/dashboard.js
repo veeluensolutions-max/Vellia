@@ -102,8 +102,17 @@ export const Dashboard = {
                 this.renderOperacionalDashboard(proposals, leads);
             }
         } else {
-            if (opDash) opDash.style.display = "none";
+            // Admin, Manager or Seller
             if (execDash) execDash.style.display = "flex";
+            
+            if (user.role === "admin") {
+                if (opDash) {
+                    opDash.style.display = "flex";
+                    this.renderOperacionalDashboard(proposals, leads);
+                }
+            } else {
+                if (opDash) opDash.style.display = "none";
+            }
 
             this.renderKPIs(leads, proposals);
             this.renderGoalsCommissionPanel();

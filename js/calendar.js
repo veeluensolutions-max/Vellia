@@ -226,8 +226,7 @@ export const Calendar = {
                     ${(() => {
                         if (!['operacional', 'admin'].includes(Auth.getCurrentUser()?.role)) return '';
                         const dateToBlock = this.selectedDateStr || new Date().toISOString().split("T")[0];
-                        const dayEvts = eventsByDate[dateToBlock] || [];
-                        const blockedEvent = dayEvts.find(e => e.status === "bloqueado");
+                        const blockedEvent = allEvents.find(e => e.date === dateToBlock && e.status === "bloqueado");
                         if (blockedEvent) {
                             return `<button onclick="window.Calendar.unlockDate('${blockedEvent.id}')" class="btn btn-outline" style="gap:6px; display:inline-flex; align-items:center; border-color:#10b981; color:#10b981;"><span>🔓 Destravar Data</span></button>`;
                         }

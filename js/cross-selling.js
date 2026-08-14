@@ -38,13 +38,12 @@ export const CrossSelling = {
         }
 
         // Recuperar contratos e propostas ganhas do lead
-        const allContracts = Store.getAllContracts ? Store.getAllContracts() : [];
+        const allContracts = Store.getContracts ? Store.getContracts() : [];
         const leadContracts = allContracts.filter(c => c.leadId === leadId);
         
         // Vamos analisar os serviços baseados nas vitórias registradas no CRM (propostas ganhas).
-        // Se a store suportar getProposals...
-        const allProposals = Store.getAllProposals ? Store.getAllProposals() : [];
-        const leadProposals = allProposals.filter(p => p.leadId === leadId && p.status === "Ganha");
+        const allProposals = Store.getProposals ? Store.getProposals() : [];
+        const leadProposals = allProposals.filter(p => p.leadId === leadId && p.status === "Ganho");
 
         // Compilar serviços já adquiridos
         const acquiredServices = new Set();
@@ -94,7 +93,7 @@ export const CrossSelling = {
 
             newBtn.addEventListener("click", () => {
                 // Abrir modal de proposta preenchido
-                if (window.Proposals) {
+                if (Proposals) {
                     window.location.hash = "#proposals";
                     setTimeout(() => {
                         Proposals.openModal(leadId, suggestion.suggest);

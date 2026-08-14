@@ -57,7 +57,7 @@ export const Intervention = {
     // Retorna a lista de leads que necessitam de intervenção
     getPendingInterventions() {
         const allLeads = Store.getAllLeadsRaw();
-        const allProposals = Store.getAllProposals ? Store.getAllProposals() : [];
+        const allProposals = Store.getProposals ? Store.getProposals() : [];
         
         const stalledLeads = [];
         const now = new Date();

@@ -233,8 +233,8 @@ export const Dashboard = {
         // 1. Receita Recorrente e TCV (Contratos)
         let mrr = 0;
         let tcv = 0;
-        if (window.Store && window.Store.getAllContracts) {
-            const contracts = window.Store.getAllContracts();
+        if (window.Store && window.Store.getContracts) {
+            const contracts = window.Store.getContracts();
             contracts.filter(c => c.status === 'Ativo').forEach(c => {
                 if (c.billing_type === 'Recorrente') {
                     mrr += (c.monthly_value || 0);

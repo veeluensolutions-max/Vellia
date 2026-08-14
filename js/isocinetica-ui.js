@@ -149,4 +149,56 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     }
+
+    // Salvar no Supabase
+    const btnSave = document.getElementById("btn-iso-save-supabase");
+    if (btnSave) {
+        btnSave.addEventListener("click", () => {
+            try {
+                const payload = buildInputPayload();
+                const result = IsocineticaCalculator.calculateProposal(payload);
+                
+                // Mapear para o formato da tabela SQL criada
+                const dbData = {
+                    travel_mode: payload.travelMode,
+                    round_trip_distance_km: payload.roundTripDistanceKm,
+                    number_of_days: payload.numberOfDays,
+                    number_of_employees: payload.numberOfEmployees,
+                    number_of_stacks: payload.numberOfStacks,
+                    
+                    vehicle_consumption_km_per_liter: payload.vehicleConsumptionKmPerLiter,
+                    fuel_price_per_liter: payload.fuelPricePerLiter,
+                    hotel_daily_rate_per_employee: payload.hotelDailyRatePerEmployee,
+                    daily_food_rate_per_employee: payload.dailyFoodRatePerEmployee,
+                    meals_per_employee: payload.mealsPerEmployee,
+                    meal_unit_price: payload.mealUnitPrice,
+                    
+                    stack_additional_rate: payload.stackAdditionalRate,
+                    administrative_cost_rate: payload.administrativeCostRate,
+                    tax_rate: payload.taxRate,
+                    profit_rate: payload.profitRate,
+                    vehicle_maintenance_rate: payload.vehicleMaintenanceRate,
+                    
+                    commercial_adjustment: payload.commercialAdjustment,
+                    final_commercial_price: result.finalCommercialPrice,
+                    
+                    created_by: (window.Auth && window.Auth.getCurrentUser()) ? window.Auth.getCurrentUser().email : "sistema@vellia.com"
+                };
+
+                if (window.Store && window.Store.upsert) {
+                    window.Store.upsert("isocinetica_calculations", dbData)
+                        .then(() => {
+                            alert("✅ Cálculo salvo com sucesso no banco de dados!");
+                        })
+                        .catch(e => {
+                            alert("❌ Erro ao salvar o cálculo no Supabase: " + e.message);
+                        });
+                } else {
+                    alert("A loja de dados (Store) não está disponível para salvar.");
+                }
+            } catch (error) {
+                alert("Não foi possível salvar: " + error.message);
+            }
+        });
+    }
 });

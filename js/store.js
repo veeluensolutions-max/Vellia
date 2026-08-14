@@ -1184,5 +1184,10 @@ export const Store = {
         localStorage.removeItem("comercial_services");
         initStorage();
         window.location.reload();
+    },
+
+    // Expor upsert para módulos externos salvarem diretamente em tabelas customizadas
+    upsert(table, data) {
+        return upsertSupabase(table, data);
     }
 };

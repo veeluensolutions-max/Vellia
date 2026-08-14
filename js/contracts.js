@@ -198,6 +198,9 @@ export const Contracts = {
             oldServices.forEach(s => {
                 const ns = { ...s, contractId: newC.id };
                 allServices.push(ns);
+                if (Store.upsert) {
+                    Store.upsert("comercial_contract_services", ns);
+                }
             });
             localStorage.setItem("comercial_contract_services", JSON.stringify(allServices));
         }

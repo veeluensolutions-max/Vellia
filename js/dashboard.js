@@ -1,5 +1,6 @@
 import { Store } from "./store.js";
 import { Auth } from "./auth.js";
+import { PostSales } from "./post-sales.js";
 
 const charts = {};
 
@@ -228,17 +229,44 @@ export const Dashboard = {
         const convRate = totalProposals > 0 ? Math.round((wonProposals / totalProposals) * 100) : 0;
         const avgTicket = wonProposals > 0 ? Math.round(revenue / wonProposals) : 0;
 
+        // --- Novos KPIs da Fase 7 ---
+        // 1. Receita Recorrente e TCV (Contratos)
+        let mrr = 0;
+        let tcv = 0;
+        if (window.Store && window.Store.getAllContracts) {
+            const contracts = window.Store.getAllContracts();
+            contracts.filter(c => c.status === 'Ativo').forEach(c => {
+                if (c.billing_type === 'Recorrente') {
+                    mrr += (c.monthly_value || 0);
+                }
+                tcv += (c.total_value || 0);
+            });
+        }
+
+        // 2. Saúde do Pós-Venda
+        let activeClientsCount = 0;
+        let riskClientsCount = 0;
+        const closedClients = PostSales.getClosedClients();
+        closedClients.forEach(client => {
+            const inactivity = PostSales.calculateInactivity(client);
+            if (inactivity.status === "Ativo") {
+                activeClientsCount++;
+            } else {
+                riskClientsCount++; // "Em Risco" ou "Inativo"
+            }
+        });
+
         const fmt = v => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
         const kpis = [
-            { id: "kpi-total-leads", val: totalLeads, label: "Leads Cadastrados", icon: "👥", color: "var(--primary)", link: "#crm" },
-            { id: "kpi-active-leads", val: activeLeads, label: "Leads Ativos", icon: "🔥", color: "#8b5cf6", link: "#crm" },
-            { id: "kpi-closed", val: closedLeads, label: "Clientes Fechados", icon: "🤝", color: "var(--success)", link: "#kanban" },
-            { id: "kpi-revenue", val: fmt(revenue), label: "Receita Gerada", icon: "💰", color: "var(--success)", large: true, link: "#performance" },
+            { id: "kpi-mrr", val: fmt(mrr), label: "Receita Recorrente (MRR)", icon: "🔄", color: "#8b5cf6", large: true, link: "#contracts" },
+            { id: "kpi-tcv", val: fmt(tcv), label: "Total em Contratos (TCV)", icon: "📜", color: "var(--success)", large: true, link: "#contracts" },
+            { id: "kpi-health-active", val: activeClientsCount, label: "Clientes Ativos", icon: "🟢", color: "var(--success)", link: "#post-sales" },
+            { id: "kpi-health-risk", val: riskClientsCount, label: "Clientes Em Risco", icon: "🔴", color: "var(--danger)", link: "#post-sales" },
+            { id: "kpi-revenue", val: fmt(revenue), label: "Receita em Propostas", icon: "💰", color: "var(--success)", large: true, link: "#performance" },
             { id: "kpi-pipeline", val: fmt(pipeline), label: "Pipeline em Aberto", icon: "📊", color: "var(--primary)", large: true, link: "#kanban" },
             { id: "kpi-avg-ticket", val: fmt(avgTicket), label: "Ticket Médio", icon: "🎯", color: "#f97316", large: true, link: "#proposals" },
-            { id: "kpi-conv-rate", val: `${convRate}%`, label: "Taxa de Conversão", icon: "📈", color: convRate >= 30 ? "var(--success)" : convRate >= 15 ? "var(--warning)" : "var(--danger)", link: "#performance" },
-            { id: "kpi-total-proposals", val: totalProposals, label: "Total de Propostas", icon: "📝", color: "var(--primary)", link: "#proposals" },
+            { id: "kpi-conv-rate", val: `${convRate}%`, label: "Conversão de Vendas", icon: "📈", color: convRate >= 30 ? "var(--success)" : convRate >= 15 ? "var(--warning)" : "var(--danger)", link: "#performance" }
         ];
 
         const container = document.getElementById("dashboard-kpis");

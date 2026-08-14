@@ -170,6 +170,18 @@
                                 <span>Propostas & Vendas</span>
                             </a>
                         </li>
+                        <li class="menu-item" data-view="contracts" id="menu-contracts">
+                            <a href="#contracts">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                                <span>Gestão de Contratos</span>
+                            </a>
+                        </li>
+                        <li class="menu-item" data-view="post-sales" id="menu-post-sales">
+                            <a href="#post-sales">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                                <span>Pós-Venda / Inativos</span>
+                            </a>
+                        </li>
                         <li class="menu-item" data-view="calculators" id="menu-calculators">
                             <a href="#calculators">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="16" y1="18" x2="16" y2="18"/><line x1="12" y1="18" x2="12" y2="18"/><line x1="8" y1="18" x2="8" y2="18"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="8" y1="10" x2="8" y2="10"/></svg>
@@ -337,7 +349,20 @@
                     <!-- Dashboard Gerente / Admin (Executivo) — ETAPA 5 -->
                     <div id="dashboard-exec" style="display: flex; flex-direction: column;">
 
-
+                        <!-- Alerta de Intervenção da Diretoria (Fase 6) -->
+                        <div id="dashboard-intervention-alert" class="card" style="display: none; background: rgba(220, 38, 38, 0.1); border-left: 4px solid var(--danger); margin-bottom: 24px; padding: 16px; align-items: center; justify-content: space-between;">
+                            <div>
+                                <h3 style="color: var(--danger); font-size: 16px; margin: 0 0 4px 0; display: flex; align-items: center; gap: 8px;">
+                                    🚨 Intervenção Necessária
+                                </h3>
+                                <p style="color: var(--text-muted); font-size: 13px; margin: 0;" id="intervention-alert-text">
+                                    Existem negociações de alto valor travadas que precisam da sua ajuda.
+                                </p>
+                            </div>
+                            <button class="btn btn-danger btn-sm" id="btn-open-interventions">
+                                Ver Negociações
+                            </button>
+                        </div>
                         <!-- KPIs dinâmicos — preenchidos via dashboard.js -->
                         <div id="dashboard-kpis" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; margin-bottom: 28px;">
                             <!-- Carregado via JS -->
@@ -1700,6 +1725,220 @@
                 </div>
 
                 <!-- ==========================================================
+                     VIEW: GESTÃO DE CONTRATOS (FASE 2)
+                     ========================================================== -->
+                <div id="view-contracts" class="spa-view" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                        <div>
+                            <h2 style="font-size: 24px; font-weight: 700; color: var(--text-dark);">Gestão de Contratos</h2>
+                            <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">Acompanhe contratos ativos, renovações e faturamentos.</p>
+                        </div>
+                        <button class="btn btn-primary" id="btn-new-contract">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            <span>Novo Contrato</span>
+                        </button>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                        <div class="card stat-card">
+                            <div class="stat-info">
+                                <span class="stat-label">Contratos Ativos</span>
+                                <span class="stat-value" id="contract-stat-active">0</span>
+                            </div>
+                        </div>
+                        <div class="card stat-card" style="background: linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(99,102,241,0.02) 100%);">
+                            <div class="stat-info">
+                                <span class="stat-label" style="color: var(--primary);">Receita Recorrente (MRR)</span>
+                                <span class="stat-value" id="contract-stat-mrr" style="color: var(--primary-dark);">R$ 0,00</span>
+                            </div>
+                        </div>
+                        <div class="card stat-card">
+                            <div class="stat-info">
+                                <span class="stat-label">Valor Total Contratado (Ativos)</span>
+                                <span class="stat-value" id="contract-stat-tcv">R$ 0,00</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card p-4">
+                        <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+                            <div class="search-box" style="flex: 1; min-width: 250px; position: relative;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 10px; top: 10px; color: var(--text-muted);"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                <input type="text" id="contracts-search" class="form-control" style="padding-left: 36px;" placeholder="Buscar por cliente, CNPJ ou número...">
+                            </div>
+                            <select id="contracts-filter-status" class="form-control" style="width: auto;">
+                                <option value="all">Todos os Status</option>
+                                <option value="Ativo">Ativos</option>
+                                <option value="Em formalização">Em formalização</option>
+                                <option value="Vencendo">Próximos do Vencimento</option>
+                                <option value="Encerrado">Encerrados</option>
+                            </select>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table-modern" style="width: 100%;">
+                                <thead>
+                                    <tr>
+                                        <th>Número</th>
+                                        <th>Cliente / Lead</th>
+                                        <th>Valor Total</th>
+                                        <th>Recorrente</th>
+                                        <th>Vigência</th>
+                                        <th>Status</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="contracts-table-body">
+                                    <!-- Renderizado via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Cadastro de Contrato -->
+                <div id="contract-modal-overlay" class="modal-overlay" style="z-index: 1100; display: none;"></div>
+                <div id="modal-contract" class="modal" style="z-index: 1101; max-width: 700px;">
+                    <div class="modal-header">
+                        <h3 class="modal-title">
+                            <span id="modal-contract-title">Novo Contrato</span>
+                        </h3>
+                        <button class="btn-icon-close" id="btn-close-contract-modal" aria-label="Fechar">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                    </div>
+                    <form id="contract-form" class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
+                        <input type="hidden" id="contract-id">
+                        
+                        <div class="grid-modal-2col">
+                            <div class="form-group">
+                                <label>Cliente / Oportunidade Relacionada</label>
+                                <select id="contract-lead-id" class="form-control" required>
+                                    <!-- Preenchido via JS -->
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Número do Contrato</label>
+                                <input type="text" id="contract-number" class="form-control" placeholder="Gerado automaticamente" disabled>
+                            </div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px;">
+                            <div class="form-group">
+                                <label>Status</label>
+                                <select id="contract-status" class="form-control">
+                                    <option value="Em formalização">Em formalização</option>
+                                    <option value="Aguardando assinatura">Aguardando assinatura</option>
+                                    <option value="Ativo">Ativo</option>
+                                    <option value="Suspenso">Suspenso</option>
+                                    <option value="Encerrado">Encerrado</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Valor Total (R$)</label>
+                                <input type="number" step="0.01" id="contract-total-value" class="form-control" placeholder="0.00">
+                            </div>
+                            <div class="form-group">
+                                <label>Valor Recorrente (R$)</label>
+                                <input type="number" step="0.01" id="contract-recurring-value" class="form-control" placeholder="0.00">
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px;">
+                            <div class="form-group">
+                                <label>Data Início</label>
+                                <input type="date" id="contract-start-date" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>Data Término (Opcional)</label>
+                                <input type="date" id="contract-end-date" class="form-control">
+                            </div>
+                            <div class="form-group" style="display: flex; align-items: flex-end; padding-bottom: 10px;">
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" id="contract-auto-renew" style="width: 16px; height: 16px;">
+                                    <span style="font-size: 13px;">Renovação Automática</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 10px;">
+                            <label>Observações</label>
+                            <textarea id="contract-notes" class="form-control" rows="3" placeholder="Informações adicionais do contrato..."></textarea>
+                        </div>
+                        
+                        <div class="modal-footer" style="padding: 0; border: none;">
+                            <button type="button" class="btn btn-outline" id="btn-cancel-contract">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Salvar Contrato</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- ==========================================================
+                     VIEW: PÓS-VENDA E CLIENTES INATIVOS
+                     ========================================================== -->
+                <div id="view-post-sales" class="spa-view" style="display: none;">
+                    <div class="view-header">
+                        <div>
+                            <h2 style="font-size: 24px; font-weight: 700; color: var(--text-dark);">Pós-Venda e Relacionamento</h2>
+                            <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">Monitore o engajamento de clientes fechados e identifique quem está esfriando.</p>
+                        </div>
+                    </div>
+
+                    <!-- Post Sales Stats -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                        <div class="card p-4">
+                            <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">Clientes Monitorados</div>
+                            <div id="ps-stat-total" style="font-size: 24px; font-weight: 800; color: var(--primary);">0</div>
+                        </div>
+                        <div class="card p-4">
+                            <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">Clientes Ativos (&lt;60 dias)</div>
+                            <div id="ps-stat-active" style="font-size: 24px; font-weight: 800; color: var(--success);">0</div>
+                        </div>
+                        <div class="card p-4" style="border-left: 4px solid var(--warning);">
+                            <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">Em Risco (60 a 90 dias)</div>
+                            <div id="ps-stat-risk" style="font-size: 24px; font-weight: 800; color: var(--warning);">0</div>
+                        </div>
+                        <div class="card p-4" style="border-left: 4px solid var(--danger);">
+                            <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">Inativos (&gt;90 dias)</div>
+                            <div id="ps-stat-inactive" style="font-size: 24px; font-weight: 800; color: var(--danger);">0</div>
+                        </div>
+                    </div>
+                    
+                    <div class="card p-4">
+                        <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+                            <div class="search-box" style="flex: 1; min-width: 250px; position: relative;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 10px; top: 10px; color: var(--text-muted);"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                <input type="text" id="post-sales-search" class="form-control" style="padding-left: 36px;" placeholder="Buscar cliente por nome ou CNPJ...">
+                            </div>
+                            <select id="post-sales-filter" class="form-control" style="width: auto;">
+                                <option value="all">Todos os Clientes</option>
+                                <option value="ativo">Somente Ativos</option>
+                                <option value="risco">Somente Em Risco</option>
+                                <option value="inativo">Somente Inativos</option>
+                            </select>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="data-table" id="post-sales-table">
+                                <thead>
+                                    <tr>
+                                        <th>Cliente</th>
+                                        <th>Responsável</th>
+                                        <th>Última Interação</th>
+                                        <th>Dias Ocioso</th>
+                                        <th>Status (Relacionamento)</th>
+                                        <th style="text-align: right;">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Nenhum cliente fechado encontrado.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==========================================================
                      VIEW: PROPOSTAS, FECHAMENTOS E PERDAS (ETAPA 4)
                      ========================================================== -->
                 <div id="view-proposals" class="spa-view" style="display: none;">
@@ -2716,6 +2955,24 @@
                         <span class="info-label">Segmento / Origem</span>
                         <span class="info-value" id="drawer-lead-source">-</span>
                     </div>
+                </div>
+            </div>
+
+            <!-- Seção Cross-Selling (Injetada via JS se houver sugestão) -->
+            <div id="cross-selling-section" class="drawer-section" style="border-top: 1px solid var(--border-color); padding-top: 16px; display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <span class="drawer-section-title" style="margin: 0; display: flex; align-items: center; gap: 6px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--warning);"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        Oportunidade de Cross-Selling
+                    </span>
+                    <span class="badge" style="background-color: var(--primary-glow); color: var(--primary); font-size: 9px;">IA Vellia</span>
+                </div>
+                <div class="card p-3" style="background: var(--bg-body); border-left: 3px solid var(--primary); padding: 12px;">
+                    <div style="font-weight: 700; color: var(--text-dark); margin-bottom: 4px; font-size: 14px;" id="cs-suggested-service">Serviço</div>
+                    <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.4;" id="cs-suggestion-reason">Motivo da sugestão</div>
+                    <button class="btn btn-primary btn-sm" id="btn-cs-generate-proposal" style="width: 100%; height: 32px; font-size: 12px;">
+                        Gerar Nova Proposta
+                    </button>
                 </div>
             </div>
 
@@ -4281,6 +4538,40 @@
             <button id="btn-send-copilot-msg" style="width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, var(--primary), #8b5cf6); border: none; color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; box-shadow: 0 4px 10px rgba(139, 92, 246, 0.25); outline: none;">
                 ✈️
             </button>
+        </div>
+        </div>
+    </div>
+
+    <!-- ==========================================================
+         MODAL DE INTERVENÇÃO DA DIRETORIA (FASE 6)
+         ========================================================== -->
+    <div id="intervention-modal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3>🚨 Central de Intervenção da Diretoria</h3>
+                <button class="btn-close" id="btn-close-intervention-modal" title="Fechar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 20px;">
+                    Estas são as negociações de alto valor (> R$ 5.000) que estão estagnadas no funil (sem contato recente).
+                </p>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Lead/Empresa</th>
+                                <th>Valor</th>
+                                <th>Tempo Parado</th>
+                                <th>Responsável</th>
+                                <th style="text-align: right;">Ações de Resgate</th>
+                            </tr>
+                        </thead>
+                        <tbody id="intervention-table-body">
+                            <!-- Preenchido via js/intervention.js -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 

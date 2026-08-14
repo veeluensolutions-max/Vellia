@@ -423,15 +423,25 @@ export const Proposals = {
     // ==========================================================================
     // MODAL DE NOVA PROPOSTA
     // ==========================================================================
-    openModal(leadData = null) {
+    openModal(leadData = null, suggestedService = null) {
         const form = document.getElementById("new-proposal-form");
         if (form) form.reset();
+
+        // Se passarem uma string como leadData, tentar buscar o objeto na store
+        if (typeof leadData === 'string') {
+            leadData = window.Store ? window.Store.getLeadById(leadData) : null;
+        }
 
         // Pré-preencher com dados do lead se fornecido
         if (leadData) {
             const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
             setVal("proposal-company", leadData.company || "");
             setVal("proposal-contact", leadData.contact || "");
+        }
+        
+        if (suggestedService) {
+            const el = document.getElementById("proposal-service");
+            if (el) el.value = suggestedService;
         }
 
         document.getElementById("proposal-modal")?.classList.add("open");
@@ -748,6 +758,18 @@ export const Proposals = {
 
         // Notificar demais módulos
         window.dispatchEvent(new CustomEvent("vellia:proposalUpdated"));
+
+        // Integração com Fase 2 - Contratos
+        if (confirm("Parabéns pelo fechamento! Deseja gerar o Contrato para este cliente agora?")) {
+            window.location.hash = "#contracts";
+            setTimeout(() => {
+                if (window.Contracts) {
+                    window.Contracts.openModal();
+                    document.getElementById("contract-lead-id").value = proposal.leadId;
+                    document.getElementById("contract-total-value").value = finalValue;
+                }
+            }, 300);
+        }
     },
 
     // ==========================================================================

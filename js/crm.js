@@ -3,6 +3,7 @@ import { Auth } from "./auth.js";
 import { Audit } from "./audit.js";
 import { SDR } from "./sdr.js";
 import { LeadAIScore } from "./ai-score.js";
+import { CrossSelling } from "./cross-selling.js";
 
 let activeLeadId = null;
 let pendingStageChange = null;
@@ -811,6 +812,9 @@ export const CRM = {
         if (inspectionFormContainer) inspectionFormContainer.style.display = "none";
         
         this.renderDrawerInspections(lead);
+
+        // Avaliar sugestões de Cross-Selling
+        CrossSelling.evaluateLead(id);
 
         // Exibir Drawer e Overlay
         document.getElementById("lead-drawer").classList.add("open");

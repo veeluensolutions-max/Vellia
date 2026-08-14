@@ -100,7 +100,9 @@ const TABLE_SCHEMAS = {
     comercial_services: ['id', 'name', 'category', 'baseMargin', 'isActive'],
     comercial_goals: ['userEmail', 'period', 'targets'],
     comercial_tasks: ['id', 'workspace', 'owner', 'text', 'done', 'date', 'priority', 'assignedBy'],
-    comercial_calendar_events: ['id', 'workspace', 'title', 'company', 'date', 'time', 'type', 'status', 'notes', 'phone', 'contact', 'leadId']
+    comercial_calendar_events: ['id', 'workspace', 'title', 'company', 'date', 'time', 'type', 'status', 'notes', 'phone', 'contact', 'leadId'],
+    comercial_contracts: ['id', 'workspace', 'leadId', 'proposalId', 'number', 'status', 'totalValue', 'recurringValue', 'periodicity', 'startDate', 'endDate', 'autoRenew', 'warningDays', 'owner', 'createdBy', 'notes', 'createdAt', 'updatedAt'],
+    comercial_contract_services: ['contractId', 'serviceId', 'quantity', 'unitValue']
 };
 
 async function upsertSupabase(table, data) {
@@ -684,6 +686,81 @@ export const Store = {
     getLeadById(leadId) {
         const leads = this.getAllLeadsRaw();
         return leads.find(l => l.id === leadId) || null;
+    },
+
+    // CONTRATOS
+    getContracts() {
+        return JSON.parse(localStorage.getItem("comercial_contracts")) || [];
+    },
+
+    getContractById(id) {
+        return this.getContracts().find(c => c.id === id) || null;
+    },
+
+    addContract(data) {
+        const contracts = this.getContracts();
+        const newContract = {
+            id: `ct_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+            workspace: localStorage.getItem('activeCompany') || 'Veeluen Solutions',
+            leadId: data.leadId || "",
+            proposalId: data.proposalId || null,
+            number: data.number || `CT-${new Date().getFullYear()}-${Math.floor(Math.random()*1000).toString().padStart(3, '0')}`,
+            status: data.status || "Em formalização",
+            totalValue: parseFloat(data.totalValue) || 0,
+            recurringValue: parseFloat(data.recurringValue) || 0,
+            periodicity: data.periodicity || "Mensal",
+            startDate: data.startDate || null,
+            endDate: data.endDate || null,
+            autoRenew: data.autoRenew || false,
+            warningDays: parseInt(data.warningDays) || 30,
+            owner: data.owner || "",
+            createdBy: data.createdBy || "sistema@vellia.com",
+            notes: data.notes || "",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+        contracts.push(newContract);
+        localStorage.setItem("comercial_contracts", JSON.stringify(contracts));
+        upsertSupabase("comercial_contracts", newContract);
+        
+        if (data.services && data.services.length > 0) {
+            const cServices = this.getContractServices();
+            data.services.forEach(srv => {
+                const cs = {
+                    contractId: newContract.id,
+                    serviceId: srv.serviceId,
+                    quantity: srv.quantity || 1,
+                    unitValue: srv.unitValue || 0
+                };
+                cServices.push(cs);
+                upsertSupabase("comercial_contract_services", cs);
+            });
+            localStorage.setItem("comercial_contract_services", JSON.stringify(cServices));
+        }
+        
+        this.addLog(data.createdBy, "CONTRACT_CREATED", `Contrato ${newContract.number} criado.`);
+        return newContract;
+    },
+
+    updateContract(id, updates, userEmail = "sistema@vellia.com") {
+        const contracts = this.getContracts();
+        const index = contracts.findIndex(c => c.id === id);
+        if (index !== -1) {
+            contracts[index] = { ...contracts[index], ...updates, updatedAt: new Date().toISOString() };
+            localStorage.setItem("comercial_contracts", JSON.stringify(contracts));
+            upsertSupabase("comercial_contracts", contracts[index]);
+            this.addLog(userEmail, "CONTRACT_UPDATED", `Contrato ${contracts[index].number} atualizado.`);
+            return contracts[index];
+        }
+        return null;
+    },
+    
+    getContractServices() {
+        return JSON.parse(localStorage.getItem("comercial_contract_services")) || [];
+    },
+    
+    getServicesForContract(contractId) {
+        return this.getContractServices().filter(cs => cs.contractId === contractId);
     },
 
     // PROPOSTAS

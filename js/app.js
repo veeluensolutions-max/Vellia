@@ -22,6 +22,9 @@ import { Calendar } from "./calendar.js?v=9";
 import "./pdf-generator.js";
 import { Copilot } from "./copilot.js";
 import { Trash } from "./trash.js";
+import { Contracts } from "./contracts.js";
+import { PostSales } from "./post-sales.js";
+import { Intervention } from "./intervention.js";
 
 // Elementos Globais DOM (Getters Dinâmicos para garantia de não-nulidade)
 const elements = {
@@ -162,6 +165,9 @@ function initApp() {
     WhatsApp.init();
     Pricing.init();
     Copilot.init();
+    Contracts.init();
+    PostSales.init();
+    Intervention.init();
     
     // Inicializar Workspace
     const savedCompany = localStorage.getItem("activeCompany") || "Veeluen Solutions";
@@ -435,6 +441,10 @@ function navigateTo(viewName) {
         import('./ai-agents.js').then(m => m.AIAgents.init());
     } else if (viewName === "trash") {
         Trash.init();
+    } else if (viewName === "contracts") {
+        Contracts.init();
+    } else if (viewName === "post-sales") {
+        PostSales.init();
     }
 }
 
@@ -1509,8 +1519,8 @@ function setupEventListeners() {
 
     // Escutar mudança de Hash do Navegador para Roteamento SPA
     window.addEventListener("hashchange", () => {
-        const viewName = window.location.hash.replace("#", "") || "dashboard";
-        navigateTo(viewName);
+        const viewId = window.location.hash.replace("#", "") || "dashboard";
+        navigateTo(viewId);
     });
 
     // Logs view listeners
@@ -1569,6 +1579,11 @@ function setupEventListeners() {
             Team.init();
         } else if (currentHash === "goals") {
             Goals.init();
+        }
+        
+        // Rechecar intervenções sempre que houver disparo global e estiver no dashboard
+        if (currentHash === "dashboard") {
+            Intervention.checkInterventions();
         }
     });
 }

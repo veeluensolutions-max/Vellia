@@ -2,6 +2,8 @@
  * Isocinética UI Controller
  * Gerencia a interação entre o formulário HTML e o IsocineticaCalculator
  */
+import { Store } from "./store.js";
+import { Auth } from "./auth.js";
 
 document.addEventListener("DOMContentLoaded", () => {
     
@@ -182,11 +184,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     commercial_adjustment: payload.commercialAdjustment,
                     final_commercial_price: result.finalCommercialPrice,
                     
-                    created_by: (window.Auth && window.Auth.getCurrentUser()) ? window.Auth.getCurrentUser().email : "sistema@vellia.com"
+                    created_by: (Auth && Auth.getCurrentUser()) ? Auth.getCurrentUser().email : "sistema@vellia.com"
                 };
 
-                if (window.Store && window.Store.upsert) {
-                    window.Store.upsert("isocinetica_calculations", dbData)
+                if (Store && Store.upsert) {
+                    Store.upsert("isocinetica_calculations", dbData)
                         .then(() => {
                             alert("✅ Cálculo salvo com sucesso no banco de dados!");
                         })

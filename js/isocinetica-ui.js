@@ -86,6 +86,31 @@ document.addEventListener("DOMContentLoaded", () => {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
     };
 
+    // Função para construir o payload de inputs
+    function buildInputPayload() {
+        const getVal = (id) => parseFloat(document.getElementById(id).value) || 0;
+        
+        return {
+            travelMode: hiddenTravelMode.value,
+            roundTripDistanceKm: getVal("iso-distance"),
+            numberOfDays: getVal("iso-days"),
+            numberOfEmployees: getVal("iso-employees"),
+            numberOfStacks: getVal("iso-stacks"),
+            vehicleConsumptionKmPerLiter: getVal("iso-consumption"),
+            fuelPricePerLiter: getVal("iso-fuel-price"),
+            hotelDailyRatePerEmployee: getVal("iso-hotel-rate"),
+            dailyFoodRatePerEmployee: getVal("iso-food-rate"),
+            mealsPerEmployee: getVal("iso-meals-count"),
+            mealUnitPrice: getVal("iso-meal-price"),
+            stackAdditionalRate: getVal("iso-stack-rate") / 100, // converte de % para decimal
+            vehicleMaintenanceRate: getVal("iso-maint-rate") / 100,
+            administrativeCostRate: getVal("iso-admin-rate") / 100,
+            taxRate: getVal("iso-tax-rate") / 100,
+            profitRate: getVal("iso-profit-rate") / 100,
+            commercialAdjustment: 0 // Sem ajuste via UI nesta versão base
+        };
+    }
+
     // Função Principal de Atualização
     function updateCalculations() {
         if (typeof IsocineticaCalculator === "undefined") {
@@ -93,28 +118,8 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        const getVal = (id) => parseFloat(document.getElementById(id).value) || 0;
-
         try {
-            const inputData = {
-                travelMode: hiddenTravelMode.value,
-                roundTripDistanceKm: getVal("iso-distance"),
-                numberOfDays: getVal("iso-days"),
-                numberOfEmployees: getVal("iso-employees"),
-                numberOfStacks: getVal("iso-stacks"),
-                vehicleConsumptionKmPerLiter: getVal("iso-consumption"),
-                fuelPricePerLiter: getVal("iso-fuel-price"),
-                hotelDailyRatePerEmployee: getVal("iso-hotel-rate"),
-                dailyFoodRatePerEmployee: getVal("iso-food-rate"),
-                mealsPerEmployee: getVal("iso-meals-count"),
-                mealUnitPrice: getVal("iso-meal-price"),
-                stackAdditionalRate: getVal("iso-stack-rate") / 100, // converte de % para decimal
-                vehicleMaintenanceRate: getVal("iso-maint-rate") / 100,
-                administrativeCostRate: getVal("iso-admin-rate") / 100,
-                taxRate: getVal("iso-tax-rate") / 100,
-                profitRate: getVal("iso-profit-rate") / 100,
-                commercialAdjustment: 0 // Sem ajuste via UI nesta versão base
-            };
+            const inputData = buildInputPayload();
 
             const result = IsocineticaCalculator.calculateProposal(inputData);
 

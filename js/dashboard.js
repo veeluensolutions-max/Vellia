@@ -418,7 +418,7 @@ export const Dashboard = {
 
         container.innerHTML = kpis.map(k => `
             <div class="card stat-card dash-kpi-card modern-kpi-card" 
-                 style="--kpi-color: ${k.color}; ${k.link ? 'cursor: pointer;' : ''}" 
+                 style="--kpi-color: ${k.color}; background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); ${k.link ? 'cursor: pointer;' : ''}" 
                  ${k.link ? `onclick="window.location.hash = '${k.link}'"` : ''}>
                 <div class="kpi-top-row">
                     <div class="stat-info">

@@ -53,6 +53,23 @@ export const Users = {
         const users = Store.getUsers();
         const leads = Store.getLeads();
 
+        // Calcular e atualizar KPIs
+        const elTotal = document.getElementById("kpi-users-total");
+        const elActive = document.getElementById("kpi-users-active");
+        const elAdmins = document.getElementById("kpi-users-admins");
+        const elSellers = document.getElementById("kpi-users-sellers");
+
+        if (elTotal) {
+            const activeUsers = users.filter(u => (u.status || "active") === "active").length;
+            const admins = users.filter(u => u.role === "admin").length;
+            const sellers = users.filter(u => ["seller", "operacional"].includes(u.role)).length;
+
+            elTotal.textContent = users.length;
+            elActive.textContent = activeUsers;
+            elAdmins.textContent = admins;
+            elSellers.textContent = sellers;
+        }
+
         tableBody.innerHTML = "";
 
         if (users.length === 0) {

@@ -221,8 +221,10 @@ Pergunta: "${query}"
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    prompt: promptPayload,
-                    systemInstruction: "Você é o Vellia Copiloto, assistente comercial de IA especialista do Vellia CRM."
+                    model: "gemini-2.5-flash",
+                    contents: [
+                        { parts: [{ text: promptPayload }] }
+                    ]
                 })
             });
 
@@ -230,7 +232,7 @@ Pergunta: "${query}"
 
             if (res.ok) {
                 const data = await res.json();
-                const text = data.text || "Desculpe, não consegui gerar a resposta.";
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Desculpe, não consegui gerar a resposta.";
                 this.appendMessage(text, false);
             } else {
                 this.appendMessage("Houve uma falha ao comunicar com a IA do Gemini. Verifique os logs e tente novamente.", false);

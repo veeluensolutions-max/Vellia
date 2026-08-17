@@ -292,6 +292,13 @@
                 </div>
 
                 <div class="header-actions">
+                    <!-- Trigger Command Palette (Ctrl + K) -->
+                    <button id="btn-command-palette-trigger" class="cmd-palette-trigger" title="Buscar e Ações Rápidas (Ctrl + K)">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <span>Buscar ou comando...</span>
+                        <kbd>Ctrl K</kbd>
+                    </button>
+
                     <!-- Badge de Status do Realtime -->
                     <span id="realtime-status-badge" style="
                         display: inline-flex; align-items: center; gap: 5px;
@@ -4595,6 +4602,32 @@
                             <!-- Preenchido via js/intervention.js -->
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================================
+         COMMAND PALETTE MODAL (CTRL + K SPOTLIGHT)
+         ========================================================== -->
+    <div id="cmd-palette-overlay" class="cmd-palette-overlay" style="display: none;">
+        <div class="cmd-palette-modal" id="cmd-palette-modal">
+            <div class="cmd-palette-header">
+                <svg class="cmd-search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="cmd-palette-input" class="cmd-palette-input" placeholder="Digite um comando, ação ou busque um lead..." autocomplete="off" spellcheck="false">
+                <span class="cmd-shortcut-badge">ESC para fechar</span>
+            </div>
+            <div class="cmd-palette-body" id="cmd-palette-results">
+                <!-- Renderizado via js/command-palette.js -->
+            </div>
+            <div class="cmd-palette-footer">
+                <div class="cmd-footer-tip">
+                    <span><kbd>↑</kbd> <kbd>↓</kbd> navegar</span>
+                    <span><kbd>↵</kbd> selecionar</span>
+                    <span><kbd>esc</kbd> fechar</span>
+                </div>
+                <div class="cmd-footer-brand">
+                    <span>Vellia Intelligence</span>
                 </div>
             </div>
         </div>

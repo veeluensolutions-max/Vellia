@@ -25,6 +25,7 @@ import { Trash } from "./trash.js";
 import { Contracts } from "./contracts.js";
 import { PostSales } from "./post-sales.js";
 import { Intervention } from "./intervention.js";
+import { CommandPalette } from "./command-palette.js";
 
 // Elementos Globais DOM (Getters Dinâmicos para garantia de não-nulidade)
 const elements = {
@@ -1456,6 +1457,9 @@ function setupEventListeners() {
         Auth.logout();
     });
 
+    // Inicializar Command Palette (Ctrl + K)
+    CommandPalette.init();
+
     // Modal de Inatividade (Continuar Conectado / Sair Agora)
     const btnInactivityKeep = document.getElementById("btn-inactivity-keep");
     if (btnInactivityKeep) {
@@ -1601,6 +1605,7 @@ window.Auth = Auth;
 window.Audit = Audit;
 window.CRM = CRM;
 window.Kanban = Kanban;
+window.CommandPalette = CommandPalette;
 
 // ==========================================================================
 // WORKSPACE / COMPANY SWITCHER

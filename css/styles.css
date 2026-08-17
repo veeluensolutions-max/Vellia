@@ -3575,6 +3575,294 @@ input:checked + .switch-slider::before {
     .podium-card-first:hover {
         transform: translateY(-4px) !important;
     }
+/* ==========================================================================
+   COMMAND PALETTE (CTRL + K SPOTLIGHT MODAL)
+   ========================================================================== */
+
+.cmd-palette-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 14px;
+    background: var(--bg-card-glass);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-full);
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    outline: none;
+    user-select: none;
+}
+
+.cmd-palette-trigger:hover {
+    border-color: var(--primary-light);
+    color: var(--text-primary);
+    background: var(--bg-surface);
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.12);
+    transform: translateY(-1px);
+}
+
+.cmd-palette-trigger kbd {
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    background: var(--bg-app);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    letter-spacing: 0.5px;
+}
+
+/* Overlay & Backdrop */
+.cmd-palette-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(4, 6, 12, 0.65);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    z-index: 9999;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 12vh 20px 20px;
+}
+
+/* Modal Box */
+.cmd-palette-modal {
+    width: 100%;
+    max-width: 640px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-card-glass);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: scaleIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+[data-theme="dark"] .cmd-palette-modal {
+    background: rgba(14, 18, 28, 0.95);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Header & Input */
+.cmd-palette-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border-color);
+    position: relative;
+}
+
+.cmd-search-icon {
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+.cmd-palette-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-primary);
+    outline: none;
+    line-height: 1.4;
+}
+
+.cmd-palette-input::placeholder {
+    color: var(--text-muted);
+}
+
+.cmd-shortcut-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    background: var(--bg-app);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xs);
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+/* Results Body */
+.cmd-palette-body {
+    max-height: 380px;
+    overflow-y: auto;
+    padding: 12px;
+}
+
+.cmd-category-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text-muted);
+    padding: 8px 12px 6px;
+}
+
+.cmd-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border: 1px solid transparent;
+}
+
+.cmd-item:hover, .cmd-item.active {
+    background: var(--bg-surface-hover);
+    border-color: rgba(99, 102, 241, 0.25);
+    transform: translateX(2px);
+}
+
+[data-theme="dark"] .cmd-item.active {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: rgba(99, 102, 241, 0.4);
+}
+
+.cmd-item-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-app);
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+    flex-shrink: 0;
+    transition: all var(--transition-fast);
+}
+
+.cmd-item.active .cmd-item-icon {
+    background: var(--primary);
+    color: #fff;
+    box-shadow: 0 4px 12px var(--primary-glow);
+}
+
+.cmd-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.cmd-item-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cmd-item-subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 1px;
+}
+
+.cmd-item-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    background: var(--bg-app);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xs);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+}
+
+/* Empty State */
+.cmd-empty-state {
+    padding: 36px 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+}
+
+.cmd-empty-state svg {
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.cmd-empty-state p {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.cmd-empty-state span {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* Footer */
+.cmd-palette-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    background: var(--bg-app);
+    border-top: 1px solid var(--border-color);
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.cmd-footer-tip {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.cmd-footer-tip kbd {
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 5px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-secondary);
+}
+
+.cmd-footer-brand {
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+    .cmd-palette-overlay {
+        padding: 40px 12px 12px;
+    }
+    .cmd-palette-trigger span {
+        display: none;
+    }
+    .cmd-footer-tip span:not(:first-child) {
+        display: none;
+    }
 }
 
 

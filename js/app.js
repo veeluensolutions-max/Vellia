@@ -26,6 +26,7 @@ import { Contracts } from "./contracts.js";
 import { PostSales } from "./post-sales.js";
 import { Intervention } from "./intervention.js";
 import { CommandPalette } from "./command-palette.js";
+import { Toast } from "./toast.js";
 
 // Elementos Globais DOM (Getters Dinâmicos para garantia de não-nulidade)
 const elements = {
@@ -394,10 +395,42 @@ function navigateTo(viewName) {
         }
     });
 
-    // Atualizar Título do Cabeçalho
+    // Atualizar Título do Cabeçalho e Breadcrumbs Dinâmicos
     const activeMenuItem = document.querySelector(`.sidebar-menu .menu-item[data-view="${viewName}"] span`);
-    if (activeMenuItem) {
+    if (activeMenuItem && elements.viewTitle) {
         elements.viewTitle.textContent = activeMenuItem.textContent;
+    }
+
+    // Mapa de Breadcrumbs Contextuais
+    const breadcrumbRoutes = {
+        "dashboard": { section: "Visão Geral", page: "Dashboard" },
+        "crm": { section: "Contatos", page: "Leads & Oportunidades" },
+        "kanban": { section: "Pipeline", page: "Funil de Vendas" },
+        "proposals": { section: "Comercial", page: "Propostas & Vendas" },
+        "contracts": { section: "Gestão", page: "Contratos & Renovações" },
+        "post-sales": { section: "Clientes", page: "Pós-Venda & Retenção" },
+        "ai-agents": { section: "Inteligência", page: "Agentes IA 24/7" },
+        "calendar": { section: "Operações", page: "Agenda & Vistorias" },
+        "inspections": { section: "Técnico", page: "Laudos & Inspeções" },
+        "performance": { section: "Comercial", page: "Performance da Equipe" },
+        "goals": { section: "Comercial", page: "Metas & Comissões" },
+        "team": { section: "Comercial", page: "Equipe & Serviços" },
+        "integrations": { section: "Sistema", page: "Integrações & Webhooks" },
+        "users": { section: "Configurações", page: "Controle de Usuários" },
+        "logs": { section: "Segurança", page: "Logs & Auditoria" },
+        "trash": { section: "Sistema", page: "Lixeira" }
+    };
+
+    const breadcrumbEl = document.getElementById("header-breadcrumbs");
+    if (breadcrumbEl) {
+        const info = breadcrumbRoutes[viewName] || { section: "Módulo", page: (activeMenuItem ? activeMenuItem.textContent : viewName) };
+        breadcrumbEl.innerHTML = `
+            <span class="breadcrumb-segment">Vellia CRM</span>
+            <span class="breadcrumb-separator">›</span>
+            <span class="breadcrumb-segment">${info.section}</span>
+            <span class="breadcrumb-separator">›</span>
+            <span class="breadcrumb-segment active">${info.page}</span>
+        `;
     }
 
     // Fechar menu mobile se aberto
@@ -1606,6 +1639,7 @@ window.Audit = Audit;
 window.CRM = CRM;
 window.Kanban = Kanban;
 window.CommandPalette = CommandPalette;
+window.Toast = Toast;
 
 // ==========================================================================
 // WORKSPACE / COMPANY SWITCHER

@@ -283,12 +283,19 @@
         <main class="main-panel">
             <!-- Cabeçalho (Header) -->
             <header class="app-header">
-                <div class="header-title-section">
+                <div class="header-title-section" style="display: flex; align-items: center; gap: 12px;">
                     <!-- Botão de Hambúrguer (Mobile) -->
                     <button id="menu-toggle-btn" class="menu-toggle">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
                     </button>
-                    <h1 id="view-title" class="page-title">Dashboard</h1>
+                    <div>
+                        <nav id="header-breadcrumbs" class="header-breadcrumbs" aria-label="Breadcrumb">
+                            <span class="breadcrumb-segment">Vellia CRM</span>
+                            <span class="breadcrumb-separator">›</span>
+                            <span class="breadcrumb-segment active" id="breadcrumb-current-view">Dashboard</span>
+                        </nav>
+                        <h1 id="view-title" class="page-title" style="margin: 0; line-height: 1.2;">Dashboard</h1>
+                    </div>
                 </div>
 
                 <div class="header-actions">

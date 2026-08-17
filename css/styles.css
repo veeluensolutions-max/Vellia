@@ -3868,6 +3868,161 @@ input:checked + .switch-slider::before {
     }
 }
 
+/* ==========================================================================
+   FASE 2: MODERN KPI CARDS & SPARKLINES
+   ========================================================================== */
+
+.modern-kpi-card {
+    background: var(--bg-card-glass) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+    border: 1px solid var(--border-card-glass) !important;
+    border-radius: var(--radius-lg) !important;
+    padding: 18px 20px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    position: relative !important;
+    overflow: hidden !important;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04) !important;
+}
+
+.modern-kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--kpi-color, var(--primary));
+    opacity: 0.7;
+    transition: opacity 0.2s ease, height 0.2s ease;
+}
+
+.modern-kpi-card:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.09), 0 0 0 1px var(--kpi-color) !important;
+}
+
+.modern-kpi-card:hover::before {
+    opacity: 1;
+    height: 4px;
+}
+
+.kpi-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.modern-kpi-value {
+    font-weight: 800 !important;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+    display: block;
+    margin-top: 4px;
+}
+
+.modern-kpi-icon {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 20px !important;
+    flex-shrink: 0 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.kpi-bottom-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 10px;
+    margin-top: 6px;
+}
+
+.kpi-trend-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 99px;
+    white-space: nowrap;
+    letter-spacing: 0.2px;
+}
+
+.kpi-trend-pill.trend-up {
+    background: rgba(16, 185, 129, 0.12);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.28);
+}
+
+.kpi-trend-pill.trend-down {
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.28);
+}
+
+.kpi-sparkline-container {
+    flex: 1;
+    max-width: 105px;
+    height: 38px;
+    display: flex;
+    align-items: flex-end;
+    opacity: 0.88;
+    transition: opacity 0.2s ease;
+}
+
+.modern-kpi-card:hover .kpi-sparkline-container {
+    opacity: 1;
+}
+
+/* ==========================================================================
+   FASE 3: KANBAN 3D TILT & TEMPERATURE GLOW
+   ========================================================================== */
+
+.kanban-card {
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s, border-color 0.2s !important;
+    border-radius: 10px !important;
+    background: var(--bg-surface) !important;
+    border: 1px solid var(--border-color) !important;
+    position: relative;
+    user-select: none;
+}
+
+.kanban-card:active,
+.kanban-card.dragging {
+    transform: rotate(2.5deg) scale(1.04) translateY(-4px) !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.32), 0 0 0 1px var(--primary) !important;
+    opacity: 0.9 !important;
+    cursor: grabbing !important;
+    z-index: 100 !important;
+}
+
+.kanban-column {
+    border-radius: 12px !important;
+    transition: background-color 0.2s ease;
+}
+
+.kanban-column.drag-over {
+    background: rgba(99, 102, 241, 0.08) !important;
+    box-shadow: inset 0 0 0 2px var(--primary) !important;
+}
+
+.kanban-column-header {
+    border-top: 3px solid var(--stage-color, var(--primary));
+    border-radius: 10px 10px 0 0;
+    padding-top: 10px;
+}
+
+
 
 
 

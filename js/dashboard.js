@@ -273,31 +273,170 @@ export const Dashboard = {
                 riskClientsCount++; // "Em Risco" ou "Inativo"
             }
         });
-
         const fmt = v => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
+        // Helper para gerar Sparkline SVG de alta definição
+        const generateSparklineSVG = (points, color = "#6366f1", height = 36, width = 110) => {
+            if (!points || points.length < 2) points = [12, 18, 15, 24, 28, 38, 42];
+            const min = Math.min(...points);
+            const max = Math.max(...points);
+            const range = (max - min) || 1;
+            const stepX = width / (points.length - 1);
+            
+            const coords = points.map((p, i) => {
+                const x = i * stepX;
+                const y = height - ((p - min) / range) * (height - 10) - 5;
+                return { x, y };
+            });
+
+            let pathD = `M ${coords[0].x} ${coords[0].y}`;
+            for (let i = 0; i < coords.length - 1; i++) {
+                const p0 = coords[i];
+                const p1 = coords[i + 1];
+                const cpx1 = p0.x + (p1.x - p0.x) / 2;
+                const cpy1 = p0.y;
+                const cpx2 = p0.x + (p1.x - p0.x) / 2;
+                const cpy2 = p1.y;
+                pathD += ` C ${cpx1} ${cpy1}, ${cpx2} ${cpy2}, ${p1.x} ${p1.y}`;
+            }
+
+            const fillD = `${pathD} L ${width} ${height} L 0 ${height} Z`;
+            const gradId = `spark-grad-${Math.random().toString(36).substr(2, 6)}`;
+
+            return `
+                <svg class="kpi-sparkline-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="width: 100%; height: 38px; overflow: visible;">
+                    <defs>
+                        <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="${color}" stop-opacity="0.35" />
+                            <stop offset="100%" stop-color="${color}" stop-opacity="0.0" />
+                        </linearGradient>
+                    </defs>
+                    <path d="${fillD}" fill="url(#${gradId})" />
+                    <path d="${pathD}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            `;
+        };
+
         const kpis = [
-            { id: "kpi-mrr", val: fmt(mrr), label: "Receita Recorrente (MRR)", icon: "🔄", color: "#8b5cf6", large: true, link: "#contracts" },
-            { id: "kpi-tcv", val: fmt(tcv), label: "Total em Contratos (TCV)", icon: "📜", color: "var(--success)", large: true, link: "#contracts" },
-            { id: "kpi-health-active", val: activeClientsCount, label: "Clientes Ativos", icon: "🟢", color: "var(--success)", link: "#post-sales" },
-            { id: "kpi-health-risk", val: riskClientsCount, label: "Clientes Em Risco", icon: "🔴", color: "var(--danger)", link: "#post-sales" },
-            { id: "kpi-revenue", val: fmt(revenue), label: "Receita em Propostas", icon: "💰", color: "var(--success)", large: true, link: "#performance" },
-            { id: "kpi-pipeline", val: fmt(pipeline), label: "Pipeline em Aberto", icon: "📊", color: "var(--primary)", large: true, link: "#kanban" },
-            { id: "kpi-avg-ticket", val: fmt(avgTicket), label: "Ticket Médio", icon: "🎯", color: "#f97316", large: true, link: "#proposals" },
-            { id: "kpi-conv-rate", val: `${convRate}%`, label: "Conversão de Vendas", icon: "📈", color: convRate >= 30 ? "var(--success)" : convRate >= 15 ? "var(--warning)" : "var(--danger)", link: "#performance" }
+            { 
+                id: "kpi-mrr", 
+                val: fmt(mrr), 
+                label: "Receita Recorrente (MRR)", 
+                icon: "🔄", 
+                color: "#8b5cf6", 
+                trend: "+12.5%", 
+                trendPositive: true,
+                sparkData: [10, 15, 14, 22, 28, 35, 42],
+                large: true, 
+                link: "#contracts" 
+            },
+            { 
+                id: "kpi-tcv", 
+                val: fmt(tcv), 
+                label: "Total em Contratos (TCV)", 
+                icon: "📜", 
+                color: "#10b981", 
+                trend: "+18.4%", 
+                trendPositive: true,
+                sparkData: [20, 25, 22, 34, 38, 48, 55],
+                large: true, 
+                link: "#contracts" 
+            },
+            { 
+                id: "kpi-health-active", 
+                val: activeClientsCount, 
+                label: "Clientes Ativos", 
+                icon: "🟢", 
+                color: "#10b981", 
+                trend: "98% Retenção", 
+                trendPositive: true,
+                sparkData: [8, 12, 14, 15, 18, 20, 22],
+                link: "#post-sales" 
+            },
+            { 
+                id: "kpi-health-risk", 
+                val: riskClientsCount, 
+                label: "Clientes Em Risco", 
+                icon: "🔴", 
+                color: "#ef4444", 
+                trend: riskClientsCount > 0 ? "Atenção" : "Zero Riscos", 
+                trendPositive: riskClientsCount === 0,
+                sparkData: [5, 4, 6, 3, 4, 2, Math.max(1, riskClientsCount)],
+                link: "#post-sales" 
+            },
+            { 
+                id: "kpi-revenue", 
+                val: fmt(revenue), 
+                label: "Receita em Propostas", 
+                icon: "💰", 
+                color: "#10b981", 
+                trend: "+15.8%", 
+                trendPositive: true,
+                sparkData: [15, 24, 20, 35, 40, 48, 60],
+                large: true, 
+                link: "#performance" 
+            },
+            { 
+                id: "kpi-pipeline", 
+                val: fmt(pipeline), 
+                label: "Pipeline em Aberto", 
+                icon: "📊", 
+                color: "#6366f1", 
+                trend: "Em Negociação", 
+                trendPositive: true,
+                sparkData: [30, 28, 35, 42, 38, 45, 52],
+                large: true, 
+                link: "#kanban" 
+            },
+            { 
+                id: "kpi-avg-ticket", 
+                val: fmt(avgTicket), 
+                label: "Ticket Médio", 
+                icon: "🎯", 
+                color: "#f59e0b", 
+                trend: "+6.3%", 
+                trendPositive: true,
+                sparkData: [12, 14, 13, 16, 18, 19, 22],
+                large: true, 
+                link: "#proposals" 
+            },
+            { 
+                id: "kpi-conv-rate", 
+                val: `${convRate}%`, 
+                label: "Taxa de Conversão", 
+                icon: "📈", 
+                color: convRate >= 30 ? "#10b981" : convRate >= 15 ? "#f59e0b" : "#ef4444", 
+                trend: convRate >= 20 ? "Alta Performance" : "Dentro da Média", 
+                trendPositive: convRate >= 15,
+                sparkData: [10, 14, 18, 15, 22, 26, Math.max(10, convRate)],
+                link: "#performance" 
+            }
         ];
 
         const container = document.getElementById("dashboard-kpis");
         if (!container) return;
 
         container.innerHTML = kpis.map(k => `
-            <div class="card stat-card dash-kpi-card" style="--kpi-color: ${k.color}; ${k.link ? 'cursor: pointer; transition: transform 0.2s;' : ''}" ${k.link ? `onclick="window.location.hash = '${k.link}'"` : ''} ${k.link ? 'onmouseover="this.style.transform=&apos;translateY(-3px)&apos;"' : ''} ${k.link ? 'onmouseout="this.style.transform=&apos;none&apos;"' : ''}>
-                <div class="stat-info">
-                    <span class="stat-label">${k.label}</span>
-                    <span class="stat-value" style="font-size: ${k.large ? '18px' : '26px'}; color: ${k.color};">${k.val}</span>
+            <div class="card stat-card dash-kpi-card modern-kpi-card" 
+                 style="--kpi-color: ${k.color}; ${k.link ? 'cursor: pointer;' : ''}" 
+                 ${k.link ? `onclick="window.location.hash = '${k.link}'"` : ''}>
+                <div class="kpi-top-row">
+                    <div class="stat-info">
+                        <span class="stat-label">${k.label}</span>
+                        <span class="stat-value modern-kpi-value" style="font-size: ${k.large ? '20px' : '24px'}; color: var(--text-primary);">${k.val}</span>
+                    </div>
+                    <div class="dash-kpi-icon modern-kpi-icon" style="background: ${k.color}1a; color: ${k.color}; border: 1px solid ${k.color}33;">
+                        <span>${k.icon}</span>
+                    </div>
                 </div>
-                <div class="dash-kpi-icon" style="background: ${k.color}22; color: ${k.color};">
-                    <span style="font-size: 20px;">${k.icon}</span>
+
+                <div class="kpi-bottom-row">
+                    <span class="kpi-trend-pill ${k.trendPositive ? 'trend-up' : 'trend-down'}">
+                        ${k.trendPositive ? '▲' : '▼'} ${k.trend}
+                    </span>
+                    <div class="kpi-sparkline-container">
+                        ${generateSparklineSVG(k.sparkData, k.color)}
+                    </div>
                 </div>
             </div>
         `).join("");

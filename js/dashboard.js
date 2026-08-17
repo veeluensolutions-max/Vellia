@@ -762,26 +762,44 @@ export const Dashboard = {
 
         const ctx = canvas.getContext('2d');
         const gradient = ctx.createLinearGradient(0, 0, 0, 250);
-        gradient.addColorStop(0, 'rgba(16, 185, 129, 0.4)');
+        gradient.addColorStop(0, 'rgba(16, 185, 129, 0.35)');
+        gradient.addColorStop(0.6, 'rgba(16, 185, 129, 0.08)');
         gradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+
+        const glassTooltip = {
+            backgroundColor: 'rgba(15, 23, 42, 0.92)',
+            titleColor: '#ffffff',
+            bodyColor: '#e2e8f0',
+            borderColor: 'rgba(255, 255, 255, 0.12)',
+            borderWidth: 1,
+            padding: 12,
+            cornerRadius: 10,
+            boxPadding: 6,
+            usePointStyle: true,
+            titleFont: { family: 'Inter, sans-serif', weight: '700', size: 12 },
+            bodyFont: { family: 'Inter, sans-serif', size: 12 }
+        };
 
         charts.revenue = new Chart(canvas, {
             type: 'line',
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Receita (R$)',
+                    label: 'Receita Realizada (R$)',
                     data: data,
                     borderColor: '#10b981',
                     backgroundColor: gradient,
                     borderWidth: 3,
                     fill: true,
-                    tension: 0.4,
+                    tension: 0.42,
                     pointBackgroundColor: '#ffffff',
                     pointBorderColor: '#10b981',
-                    pointBorderWidth: 2,
+                    pointBorderWidth: 2.5,
                     pointRadius: 4,
-                    pointHoverRadius: 6
+                    pointHoverRadius: 7,
+                    pointHoverBackgroundColor: '#10b981',
+                    pointHoverBorderColor: '#ffffff',
+                    pointHoverBorderWidth: 2
                 }]
             },
             options: {
@@ -790,9 +808,10 @@ export const Dashboard = {
                 plugins: {
                     legend: { display: false },
                     tooltip: {
+                        ...glassTooltip,
                         callbacks: {
                             label: function(context) {
-                                return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(context.parsed.y);
+                                return " " + new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(context.parsed.y);
                             }
                         }
                     }
@@ -800,14 +819,14 @@ export const Dashboard = {
                 scales: {
                     x: {
                         grid: { display: false },
-                        ticks: { color: '#64748b', font: { family: 'Inter, sans-serif', weight: 500 } }
+                        ticks: { color: '#64748b', font: { family: 'Inter, sans-serif', weight: 600, size: 11 } }
                     },
                     y: {
                         beginAtZero: true,
-                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        grid: { color: 'rgba(148, 163, 184, 0.08)' },
                         ticks: {
                             color: '#64748b',
-                            font: { family: 'Inter, sans-serif' },
+                            font: { family: 'Inter, sans-serif', size: 11 },
                             callback: function(value) {
                                 return value >= 1000 ? 'R$ ' + (value/1000) + 'k' : 'R$ ' + value;
                             }
@@ -844,8 +863,22 @@ export const Dashboard = {
         gradLost.addColorStop(1, '#b91c1c');
 
         const gradPending = ctx.createLinearGradient(0, 0, 0, 200);
-        gradPending.addColorStop(0, '#f59e0b');
-        gradPending.addColorStop(1, '#d97706');
+        gradPending.addColorStop(0, '#6366f1');
+        gradPending.addColorStop(1, '#4f46e5');
+
+        const glassTooltip = {
+            backgroundColor: 'rgba(15, 23, 42, 0.92)',
+            titleColor: '#ffffff',
+            bodyColor: '#e2e8f0',
+            borderColor: 'rgba(255, 255, 255, 0.12)',
+            borderWidth: 1,
+            padding: 12,
+            cornerRadius: 10,
+            boxPadding: 6,
+            usePointStyle: true,
+            titleFont: { family: 'Inter, sans-serif', weight: '700', size: 12 },
+            bodyFont: { family: 'Inter, sans-serif', size: 12 }
+        };
 
         charts.conversion = new Chart(canvas, {
             type: 'doughnut',
@@ -855,21 +888,23 @@ export const Dashboard = {
                     data: [won, lost, pending],
                     backgroundColor: [gradWon, gradLost, gradPending],
                     borderWidth: 0,
-                    hoverOffset: 4
+                    hoverOffset: 6,
+                    borderRadius: 4
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: '75%',
+                cutout: '74%',
                 plugins: {
+                    tooltip: glassTooltip,
                     legend: {
                         position: 'right',
                         labels: {
                             color: '#64748b',
-                            font: { family: 'Inter, sans-serif', weight: 500 },
+                            font: { family: 'Inter, sans-serif', weight: 600, size: 11 },
                             usePointStyle: true,
-                            padding: 20
+                            padding: 16
                         }
                     }
                 }
@@ -924,13 +959,27 @@ export const Dashboard = {
         const labels = sorted.map(s => s[0]);
         const data = sorted.map(s => s[1]);
         const colors = [
-            'rgba(99, 102, 241, 0.8)',
-            'rgba(139, 92, 246, 0.8)',
-            'rgba(245, 158, 11, 0.8)',
-            'rgba(16, 185, 129, 0.8)',
-            'rgba(249, 115, 22, 0.8)',
-            'rgba(239, 68, 68, 0.8)'
+            'rgba(99, 102, 241, 0.85)',
+            'rgba(139, 92, 246, 0.85)',
+            'rgba(245, 158, 11, 0.85)',
+            'rgba(16, 185, 129, 0.85)',
+            'rgba(249, 115, 22, 0.85)',
+            'rgba(239, 68, 68, 0.85)'
         ];
+
+        const glassTooltip = {
+            backgroundColor: 'rgba(15, 23, 42, 0.92)',
+            titleColor: '#ffffff',
+            bodyColor: '#e2e8f0',
+            borderColor: 'rgba(255, 255, 255, 0.12)',
+            borderWidth: 1,
+            padding: 12,
+            cornerRadius: 10,
+            boxPadding: 6,
+            usePointStyle: true,
+            titleFont: { family: 'Inter, sans-serif', weight: '700', size: 12 },
+            bodyFont: { family: 'Inter, sans-serif', size: 12 }
+        };
 
         charts.segments = new Chart(canvas, {
             type: 'polarArea',
@@ -939,26 +988,29 @@ export const Dashboard = {
                 datasets: [{
                     data: data,
                     backgroundColor: colors,
-                    borderWidth: 1
+                    borderWidth: 1.5,
+                    borderColor: 'var(--bg-surface)'
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
+                    tooltip: glassTooltip,
                     legend: {
                         position: 'right',
                         labels: {
                             color: '#64748b',
-                            font: { family: 'Inter, sans-serif', size: 11 },
-                            usePointStyle: true
+                            font: { family: 'Inter, sans-serif', size: 11, weight: 600 },
+                            usePointStyle: true,
+                            padding: 12
                         }
                     }
                 },
                 scales: {
                     r: {
                         ticks: { display: false },
-                        grid: { color: 'rgba(0,0,0,0.05)' }
+                        grid: { color: 'rgba(148, 163, 184, 0.08)' }
                     }
                 }
             }
@@ -996,12 +1048,26 @@ export const Dashboard = {
             '#ef4444'
         ];
 
-        const gradients = colors.map((col, idx) => {
+        const gradients = colors.map((col) => {
             const grad = ctx.createLinearGradient(0, 0, 0, 200);
             grad.addColorStop(0, col);
-            grad.addColorStop(1, col + '66');
+            grad.addColorStop(1, col + '88');
             return grad;
         });
+
+        const glassTooltip = {
+            backgroundColor: 'rgba(15, 23, 42, 0.92)',
+            titleColor: '#ffffff',
+            bodyColor: '#e2e8f0',
+            borderColor: 'rgba(255, 255, 255, 0.12)',
+            borderWidth: 1,
+            padding: 12,
+            cornerRadius: 10,
+            boxPadding: 6,
+            usePointStyle: true,
+            titleFont: { family: 'Inter, sans-serif', weight: '700', size: 12 },
+            bodyFont: { family: 'Inter, sans-serif', size: 12 }
+        };
 
         charts.sources = new Chart(canvas, {
             type: 'doughnut',
@@ -1011,20 +1077,23 @@ export const Dashboard = {
                     data: data,
                     backgroundColor: gradients,
                     borderWidth: 0,
-                    hoverOffset: 4
+                    hoverOffset: 6,
+                    borderRadius: 4
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: '70%',
+                cutout: '72%',
                 plugins: {
+                    tooltip: glassTooltip,
                     legend: {
                         position: 'right',
                         labels: {
                             color: '#64748b',
-                            font: { family: 'Inter, sans-serif', size: 11 },
-                            usePointStyle: true
+                            font: { family: 'Inter, sans-serif', size: 11, weight: 600 },
+                            usePointStyle: true,
+                            padding: 12
                         }
                     }
                 }

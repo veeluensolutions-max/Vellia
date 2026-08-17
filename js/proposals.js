@@ -50,6 +50,9 @@ export const Proposals = {
         const form = document.getElementById("new-proposal-form");
         if (form) form.addEventListener("submit", (e) => { e.preventDefault(); this.saveProposal(); });
 
+        // Interatividade de Cards de Serviços e Slider de Desconto
+        this.bindProposalFormInteractive();
+
         // Busca e filtro
         const search = document.getElementById("proposals-search");
         if (search) search.addEventListener("input", () => this.renderTable());
@@ -420,6 +423,69 @@ export const Proposals = {
     },
 
 
+    bindProposalFormInteractive() {
+        const cardsContainer = document.getElementById("proposal-service-cards");
+        const serviceSelect = document.getElementById("proposal-service");
+        const titleInput = document.getElementById("proposal-title");
+        const baseValInput = document.getElementById("proposal-base-value");
+        const discountSlider = document.getElementById("proposal-discount-range");
+
+        if (cardsContainer) {
+            cardsContainer.addEventListener("click", (e) => {
+                const card = e.target.closest(".service-choice-card");
+                if (!card) return;
+
+                cardsContainer.querySelectorAll(".service-choice-card").forEach(c => c.classList.remove("active"));
+                card.classList.add("active");
+
+                const service = card.getAttribute("data-service");
+                const defaultTitle = card.getAttribute("data-title");
+
+                if (serviceSelect && service) {
+                    serviceSelect.value = service;
+                }
+                if (titleInput && defaultTitle) {
+                    titleInput.value = defaultTitle;
+                }
+            });
+        }
+
+        if (baseValInput) {
+            baseValInput.addEventListener("input", () => this.updatePricingSummary());
+        }
+
+        if (discountSlider) {
+            discountSlider.addEventListener("input", () => this.updatePricingSummary());
+        }
+    },
+
+    updatePricingSummary() {
+        const baseValInput = document.getElementById("proposal-base-value");
+        const discountSlider = document.getElementById("proposal-discount-range");
+        const discountBadge = document.getElementById("proposal-discount-badge");
+        const summaryBase = document.getElementById("summary-base-val");
+        const summaryDiscount = document.getElementById("summary-discount-val");
+        const summaryFinal = document.getElementById("summary-final-val");
+        const hiddenValue = document.getElementById("proposal-value");
+
+        const baseVal = parseFloat(baseValInput?.value) || 0;
+        const discountPct = parseInt(discountSlider?.value) || 0;
+
+        const discountAmount = baseVal * (discountPct / 100);
+        const finalVal = Math.max(0, baseVal - discountAmount);
+
+        const fmt = (v) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+
+        if (discountBadge) {
+            discountBadge.textContent = discountPct === 0 ? "0% de Desconto (Tabela)" : `${discountPct}% de Desconto`;
+        }
+
+        if (summaryBase) summaryBase.textContent = fmt(baseVal);
+        if (summaryDiscount) summaryDiscount.textContent = discountPct === 0 ? "R$ 0,00 (0%)" : `- ${fmt(discountAmount)} (${discountPct}%)`;
+        if (summaryFinal) summaryFinal.textContent = fmt(finalVal);
+        if (hiddenValue) hiddenValue.value = finalVal.toFixed(2);
+    },
+
     // ==========================================================================
     // MODAL DE NOVA PROPOSTA
     // ==========================================================================
@@ -432,6 +498,13 @@ export const Proposals = {
             leadData = window.Store ? window.Store.getLeadById(leadData) : null;
         }
 
+        // Resetar cards de serviço para o primeiro
+        const cards = document.querySelectorAll("#proposal-service-cards .service-choice-card");
+        cards.forEach((c, idx) => {
+            if (idx === 0) c.classList.add("active");
+            else c.classList.remove("active");
+        });
+
         // Pré-preencher com dados do lead se fornecido
         if (leadData) {
             const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
@@ -442,7 +515,14 @@ export const Proposals = {
         if (suggestedService) {
             const el = document.getElementById("proposal-service");
             if (el) el.value = suggestedService;
+            // Atualizar card visual ativo correspondente
+            cards.forEach(c => {
+                if (c.getAttribute("data-service") === suggestedService) c.classList.add("active");
+                else c.classList.remove("active");
+            });
         }
+
+        this.updatePricingSummary();
 
         document.getElementById("proposal-modal")?.classList.add("open");
         document.getElementById("proposal-modal-overlay").style.display = "block";

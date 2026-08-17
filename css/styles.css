@@ -4563,6 +4563,122 @@ input:checked + .switch-slider::before {
     box-shadow: 0 6px 16px rgba(99, 102, 241, 0.45);
 }
 
+/* ==========================================================================
+   PROPOSAL VISUAL SERVICE CARDS & PRICING SUMMARY
+   ========================================================================== */
+
+.service-choice-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.service-choice-card {
+    background: var(--bg-app);
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all var(--transition-fast);
+    user-select: none;
+}
+
+.service-choice-card:hover {
+    border-color: var(--primary-light);
+    background: var(--bg-hover);
+    transform: translateY(-1px);
+}
+
+.service-choice-card.active {
+    border-color: var(--primary);
+    background: var(--primary-glow);
+    box-shadow: 0 4px 12px var(--primary-glow);
+}
+
+.service-choice-icon {
+    font-size: 20px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.service-choice-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.service-choice-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.service-choice-desc {
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+.proposal-pricing-summary {
+    background: var(--bg-card-glass);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border-card-glass);
+    border-radius: var(--radius-md);
+    padding: 14px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.pricing-summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12.5px;
+}
+
+.summary-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.summary-val {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.summary-val.text-discount {
+    color: #f59e0b;
+    font-weight: 600;
+}
+
+.pricing-summary-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 2px 0;
+}
+
+.pricing-summary-item.total {
+    padding-top: 4px;
+}
+
+.summary-label-total {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.summary-val-total {
+    font-size: 18px;
+    font-weight: 800;
+    color: #10b981;
+    text-shadow: 0 0 12px rgba(16, 185, 129, 0.25);
+}
+
+
 
 
 

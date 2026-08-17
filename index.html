@@ -3673,105 +3673,148 @@
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
         </div>
-        <form id="new-proposal-form" class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
+        <form id="new-proposal-form" class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
             <div class="grid-modal-2col">
                 <div class="form-group">
-                    <label for="proposal-company">Empresa *</label>
+                    <label for="proposal-company">Empresa / Lead *</label>
                     <input type="text" id="proposal-company" class="form-control" placeholder="Nome da empresa" required>
                 </div>
                 <div class="form-group">
-                    <label for="proposal-contact">Contato</label>
+                    <label for="proposal-contact">Contato / Decisor</label>
                     <input type="text" id="proposal-contact" class="form-control" placeholder="Nome do responsável">
                 </div>
             </div>
-            <div class="grid-modal-2col">
-                <div class="form-group">
-                    <label for="proposal-number">Número da Proposta</label>
-                    <input type="text" id="proposal-number" class="form-control" placeholder="Gerado automaticamente" disabled>
+
+            <!-- Seleção Visual de Serviços em Cards -->
+            <div class="form-group">
+                <label style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span>Serviço Principal *</span>
+                    <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">Escolha rápida em 1 clique</span>
+                </label>
+                
+                <div class="service-choice-cards" id="proposal-service-cards">
+                    <div class="service-choice-card active" data-service="Licenciamento Ambiental" data-title="Proposta Comercial - Licenciamento Ambiental">
+                        <span class="service-choice-icon">🌱</span>
+                        <div class="service-choice-info">
+                            <span class="service-choice-name">Licenciamento</span>
+                            <span class="service-choice-desc">LP, LI e LO</span>
+                        </div>
+                    </div>
+                    <div class="service-choice-card" data-service="ESG" data-title="Consultoria Estratégica ESG e Sustentabilidade">
+                        <span class="service-choice-icon">📊</span>
+                        <div class="service-choice-info">
+                            <span class="service-choice-name">Consultoria ESG</span>
+                            <span class="service-choice-desc">Diagnóstico & Metas</span>
+                        </div>
+                    </div>
+                    <div class="service-choice-card" data-service="NR-13" data-title="Inspeção e Laudo Técnico NR-13">
+                        <span class="service-choice-icon">⚡</span>
+                        <div class="service-choice-info">
+                            <span class="service-choice-name">NR-13 & Laudos</span>
+                            <span class="service-choice-desc">Caldeiras & Vasos</span>
+                        </div>
+                    </div>
+                    <div class="service-choice-card" data-service="Monitoramento Ambiental" data-title="Monitoramento e Controle Ambiental Contínuo">
+                        <span class="service-choice-icon">💧</span>
+                        <div class="service-choice-info">
+                            <span class="service-choice-name">Monitoramento</span>
+                            <span class="service-choice-desc">Água, Solo & Efluentes</span>
+                        </div>
+                    </div>
+                    <div class="service-choice-card" data-service="Estudos Ambientais" data-title="Estudo de Impacto Ambiental (EIA/RIMA)">
+                        <span class="service-choice-icon">🔬</span>
+                        <div class="service-choice-info">
+                            <span class="service-choice-name">Estudos Ambientais</span>
+                            <span class="service-choice-desc">EIA/RIMA e RCA</span>
+                        </div>
+                    </div>
+                    <div class="service-choice-card" data-service="Consultorias Técnicas" data-title="Consultoria Técnica de Engenharia">
+                        <span class="service-choice-icon">💼</span>
+                        <div class="service-choice-info">
+                            <span class="service-choice-name">Outros Projetos</span>
+                            <span class="service-choice-desc">Sob Medida</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="proposal-service">Serviço *</label>
-                    <select id="proposal-service" class="form-control" required>
-                        <option value="">Selecione...</option>
-                        <option value="Licenciamento Ambiental">Licenciamento Ambiental</option>
-                        <option value="Monitoramento Ambiental">Monitoramento Ambiental</option>
-                        <option value="ESG">ESG</option>
-                        <option value="NR-13">NR-13</option>
-                        <option value="Estudos Ambientais">Estudos Ambientais</option>
-                        <option value="Consultorias Técnicas">Consultorias Técnicas</option>
-                        <option value="Outros">Outros</option>
-                    </select>
-                </div>
+
+                <select id="proposal-service" class="form-control" style="display: none;" required>
+                    <option value="Licenciamento Ambiental" selected>Licenciamento Ambiental</option>
+                    <option value="Monitoramento Ambiental">Monitoramento Ambiental</option>
+                    <option value="ESG">ESG</option>
+                    <option value="NR-13">NR-13</option>
+                    <option value="Estudos Ambientais">Estudos Ambientais</option>
+                    <option value="Consultorias Técnicas">Consultorias Técnicas</option>
+                    <option value="Outros">Outros</option>
+                </select>
             </div>
+
             <div class="form-group">
                 <label for="proposal-title">Título da Proposta *</label>
-                <input type="text" id="proposal-title" class="form-control" placeholder="Ex: Proposta Comercial - Sistema de Gestão" required>
+                <input type="text" id="proposal-title" class="form-control" placeholder="Ex: Proposta Comercial - Licenciamento Ambiental" value="Proposta Comercial - Licenciamento Ambiental" required>
             </div>
+
             <div class="grid-modal-2col">
                 <div class="form-group">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <label for="proposal-value" style="margin: 0;">Valor (R$) *</label>
-                        <button type="button" class="btn-toggle-pricing-sim" data-target="new" style="background: none; border: none; color: var(--primary); font-size: 11px; font-weight: 700; cursor: pointer; padding: 0;">🧮 Simular Preço</button>
-                    </div>
-                    <input type="number" id="proposal-value" class="form-control" placeholder="0,00" min="0" step="0.01" required>
+                    <label for="proposal-base-value">Valor Base Bruto (R$) *</label>
+                    <input type="number" id="proposal-base-value" class="form-control" placeholder="0,00" min="0" step="0.01" value="5000" required>
                 </div>
                 <div class="form-group">
-                    <label for="proposal-valid">Válida até</label>
+                    <label for="proposal-valid">Validade da Proposta</label>
                     <input type="date" id="proposal-valid" class="form-control">
                 </div>
             </div>
-            
-            <!-- Painel Retrátil de Simulação de Preço para Nova Proposta -->
-            <div id="pricing-sim-panel-new" style="display: none; background: var(--bg-app); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; margin-bottom: 10px;">
-                <h4 style="font-size: 12px; font-weight: 700; margin-bottom: 12px; color: var(--text-primary); text-transform: uppercase;">🧮 Calculadora de Preço de Venda</h4>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
-                    <div class="form-group" style="margin: 0;">
-                        <label style="font-size: 10px; text-transform: uppercase;">Custo Pessoal (R$)</label>
-                        <input type="number" id="sim-new-custo" class="form-control" style="height: 34px; font-size: 12px;" placeholder="Ex: 2000" min="0">
-                    </div>
-                    <div class="form-group" style="margin: 0;">
-                        <label style="font-size: 10px; text-transform: uppercase;">Despesas Extra (R$)</label>
-                        <input type="number" id="sim-new-despesa" class="form-control" style="height: 34px; font-size: 12px;" placeholder="Ex: 500" min="0">
-                    </div>
+
+            <!-- Slider Deslizante de Desconto Comercial -->
+            <div class="form-group" style="background: var(--bg-app); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label for="proposal-discount-range" style="margin: 0; font-weight: 700; font-size: 12.5px; color: var(--text-primary);">
+                        🏷️ Desconto Comercial Aplicado
+                    </label>
+                    <span id="proposal-discount-badge" class="badge" style="background: var(--primary-glow); color: var(--primary); font-weight: 700; font-size: 12px; border: 1px solid rgba(99,102,241,0.2);">0% de Desconto</span>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
-                    <div class="form-group" style="margin: 0;">
-                        <label style="font-size: 10px; text-transform: uppercase;">Margem Lucro (%)</label>
-                        <input type="number" id="sim-new-margem" class="form-control" style="height: 34px; font-size: 12px;" placeholder="Ex: 30" min="0" value="30">
-                    </div>
-                    <div class="form-group" style="margin: 0;">
-                        <label style="font-size: 10px; text-transform: uppercase;">Impostos (%)</label>
-                        <input type="number" id="sim-new-impostos" class="form-control" style="height: 34px; font-size: 12px;" placeholder="Ex: 15" min="0" value="15">
-                    </div>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 10px;">
-                    <div>
-                        <span style="font-size: 10px; color: var(--text-muted); display: block; text-transform: uppercase;">Preço Sugerido</span>
-                        <strong id="sim-new-result" style="font-size: 16px; color: var(--success);">R$ 0,00</strong>
-                    </div>
-                    <button type="button" class="btn btn-outline btn-apply-sim-val" data-target="new" style="height: 32px; padding: 0 10px; font-size: 11px;">Aplicar Valor</button>
+                <input type="range" id="proposal-discount-range" min="0" max="30" step="1" value="0" style="width: 100%; accent-color: var(--primary); cursor: pointer; height: 6px;">
+                <div style="display: flex; justify-content: space-between; font-size: 10.5px; color: var(--text-muted); margin-top: 4px;">
+                    <span>0% (Preço de Tabela)</span>
+                    <span>15%</span>
+                    <span>30% (Desconto Máximo)</span>
                 </div>
             </div>
+
+            <!-- Resumo Financeiro em Tempo Real (Glass Box) -->
+            <div class="proposal-pricing-summary" id="proposal-pricing-summary">
+                <div class="pricing-summary-item">
+                    <span class="summary-label">Valor Base:</span>
+                    <span class="summary-val" id="summary-base-val">R$ 5.000,00</span>
+                </div>
+                <div class="pricing-summary-item">
+                    <span class="summary-label">Desconto:</span>
+                    <span class="summary-val text-discount" id="summary-discount-val">- R$ 0,00 (0%)</span>
+                </div>
+                <div class="pricing-summary-divider"></div>
+                <div class="pricing-summary-item total">
+                    <span class="summary-label-total">Total Líquido da Proposta:</span>
+                    <span class="summary-val-total" id="summary-final-val">R$ 5.000,00</span>
+                </div>
+            </div>
+
+            <input type="hidden" id="proposal-value" value="5000">
+
             <div class="form-group">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <label for="proposal-notes" style="margin: 0;">Observações</label>
+                    <label for="proposal-notes" style="margin: 0;">Observações & Escopo</label>
                     <button type="button" id="btn-generate-proposal-notes-ai" class="btn btn-outline" style="height: 28px; padding: 0 8px; font-size: 11px; gap: 4px; display: inline-flex; align-items: center; border-color: var(--primary); color: var(--primary); background: transparent;">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> 
                         Gerar Escopo com IA
                     </button>
                 </div>
-                <textarea id="proposal-notes" class="form-control" placeholder="Condições especiais, escopo, contexto da proposta..." style="min-height: 80px; resize: vertical;"></textarea>
+                <textarea id="proposal-notes" class="form-control" placeholder="Condições especiais, escopo de trabalho, prazos de entrega..." style="min-height: 80px; resize: vertical;"></textarea>
             </div>
-            <div class="form-group">
-                <label>Anexos (Opcional)</label>
-                <input type="file" id="proposal-files" class="form-control" multiple accept=".pdf,.doc,.docx,.xls,.xlsx" style="padding: 8px;">
-                <small style="color: var(--text-muted); font-size: 11px;">Suportado: PDF, Word, Excel.</small>
-            </div>
+
             <div class="modal-footer" style="padding: 0; border: none; margin-top: 4px;">
                 <button type="button" id="btn-cancel-proposal" class="btn btn-outline">Cancelar</button>
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn btn-primary" style="gap: 8px;">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                    Registrar Proposta
+                    <span>Salvar & Emitir Proposta</span>
                 </button>
             </div>
         </form>

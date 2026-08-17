@@ -104,33 +104,17 @@ export const Copilot = {
 
         const msgDiv = document.createElement("div");
         msgDiv.className = `copilot-msg ${isUser ? 'user' : 'assistant'}`;
-        msgDiv.style.display = "flex";
-        msgDiv.style.alignItems = "flex-start";
-        msgDiv.style.gap = "8px";
-        msgDiv.style.maxWidth = "85%";
-        
-        if (isUser) {
-            msgDiv.style.alignSelf = "flex-end";
-            msgDiv.style.flexDirection = "row-reverse";
-        } else {
-            msgDiv.style.alignSelf = "flex-start";
-        }
 
-        const avatar = isUser ? "👤" : "🤖";
-        const avatarBg = isUser ? "rgba(255, 255, 255, 0.1)" : "rgba(99, 102, 241, 0.15)";
-        const avatarColor = isUser ? "#cbd5e1" : "#8b5cf6";
-        const avatarBorder = isUser ? "rgba(255, 255, 255, 0.15)" : "rgba(139, 92, 246, 0.2)";
+        const avatar = isUser ? "👤" : "✨";
 
-        const bubbleBg = isUser ? "linear-gradient(135deg, var(--primary), #8b5cf6)" : "rgba(30, 41, 59, 0.8)";
-        const bubbleBorder = isUser ? "none" : "1px solid rgba(255, 255, 255, 0.05)";
-        const bubbleColor = isUser ? "#ffffff" : "#e2e8f0";
-        const borderRadius = isUser ? "14px 4px 14px 14px" : "4px 14px 14px 14px";
+        // Formatação simples de negrito e quebras de linha
+        let formattedText = text
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\n/g, '<br>');
 
         msgDiv.innerHTML = `
-            <div style="background: ${avatarBg}; color: ${avatarColor}; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; border: 1px solid ${avatarBorder};">${avatar}</div>
-            <div style="background: ${bubbleBg}; border: ${bubbleBorder}; border-radius: ${borderRadius}; padding: 10px 14px; font-size: 12px; color: ${bubbleColor}; line-height: 1.5; text-align: left; word-break: break-word; font-family: system-ui, sans-serif;">
-                ${text.replace(/\n/g, '<br>')}
-            </div>
+            <div class="copilot-msg-avatar">${avatar}</div>
+            <div class="copilot-msg-bubble">${formattedText}</div>
         `;
 
         this.history.appendChild(msgDiv);
@@ -143,28 +127,23 @@ export const Copilot = {
 
         const skeleton = document.createElement("div");
         skeleton.id = "copilot-typing-skeleton";
-        skeleton.style.display = "flex";
-        skeleton.style.alignItems = "flex-start";
-        skeleton.style.gap = "8px";
-        skeleton.style.maxWidth = "85%";
-        skeleton.style.alignSelf = "flex-start";
+        skeleton.className = "copilot-msg assistant";
 
         skeleton.innerHTML = `
-            <div style="background: rgba(99, 102, 241, 0.15); color: #8b5cf6; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; border: 1px solid rgba(139, 92, 246, 0.2);">🤖</div>
-            <div style="background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 4px 14px 14px 14px; padding: 10px 14px; display: flex; align-items: center; gap: 4px;">
-                <span style="width: 6px; height: 6px; background: #94a3b8; border-radius: 50%; display: inline-block; animation: copilot-pulse 1s infinite alternate;"></span>
-                <span style="width: 6px; height: 6px; background: #94a3b8; border-radius: 50%; display: inline-block; animation: copilot-pulse 1s infinite alternate 0.25s;"></span>
-                <span style="width: 6px; height: 6px; background: #94a3b8; border-radius: 50%; display: inline-block; animation: copilot-pulse 1s infinite alternate 0.5s;"></span>
+            <div class="copilot-msg-avatar">✨</div>
+            <div class="copilot-msg-bubble" style="display: inline-flex; align-items: center; gap: 6px; padding: 12px 18px;">
+                <span style="width: 6px; height: 6px; background: var(--primary); border-radius: 50%; display: inline-block; animation: copilot-pulse 0.8s infinite alternate;"></span>
+                <span style="width: 6px; height: 6px; background: var(--primary); border-radius: 50%; display: inline-block; animation: copilot-pulse 0.8s infinite alternate 0.2s;"></span>
+                <span style="width: 6px; height: 6px; background: var(--primary); border-radius: 50%; display: inline-block; animation: copilot-pulse 0.8s infinite alternate 0.4s;"></span>
             </div>
         `;
 
-        // Injetar folha de estilo para animação se necessário
         if (!document.getElementById("copilot-pulse-style")) {
             const style = document.createElement("style");
             style.id = "copilot-pulse-style";
             style.innerHTML = `
                 @keyframes copilot-pulse {
-                    from { opacity: 0.35; transform: translateY(0); }
+                    from { opacity: 0.3; transform: translateY(0); }
                     to { opacity: 1; transform: translateY(-3px); }
                 }
             `;

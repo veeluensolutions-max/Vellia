@@ -77,6 +77,21 @@ export const CRM = {
         if (elements.crmSearch) elements.crmSearch.addEventListener("input", () => this.renderLeadsTable());
         if (elements.crmFilterStage) elements.crmFilterStage.addEventListener("change", () => this.renderLeadsTable());
 
+        // Pílulas de Filtros Rápidos (Pill Filters)
+        const pillContainer = document.getElementById("crm-pill-filters");
+        if (pillContainer && !this._pillEventsBound) {
+            pillContainer.addEventListener("click", (e) => {
+                const btn = e.target.closest(".crm-pill-filter");
+                if (btn) {
+                    pillContainer.querySelectorAll(".crm-pill-filter").forEach(b => b.classList.remove("active"));
+                    btn.classList.add("active");
+                    this.activePillFilter = btn.getAttribute("data-filter") || "all";
+                    this.renderLeadsTable();
+                }
+            });
+            this._pillEventsBound = true;
+        }
+
         // Drawer Detalhes
         if (elements.btnCloseDrawer) elements.btnCloseDrawer.addEventListener("click", () => this.closeLeadDrawer());
         if (elements.drawerOverlay) elements.drawerOverlay.addEventListener("click", () => this.closeLeadDrawer());
@@ -314,7 +329,42 @@ export const CRM = {
         const stageFilter = document.getElementById("crm-filter-stage")?.value || "all";
         const ownerFilterValue = ownerFilter?.value || "all";
 
+        const proposals = Store.getProposals();
+        const now = new Date();
+
+        const getLeadDaysNoContact = (lead) => {
+            let lastDate = new Date(lead.createdAt || now);
+            if (lead.interactions && lead.interactions.length > 0) {
+                const sorted = [...lead.interactions].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+                lastDate = new Date(sorted[0].timestamp);
+            }
+            return Math.floor(Math.abs(now - lastDate) / (1000 * 60 * 60 * 24));
+        };
+
+        const getLeadValue = (lead) => {
+            return proposals.filter(p => p.leadId === lead.id && p.status !== "Perdido").reduce((s, p) => s + (p.value || 0), 0);
+        };
+
+        // Contadores das Pílulas em tempo real
+        const countAll = leads.length;
+        const countHot = leads.filter(l => (l.aiScore || 0) >= 75).length;
+        const countWarm = leads.filter(l => (l.aiScore || 0) >= 45 && (l.aiScore || 0) < 75).length;
+        const countNoContact = leads.filter(l => getLeadDaysNoContact(l) >= 3 && l.stage !== "Cliente Fechado" && l.stage !== "Cliente Perdido").length;
+        const countHighValue = leads.filter(l => getLeadValue(l) >= 5000).length;
+
+        const setPillText = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = val;
+        };
+        setPillText("pill-count-all", countAll);
+        setPillText("pill-count-hot", countHot);
+        setPillText("pill-count-warm", countWarm);
+        setPillText("pill-count-nocontact", countNoContact);
+        setPillText("pill-count-highvalue", countHighValue);
+
         // Filtro de leads
+        const activePill = this.activePillFilter || "all";
+
         const filteredLeads = leads.filter(lead => {
             const matchesSearch =
                 (lead.company || "").toLowerCase().includes(searchQuery) ||
@@ -325,7 +375,18 @@ export const CRM = {
             const matchesStage = stageFilter === "all" || lead.stage === stageFilter;
             const matchesOwner = !isAdmin || ownerFilterValue === "all" || lead.owner === ownerFilterValue;
 
-            return matchesSearch && matchesStage && matchesOwner;
+            let matchesPill = true;
+            if (activePill === "hot") {
+                matchesPill = (lead.aiScore || 0) >= 75;
+            } else if (activePill === "warm") {
+                matchesPill = (lead.aiScore || 0) >= 45 && (lead.aiScore || 0) < 75;
+            } else if (activePill === "nocontact") {
+                matchesPill = getLeadDaysNoContact(lead) >= 3 && lead.stage !== "Cliente Fechado" && lead.stage !== "Cliente Perdido";
+            } else if (activePill === "highvalue") {
+                matchesPill = getLeadValue(lead) >= 5000;
+            }
+
+            return matchesSearch && matchesStage && matchesOwner && matchesPill;
         });
 
         if (filteredLeads.length === 0) {

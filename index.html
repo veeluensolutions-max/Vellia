@@ -1610,12 +1610,24 @@
                      ========================================================== -->
                 <div id="view-crm" class="spa-view" style="display: none;">
                     <!-- CRM Header Bar -->
-                    <div class="crm-header-bar">
+                    <div class="crm-header-bar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
                         <div>
-                            <h3 style="font-weight: 700;">Gestão de Leads & Contatos</h3>
-                            <p style="color: var(--text-secondary); font-size: 13px;">Cadastre e gerencie a jornada comercial dos seus leads.</p>
+                            <h3 style="font-weight: 800; font-size: 20px; color: var(--text-primary); margin: 0 0 4px 0;">Gestão de Leads & Contatos</h3>
+                            <p style="color: var(--text-secondary); font-size: 13px; margin: 0;">Cadastre, qualifique e gerencie a jornada comercial dos seus clientes.</p>
                         </div>
-                        <div style="display: flex; gap: 10px; align-items: center;">
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <!-- View Switcher -->
+                            <div class="crm-view-switcher">
+                                <button class="view-switch-btn active" data-target="crm" title="Visualização em Lista/Tabela">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                                    <span>Tabela</span>
+                                </button>
+                                <button class="view-switch-btn" onclick="window.location.hash = '#kanban'" title="Visualização em Pipeline Kanban">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></svg>
+                                    <span>Kanban</span>
+                                </button>
+                            </div>
+
                             <button id="btn-ai-distribute" class="btn btn-outline" style="display:none; gap: 8px; align-items: center; border-color: var(--primary); color: var(--primary);" title="Distribuição inteligente de leads por IA">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
                                 <span>🤖 Distribuição IA</span>
@@ -1625,6 +1637,30 @@
                                 <span>Novo Lead</span>
                             </button>
                         </div>
+                    </div>
+
+                    <!-- Barra de Filtros Rápidos em Pílula (Pill Filters) -->
+                    <div class="crm-pill-filters-bar" id="crm-pill-filters">
+                        <button class="crm-pill-filter active" data-filter="all">
+                            <span>🔍 Todos</span>
+                            <span class="pill-badge" id="pill-count-all">0</span>
+                        </button>
+                        <button class="crm-pill-filter" data-filter="hot">
+                            <span>🔥 Quentes (IA ≥ 75)</span>
+                            <span class="pill-badge pill-badge-hot" id="pill-count-hot">0</span>
+                        </button>
+                        <button class="crm-pill-filter" data-filter="warm">
+                            <span>⚡ Mornos</span>
+                            <span class="pill-badge pill-badge-warm" id="pill-count-warm">0</span>
+                        </button>
+                        <button class="crm-pill-filter" data-filter="nocontact">
+                            <span>⚠️ Sem Contato (+3d)</span>
+                            <span class="pill-badge pill-badge-nocontact" id="pill-count-nocontact">0</span>
+                        </button>
+                        <button class="crm-pill-filter" data-filter="highvalue">
+                            <span>💰 Alto Valor (&gt; R$ 5k)</span>
+                            <span class="pill-badge pill-badge-highvalue" id="pill-count-highvalue">0</span>
+                        </button>
                     </div>
 
                     <!-- Filtros Rápidos -->
@@ -4531,54 +4567,59 @@
         </div>
     </div>
 
-    <!-- Copiloto de IA Conversacional (Chat Flutuante) -->
-    <div id="ai-copilot-trigger" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: none;">
-        <button id="btn-open-copilot" style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), #8b5cf6); color: white; border: none; display: flex; align-items: center; justify-content: center; font-size: 26px; cursor: pointer; box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4); transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275); outline: none;" onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'">
-            🤖
+    <!-- Copiloto de IA Conversacional (Floating Island) -->
+    <div id="ai-copilot-trigger" class="copilot-orb-trigger" style="display: none;">
+        <button id="btn-open-copilot" class="copilot-orb-btn" title="Abrir Copiloto IA (Guru & SDR)">
+            <span class="copilot-orb-glow"></span>
+            <span class="copilot-orb-icon">✨</span>
+            <span class="copilot-orb-badge">IA</span>
         </button>
     </div>
 
-    <div id="ai-copilot-chat-panel" style="position: fixed; bottom: 90px; right: 20px; width: 360px; height: 480px; max-height: 80vh; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3); z-index: 9999; display: none; flex-direction: column; overflow: hidden; transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease; opacity: 0; transform: translateY(20px);">
+    <div id="ai-copilot-chat-panel" class="copilot-floating-island" style="display: none;">
         <!-- Header -->
-        <div style="padding: 14px 18px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; align-items: center; justify-content: space-between; background: rgba(30, 41, 59, 0.5);">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="font-size: 22px;">🤖</span>
+        <div class="copilot-island-header">
+            <div class="copilot-island-title">
+                <div class="copilot-avatar-ring">
+                    <span>✨</span>
+                </div>
                 <div>
-                    <h4 style="font-size: 13.5px; font-weight: 700; color: white; margin: 0; text-align: left;">Vellia Copiloto IA</h4>
-                    <span style="font-size: 10px; color: #10b981; font-weight: 600; display: flex; align-items: center; gap: 4px; margin-top: 1px;">
-                        <span style="width: 6px; height: 6px; border-radius: 50%; background: #10b981; display: inline-block;"></span> Ativo
+                    <h4>Vellia Copiloto IA</h4>
+                    <span class="copilot-status-dot">
+                        <span class="status-pulse"></span> Online • SDR & Guru Ativo
                     </span>
                 </div>
             </div>
-            <button id="btn-close-copilot" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer; padding: 0 4px; line-height: 1; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94a3b8'">&times;</button>
+            <button id="btn-close-copilot" class="copilot-close-btn" title="Minimizar">&times;</button>
         </div>
 
         <!-- Chat History -->
-        <div id="copilot-chat-history" style="flex-grow: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth;">
+        <div id="copilot-chat-history" class="copilot-island-body">
             <!-- Welcome message -->
-            <div class="copilot-msg assistant" style="display: flex; align-items: flex-start; gap: 8px; max-width: 85%;">
-                <div style="background: rgba(99, 102, 241, 0.15); color: #8b5cf6; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; border: 1px solid rgba(139, 92, 246, 0.2);">🤖</div>
-                <div style="background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 4px 14px 14px 14px; padding: 10px 14px; font-size: 12px; color: #e2e8f0; line-height: 1.5; text-align: left; word-break: break-word;">
-                    Olá! Sou o Vellia Copiloto. Posso te ajudar a analisar os leads, planejar abordagens ou resumir metas de vendas. O que você gostaria de fazer hoje?
+            <div class="copilot-msg assistant">
+                <div class="copilot-msg-avatar">✨</div>
+                <div class="copilot-msg-bubble">
+                    Olá! Sou o <strong>Vellia Copiloto IA</strong>. Posso te ajudar a analisar oportunidades no funil, planejar abordagens de WhatsApp ou resumir suas metas. Como posso te apoiar agora?
                 </div>
             </div>
         </div>
 
         <!-- Quick actions -->
-        <div id="copilot-quick-actions" style="padding: 8px 12px; border-top: 1px solid rgba(255, 255, 255, 0.04); display: flex; gap: 6px; overflow-x: auto; white-space: nowrap; scrollbar-width: none; background: rgba(15, 23, 42, 0.3);">
-            <button class="copilot-pill" data-prompt="Quais são os leads mais frios e que precisam de contato urgente?" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: #94a3b8; font-size: 11px; padding: 6px 12px; border-radius: 99px; cursor: pointer; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'; this.style.color='#ffffff'" onmouseout="this.style.background='rgba(255,255,255,0.05)'; this.style.color='#94a3b8'">❄️ Leads Frios</button>
-            <button class="copilot-pill" data-prompt="Me dê um resumo rápido sobre o desempenho e faturamento da empresa." style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: #94a3b8; font-size: 11px; padding: 6px 12px; border-radius: 99px; cursor: pointer; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'; this.style.color='#ffffff'" onmouseout="this.style.background='rgba(255,255,255,0.05)'; this.style.color='#94a3b8'">📊 Resumo Comercial</button>
-            <button class="copilot-pill" data-prompt="Quais são os 3 leads com maior probabilidade (AI Score) de fechar venda?" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: #94a3b8; font-size: 11px; padding: 6px 12px; border-radius: 99px; cursor: pointer; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'; this.style.color='#ffffff'" onmouseout="this.style.background='rgba(255,255,255,0.05)'; this.style.color='#94a3b8'">🔥 Maiores Chances</button>
+        <div id="copilot-quick-actions" class="copilot-island-pills">
+            <button class="copilot-pill" data-prompt="Quais são os 3 leads com maior probabilidade (AI Score) de fechar venda?">🔥 Maiores Chances</button>
+            <button class="copilot-pill" data-prompt="Quais são os leads mais frios e que precisam de contato urgente?">❄️ Leads Frios</button>
+            <button class="copilot-pill" data-prompt="Me dê um resumo rápido sobre o desempenho e faturamento da empresa.">📊 Resumo Comercial</button>
+            <button class="copilot-pill" data-prompt="Sugira uma mensagem persuasiva de WhatsApp para follow-up de proposta.">✍️ Criar Abordagem</button>
         </div>
 
         <!-- Input Footer -->
-        <div style="padding: 10px 14px; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; gap: 8px; background: rgba(30, 41, 59, 0.5); align-items: center;">
-            <input type="text" id="copilot-chat-input" placeholder="Pergunte ao copiloto..." style="flex-grow: 1; height: 36px; padding: 0 12px; font-size: 12.5px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(15, 23, 42, 0.6); color: white; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#8b5cf6'" onblur="this.style.borderColor='rgba(255, 255, 255, 0.1)'">
-            <button id="btn-send-copilot-msg" style="width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, var(--primary), #8b5cf6); border: none; color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; box-shadow: 0 4px 10px rgba(139, 92, 246, 0.25); outline: none;">
-                ✈️
+        <div class="copilot-island-footer">
+            <input type="text" id="copilot-chat-input" class="copilot-island-input" placeholder="Pergunte ao copiloto ou escolha uma ação..." autocomplete="off">
+            <button id="btn-send-copilot-msg" class="copilot-send-btn" title="Enviar Mensagem">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
             </button>
         </div>
-        </div>
+    </div>
     </div>
 
     <!-- ==========================================================

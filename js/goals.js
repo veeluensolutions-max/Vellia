@@ -45,6 +45,21 @@ export const Goals = {
         // Filtro de período
         const periodFilter = document.getElementById("goals-period-filter");
         if (periodFilter) periodFilter.addEventListener("change", () => this.renderAll());
+
+        // Atualização automática em tempo real ao realizar ações comerciais
+        const refreshGoals = () => {
+            const goalsView = document.getElementById("view-metas") || document.getElementById("view-team");
+            if (goalsView && goalsView.style.display !== "none") {
+                this.renderAll();
+            }
+        };
+
+        window.addEventListener("vellia:scoreUpdated", refreshGoals);
+        window.addEventListener("vellia:leadAdded", refreshGoals);
+        window.addEventListener("vellia:leadUpdated", refreshGoals);
+        window.addEventListener("vellia:proposalUpdated", refreshGoals);
+        window.addEventListener("vellia:waSent", refreshGoals);
+        window.addEventListener("storage", refreshGoals);
     },
 
     renderAll() {
@@ -258,6 +273,10 @@ export const Goals = {
         if (!container) return;
 
         const fmt = v => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+        const leads = Store.getLeads();
+
+        const period = document.getElementById("goals-period-filter")?.value || "month";
+        const { start, end } = this.getPeriodRange(period);
 
         const ranking = sellers.map(u => {
             const myProps = periodProposals.filter(p => p.createdBy === u.email);
@@ -267,15 +286,29 @@ export const Goals = {
             const convRate = sent > 0 ? Math.round((won / sent) * 100) : 0;
             const goalPct = goals.meta_revenue > 0 ? Math.min(Math.round((revenue / goals.meta_revenue) * 100), 100) : 0;
             
-            // Contar quantos WhatsApp foram enviados por este vendedor
-            const waCount = Store.getLeads().reduce((total, lead) => {
-                const myWa = (lead.interactions || []).filter(int => int.type === "WhatsApp" && int.userEmail === u.email).length;
+            // Contar leads gerados por este vendedor no período
+            const sellerLeads = leads.filter(l => {
+                const d = new Date(l.createdAt || (l.id && l.id.startsWith("lead_") ? Number(l.id.split("_")[1]) : null) || Date.now());
+                return d >= start && d <= end && (l.createdBy === u.email || l.owner === u.email);
+            });
+            const leadsGenerated = sellerLeads.length;
+            const leadsQualified = sellerLeads.filter(l => l.stage !== "Lead Novo" && l.stage !== "Contato").length;
+
+            // Contar quantos contatos / WhatsApp foram enviados por este vendedor
+            const waCount = leads.reduce((total, lead) => {
+                const myWa = (lead.interactions || []).filter(int => {
+                    const d = new Date(int.timestamp);
+                    return d >= start && d <= end && int.userEmail === u.email;
+                }).length;
                 return total + myWa;
             }, 0);
 
-            const score = revenue + (won * 1000) + (sent * 100) + (waCount * 5);
-            return { ...u, won, revenue, sent, convRate, goalPct, score, waCount };
-        }).sort((a, b) => b.score - a.score);
+            // Fórmula de pontuação unificada:
+            // 50 pts por lead gerado + 30 pts por lead qualificado + 10 pts por interação + 100 pts por proposta + 500 pts por ganho + receita gerada
+            const score = (leadsGenerated * 50) + (leadsQualified * 30) + (waCount * 10) + (sent * 100) + (won * 500) + revenue;
+
+            return { ...u, won, revenue, sent, convRate, goalPct, score, waCount, leadsGenerated };
+        }).sort((a, b) => b.score - a.score || b.revenue - a.revenue);
 
         const medals = ["🥇", "🥈", "🥉"];
         const colors = ["#f59e0b", "#94a3b8", "#cd7c2f"];
@@ -290,12 +323,16 @@ export const Goals = {
                 <div class="ranking-position" style="color: ${colors[i] || 'var(--text-muted)'};">${medals[i] || `#${i + 1}`}</div>
                 <div class="user-avatar" style="width: 40px; height: 40px; font-size: 13px; flex-shrink: 0;">${r.name.substring(0, 2).toUpperCase()}</div>
                 <div style="flex-grow: 1; min-width: 0;">
-                    <div style="font-weight: 700; font-size: 13px; color: var(--text-primary);">${r.name}</div>
-                    <div style="display: flex; gap: 12px; margin-top: 4px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-weight: 700; font-size: 13px; color: var(--text-primary);">${r.name}</span>
+                        <span class="badge" style="background: rgba(99,102,241,0.12); color:#6366f1; border: 1px solid rgba(99,102,241,0.2); font-size: 10px; padding: 1px 6px; font-weight: 700;">⭐ ${Math.round(r.score).toLocaleString('pt-BR')} pts</span>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 4px; flex-wrap: wrap;">
+                        <span style="font-size: 11px; color: var(--primary); font-weight: 600;">🎯 ${r.leadsGenerated} leads</span>
                         <span style="font-size: 11px; color: var(--text-muted);">📝 ${r.sent} propostas</span>
                         <span style="font-size: 11px; color: var(--success);">✅ ${r.won} ganhos</span>
                         <span style="font-size: 11px; color: var(--text-muted);">📈 ${r.convRate}% conv.</span>
-                        <span style="font-size: 11px; color: #25d366; font-weight: 600;">💬 ${r.waCount || 0} zap</span>
+                        <span style="font-size: 11px; color: #25d366; font-weight: 600;">💬 ${r.waCount || 0} contatos</span>
                     </div>
                     <div style="margin-top: 8px;">
                         <div style="height: 5px; background: var(--bg-app); border-radius: 99px; overflow: hidden;">

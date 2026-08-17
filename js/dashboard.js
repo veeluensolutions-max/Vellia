@@ -15,6 +15,24 @@ export const Dashboard = {
             this.renderMetaAdsPanel();
         });
 
+        // Atualização automática em tempo real do ranking e dos KPIs
+        const refreshDashboardData = () => {
+            const viewDashboard = document.getElementById("view-dashboard");
+            if (viewDashboard && viewDashboard.style.display !== "none") {
+                const proposals = Store.getProposals();
+                const leads = Store.getLeads();
+                this.renderVendorRanking(proposals);
+                this.renderKPIs(leads, proposals);
+                this.renderRecentActivity(leads, proposals);
+            }
+        };
+
+        window.addEventListener("vellia:scoreUpdated", refreshDashboardData);
+        window.addEventListener("vellia:leadAdded", refreshDashboardData);
+        window.addEventListener("vellia:leadUpdated", refreshDashboardData);
+        window.addEventListener("vellia:proposalUpdated", refreshDashboardData);
+        window.addEventListener("vellia:waSent", refreshDashboardData);
+
         // Atualização em tempo real (Real-time) do painel de Atividades Recentes
         setInterval(() => {
             if (document.hidden) return;
@@ -884,14 +902,31 @@ export const Dashboard = {
 
         const users = Store.getUsers();
         const sellers = users.filter(u => u.role === "seller" || u.role === "manager");
+        const leads = Store.getLeads();
 
         const ranking = sellers.map(u => {
             const myProps = proposals.filter(p => p.createdBy === u.email);
             const won = myProps.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)).length;
             const revenue = myProps.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)).reduce((s, p) => s + (p.value || 0), 0);
             const convRate = myProps.length > 0 ? Math.round((won / myProps.length) * 100) : 0;
-            return { ...u, totalProposals: myProps.length, won, revenue, convRate };
-        }).sort((a, b) => b.revenue - a.revenue);
+            
+            // Leads gerados pelo vendedor (criados ou atribuídos)
+            const sellerLeads = leads.filter(l => l.createdBy === u.email || l.owner === u.email);
+            const leadsCount = sellerLeads.length;
+            const leadsQualified = sellerLeads.filter(l => l.stage !== "Lead Novo" && l.stage !== "Contato").length;
+
+            // Interações / WhatsApp realizadas pelo vendedor
+            const waCount = leads.reduce((total, lead) => {
+                const myWa = (lead.interactions || []).filter(int => int.userEmail === u.email).length;
+                return total + myWa;
+            }, 0);
+
+            // Fórmula de pontuação unificada (Score XP):
+            // 50 pts por lead cadastrado + 30 pts por lead qualificado + 10 pts por interação + 100 pts por proposta + 500 pts por ganho + receita
+            const score = (leadsCount * 50) + (leadsQualified * 30) + (waCount * 10) + (myProps.length * 100) + (won * 500) + revenue;
+
+            return { ...u, totalProposals: myProps.length, won, revenue, convRate, leadsCount, score, waCount };
+        }).sort((a, b) => b.score - a.score || b.revenue - a.revenue);
 
         const fmt = v => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
         const medals = ["🥇", "🥈", "🥉"];
@@ -906,8 +941,11 @@ export const Dashboard = {
                 <div style="font-size: 22px; width: 32px; text-align: center; flex-shrink: 0;">${medals[i] || `#${i + 1}`}</div>
                 <div class="user-avatar" style="width: 38px; height: 38px; font-size: 13px; flex-shrink: 0;">${r.avatar || r.name.substring(0, 2).toUpperCase()}</div>
                 <div style="flex-grow: 1; min-width: 0;">
-                    <div style="font-weight: 700; font-size: 13px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${r.name}</div>
-                    <div style="font-size: 11px; color: var(--text-muted);">${r.totalProposals} proposta${r.totalProposals !== 1 ? 's' : ''} · ${r.won} ganhos · ${r.convRate}% conv.</div>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="font-weight: 700; font-size: 13px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${r.name}</span>
+                        <span class="badge" style="background: rgba(99,102,241,0.12); color:#6366f1; border: 1px solid rgba(99,102,241,0.2); font-size: 10px; padding: 1px 5px; font-weight: 700;">⭐ ${Math.round(r.score).toLocaleString('pt-BR')} pts</span>
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">🎯 ${r.leadsCount} lead${r.leadsCount !== 1 ? 's' : ''} · 📝 ${r.totalProposals} prop. · ✅ ${r.won} ganhos · ${r.convRate}% conv.</div>
                 </div>
                 <div style="text-align: right; flex-shrink: 0;">
                     <div style="font-weight: 800; font-size: 14px; color: var(--success);">${fmt(r.revenue)}</div>

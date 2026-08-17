@@ -545,6 +545,7 @@ export const Store = {
 
     addLead(lead, userEmail = "sistema@vellia.com") {
         const leads = this.getAllLeadsRaw();
+        const nowIso = new Date().toISOString();
         const newLead = {
             id: `lead_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
             workspace: localStorage.getItem('activeCompany') || 'Veeluen Solutions',
@@ -562,13 +563,15 @@ export const Store = {
             segment: lead.segment || "Outros",
             source: lead.source || "Outbound",
             stage: lead.stage || "Contato",
-            owner: userEmail,
+            owner: lead.owner || userEmail,
+            createdBy: lead.createdBy || userEmail,
+            createdAt: lead.createdAt || nowIso,
             interactions: lead.interactions || [],
             stageHistory: lead.stageHistory || [
                 {
                     stage: lead.stage || "Contato",
-                    userEmail: lead.userEmail || "sistema@vellia.com",
-                    timestamp: new Date().toISOString(),
+                    userEmail: lead.userEmail || userEmail,
+                    timestamp: nowIso,
                     reason: "Cadastro inicial do lead."
                 }
             ]
@@ -577,8 +580,11 @@ export const Store = {
         localStorage.setItem("comercial_leads", JSON.stringify(leads));
         upsertSupabase("comercial_leads", newLead);
 
-        // Notificar agentes de IA sobre o novo lead
+        // Notificar agentes de IA e rankings sobre o novo lead gerado
         window.dispatchEvent(new CustomEvent("vellia:leadAdded", { detail: newLead }));
+        window.dispatchEvent(new CustomEvent("vellia:scoreUpdated", { detail: { sellerEmail: newLead.createdBy || newLead.owner, action: "LEAD_ADDED", points: 50 } }));
+        window.dispatchEvent(new CustomEvent("vellia:waSent"));
+        window.dispatchEvent(new Event("storage"));
 
         return newLead;
     },
@@ -592,6 +598,9 @@ export const Store = {
             localStorage.setItem("comercial_leads", JSON.stringify(leads));
             upsertSupabase("comercial_leads", leads[index]);
             this.addLog(userEmail, "LEAD_UPDATED", `Lead ${leads[index].company} atualizado.`);
+            window.dispatchEvent(new CustomEvent("vellia:leadUpdated", { detail: leads[index] }));
+            window.dispatchEvent(new CustomEvent("vellia:scoreUpdated", { detail: { sellerEmail: userEmail, action: "LEAD_UPDATED" } }));
+            window.dispatchEvent(new CustomEvent("vellia:waSent"));
             return leads[index];
         }
         return null;
@@ -619,6 +628,9 @@ export const Store = {
             leads[index].interactions.push(newInteraction);
             localStorage.setItem("comercial_leads", JSON.stringify(leads));
             upsertSupabase("comercial_leads", leads[index]);
+            window.dispatchEvent(new CustomEvent("vellia:leadUpdated", { detail: leads[index] }));
+            window.dispatchEvent(new CustomEvent("vellia:scoreUpdated", { detail: { sellerEmail: userEmail, action: "INTERACTION_ADDED", points: 10 } }));
+            window.dispatchEvent(new CustomEvent("vellia:waSent"));
             return newInteraction;
         }
         return null;
@@ -678,6 +690,9 @@ export const Store = {
 
             localStorage.setItem("comercial_leads", JSON.stringify(leads));
             upsertSupabase("comercial_leads", leads[index]);
+            window.dispatchEvent(new CustomEvent("vellia:leadUpdated", { detail: leads[index] }));
+            window.dispatchEvent(new CustomEvent("vellia:scoreUpdated", { detail: { sellerEmail: userEmail, action: "STAGE_CHANGED", oldStage, newStage, points: 30 } }));
+            window.dispatchEvent(new CustomEvent("vellia:waSent"));
             return { success: true, oldStage, newStage };
         }
         return { success: false };
@@ -768,6 +783,10 @@ export const Store = {
         return JSON.parse(localStorage.getItem("comercial_proposals")) || [];
     },
 
+    getProposalsRaw() {
+        return JSON.parse(localStorage.getItem("comercial_proposals")) || [];
+    },
+
     getProposalById(id) {
         return this.getProposals().find(p => p.id === id) || null;
     },
@@ -795,6 +814,11 @@ export const Store = {
         proposals.push(newProposal);
         localStorage.setItem("comercial_proposals", JSON.stringify(proposals));
         upsertSupabase("comercial_proposals", newProposal);
+        
+        window.dispatchEvent(new CustomEvent("vellia:proposalUpdated", { detail: newProposal }));
+        window.dispatchEvent(new CustomEvent("vellia:scoreUpdated", { detail: { sellerEmail: newProposal.createdBy, action: "PROPOSAL_ADDED", points: 100 } }));
+        window.dispatchEvent(new CustomEvent("vellia:waSent"));
+        
         return newProposal;
     },
 
@@ -806,6 +830,11 @@ export const Store = {
             localStorage.setItem("comercial_proposals", JSON.stringify(proposals));
             upsertSupabase("comercial_proposals", proposals[index]);
             this.addLog(userEmail, "PROPOSAL_UPDATED", `Proposta ${proposals[index].title} atualizada.`);
+            
+            window.dispatchEvent(new CustomEvent("vellia:proposalUpdated", { detail: proposals[index] }));
+            window.dispatchEvent(new CustomEvent("vellia:scoreUpdated", { detail: { sellerEmail: userEmail, action: "PROPOSAL_UPDATED" } }));
+            window.dispatchEvent(new CustomEvent("vellia:waSent"));
+            
             return proposals[index];
         }
         return null;

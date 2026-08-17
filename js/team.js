@@ -27,13 +27,20 @@ export const Team = {
         const searchInput = document.getElementById("team-search");
         if (searchInput) searchInput.addEventListener("input", () => this.renderAll());
 
-        // Atualização automática ao disparar mensagem de Whatsapp
-        window.addEventListener("vellia:waSent", () => {
+        // Atualização automática em tempo real ao realizar qualquer ação comercial
+        const refreshTeamView = () => {
             const teamView = document.getElementById("view-team");
             if (teamView && teamView.style.display !== "none") {
                 this.renderAll();
             }
-        });
+        };
+
+        window.addEventListener("vellia:scoreUpdated", refreshTeamView);
+        window.addEventListener("vellia:leadAdded", refreshTeamView);
+        window.addEventListener("vellia:leadUpdated", refreshTeamView);
+        window.addEventListener("vellia:proposalUpdated", refreshTeamView);
+        window.addEventListener("vellia:waSent", refreshTeamView);
+        window.addEventListener("storage", refreshTeamView);
 
         const tabBtns = document.querySelectorAll(".subtab-btn");
         tabBtns.forEach(btn => {
@@ -128,10 +135,10 @@ export const Team = {
                 }
             });
 
-            // Leads
+            // Leads gerados pelo vendedor (criados ou atribuídos)
             const sellerLeads = leads.filter(l => {
-                const d = new Date(l.createdAt);
-                return d >= new Date(start) && d <= new Date(end) && l.createdBy === seller.email;
+                const d = new Date(l.createdAt || (l.id && l.id.startsWith("lead_") ? Number(l.id.split("_")[1]) : null) || Date.now());
+                return d >= new Date(start) && d <= new Date(end) && (l.createdBy === seller.email || l.owner === seller.email);
             });
             const leadsGenerated = sellerLeads.length;
             const leadsQualified = sellerLeads.filter(l => l.stage !== "Lead Novo" && l.stage !== "Contato").length;
@@ -150,6 +157,10 @@ export const Team = {
             const conversion = proposalsSent > 0 ? Math.round((proposalsWon / proposalsSent) * 100) : 0;
             const metaPct = Math.min(Math.round((revenue / sellerRevenueGoal) * 100), 100);
 
+            // Fórmula de pontuação unificada (Score XP):
+            // 50 pts por lead gerado + 30 pts por lead qualificado + 10 pts por contato + 100 pts por proposta + 500 pts por ganho + receita gerada
+            const score = (leadsGenerated * 50) + (leadsQualified * 30) + (contacts * 10) + (proposalsSent * 100) + (proposalsWon * 500) + revenue;
+
             return {
                 ...seller,
                 contacts,
@@ -159,12 +170,13 @@ export const Team = {
                 proposalsWon,
                 revenue,
                 conversion,
-                metaPct
+                metaPct,
+                score
             };
         });
 
-        // Ordenar por receita e conversão
-        stats.sort((a, b) => b.revenue - a.revenue || b.conversion - a.conversion);
+        // Ordenar por pontuação unificada e receita
+        stats.sort((a, b) => b.score - a.score || b.revenue - a.revenue || b.conversion - a.conversion);
 
         this.renderPodium(stats);
         this.renderTable(stats);
@@ -192,17 +204,22 @@ export const Team = {
 
             // Injetar medalhas baseadas em estatísticas comportamentais
             let achievements = "";
+            achievements += `<span class="badge" style="background: rgba(99,102,241,0.12); color:#6366f1; border: 1px solid rgba(99,102,241,0.2); margin-left: 6px; font-size:10px; padding: 2px 6px; font-weight: 700;">⭐ ${Math.round(stat.score).toLocaleString('pt-BR')} pts</span>`;
+            
             if (index === 0 && stat.revenue > 0) {
-                achievements += `<span class="badge" style="background: rgba(251,191,36,0.12); color:#92400e; border: 1px solid rgba(251,191,36,0.2); margin-left: 6px; font-size:9px; padding: 2px 6px;">🥇 Lenda</span>`;
+                achievements += `<span class="badge" style="background: rgba(251,191,36,0.12); color:#92400e; border: 1px solid rgba(251,191,36,0.2); margin-left: 6px; font-size:9px; padding: 2px 6px;">🥇 Líder</span>`;
+            }
+            if (stat.leadsGenerated >= 10) {
+                achievements += `<span class="badge" style="background: rgba(59,130,246,0.12); color:#1d4ed8; border: 1px solid rgba(59,130,246,0.2); margin-left: 4px; font-size:9px; padding: 2px 6px;">🔥 Prospector</span>`;
             }
             if (stat.conversion >= 30) {
-                achievements += `<span class="badge" style="background: rgba(99,102,241,0.12); color:#4f46e5; border: 1px solid rgba(99,102,241,0.2); margin-left: 6px; font-size:9px; padding: 2px 6px;">🎯 Sniper</span>`;
+                achievements += `<span class="badge" style="background: rgba(99,102,241,0.12); color:#4f46e5; border: 1px solid rgba(99,102,241,0.2); margin-left: 4px; font-size:9px; padding: 2px 6px;">🎯 Sniper</span>`;
             }
             if (stat.contacts >= 15) {
-                achievements += `<span class="badge" style="background: rgba(16,185,129,0.12); color:#065f46; border: 1px solid rgba(16,185,129,0.2); margin-left: 6px; font-size:9px; padding: 2px 6px;">📞 Conectado</span>`;
+                achievements += `<span class="badge" style="background: rgba(16,185,129,0.12); color:#065f46; border: 1px solid rgba(16,185,129,0.2); margin-left: 4px; font-size:9px; padding: 2px 6px;">📞 Conectado</span>`;
             }
             if (stat.proposalsSent >= 8) {
-                achievements += `<span class="badge" style="background: rgba(245,158,11,0.12); color:#b45309; border: 1px solid rgba(245,158,11,0.2); margin-left: 6px; font-size:9px; padding: 2px 6px;">🚀 Máquina</span>`;
+                achievements += `<span class="badge" style="background: rgba(245,158,11,0.12); color:#b45309; border: 1px solid rgba(245,158,11,0.2); margin-left: 4px; font-size:9px; padding: 2px 6px;">🚀 Máquina</span>`;
             }
 
             tr.innerHTML = `
@@ -213,7 +230,7 @@ export const Team = {
                             ${stat.avatar}
                         </div>
                         <div>
-                            <div style="display: flex; align-items: center; gap: 4px;">
+                            <div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
                                 <span style="font-weight: 600;">${stat.name}</span>
                                 ${achievements}
                             </div>
@@ -222,7 +239,7 @@ export const Team = {
                     </div>
                 </td>
                 <td style="text-align: center;">${stat.contacts}</td>
-                <td style="text-align: center;">${stat.leadsGenerated}</td>
+                <td style="text-align: center; font-weight: 700; color: var(--primary);">${stat.leadsGenerated}</td>
                 <td style="text-align: center;">${stat.leadsQualified}</td>
                 <td style="text-align: center;">${stat.proposalsSent}</td>
                 <td style="text-align: center;">${stat.proposalsWon}</td>
@@ -314,8 +331,9 @@ export const Team = {
                     </div>
                     <h4 style="font-size: 15px; font-weight: 700; margin: 0 0 4px 0; color: var(--text-primary);">${second.name}</h4>
                     <span style="font-size: 11px; color: var(--text-muted);">${second.role === "manager" ? "Gerente" : "Vendedor"}</span>
-                    <div style="margin-top: 12px; font-size: 17px; font-weight: 800; color: var(--success);">${fmt(second.revenue)}</div>
-                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Conversão: ${second.conversion}% • ${second.proposalsWon} fechadas</div>
+                    <span class="badge" style="background: rgba(99,102,241,0.12); color: #6366f1; border: 1px solid rgba(99,102,241,0.3); margin-top: 6px; font-size: 10px; font-weight: 700;">⭐ ${Math.round(second.score).toLocaleString('pt-BR')} pts</span>
+                    <div style="margin-top: 8px; font-size: 17px; font-weight: 800; color: var(--success);">${fmt(second.revenue)}</div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">🎯 ${second.leadsGenerated} leads • ${second.proposalsWon} ganhos (${second.conversion}%)</div>
                 </div>
             `;
         }
@@ -324,14 +342,15 @@ export const Team = {
         if (first) {
             colsHtml += `
                 <div class="card podium-card podium-card-first" style="position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 24px;">
-                    <div style="position: absolute; top: -14px; background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #0f172a; font-weight: 900; font-size: 11px; padding: 5px 14px; border-radius: 99px; text-transform: uppercase; box-shadow: 0 4px 10px rgba(245, 158, 11, 0.25); letter-spacing: 0.5px; z-index: 3;">👑 Vendedor do Mês</div>
+                    <div style="position: absolute; top: -14px; background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #0f172a; font-weight: 900; font-size: 11px; padding: 5px 14px; border-radius: 99px; text-transform: uppercase; box-shadow: 0 4px 10px rgba(245, 158, 11, 0.25); letter-spacing: 0.5px; z-index: 3;">👑 Líder do Ranking</div>
                     <div style="width: 68px; height: 68px; border-radius: 50%; background: linear-gradient(135deg, #fef3c7, #fde68a); border: 3px solid #fbbf24; color: #92400e; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 800; margin-bottom: 12px; box-shadow: 0 0 15px rgba(251, 191, 36, 0.35);">
                         ${first.avatar}
                     </div>
                     <h4 style="font-size: 17px; font-weight: 800; margin: 0 0 4px 0; color: var(--text-primary);">${first.name}</h4>
                     <span style="font-size: 11px; color: var(--text-muted);">${first.role === "manager" ? "Gerente" : "Vendedor"}</span>
-                    <div style="margin-top: 12px; font-size: 20px; font-weight: 900; color: var(--success);">${fmt(first.revenue)}</div>
-                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Conversão: ${first.conversion}% • ${first.proposalsWon} fechadas</div>
+                    <span class="badge" style="background: rgba(251, 191, 36, 0.2); color: #92400e; border: 1px solid rgba(251, 191, 36, 0.4); margin-top: 6px; font-size: 11px; font-weight: 800;">⭐ ${Math.round(first.score).toLocaleString('pt-BR')} pts</span>
+                    <div style="margin-top: 8px; font-size: 20px; font-weight: 900; color: var(--success);">${fmt(first.revenue)}</div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">🎯 ${first.leadsGenerated} leads • ${first.proposalsWon} ganhos (${first.conversion}%)</div>
                     <span class="badge" style="background: rgba(251, 191, 36, 0.12); color: #92400e; border: 1px solid rgba(251, 191, 36, 0.3); margin-top: 10px; font-size: 10px; text-transform: uppercase; font-weight: 700;">🏆 Performance Lendária</span>
                 </div>
             `;
@@ -347,8 +366,9 @@ export const Team = {
                     </div>
                     <h4 style="font-size: 15px; font-weight: 700; margin: 0 0 4px 0; color: var(--text-primary);">${third.name}</h4>
                     <span style="font-size: 11px; color: var(--text-muted);">${third.role === "manager" ? "Gerente" : "Vendedor"}</span>
-                    <div style="margin-top: 12px; font-size: 17px; font-weight: 800; color: var(--success);">${fmt(third.revenue)}</div>
-                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Conversão: ${third.conversion}% • ${third.proposalsWon} fechadas</div>
+                    <span class="badge" style="background: rgba(99,102,241,0.12); color: #6366f1; border: 1px solid rgba(99,102,241,0.3); margin-top: 6px; font-size: 10px; font-weight: 700;">⭐ ${Math.round(third.score).toLocaleString('pt-BR')} pts</span>
+                    <div style="margin-top: 8px; font-size: 17px; font-weight: 800; color: var(--success);">${fmt(third.revenue)}</div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">🎯 ${third.leadsGenerated} leads • ${third.proposalsWon} ganhos (${third.conversion}%)</div>
                 </div>
             `;
         }

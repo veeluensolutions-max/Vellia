@@ -1430,13 +1430,6 @@ function setupEventListeners() {
 
     window.executeLogin = executeLogin;
 
-    window.quickFillLogin = (email, password) => {
-        if (elements.loginEmail) elements.loginEmail.value = email;
-        if (elements.loginPassword) elements.loginPassword.value = password;
-        if (elements.loginError) elements.loginError.style.display = "none";
-        executeLogin();
-    };
-
     if (elements.loginForm) {
         elements.loginForm.addEventListener("submit", (e) => {
             e.preventDefault();

@@ -92,9 +92,22 @@ export const CRM = {
             this._pillEventsBound = true;
         }
 
-        // Drawer Detalhes
+        // Drawer Detalhes e Botões de Ação Rápida
         if (elements.btnCloseDrawer) elements.btnCloseDrawer.addEventListener("click", () => this.closeLeadDrawer());
         if (elements.drawerOverlay) elements.drawerOverlay.addEventListener("click", () => this.closeLeadDrawer());
+
+        const btnQuickWa = document.getElementById("btn-drawer-quick-wa");
+        if (btnQuickWa) {
+            btnQuickWa.addEventListener("click", () => {
+                if (activeLeadId) window.WhatsApp?.openModalForLead(activeLeadId);
+            });
+        }
+        const btnQuickProp = document.getElementById("btn-drawer-quick-prop");
+        if (btnQuickProp) {
+            btnQuickProp.addEventListener("click", () => {
+                if (activeLeadId) window.Proposals?.openModal(activeLeadId);
+            });
+        }
 
         // Ouvintes de evento do Chat WhatsApp / SDR Takeover
         const btnTakeover = document.getElementById("btn-takeover-chat");
@@ -811,6 +824,46 @@ export const CRM = {
 
         activeLeadId = id;
 
+        // Atualizar avatar e cabeçalho visual
+        const avatarEl = document.getElementById("drawer-lead-avatar");
+        if (avatarEl) {
+            avatarEl.textContent = (lead.company || "L").charAt(0).toUpperCase();
+            const colors = [
+                "linear-gradient(135deg, #6366f1, #3b82f6)",
+                "linear-gradient(135deg, #ec4899, #8b5cf6)",
+                "linear-gradient(135deg, #10b981, #059669)",
+                "linear-gradient(135deg, #f59e0b, #d97706)"
+            ];
+            const charCode = (lead.company || "A").charCodeAt(0);
+            avatarEl.style.background = colors[charCode % colors.length];
+        }
+
+        const subtitleEl = document.getElementById("drawer-lead-subtitle");
+        if (subtitleEl) {
+            subtitleEl.textContent = `${lead.contact || "Sem contato"} • ${lead.role || lead.segment || "Lead"}`;
+        }
+
+        const tempBadge = document.getElementById("drawer-lead-temp-badge");
+        if (tempBadge) {
+            const score = typeof lead.score === "number" ? lead.score : (lead.aiScore || 70);
+            if (score >= 75 || lead.stage === "Negociação" || lead.stage === "Proposta Enviada") {
+                tempBadge.textContent = "🔥 Quente (" + score + ")";
+                tempBadge.style.background = "rgba(239, 68, 68, 0.12)";
+                tempBadge.style.color = "#ef4444";
+                tempBadge.style.borderColor = "rgba(239, 68, 68, 0.25)";
+            } else if (score >= 45 || lead.stage === "Lead Qualificado") {
+                tempBadge.textContent = "⚡ Morno (" + score + ")";
+                tempBadge.style.background = "rgba(245, 158, 11, 0.12)";
+                tempBadge.style.color = "#f59e0b";
+                tempBadge.style.borderColor = "rgba(245, 158, 11, 0.25)";
+            } else {
+                tempBadge.textContent = "❄️ Frio (" + score + ")";
+                tempBadge.style.background = "rgba(100, 116, 139, 0.12)";
+                tempBadge.style.color = "#64748b";
+                tempBadge.style.borderColor = "rgba(100, 116, 139, 0.25)";
+            }
+        }
+
         // Atualizar campos do Drawer
         document.getElementById("drawer-lead-company").textContent = lead.company;
         document.getElementById("drawer-lead-contact").textContent = lead.contact;
@@ -1146,29 +1199,39 @@ export const CRM = {
             return;
         }
 
+        const iconMap = {
+            "Ligação": "📞",
+            "WhatsApp": "💬",
+            "E-mail": "✉️",
+            "Reunião": "👥",
+            "Visita": "🚗",
+            "Observação": "📝",
+            "stage-change": "🔄"
+        };
+
         timelineContainer.innerHTML = timelineItems.map(item => {
             const formattedDate = item.timestamp.toLocaleString("pt-BR", {
                 day: "2-digit",
                 month: "2-digit",
-                year: "numeric",
                 hour: "2-digit",
                 minute: "2-digit"
             });
 
+            const icon = item.type === "stage-change" ? iconMap["stage-change"] : (iconMap[item.intType] || "📌");
             const markerClass = item.type === "stage-change" 
                 ? "stage-change" 
                 : `interaction-${(item.intType || "Outros").replace(" ", "-")}`;
 
             return `
                 <div class="timeline-item ${markerClass}">
-                    <div class="timeline-marker"></div>
+                    <div class="timeline-marker" title="${item.title}">${icon}</div>
                     <div class="timeline-card">
                         <div class="timeline-header">
-                            <span class="timeline-author">${item.user}</span>
+                            <span class="timeline-author">${item.user || "Sistema"}</span>
                             <span>${formattedDate}</span>
                         </div>
-                        <div style="font-weight: 700; margin-bottom: 4px; color: var(--text-primary); font-size: 12px;">
-                            ${item.title}
+                        <div style="font-weight: 700; margin-bottom: 4px; color: var(--text-primary); font-size: 12px; display: flex; align-items: center; gap: 6px;">
+                            <span>${item.title}</span>
                         </div>
                         <div class="timeline-body">${item.description}</div>
                     </div>

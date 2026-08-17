@@ -4678,6 +4678,203 @@ input:checked + .switch-slider::before {
     text-shadow: 0 0 12px rgba(16, 185, 129, 0.25);
 }
 
+/* ==========================================================================
+   LEAD DRAWER NOTION / LINEAR STYLE & SPA PAGE TRANSITIONS
+   ========================================================================== */
+
+.drawer-lead-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #6366f1, #3b82f6);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    font-weight: 800;
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+    flex-shrink: 0;
+}
+
+.drawer-quick-actions {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    width: 100%;
+    margin-top: 4px;
+}
+
+.drawer-quick-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 7px 10px;
+    font-size: 11.5px;
+    font-weight: 600;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    background: var(--bg-app);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-align: center;
+    white-space: nowrap;
+}
+
+.drawer-quick-btn:hover {
+    background: var(--bg-hover);
+    transform: translateY(-1px);
+    border-color: var(--primary-light);
+}
+
+.drawer-quick-btn.wa {
+    border-color: rgba(37, 211, 102, 0.3);
+    color: #16a34a;
+    background: rgba(37, 211, 102, 0.06);
+}
+
+.drawer-quick-btn.wa:hover {
+    background: rgba(37, 211, 102, 0.15);
+    border-color: #25d366;
+}
+
+.drawer-quick-btn.prop {
+    border-color: rgba(99, 102, 241, 0.3);
+    color: var(--primary);
+    background: var(--primary-glow);
+}
+
+.drawer-quick-btn.prop:hover {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: var(--primary);
+}
+
+.drawer-quick-btn.danger {
+    border-color: rgba(239, 68, 68, 0.25);
+    color: #ef4444;
+}
+
+.drawer-quick-btn.danger:hover {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: #ef4444;
+}
+
+/* Timeline Contínua Estilizada */
+.timeline {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-left: 20px;
+    margin-top: 8px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    top: 10px;
+    bottom: 10px;
+    left: 7px;
+    width: 2px;
+    background: var(--border-color);
+    border-radius: 99px;
+}
+
+.timeline-item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -20px;
+    top: 4px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--bg-surface);
+    border: 2.5px solid var(--primary);
+    z-index: 2;
+    box-shadow: 0 0 0 3px var(--bg-surface);
+    transition: transform 0.2s ease;
+}
+
+.timeline-item:hover .timeline-marker {
+    transform: scale(1.25);
+}
+
+.timeline-item.stage-change .timeline-marker {
+    border-color: #3b82f6;
+}
+
+.timeline-item.interaction-WhatsApp .timeline-marker {
+    border-color: #25d366;
+}
+
+.timeline-item.interaction-Ligação .timeline-marker {
+    border-color: #f59e0b;
+}
+
+.timeline-item.interaction-Reunião .timeline-marker {
+    border-color: #8b5cf6;
+}
+
+.timeline-card {
+    background: var(--bg-card-glass);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--border-card-glass);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    transition: transform var(--transition-fast), border-color var(--transition-fast);
+}
+
+.timeline-card:hover {
+    border-color: var(--primary-light);
+    transform: translateX(2px);
+}
+
+.timeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.timeline-author {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.timeline-body {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    line-height: 1.45;
+}
+
+/* Transições Suaves de Rotas SPA */
+@keyframes viewFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.spa-view.active,
+.spa-view:not([style*="display: none"]) {
+    animation: viewFadeIn 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+
 
 
 

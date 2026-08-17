@@ -2978,19 +2978,40 @@
 
     <!-- Painel Lateral (Drawer) de Detalhes do Lead -->
     <div id="lead-drawer" class="drawer">
-        <div class="drawer-header" style="display: flex; align-items: center; justify-content: space-between;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <h3 class="drawer-title" id="drawer-lead-company">Nome da Empresa</h3>
-                <button id="btn-edit-lead" class="action-btn" title="Editar Lead" style="background: none; border: none; cursor: pointer; color: var(--text-muted);">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        <div class="drawer-header" style="display: flex; flex-direction: column; gap: 12px; padding: 18px 20px; border-bottom: 1px solid var(--border-color); background: var(--bg-surface);">
+            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="drawer-lead-avatar" id="drawer-lead-avatar">V</div>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <h3 class="drawer-title" id="drawer-lead-company" style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text-primary);">Nome da Empresa</h3>
+                            <span id="drawer-lead-temp-badge" class="badge" style="font-size: 10.5px; padding: 2px 8px; border-radius: 99px; font-weight: 700; background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25);">🔥 Quente</span>
+                        </div>
+                        <span id="drawer-lead-subtitle" style="font-size: 11.5px; color: var(--text-muted); display: block; margin-top: 2px;">Responsável & Contato</span>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <button id="btn-close-drawer" class="drawer-close" style="width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: var(--bg-app); border: 1px solid var(--border-color); cursor: pointer; color: var(--text-secondary);">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Barra de Ações Rápidas -->
+            <div class="drawer-quick-actions">
+                <button type="button" class="drawer-quick-btn wa" id="btn-drawer-quick-wa" title="WhatsApp Direto">
+                    <span>💬</span> WhatsApp
                 </button>
-                <button id="btn-delete-lead" class="action-btn" title="Excluir Lead" style="background: none; border: none; cursor: pointer; color: var(--danger); margin-left: 6px;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                <button type="button" class="drawer-quick-btn prop" id="btn-drawer-quick-prop" title="Emitir Proposta">
+                    <span>📝</span> Proposta
+                </button>
+                <button type="button" class="drawer-quick-btn" id="btn-edit-lead" title="Editar Lead">
+                    <span>✏️</span> Editar
+                </button>
+                <button type="button" class="drawer-quick-btn danger" id="btn-delete-lead" title="Mover para Lixeira">
+                    <span>🗑️</span> Lixeira
                 </button>
             </div>
-            <button id="btn-close-drawer" class="drawer-close">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
         </div>
         
         <div class="drawer-body">

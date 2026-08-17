@@ -201,28 +201,20 @@ export const Calendar = {
         const doneCount = monthEvents.filter(e => e.status === "concluido").length;
 
         container.innerHTML = `
-            <!-- Top Controls -->
+            <!-- Top Controls & Filtros em Pílulas -->
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:16px;">
                 <div style="display:flex; align-items:center; gap:14px;">
                     <h3 style="font-size:18px; font-weight:800; color:var(--text-primary); margin:0;">
                         📅 Agenda & Vistorias — ${monthNames[month]} ${year}
                     </h3>
                     <div style="display:flex; gap:4px;">
-                        <button id="btn-cal-prev" class="btn btn-outline" style="padding:4px 10px; font-size:12px;">◀ Anterior</button>
-                        <button id="btn-cal-today" class="btn btn-outline" style="padding:4px 10px; font-size:12px;">Hoje</button>
-                        <button id="btn-cal-next" class="btn btn-outline" style="padding:4px 10px; font-size:12px;">Próximo ▶</button>
+                        <button id="btn-cal-prev" class="btn btn-outline" style="padding:4px 10px; font-size:12px; border-radius:var(--radius-sm);">◀ Anterior</button>
+                        <button id="btn-cal-today" class="btn btn-outline" style="padding:4px 10px; font-size:12px; border-radius:var(--radius-sm);">Hoje</button>
+                        <button id="btn-cal-next" class="btn btn-outline" style="padding:4px 10px; font-size:12px; border-radius:var(--radius-sm);">Próximo ▶</button>
                     </div>
                 </div>
 
                 <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                    <select id="cal-filter-type" class="filter-control" style="height:36px; padding:4px 10px; font-size:12px;">
-                        <option value="all" ${this.filterType === 'all' ? 'selected' : ''}>Todos os Tipos</option>
-                        <option value="inspecao" ${this.filterType === 'inspecao' ? 'selected' : ''}>📋 Vistorias Técnicas</option>
-                        <option value="followup" ${this.filterType === 'followup' ? 'selected' : ''}>⏰ Follow-ups</option>
-                        <option value="vencimento" ${this.filterType === 'vencimento' ? 'selected' : ''}>⚠️ Vencimentos</option>
-                        <option value="reuniao" ${this.filterType === 'reuniao' ? 'selected' : ''}>💼 Reuniões</option>
-                    </select>
-
                     ${(() => {
                         if (!Auth.getCurrentUser()?.role || !['operacional', 'admin'].includes(Auth.getCurrentUser().role.toLowerCase())) return '';
                         const dateToBlock = this.selectedDateStr || new Date().toISOString().split("T")[0];
@@ -232,34 +224,43 @@ export const Calendar = {
                         }
                         return `<button onclick="window.Calendar.blockDateModal()" class="btn btn-outline" style="gap:6px; display:inline-flex; align-items:center; border-color:#ef4444; color:#ef4444;"><span>🚫 Bloquear Data</span></button>`;
                     })()}
-                    <button id="btn-open-new-event-modal" class="btn btn-primary" style="gap:6px; display:inline-flex; align-items:center;">
-                        <span>➕ Agendar Vistoria / Evento</span>
+                    <button id="btn-open-new-event-modal" class="btn btn-primary" style="gap:6px; display:inline-flex; align-items:center; border-radius:var(--radius-md);">
+                        <span>➕ Novo Agendamento</span>
                     </button>
                 </div>
             </div>
 
-            <!-- Cards KPI Rápidos -->
+            <!-- Barra de Filtros em Pílulas (Pill Filters) -->
+            <div class="calendar-pill-filters-bar" style="display:flex; gap:8px; margin-bottom:18px; overflow-x:auto; padding-bottom:4px;">
+                <button class="calendar-pill-filter ${this.filterType === 'all' ? 'active' : ''}" data-type="all">🔍 Todos (${allEvents.length})</button>
+                <button class="calendar-pill-filter ${this.filterType === 'inspecao' ? 'active' : ''}" data-type="inspecao">📋 Vistorias Técnicas</button>
+                <button class="calendar-pill-filter ${this.filterType === 'followup' ? 'active' : ''}" data-type="followup">⏰ Follow-ups</button>
+                <button class="calendar-pill-filter ${this.filterType === 'vencimento' ? 'active' : ''}" data-type="vencimento">⚠️ Vencimentos</button>
+                <button class="calendar-pill-filter ${this.filterType === 'reuniao' ? 'active' : ''}" data-type="reuniao">💼 Reuniões</button>
+            </div>
+
+            <!-- Cards KPI Rápidos com Efeito Glass -->
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px; margin-bottom:20px;">
-                <div class="card stat-card" style="padding:14px; border-left:4px solid #1877F2;">
-                    <div style="font-size:11px; font-weight:700; color:var(--text-muted);">Compromissos no Mês</div>
+                <div class="card stat-card" style="padding:14px 18px; border-left:4px solid #6366f1;">
+                    <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Compromissos no Mês</div>
                     <div style="font-size:22px; font-weight:800; color:var(--text-primary); margin-top:2px;">${totalCount}</div>
                 </div>
-                <div class="card stat-card" style="padding:14px; border-left:4px solid #10b981;">
-                    <div style="font-size:11px; font-weight:700; color:var(--text-muted);">Vistorias Técnicas</div>
+                <div class="card stat-card" style="padding:14px 18px; border-left:4px solid #10b981;">
+                    <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Vistorias Técnicas</div>
                     <div style="font-size:22px; font-weight:800; color:#10b981; margin-top:2px;">${inspecaoCount}</div>
                 </div>
-                <div class="card stat-card" style="padding:14px; border-left:4px solid #f59e0b;">
-                    <div style="font-size:11px; font-weight:700; color:var(--text-muted);">Pendentes</div>
+                <div class="card stat-card" style="padding:14px 18px; border-left:4px solid #f59e0b;">
+                    <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Pendentes</div>
                     <div style="font-size:22px; font-weight:800; color:#f59e0b; margin-top:2px;">${pendingCount}</div>
                 </div>
-                <div class="card stat-card" style="padding:14px; border-left:4px solid #8b5cf6;">
-                    <div style="font-size:11px; font-weight:700; color:var(--text-muted);">Concluídos</div>
+                <div class="card stat-card" style="padding:14px 18px; border-left:4px solid #8b5cf6;">
+                    <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Concluídos</div>
                     <div style="font-size:22px; font-weight:800; color:#8b5cf6; margin-top:2px;">${doneCount}</div>
                 </div>
             </div>
 
             <!-- Grade do Calendário -->
-            <div class="calendar-grid-wrapper card" style="padding:16px;">
+            <div class="calendar-grid-wrapper card" style="padding:18px; border-radius:var(--radius-lg);">
                 <div class="calendar-weekdays-header">
                     <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
                 </div>
@@ -289,39 +290,47 @@ export const Calendar = {
         const formattedDate = `${d}/${m}/${y}`;
 
         const eventsHtml = dayEvents.length === 0 ? `
-            <div style="color:var(--text-muted); font-size:13px; text-align:center; padding:20px;">
-                Nenhum compromisso agendado para o dia ${formattedDate}.
+            <div style="color:var(--text-muted); font-size:13px; text-align:center; padding:28px 0;">
+                Nenhum compromisso agendado para o dia <strong>${formattedDate}</strong>.
             </div>
-        ` : dayEvents.map(ev => `
-            <div style="background:var(--bg-body); border:1px solid var(--border-color); border-left:4px solid ${ev.status === 'bloqueado' ? '#475569' : (ev.status === 'pendente' ? '#f97316' : (ev.type === 'inspecao' ? '#10b981' : (ev.type === 'vencimento' ? '#ef4444' : '#1877F2')))}; border-radius:8px; padding:12px 16px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        ` : dayEvents.map(ev => {
+            const borderColor = ev.status === 'bloqueado' ? '#475569' : (ev.status === 'pendente' ? '#f97316' : (ev.type === 'inspecao' ? '#10b981' : (ev.type === 'vencimento' ? '#ef4444' : '#6366f1')));
+            const typeBadge = ev.type === 'inspecao' ? '📋 Vistoria' : (ev.type === 'vencimento' ? '⚠️ Vencimento' : (ev.type === 'followup' ? '⏰ Follow-up' : '💼 Reunião'));
+
+            return `
+            <div class="calendar-event-card-rich" style="background:var(--bg-body); border:1px solid var(--border-color); border-left:4px solid ${borderColor}; border-radius:var(--radius-md); padding:14px 18px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; transition:all var(--transition-fast);">
                 <div>
-                    <div style="font-weight:700; font-size:13.5px; color:var(--text-primary);">${ev.title}</div>
-                    <div style="font-size:11.5px; color:var(--text-muted); margin-top:2px;">
-                        🏢 ${ev.company} ${ev.contact ? `• Contato: ${ev.contact}` : ''} • 🕒 ${ev.time || 'Horário comercial'}
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span class="badge" style="background:${borderColor}18; color:${borderColor}; font-size:10.5px; font-weight:700; border:1px solid ${borderColor}33;">${typeBadge}</span>
+                        <div style="font-weight:700; font-size:14px; color:var(--text-primary);">${ev.title}</div>
                     </div>
-                    ${ev.notes ? `<div style="font-size:11px; color:var(--text-secondary); margin-top:4px;">📝 ${ev.notes}</div>` : ''}
+                    <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">
+                        🏢 <strong>${ev.company}</strong> ${ev.contact ? `• Contato: ${ev.contact}` : ''} • 🕒 ${ev.time || 'Horário comercial'}
+                    </div>
+                    ${ev.notes ? `<div style="font-size:11.5px; color:var(--text-secondary); margin-top:4px; line-height:1.4;">📝 ${ev.notes}</div>` : ''}
                 </div>
-                <div style="display:flex; gap:6px;">
+                <div style="display:flex; gap:8px; align-items:center;">
                     ${ev.status === 'pendente' && Auth.getCurrentUser()?.role && ['operacional', 'admin'].includes(Auth.getCurrentUser().role.toLowerCase()) ? `
-                        <button onclick="window.Calendar.approveEvent('${ev.id}')" class="btn btn-sm" style="background:#10b981; color:#fff; font-size:11px; padding:4px 8px; font-weight:700; border:none; border-radius:6px; cursor:pointer;">✅ Aprovar</button>
-                        <button onclick="window.Calendar.rejectEvent('${ev.id}')" class="btn btn-sm" style="background:#ef4444; color:#fff; font-size:11px; padding:4px 8px; font-weight:700; border:none; border-radius:6px; cursor:pointer;">❌ Recusar</button>
+                        <button onclick="window.Calendar.approveEvent('${ev.id}')" class="btn btn-sm" style="background:#10b981; color:#fff; font-size:11px; padding:6px 10px; font-weight:700; border:none; border-radius:6px; cursor:pointer;">✅ Aprovar</button>
+                        <button onclick="window.Calendar.rejectEvent('${ev.id}')" class="btn btn-sm" style="background:#ef4444; color:#fff; font-size:11px; padding:6px 10px; font-weight:700; border:none; border-radius:6px; cursor:pointer;">❌ Recusar</button>
                     ` : ''}
                     ${ev.status === 'bloqueado' && Auth.getCurrentUser()?.role && ['operacional', 'admin'].includes(Auth.getCurrentUser().role.toLowerCase()) ? `
-                        <button onclick="window.Calendar.unlockDate('${ev.id}')" class="btn btn-sm" style="background:#ef4444; color:#fff; font-size:11px; padding:4px 8px; font-weight:700; border:none; border-radius:6px; cursor:pointer;">🔓 Destravar</button>
+                        <button onclick="window.Calendar.unlockDate('${ev.id}')" class="btn btn-sm" style="background:#ef4444; color:#fff; font-size:11px; padding:6px 10px; font-weight:700; border:none; border-radius:6px; cursor:pointer;">🔓 Destravar</button>
                     ` : ''}
-                    ${ev.phone ? `<a href="https://wa.me/${ev.phone.replace(/\D/g,'')}" target="_blank" class="btn btn-sm" style="background:#25d366; color:#fff; font-size:11px; padding:4px 8px; font-weight:700; border:none; text-decoration:none; border-radius:6px;">💬 WhatsApp</a>` : ''}
-                    ${ev.leadId ? `<button onclick="window.location.hash='#crm'; setTimeout(()=>window.openLeadDrawerFromExt('${ev.leadId}'),300)" class="btn btn-outline btn-sm" style="font-size:11px; padding:4px 8px;">🔍 Ver Lead</button>` : ''}
+                    ${ev.phone ? `<a href="https://wa.me/${ev.phone.replace(/\D/g,'')}" target="_blank" class="btn btn-sm" style="background:#25d366; color:#fff; font-size:11.5px; padding:6px 12px; font-weight:700; border:none; text-decoration:none; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">💬 WhatsApp</a>` : ''}
+                    ${ev.leadId ? `<button onclick="window.location.hash='#crm'; setTimeout(()=>window.openLeadDrawerFromExt('${ev.leadId}'),300)" class="btn btn-outline btn-sm" style="font-size:11.5px; padding:6px 10px; border-radius:6px;">🔍 Ver Lead</button>` : ''}
                 </div>
             </div>
-        `).join("");
+            `;
+        }).join("");
 
         panel.innerHTML = `
-            <div class="card" style="padding:18px 22px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-                    <h4 style="font-weight:700; font-size:14px; color:var(--text-primary); margin:0;">
+            <div class="card" style="padding:20px 24px; border-radius:var(--radius-lg);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                    <h4 style="font-weight:700; font-size:15px; color:var(--text-primary); margin:0;">
                         📋 Compromissos de ${formattedDate} (${dayEvents.length})
                     </h4>
-                    <button class="btn btn-outline btn-sm" onclick="document.getElementById('calendar-day-detail-panel').style.display='none'">Fechar</button>
+                    <button class="btn btn-outline btn-sm" onclick="document.getElementById('calendar-day-detail-panel').style.display='none'">Fechar Detalhes</button>
                 </div>
                 <div>${eventsHtml}</div>
             </div>
@@ -362,6 +371,16 @@ export const Calendar = {
                 this.render();
             };
         }
+
+        // Pílulas de filtro rápido
+        const pillFilters = document.querySelectorAll(".calendar-pill-filter");
+        pillFilters.forEach(pill => {
+            pill.onclick = () => {
+                const type = pill.getAttribute("data-type") || "all";
+                this.filterType = type;
+                this.render();
+            };
+        });
 
         const dayCells = document.querySelectorAll(".calendar-day:not(.other-month)");
         dayCells.forEach(cell => {

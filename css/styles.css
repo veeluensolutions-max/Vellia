@@ -4874,6 +4874,59 @@ input:checked + .switch-slider::before {
     animation: viewFadeIn 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* ==========================================================================
+   CALENDAR PILL FILTERS & NOTIFICATIONS GLASS DROPDOWN
+   ========================================================================== */
+
+.calendar-pill-filter {
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 99px;
+    border: 1.5px solid var(--border-color);
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+    user-select: none;
+}
+
+.calendar-pill-filter:hover {
+    border-color: var(--primary-light);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+}
+
+.calendar-pill-filter.active {
+    background: var(--primary-glow);
+    border-color: var(--primary);
+    color: var(--primary);
+    box-shadow: 0 2px 8px var(--primary-glow);
+}
+
+.calendar-event-card-rich:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.notifications-panel.glass-dropdown {
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--border-card-glass);
+    border-radius: 16px;
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.32);
+    overflow: hidden;
+    transform-origin: top right;
+    animation: viewFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+[data-theme="dark"] .notifications-panel.glass-dropdown {
+    background: rgba(15, 20, 32, 0.94);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+
 
 
 

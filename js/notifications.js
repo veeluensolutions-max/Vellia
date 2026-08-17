@@ -9,6 +9,7 @@ export const Notifications = {
     list: null,
     markAllBtn: null,
     items: [],
+    activeTab: "all",
 
     init() {
         this.panel = document.getElementById("notifications-panel");
@@ -98,45 +99,34 @@ export const Notifications = {
             const message = `${d.serviceName} • Vencimento: ${d.formattedExpiry} (${d.urgencyText})`;
 
             this.addItem({
-                id        : d.notifId,
+                id: d.notifId,
                 title,
                 message,
-                type      : notifType,
-                read      : false,
-                timestamp : new Date(),
-                action    : {
-                    label        : d.alertType === "expired" ? "⚡ Renovar Agora" : "💬 Notificar via WhatsApp",
-                    leadId       : d.leadId,
-                    inspectionId : d.inspectionId,
-                    phone        : d.phone,
-                    contact      : d.contact,
-                    service      : d.serviceName,
-                    urgencyText  : d.urgencyText,
-                    expiryDate   : d.formattedExpiry
+                type: notifType,
+                read: false,
+                timestamp: new Date(),
+                action: {
+                    label: d.isCritical ? "⚡ Disparar WhatsApp Urgente" : "💬 Contatar Cliente",
+                    leadId: d.leadId,
+                    inspectionId: d.inspectionId,
+                    phone: d.phone,
+                    contact: d.contact,
+                    service: d.serviceName,
+                    urgencyText: d.urgencyText,
+                    expiryDate: d.formattedExpiry
                 }
             });
 
-            // Notificacao nativa do browser para casos urgentes/vencidos
-            if (d.alertType === "expired" || d.alertType === "urgent") {
-                this.sendNativeNotification(
-                    `🔴 Inspecao vencendo: ${d.company}`,
-                    `${d.serviceName} — ${d.urgencyText}`
-                );
+            // Alerta nativo se critico
+            if (d.isCritical) {
+                this.sendNativeNotification(title, message);
             }
         });
     },
 
     requestNativePermission() {
-        if ("Notification" in window && Notification.permission === "default") {
-            this.btn.addEventListener("click", () => {
-                if (Notification.permission === "default") {
-                    Notification.requestPermission().then(permission => {
-                        if (permission === "granted") {
-                            this.sendNativeNotification("Vellia CRM 🔔", "Notificações de Área de Trabalho ativadas com sucesso!");
-                        }
-                    });
-                }
-            }, { once: true });
+        if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+            Notification.requestPermission();
         }
     },
 
@@ -145,7 +135,7 @@ export const Notifications = {
             try {
                 new Notification(title, {
                     body: message,
-                    icon: "https://velliacrm.vercel.app/favicon.ico"
+                    icon: "/favicon.ico"
                 });
             } catch (err) {
                 console.error("Falha ao enviar notificação nativa:", err);
@@ -164,6 +154,25 @@ export const Notifications = {
                 this.closePanel();
             }
         });
+
+        // Abas do painel de notificações
+        const tabContainer = document.getElementById("notif-tabs");
+        if (tabContainer) {
+            tabContainer.addEventListener("click", (e) => {
+                const tabBtn = e.target.closest(".notif-tab-btn");
+                if (!tabBtn) return;
+                tabContainer.querySelectorAll(".notif-tab-btn").forEach(b => {
+                    b.classList.remove("active");
+                    b.style.color = "var(--text-muted)";
+                    b.style.borderBottom = "none";
+                });
+                tabBtn.classList.add("active");
+                tabBtn.style.color = "var(--primary)";
+                tabBtn.style.borderBottom = "2px solid var(--primary)";
+                this.activeTab = tabBtn.getAttribute("data-tab") || "all";
+                this.render();
+            });
+        }
 
         if (this.markAllBtn) {
             this.markAllBtn.addEventListener("click", () => {
@@ -347,8 +356,20 @@ export const Notifications = {
             this.badge.style.display = "none";
         }
 
-        if (this.items.length === 0) {
-            this.list.innerHTML = `<div class="notif-empty">Nenhum alerta inteligente no momento. 🎉</div>`;
+        // Atualizar contadores das abas
+        const tabs = document.querySelectorAll(".notif-tab-btn");
+        tabs.forEach(tab => {
+            const t = tab.getAttribute("data-tab");
+            if (t === "all") tab.textContent = `Todas (${this.items.length})`;
+            if (t === "unread") tab.textContent = `Não Lidas (${unreadCount})`;
+        });
+
+        const displayedItems = this.activeTab === "unread" 
+            ? this.items.filter(i => !i.read) 
+            : this.items;
+
+        if (displayedItems.length === 0) {
+            this.list.innerHTML = `<div class="notif-empty" style="padding: 30px 20px; text-align: center; color: var(--text-muted); font-size: 13px;">${this.activeTab === 'unread' ? 'Nenhuma notificação não lida! 🎉' : 'Nenhum alerta inteligente no momento.'}</div>`;
             return;
         }
 
@@ -363,7 +384,7 @@ export const Notifications = {
             return new Date(ts).toLocaleDateString("pt-BR");
         };
 
-        this.list.innerHTML = this.items.map(item => {
+        this.list.innerHTML = displayedItems.map(item => {
             const actionHtml = item.action
                 ? `<button
                         class="notif-inspection-action"

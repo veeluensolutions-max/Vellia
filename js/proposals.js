@@ -1398,5 +1398,81 @@ Responda ESTRITAMENTE em formato JSON com o seguinte schema (sem markdown ou tex
                 if (toast && toast.parentElement) toast.remove();
             }, 3000);
         };
+    },
+
+    async translateProposalAI(proposalId, targetLang = "en") {
+        const id = proposalId || activeProposalId;
+        if (!id) return;
+
+        const proposal = Store.getProposalById(id);
+        if (!proposal) return;
+
+        const titleEl = document.getElementById("detail-title");
+        const notesEl = document.getElementById("detail-notes");
+
+        if (targetLang === "pt") {
+            if (titleEl) titleEl.textContent = proposal.title || "Proposta Comercial";
+            if (notesEl) notesEl.textContent = proposal.notes || "-";
+            return;
+        }
+
+        const langName = targetLang === "en" ? "Inglês (English - US)" : "Espanhol (Español)";
+        if (notesEl) notesEl.textContent = `🤖 Traduzindo proposta para ${langName} via Gemini 2.5 Flash... Aguarde...`;
+
+        const prompt = `
+Você é um Tradutor Corporativo Executivo B2B.
+Traduz a seguinte proposta comercial para o idioma ${langName}.
+
+PROPOSTA ORIGINAL:
+Título: "${proposal.title}"
+Empresa: "${proposal.company}"
+Valor: "R$ ${proposal.value}"
+Observações/Escopo Técnico: "${proposal.notes || ''}"
+
+Responda ESTRITAMENTE em formato JSON com o seguinte schema:
+{
+  "translatedTitle": "Título traduzido",
+  "translatedNotes": "Observações e escopo traduzidos em tom executivo",
+  "formattedCurrency": "Valor em moeda internacional equivalente (ex: USD $X.XXX ou EUR €X.XXX)"
+}
+`;
+
+        try {
+            const userApiKey = localStorage.getItem("vellia_gemini_api_key") || localStorage.getItem("gemini_api_key");
+            let res;
+
+            if (userApiKey && userApiKey.trim()) {
+                const directUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userApiKey.trim()}`;
+                res = await fetch(directUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+            } else {
+                res = await fetch("/api/gemini-proxy", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        model: "gemini-2.5-flash",
+                        contents: [{ parts: [{ text: prompt }] }]
+                    })
+                });
+            }
+
+            if (res.ok) {
+                const data = await res.json();
+                let rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
+                const parsed = JSON.parse(rawText);
+
+                if (parsed) {
+                    if (titleEl && parsed.translatedTitle) titleEl.textContent = `[${targetLang.toUpperCase()}] ${parsed.translatedTitle}`;
+                    if (notesEl && parsed.translatedNotes) notesEl.textContent = `${parsed.translatedNotes}\n\n🌐 Value: ${parsed.formattedCurrency}`;
+                }
+            }
+        } catch (e) {
+            console.error("Erro na tradução multilíngue:", e);
+            alert("Erro ao realizar tradução por IA. Tente novamente em instantes.");
+        }
     }
 };

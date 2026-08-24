@@ -25,6 +25,14 @@ export const CRM = {
             window.addEventListener("vellia:leadDeleted", () => this.renderLeadsTable());
             window.addEventListener("vellia:leadRestored", () => this.renderLeadsTable());
             this._realtimeListenersBound = true;
+
+            // Recalcular SLA de atendimento automaticamente a cada 30 segundos
+            setInterval(() => {
+                const crmView = document.getElementById("view-crm");
+                if (crmView && crmView.style.display !== "none") {
+                    this.renderLeadsTable();
+                }
+            }, 30000);
         }
     },
 
@@ -368,6 +376,15 @@ export const CRM = {
             return Math.floor(Math.abs(now - lastDate) / (1000 * 60 * 60 * 24));
         };
 
+        const getLeadMinutesSLA = (lead) => {
+            let lastDate = new Date(lead.createdAt || now);
+            if (lead.interactions && lead.interactions.length > 0) {
+                const sorted = [...lead.interactions].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+                lastDate = new Date(sorted[0].timestamp);
+            }
+            return Math.floor(Math.abs(now - lastDate) / (1000 * 60));
+        };
+
         const getLeadValue = (lead) => {
             return proposals.filter(p => p.leadId === lead.id && p.status !== "Perdido").reduce((s, p) => s + (p.value || 0), 0);
         };
@@ -378,6 +395,7 @@ export const CRM = {
         const countWarm = leads.filter(l => (l.aiScore || 0) >= 45 && (l.aiScore || 0) < 75).length;
         const countNoContact = leads.filter(l => getLeadDaysNoContact(l) >= 3 && l.stage !== "Cliente Fechado" && l.stage !== "Cliente Perdido").length;
         const countHighValue = leads.filter(l => getLeadValue(l) >= 5000).length;
+        const countSLAExpired = leads.filter(l => getLeadMinutesSLA(l) >= 15 && l.stage !== "Cliente Fechado" && l.stage !== "Cliente Perdido").length;
 
         const setPillText = (id, val) => {
             const el = document.getElementById(id);
@@ -388,6 +406,7 @@ export const CRM = {
         setPillText("pill-count-warm", countWarm);
         setPillText("pill-count-nocontact", countNoContact);
         setPillText("pill-count-highvalue", countHighValue);
+        setPillText("pill-count-sla", countSLAExpired);
 
         // Filtro de leads
         const activePill = this.activePillFilter || "all";
@@ -411,6 +430,8 @@ export const CRM = {
                 matchesPill = getLeadDaysNoContact(lead) >= 3 && lead.stage !== "Cliente Fechado" && lead.stage !== "Cliente Perdido";
             } else if (activePill === "highvalue") {
                 matchesPill = getLeadValue(lead) >= 5000;
+            } else if (activePill === "sla-expired") {
+                matchesPill = getLeadMinutesSLA(lead) >= 15 && lead.stage !== "Cliente Fechado" && lead.stage !== "Cliente Perdido";
             }
 
             return matchesSearch && matchesStage && matchesOwner && matchesPill;
@@ -519,6 +540,16 @@ export const CRM = {
                     </td>
                     <td>
                         <span class="badge ${stageBadgeClass}">${lead.stage}</span>
+                        <div style="margin-top: 4px;">
+                            ${(() => {
+                                const m = getLeadMinutesSLA(lead);
+                                if (lead.stage === "Cliente Fechado" || lead.stage === "Cliente Perdido") return "";
+                                if (m < 15) return `<span style="font-size: 10px; font-weight: 800; background: rgba(16, 185, 129, 0.12); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); padding: 2px 7px; border-radius: 99px; display: inline-flex; align-items: center; gap: 3px;">⏱️ ${m}m (SLA OK)</span>`;
+                                if (m <= 60) return `<span style="font-size: 10px; font-weight: 800; background: rgba(245, 158, 11, 0.15); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.3); padding: 2px 7px; border-radius: 99px; display: inline-flex; align-items: center; gap: 3px;">⏱️ ${m}m (ALERTA)</span>`;
+                                const h = Math.floor(m / 60);
+                                return `<span style="font-size: 10px; font-weight: 800; background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); padding: 2px 7px; border-radius: 99px; display: inline-flex; align-items: center; gap: 3px;">🚨 ${h}h+ (ESTOURADO)</span>`;
+                            })()}
+                        </div>
                     </td>
                     <td style="text-align:center;">${scoreBadge}</td>
                     <td onclick="event.stopPropagation();">

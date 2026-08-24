@@ -63,6 +63,12 @@ export const Copilot = {
         document.querySelectorAll(".copilot-pill").forEach(pill => {
             pill.addEventListener("click", (e) => {
                 e.stopPropagation();
+                const objection = pill.getAttribute("data-objection");
+                if (objection) {
+                    this.handleObjectionClick(objection);
+                    return;
+                }
+
                 const text = pill.getAttribute("data-prompt");
                 if (text) {
                     this.input.value = text;
@@ -257,6 +263,65 @@ Pergunta: "${query}"
             console.error("Erro ao enviar mensagem para o Copiloto:", e);
             this.removeTypingSkeleton();
             this.appendKeyPromptMessage(query);
+        }
+    },
+
+    async handleObjectionClick(objectionText) {
+        if (this.isTyping) return;
+
+        this.appendMessage(`🛡️ Como contornar a objeção: "${objectionText}"?`, true);
+        this.showTypingSkeleton();
+
+        const promptPayload = `
+Você é o Vellia Copiloto, Guru de Vendas B2B e Fechamento Comercial.
+O cliente apresentou a seguinte objeção ao vendedor: "${objectionText}".
+
+Crie um guia super prático para contornar essa objeção em 3 abordagens:
+
+1. 💎 **Ângulo Valor & ROI**: Foco no retorno do investimento e prevenção de riscos.
+2. 🤝 **Ângulo Empatia & Parceria**: Alinhamento com a realidade do cliente sem confrontar.
+3. ⚡ **Ângulo Escassez & Decisão Rápida**: Gatilho para tomada de decisão imediata.
+
+🎯 **Pergunta de Fechamento Recomendada**: 1 pergunta matadora para manter a negociação viva.
+
+Use emojis, formatação em negrito e frases prontas para envio por WhatsApp.
+`;
+
+        try {
+            let res;
+            const userApiKey = localStorage.getItem("vellia_gemini_api_key") || localStorage.getItem("gemini_api_key");
+
+            if (userApiKey && userApiKey.trim()) {
+                const directUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userApiKey.trim()}`;
+                res = await fetch(directUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: promptPayload }] }] })
+                });
+            } else {
+                res = await fetch("/api/gemini-proxy", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        model: "gemini-2.5-flash",
+                        contents: [{ parts: [{ text: promptPayload }] }]
+                    })
+                });
+            }
+
+            this.removeTypingSkeleton();
+
+            if (res.ok) {
+                const data = await res.json();
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Não consegui gerar o contorno de objeção no momento.";
+                this.appendMessage(text, false);
+            } else {
+                this.appendKeyPromptMessage(`Objeção: ${objectionText}`);
+            }
+        } catch (e) {
+            console.error("Erro ao gerar contorno de objeção:", e);
+            this.removeTypingSkeleton();
+            this.appendKeyPromptMessage(`Objeção: ${objectionText}`);
         }
     },
 

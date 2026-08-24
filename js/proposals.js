@@ -93,6 +93,28 @@ export const Proposals = {
             });
         }
 
+        // Aceite Online da Proposta
+        const btnOnlineLink = document.getElementById("btn-proposal-online-link");
+        if (btnOnlineLink) {
+            btnOnlineLink.addEventListener("click", () => {
+                if (activeProposalId) this.openOnlineApprovalView(activeProposalId);
+            });
+        }
+
+        const btnCopyLink = document.getElementById("btn-copy-approval-link");
+        if (btnCopyLink) {
+            btnCopyLink.addEventListener("click", () => {
+                const link = `${window.location.origin}/#proposta?id=${activeProposalId}`;
+                navigator.clipboard.writeText(link);
+                alert("🔗 Link de Aceite Online copiado para a área de transferência:\n" + link);
+            });
+        }
+
+        const btnConfirmApproval = document.getElementById("btn-confirm-online-approval");
+        if (btnConfirmApproval) {
+            btnConfirmApproval.addEventListener("click", () => this.confirmOnlineProposalApproval());
+        }
+
         // Modal de perda
         const btnCloseLoss = document.getElementById("btn-close-loss-modal");
         if (btnCloseLoss) btnCloseLoss.addEventListener("click", () => this.closeLossModal());
@@ -1153,5 +1175,107 @@ Seja profissional, direto e use uma linguagem persuasiva focada em fechamento co
 
         const safeName = (proposal.company || "Cliente").replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "").substring(0, 20);
         doc.save(`Proposta_${safeName}_${proposal.id.substring(0, 8)}.pdf`);
+    },
+
+    openOnlineApprovalView(proposalId) {
+        const proposal = Store.getProposalById(proposalId);
+        if (!proposal) return;
+
+        activeProposalId = proposalId;
+
+        const overlay = document.getElementById("proposal-online-approval-overlay");
+        const modal = document.getElementById("modal-proposal-online-approval");
+
+        if (!modal || !overlay) return;
+
+        const compTitle = document.getElementById("approval-company-title");
+        const propTitle = document.getElementById("approval-proposal-title");
+        const contactName = document.getElementById("approval-contact-name");
+        const totalVal = document.getElementById("approval-total-value");
+        const notesBody = document.getElementById("approval-notes-body");
+        const statusBanner = document.getElementById("approval-status-banner");
+        const btnConfirm = document.getElementById("btn-confirm-online-approval");
+
+        if (compTitle) compTitle.textContent = proposal.company || "Empresa Cliente";
+        if (propTitle) propTitle.textContent = proposal.title || "Proposta Comercial";
+        if (contactName) contactName.textContent = `${proposal.contact || 'Responsável'} • ${proposal.company}`;
+        if (totalVal) totalVal.textContent = (parseFloat(proposal.value) || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+        if (notesBody) notesBody.textContent = proposal.notes || "Escopo técnico e comercial padrão conforme alinhado com o cliente.";
+
+        if (proposal.status === "Ganho") {
+            if (statusBanner) {
+                statusBanner.style.background = "rgba(16, 185, 129, 0.12)";
+                statusBanner.style.borderColor = "rgba(16, 185, 129, 0.3)";
+                statusBanner.style.color = "#10b981";
+                statusBanner.innerHTML = "🟢 <strong>PROPOSTA ACEITA E ASSINADA DIGITALMENTE COM SUCESSO!</strong>";
+            }
+            if (btnConfirm) {
+                btnConfirm.disabled = true;
+                btnConfirm.textContent = "✓ Proposta Já Assinada";
+                btnConfirm.style.opacity = "0.7";
+            }
+        } else {
+            if (statusBanner) {
+                statusBanner.style.background = "rgba(245, 158, 11, 0.1)";
+                statusBanner.style.borderColor = "rgba(245, 158, 11, 0.3)";
+                statusBanner.style.color = "#d97706";
+                statusBanner.innerHTML = "⏳ Esta proposta aguarda a validação e assinatura digital do cliente.";
+            }
+            if (btnConfirm) {
+                btnConfirm.disabled = false;
+                btnConfirm.textContent = "✅ Aceitar e Assinar Digitalmente";
+                btnConfirm.style.opacity = "1";
+            }
+        }
+
+        overlay.style.display = "block";
+        modal.style.display = "block";
+    },
+
+    confirmOnlineProposalApproval() {
+        if (!activeProposalId) return;
+        const proposal = Store.getProposalById(activeProposalId);
+        if (!proposal) return;
+
+        const currentUser = Auth.getCurrentUser();
+        const userEmail = currentUser ? currentUser.email : "sistema@vellia.com";
+
+        // 1. Atualizar proposta para Ganho
+        proposal.status = "Ganho";
+        proposal.wonAt = new Date().toISOString();
+        Store.saveProposals();
+
+        // 2. Atualizar Lead correspondente no CRM para Cliente Fechado
+        const leads = Store.getLeads();
+        const matchingLead = leads.find(l => l.company.toLowerCase() === proposal.company.toLowerCase());
+        if (matchingLead) {
+            matchingLead.stage = "Cliente Fechado";
+            matchingLead.updatedAt = new Date().toISOString();
+            Store.addLeadInteraction(matchingLead.id, userEmail, {
+                type: "Reunião",
+                description: `🎉 Proposta Comercial de R$ ${proposal.value} aceita e assinada digitalmente via Aceite Online.`
+            });
+            Store.saveLeads();
+            window.dispatchEvent(new CustomEvent("vellia:leadsUpdated"));
+        }
+
+        // 3. Registrar Log de Auditoria
+        Audit.logLeadUpdate(userEmail, proposal.company, `Proposta comercial (R$ ${proposal.value}) aceita online via Assinatura Digital.`);
+
+        // 4. Notificar Central de Alertas
+        window.dispatchEvent(new CustomEvent("vellia:aiNotification", {
+            detail: {
+                id: `proposal_win_${Date.now()}`,
+                title: `🎉 Nova Venda Fechada!`,
+                message: `A empresa ${proposal.company} acabou de assinar digitalmente a proposta no valor de R$ ${proposal.value}.`,
+                type: "success"
+            }
+        }));
+
+        this.renderStats();
+        this.renderTable();
+
+        this.openOnlineApprovalView(activeProposalId);
+        alert(`🎉 Parabéns! Proposta da empresa ${proposal.company} aceita e assinada digitalmente com sucesso!\n\nStatus atualizado para GANHO e Lead convertido no CRM.`);
     }
 };

@@ -370,7 +370,7 @@
                     </div>
 
                     <!-- Botão Alternador de Tema -->
-                    <button id="btn-theme-toggle" class="theme-toggle action-btn" title="Alternar Tema">
+                    <button id="btn-toggle-theme-modal" class="theme-toggle action-btn" title="Personalizar Tema e Cores">
                         <!-- Ícone de Sol (Light) -->
                         <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
                         <!-- Ícone de Lua (Dark) -->
@@ -378,6 +378,61 @@
                     </button>
                 </div>
             </header>
+
+            <!-- Modal: Customizador de Tema Glassmorphism & Paletas de Cores -->
+            <div id="theme-modal-overlay" class="modal-overlay" style="z-index: 1250; display: none; backdrop-filter: blur(6px);"></div>
+            <div id="modal-theme-customizer" class="modal" style="z-index: 1251; max-width: 460px; display: none; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 20px 50px rgba(0,0,0,0.2); border-radius: 20px; padding: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(99, 102, 241, 0.15); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                            🎨
+                        </div>
+                        <div>
+                            <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: var(--text-primary);">Aparência & Tema</h3>
+                            <span style="font-size: 11.5px; color: var(--text-muted);">Personalize a interface e as cores do VelliaCRM</span>
+                        </div>
+                    </div>
+                    <button type="button" id="btn-close-theme-modal" style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted);">&times;</button>
+                </div>
+
+                <!-- Seleção de Modo Light / Dark -->
+                <div style="margin-bottom: 20px;">
+                    <label style="font-size: 12px; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 10px;">Modo de Exibição:</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <button type="button" id="theme-btn-light" onclick="window.ThemeManager.setThemeMode('light')" class="btn btn-outline" style="padding: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; border-radius: 12px;">
+                            ☀️ Light Glass
+                        </button>
+                        <button type="button" id="theme-btn-dark" onclick="window.ThemeManager.setThemeMode('dark')" class="btn btn-outline" style="padding: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; border-radius: 12px;">
+                            🌙 Dark Cyberpunk
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Seleção de Paleta de Cores -->
+                <div>
+                    <label style="font-size: 12px; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 10px;">Paleta de Cor de Destaque:</label>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                        <button type="button" class="color-swatch-btn" data-color-key="indigo" onclick="window.ThemeManager.setColorPalette('indigo')" style="background: linear-gradient(135deg, #4f46e5, #818cf8); border: none; height: 42px; border-radius: 10px; cursor: pointer; color: #fff; font-weight: 700; font-size: 11px;">
+                            Índigo
+                        </button>
+                        <button type="button" class="color-swatch-btn" data-color-key="emerald" onclick="window.ThemeManager.setColorPalette('emerald')" style="background: linear-gradient(135deg, #10b981, #34d399); border: none; height: 42px; border-radius: 10px; cursor: pointer; color: #fff; font-weight: 700; font-size: 11px;">
+                            Esmeralda
+                        </button>
+                        <button type="button" class="color-swatch-btn" data-color-key="ocean" onclick="window.ThemeManager.setColorPalette('ocean')" style="background: linear-gradient(135deg, #0284c7, #38bdf8); border: none; height: 42px; border-radius: 10px; cursor: pointer; color: #fff; font-weight: 700; font-size: 11px;">
+                            Ocean
+                        </button>
+                        <button type="button" class="color-swatch-btn" data-color-key="crimson" onclick="window.ThemeManager.setColorPalette('crimson')" style="background: linear-gradient(135deg, #e11d48, #fb7185); border: none; height: 42px; border-radius: 10px; cursor: pointer; color: #fff; font-weight: 700; font-size: 11px;">
+                            Sunset
+                        </button>
+                        <button type="button" class="color-swatch-btn" data-color-key="amber" onclick="window.ThemeManager.setColorPalette('amber')" style="background: linear-gradient(135deg, #d97706, #fbbf24); border: none; height: 42px; border-radius: 10px; cursor: pointer; color: #fff; font-weight: 700; font-size: 11px;">
+                            Gold Amber
+                        </button>
+                        <button type="button" class="color-swatch-btn" data-color-key="purple" onclick="window.ThemeManager.setColorPalette('purple')" style="background: linear-gradient(135deg, #9333ea, #c084fc); border: none; height: 42px; border-radius: 10px; cursor: pointer; color: #fff; font-weight: 700; font-size: 11px;">
+                            Violet Neon
+                        </button>
+                    </div>
+                </div>
+            </div>
 
             <!-- Área de Roteamento SPA -->
             <section class="app-content">

@@ -27,6 +27,7 @@ import { PostSales } from "./post-sales.js";
 import { Intervention } from "./intervention.js";
 import { ChurnAutopilot } from "./churn-autopilot.js";
 import { Leaderboard } from "./leaderboard.js";
+import { ThemeManager } from "./theme-manager.js";
 import { CommandPalette } from "./command-palette.js";
 import { Toast } from "./toast.js";
 
@@ -174,6 +175,7 @@ function initApp() {
     Intervention.init();
     ChurnAutopilot.init();
     Leaderboard.init();
+    ThemeManager.init();
     
     // Inicializar Workspace
     const savedCompany = localStorage.getItem("activeCompany") || "Veeluen Solutions";

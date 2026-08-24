@@ -3162,32 +3162,52 @@
                 </div>
             </div>
             
-            <!-- Seção: Conversa WhatsApp / SDR AI -->
-            <div class="drawer-section" id="drawer-whatsapp-chat-section" style="display: none; border-top: 1px solid var(--border-color); padding-top: 16px;">
+            <!-- Seção: Conversa WhatsApp Inline com IA & Templates -->
+            <div class="drawer-section" id="drawer-whatsapp-chat-section" style="border-top: 1px solid var(--border-color); padding-top: 16px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-                    <span class="drawer-section-title" style="margin-bottom: 0; display: flex; align-items: center; gap: 6px;">💬 Conversa WhatsApp / SDR AI</span>
+                    <span class="drawer-section-title" style="margin-bottom: 0; display: flex; align-items: center; gap: 6px; font-weight: 800; color: var(--text-primary);">
+                        💬 Chat WhatsApp Inline & Templates IA
+                    </span>
                     <div style="display: flex; gap: 8px; align-items: center;">
-                        <span id="chat-sdr-status-badge" class="badge" style="background: #e0f2fe; color: #0284c7; font-size: 11px; padding: 2px 8px; border-radius: var(--radius-sm); font-weight: 600;">SDR AI Ativo</span>
-                        <button id="btn-takeover-chat" class="btn" style="padding: 4px 8px; font-size: 11px; font-weight: 700; border-radius: 4px; border: 1px solid var(--primary); background: transparent; color: var(--primary); cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s;">
-                            🤝 Assumir
+                        <span id="chat-sdr-status-badge" class="badge" style="background: #dcfce7; color: #16a34a; font-size: 11px; padding: 3px 8px; border-radius: 99px; font-weight: 700;">🟢 Chat Ativo</span>
+                        <button id="btn-takeover-chat" class="btn" style="padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 6px; border: 1px solid var(--primary); background: transparent; color: var(--primary); cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                            🤝 Assumir Chat
                         </button>
                     </div>
                 </div>
 
-                <!-- Chat transcript box -->
-                <div id="chat-message-history" style="max-height: 250px; min-height: 150px; overflow-y: auto; background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; font-size: 13px; scroll-behavior: smooth;">
-                    <!-- Mensagens renderizadas dinamicamente -->
+                <!-- Timeline do Chat -->
+                <div id="chat-message-history" style="max-height: 250px; min-height: 140px; overflow-y: auto; background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.9); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; font-size: 13px; scroll-behavior: smooth;">
+                    <!-- Mensagens renderizadas via JS -->
                 </div>
 
-                <!-- Live Chat message input -->
-                <div id="chat-input-container" style="display: none; gap: 8px; align-items: center; margin-top: 8px;">
-                    <input type="text" id="chat-text-input" class="form-control" placeholder="Digite uma resposta..." style="flex: 1; height: 36px; padding: 6px 12px; font-size: 13px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary);">
-                    <button id="btn-send-chat-msg" class="btn btn-primary" style="height: 36px; padding: 0 14px; font-size: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer; border: none;">
-                        <span>✈️</span> Enviar
-                    </button>
+                <!-- Pílulas de Resposta Rápida (Templates com Variáveis) -->
+                <div style="margin-bottom: 10px;">
+                    <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+                        <span>⚡ Modelos Rápidos (Variáveis Automáticas):</span>
+                    </div>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;" id="wa-template-pills">
+                        <button type="button" class="btn btn-outline btn-sm wa-tpl-pill" data-template="welcome" style="font-size: 11px; padding: 4px 8px; border-radius: 20px; background: rgba(99, 102, 241, 0.06); border-color: rgba(99, 102, 241, 0.2); color: var(--primary);">
+                            👋 Boas-vindas
+                        </button>
+                        <button type="button" class="btn btn-outline btn-sm wa-tpl-pill" data-template="proposal" style="font-size: 11px; padding: 4px 8px; border-radius: 20px; background: rgba(16, 185, 129, 0.06); border-color: rgba(16, 185, 129, 0.2); color: #10b981;">
+                            📄 Envio de Proposta
+                        </button>
+                        <button type="button" class="btn btn-outline btn-sm wa-tpl-pill" data-template="followup" style="font-size: 11px; padding: 4px 8px; border-radius: 20px; background: rgba(245, 158, 11, 0.06); border-color: rgba(245, 158, 11, 0.2); color: #d97706;">
+                            ⏰ Follow-Up
+                        </button>
+                        <button type="button" class="btn btn-primary btn-sm" id="btn-wa-ai-draft" style="font-size: 11px; padding: 4px 10px; border-radius: 20px; background: linear-gradient(135deg, #7c3aed, #6366f1); border: none;">
+                            🤖 Rascunhar com IA (Gemini)
+                        </button>
+                    </div>
                 </div>
-                <div id="chat-sdr-active-alert" style="font-size: 11px; color: var(--text-muted); text-align: center; background: rgba(99,102,241,0.05); padding: 8px; border-radius: 6px; border: 1px solid rgba(99,102,241,0.1); margin-top: 6px;">
-                    🤖 O <b>SDR AI</b> está controlando esta conversa. Clique em "Assumir" para pausar a IA e responder manualmente.
+
+                <!-- Input e Envio de Mensagem -->
+                <div id="chat-input-container" style="display: flex; gap: 8px; align-items: center;">
+                    <input type="text" id="chat-text-input" class="form-control" placeholder="Digite uma resposta para o cliente..." style="flex: 1; height: 38px; padding: 6px 12px; font-size: 13px; border-radius: 8px;">
+                    <button id="btn-send-chat-msg" class="btn btn-primary" style="height: 38px; padding: 0 16px; font-size: 12px; border-radius: 8px; display: flex; align-items: center; gap: 6px; background: #25d366; border-color: #25d366; color: #fff; font-weight: 700;">
+                        <span>💬</span> Enviar
+                    </button>
                 </div>
             </div>
 

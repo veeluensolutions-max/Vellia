@@ -125,6 +125,20 @@ export const CRM = {
             });
         }
 
+        // Pílulas de Resposta Rápida (Templates com Variáveis)
+        document.querySelectorAll(".wa-tpl-pill").forEach(pill => {
+            pill.addEventListener("click", () => {
+                const tplType = pill.getAttribute("data-template");
+                this.applyWaTemplate(tplType);
+            });
+        });
+
+        // Botão Rascunhar com IA (Gemini)
+        const btnAIDraft = document.getElementById("btn-wa-ai-draft");
+        if (btnAIDraft) {
+            btnAIDraft.addEventListener("click", () => this.generateWaAIDraft());
+        }
+
         // Submissão de Interações
         if (elements.drawerInteractionForm) {
             elements.drawerInteractionForm.addEventListener("submit", (e) => {
@@ -1725,6 +1739,96 @@ export const CRM = {
                 this.renderWhatsAppChat(refreshedLead);
                 this.renderTimeline(refreshedLead);
             }, 2000);
+        }
+    },
+
+    applyWaTemplate(tplType) {
+        if (!activeLeadId) return;
+        const lead = Store.getLeadById(activeLeadId);
+        if (!lead) return;
+
+        const input = document.getElementById("chat-text-input");
+        if (!input) return;
+
+        const currentUser = Auth.getCurrentUser();
+        const sellerName = currentUser ? currentUser.name : "Consultor Vellia";
+        const contactName = lead.contact || lead.company || "Cliente";
+        const valStr = lead.estimatedValue ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(lead.estimatedValue) : "R$ 0,00";
+
+        let text = "";
+        if (tplType === "welcome") {
+            text = `Olá ${contactName}! Tudo bem? Aqui é o ${sellerName} da Vellia. Vi seu interesse para a empresa ${lead.company} e gostaria de entender melhor como podemos te ajudar no segmento de ${lead.segment || 'serviços'}. Qual o melhor horário para conversarmos?`;
+        } else if (tplType === "proposal") {
+            text = `Olá ${contactName}! Acabei de preparar a proposta comercial para a ${lead.company} no valor de ${valStr}. Fico à disposição para tirarmos qualquer dúvida!`;
+        } else if (tplType === "followup") {
+            text = `Olá ${contactName}, tudo bem? Passando para saber se você conseguiu analisar a nossa apresentação para a ${lead.company} e se podemos agendar um breve alinhamento esta semana.`;
+        }
+
+        input.value = text;
+        input.focus();
+    },
+
+    async generateWaAIDraft() {
+        if (!activeLeadId) return;
+        const lead = Store.getLeadById(activeLeadId);
+        if (!lead) return;
+
+        const input = document.getElementById("chat-text-input");
+        const btnAI = document.getElementById("btn-wa-ai-draft");
+        if (!input) return;
+
+        const originalText = btnAI ? btnAI.textContent : "";
+        if (btnAI) {
+            btnAI.textContent = "🤖 Gerando...";
+            btnAI.disabled = true;
+        }
+
+        const prompt = `
+Você é o Vellia Copiloto. Crie uma mensagem muito prática e objetiva para o vendedor enviar via WhatsApp para o lead a seguir:
+
+- Contato: "${lead.contact || lead.company}"
+- Empresa: "${lead.company}"
+- Etapa Atual: "${lead.stage}"
+- Valor Estimado: "R$ ${lead.estimatedValue || 0}"
+- Segmento: "${lead.segment || 'Geral'}"
+
+Instruções: Retorne APENAS o texto curto pronto da mensagem em tom amigável e focado em vendas (máximo 300 caracteres). Use emojis adequados.
+`;
+
+        try {
+            const userApiKey = localStorage.getItem("vellia_gemini_api_key") || localStorage.getItem("gemini_api_key");
+            let res;
+
+            if (userApiKey && userApiKey.trim()) {
+                const directUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userApiKey.trim()}`;
+                res = await fetch(directUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+            } else {
+                res = await fetch("/api/gemini-proxy", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ model: "gemini-2.5-flash", contents: [{ parts: [{ text: prompt }] }] })
+                });
+            }
+
+            if (res.ok) {
+                const data = await res.json();
+                const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (aiText) {
+                    input.value = aiText.trim();
+                }
+            }
+        } catch (e) {
+            console.error("Erro ao rascunhar mensagem IA:", e);
+        } finally {
+            if (btnAI) {
+                btnAI.textContent = originalText;
+                btnAI.disabled = false;
+            }
+            input.focus();
         }
     },
 

@@ -1957,6 +1957,47 @@
                     </form>
                 </div>
 
+                <!-- Modal: Gerador & Visualizador de Minuta de Contrato IA -->
+                <div id="contract-draft-modal-overlay" class="modal-overlay" style="z-index: 1200; display: none; backdrop-filter: blur(8px);"></div>
+                <div id="modal-contract-draft-view" class="modal" style="z-index: 1201; max-width: 800px; display: none; background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2); border-radius: 20px; padding: 0;">
+                    <div style="background: linear-gradient(135deg, #1e293b, #0f172a); color: #fff; padding: 20px 24px; border-radius: 20px 20px 0 0; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(99, 102, 241, 0.2); display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                                📜
+                            </div>
+                            <div>
+                                <h3 style="margin: 0; font-size: 17px; font-weight: 800;" id="draft-contract-company-title">Minuta de Contrato Comercial</h3>
+                                <span style="font-size: 12px; opacity: 0.8;" id="draft-contract-subtitle">Gerado por IA Gemini 2.5 Flash</span>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-icon-close" onclick="document.getElementById('contract-draft-modal-overlay').style.display='none'; document.getElementById('modal-contract-draft-view').style.display='none';" style="color: #fff; background: none; border: none; cursor: pointer;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                    </div>
+
+                    <div style="padding: 24px;">
+                        <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                            <label style="font-size: 12px; font-weight: 700; color: var(--text-primary);">
+                                ✨ Texto da Minuta Jurídica (Editável):
+                            </label>
+                            <button type="button" class="btn btn-outline btn-sm" id="btn-regenerate-draft-ai" style="font-size: 11px; padding: 4px 10px; border-color: var(--primary); color: var(--primary);">
+                                🔄 Gerar Novamente com IA
+                            </button>
+                        </div>
+
+                        <textarea id="contract-draft-text-editor" class="form-control" style="min-height: 380px; font-family: 'Courier New', Courier, monospace; font-size: 12.5px; line-height: 1.6; padding: 16px; background: #fafafa; border: 1px solid var(--border-color); border-radius: 12px; resize: vertical; margin-bottom: 20px; color: #1e293b;"></textarea>
+
+                        <div style="display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;">
+                            <button type="button" class="btn btn-outline" id="btn-copy-draft-text">
+                                📋 Copiar Texto Completo
+                            </button>
+                            <button type="button" class="btn btn-primary" id="btn-export-draft-pdf" style="background: linear-gradient(135deg, #6366f1, #4f46e5); border: none; font-weight: 700;">
+                                📄 Exportar Minuta em PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- ==========================================================
                      VIEW: PÓS-VENDA E CLIENTES INATIVOS
                      ========================================================== -->

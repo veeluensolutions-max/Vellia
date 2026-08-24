@@ -34,6 +34,35 @@ export const Contracts = {
 
         if (searchInput) searchInput.addEventListener("input", () => this.renderTable());
         if (filterStatus) filterStatus.addEventListener("change", () => this.renderTable());
+
+        // Ouvintes do Modal de Minutas IA
+        const btnCopyDraft = document.getElementById("btn-copy-draft-text");
+        if (btnCopyDraft) {
+            btnCopyDraft.addEventListener("click", () => {
+                const editor = document.getElementById("contract-draft-text-editor");
+                if (editor && editor.value) {
+                    navigator.clipboard.writeText(editor.value);
+                    alert("📋 Minuta de contrato copiada para a área de transferência!");
+                }
+            });
+        }
+
+        const btnExportPDF = document.getElementById("btn-export-draft-pdf");
+        if (btnExportPDF) {
+            btnExportPDF.addEventListener("click", () => {
+                const editor = document.getElementById("contract-draft-text-editor");
+                if (editor && editor.value) {
+                    this.exportContractDraftPDF(editor.value);
+                }
+            });
+        }
+
+        const btnRegenerate = document.getElementById("btn-regenerate-draft-ai");
+        if (btnRegenerate) {
+            btnRegenerate.addEventListener("click", () => {
+                if (this.activeContractId) this.generateContractDraftAI(this.activeContractId);
+            });
+        }
     },
 
     checkRenewals() {
@@ -274,6 +303,9 @@ export const Contracts = {
                 <button class="btn-icon" onclick="window.Contracts.openModal('${c.id}')" title="Editar Contrato">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
+                <button class="btn-icon" style="color: #7c3aed;" onclick="window.Contracts.generateContractDraftAI('${c.id}')" title="Gerar Minuta de Contrato IA">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                </button>
             `;
             
             // Mostrar botão de renovar se estiver Ativo ou Vencendo
@@ -299,6 +331,125 @@ export const Contracts = {
             `;
             tbody.appendChild(tr);
         });
+    },
+
+    activeContractId: null,
+
+    async generateContractDraftAI(contractId) {
+        this.activeContractId = contractId;
+        const contracts = Store.getContracts();
+        const contract = contracts.find(c => c.id === contractId);
+        if (!contract) return;
+
+        const leads = Store.getAllLeadsRaw ? Store.getAllLeadsRaw() : (JSON.parse(localStorage.getItem('comercial_leads')) || []);
+        const lead = leads.find(l => l.id === contract.leadId) || { company: "Empresa Cliente", contact: "Representante Legal" };
+
+        const overlay = document.getElementById("contract-draft-modal-overlay");
+        const modal = document.getElementById("modal-contract-draft-view");
+        const titleEl = document.getElementById("draft-contract-company-title");
+        const subtitleEl = document.getElementById("draft-contract-subtitle");
+        const editor = document.getElementById("contract-draft-text-editor");
+
+        if (overlay) overlay.style.display = "block";
+        if (modal) modal.style.display = "block";
+
+        if (titleEl) titleEl.textContent = `Minuta — ${contract.number} (${lead.company})`;
+        if (subtitleEl) subtitleEl.textContent = `Vigência: ${contract.startDate || 'A definir'} a ${contract.endDate || 'A definir'} • MRR: R$ ${contract.recurringValue || 0}`;
+
+        if (editor) editor.value = "🤖 Gerando minuta contratual por IA (Gemini 2.5 Flash)... Aguarde...";
+
+        const prompt = `
+Você é um Advogado Especialista em Direito Empresarial e Contratos B2B.
+Crie uma Minuta de Contrato de Prestação de Serviços Comerciais e Técnicos completa, formal e juridicamente válida.
+
+DADOS DA NEGOCIAÇÃO:
+- CONTRATADA: Veeluen Solutions / Vellia (Consultoria & Engenharia)
+- CONTRATANTE: "${lead.company}" (Contato/Representante: "${lead.contact || 'Representante Legal'}")
+- NÚMERO DO CONTRATO: "${contract.number}"
+- VALOR TOTAL DO CONTRATO: "R$ ${contract.totalValue || 0}"
+- VALOR RECORRENTE MENSAL (MRR): "R$ ${contract.recurringValue || 0}"
+- PERIODO DE VIGÊNCIA: De ${contract.startDate || 'Data da Assinatura'} a ${contract.endDate || '12 meses'}
+- OBJETO E NOTAS TÉCNICAS: "${contract.notes || 'Prestação de Serviços de Consultoria Comercial, Engenharia e Licenciamento Ambiental'}"
+
+ESTRUTURA OBRIGATÓRIA DA MINUTA:
+1. INSTRUMENTO PARTICULAR DE PRESTAÇÃO DE SERVIÇOS
+2. CLÁUSULA PRIMEIRA - DO OBJETO E ESCOPO
+3. CLÁUSULA SEGUNDA - DO PREÇO E FORMA DE PAGAMENTO
+4. CLÁUSULA TERCEIRA - DAS OBRIGAÇÕES DAS PARTES
+5. CLÁUSULA QUARTA - DA VIGÊNCIA E RESCISÃO
+6. CLÁUSULA QUINTA - DA MULTA CONTRATUAL E INADIMPLÊNCIA
+7. CLÁUSULA SEXTA - DO FORO E DISPOSIÇÕES GERAIS
+8. LOCAL E CAMPO PARA ASSINATURA DAS PARTES E TESTEMUNHAS
+
+Retorne APENAS o texto completo da minuta limpo e pronto para impressão ou cópia, em tom jurídico formal e profissional.
+`;
+
+        try {
+            const userApiKey = localStorage.getItem("vellia_gemini_api_key") || localStorage.getItem("gemini_api_key");
+            let res;
+
+            if (userApiKey && userApiKey.trim()) {
+                const directUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userApiKey.trim()}`;
+                res = await fetch(directUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+            } else {
+                res = await fetch("/api/gemini-proxy", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        model: "gemini-2.5-flash",
+                        contents: [{ parts: [{ text: prompt }] }]
+                    })
+                });
+            }
+
+            if (res.ok) {
+                const data = await res.json();
+                const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (aiText && editor) {
+                    editor.value = aiText.trim();
+                }
+            }
+        } catch (e) {
+            console.error("Erro ao gerar minuta por IA:", e);
+            if (editor) {
+                editor.value = `MINUTA DE CONTRATO PARTICULAR DE PRESTAÇÃO DE SERVIÇOS N° ${contract.number}\n\nCONTRATANTE: ${lead.company}\nCONTRATADA: Veeluen Solutions / Vellia\n\nVALOR TOTAL: R$ ${contract.totalValue}\nVALOR MENSAL: R$ ${contract.recurringValue}\nVIGÊNCIA: ${contract.startDate} a ${contract.endDate}\n\nCLÁUSULA 1ª - DO OBJETO:\nConstitui objeto deste contrato a prestação dos serviços especificados: ${contract.notes || 'Consultoria Técnica'}.\n\nCLÁUSULA 2ª - DO PREÇO:\nPelo cumprimento do objeto, a CONTRATANTE pagará o valor mensal de R$ ${contract.recurringValue}.\n\nE por estarem justas e contratadas, as partes assinam o presente instrumento.`;
+            }
+        }
+    },
+
+    exportContractDraftPDF(text) {
+        if (!text) return;
+        const { jsPDF } = window.jspdf || {};
+        if (!jsPDF) {
+            alert("Biblioteca jsPDF não encontrada no navegador.");
+            return;
+        }
+
+        const doc = new jsPDF();
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.text("MINUTA DE CONTRATO COMERCIAL", 14, 20);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        
+        const lines = doc.splitTextToSize(text, 180);
+        let y = 30;
+
+        lines.forEach(line => {
+            if (y > 280) {
+                doc.addPage();
+                y = 20;
+            }
+            doc.text(line, 14, y);
+            y += 5;
+        });
+
+        doc.save(`Minuta_Contrato_${Date.now()}.pdf`);
     }
 };
 

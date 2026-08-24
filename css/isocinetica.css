@@ -96,34 +96,35 @@
 
 #view-isocinetica .form-control-new {
     width: 100%;
-    height: 48px;
-    background: rgba(255, 255, 255, 0.8);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    border-radius: 12px;
-    padding: 0 16px;
+    height: 42px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 0 14px;
     font-size: 14px;
-    color: var(--text-main);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+    font-weight: 600;
+    color: #0f172a;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 [data-theme="dark"] #view-isocinetica .form-control-new {
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    color: #fff;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #f8fafc;
 }
 
 #view-isocinetica .form-control-new:focus {
     outline: none;
-    background: #fff;
+    background: #ffffff;
     border-color: var(--primary);
-    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15), inset 0 1px 2px rgba(0,0,0,0.01);
-    transform: translateY(-1px);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
 
 [data-theme="dark"] #view-isocinetica .form-control-new:focus {
-    background: rgba(15, 23, 42, 0.8);
-    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.25);
+    background: rgba(15, 23, 42, 0.95);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
 }
 
 /* ---------------------------------------------------

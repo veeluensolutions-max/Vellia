@@ -48,7 +48,8 @@ export const Notifications = {
 
         // Ouvir notificações de Leads recebidos do Meta Ads / Facebook / Messenger / Instagram Direct
         window.addEventListener("vellia:metaLeadReceived", (e) => {
-            const { contact, company, source } = e.detail || {};
+            const detail = e.detail || {};
+            const { contact, company, source, leadId } = detail;
             const leadTitle = source === "Instagram Direct"
                 ? "📸 Nova Mensagem Direct no Instagram!"
                 : (source === "Facebook Messenger" ? "💬 Nova Mensagem no Facebook Messenger" : "🚨 Novo Lead do Meta Ads (Facebook)");
@@ -64,6 +65,21 @@ export const Notifications = {
             });
 
             this.sendNativeNotification(leadTitle, leadMsg);
+            this.showNewLeadToast(detail);
+        });
+
+        // Ouvir criação de novos leads manuais/web
+        window.addEventListener("vellia:leadAdded", (e) => {
+            const detail = e.detail || {};
+            if (detail.lead) {
+                this.showNewLeadToast({
+                    id: detail.lead.id,
+                    leadId: detail.lead.id,
+                    contact: detail.lead.contact,
+                    company: detail.lead.company,
+                    source: detail.lead.source || "Manual / Web"
+                });
+            }
         });
 
         // Ouvir notificacoes originadas pelos Agentes de IA
@@ -599,5 +615,100 @@ export const Notifications = {
 
         notified.push(notifId);
         sessionStorage.setItem(notifiedKey, JSON.stringify(notified));
+    },
+
+    playLeadChime() {
+        try {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            const ctx = new AudioCtx();
+            
+            const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+            notes.forEach((freq, idx) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = "sine";
+                osc.frequency.value = freq;
+                
+                const startTime = ctx.currentTime + (idx * 0.08);
+                const duration = 0.25;
+                
+                gain.gain.setValueAtTime(0.15, startTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.start(startTime);
+                osc.stop(startTime + duration);
+            });
+        } catch (e) {
+            console.warn("Sintetizador de áudio não suportado ou bloqueado:", e);
+        }
+    },
+
+    showNewLeadToast(detail = {}) {
+        this.playLeadChime();
+
+        const oldToast = document.getElementById("vellia-new-lead-toast");
+        if (oldToast) oldToast.remove();
+
+        const toast = document.createElement("div");
+        toast.id = "vellia-new-lead-toast";
+        toast.style.cssText = `
+            position: fixed; top: 20px; right: 20px; z-index: 99999;
+            background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.2); border-left: 4px solid #22c55e;
+            border-radius: 14px; padding: 14px 18px; min-width: 320px; max-width: 400px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4); display: flex; flex-direction: column; gap: 8px;
+            animation: vellia-slide-in 0.4s cubic-bezier(0.4,0,0.2,1); font-family: 'Inter', sans-serif; color: #fff;
+        `;
+
+        const contactName = detail.contact || detail.company || "Novo Lead";
+        const companyName = detail.company || "Empresa";
+        const sourceName = detail.source || "Meta Ads / Web";
+        const leadId = detail.leadId || detail.id;
+
+        toast.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 18px;">🚨</span>
+                    <span style="font-size: 11px; font-weight: 800; background: rgba(34, 197, 94, 0.2); color: #4ade80; padding: 2px 8px; border-radius: 999px; text-transform: uppercase;">
+                        NOVO LEAD (${sourceName})
+                    </span>
+                </div>
+                <button type="button" class="btn-close-toast" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 16px;">&times;</button>
+            </div>
+            <div>
+                <div style="font-weight: 800; font-size: 14px; color: #f8fafc; margin-bottom: 2px;">${companyName}</div>
+                <div style="font-size: 12px; color: #cbd5e1;">Contato: ${contactName}</div>
+            </div>
+            <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
+                <button type="button" class="btn-attend-lead-action" style="background: linear-gradient(135deg, #22c55e, #16a34a); border: none; color: #fff; font-size: 12px; font-weight: 800; padding: 6px 14px; border-radius: 8px; cursor: pointer;">
+                    ⚡ Atender Lead Agora
+                </button>
+            </div>
+        `;
+
+        document.body.appendChild(toast);
+
+        const btnClose = toast.querySelector(".btn-close-toast");
+        if (btnClose) btnClose.onclick = () => toast.remove();
+
+        const btnAttend = toast.querySelector(".btn-attend-lead-action");
+        if (btnAttend) {
+            btnAttend.onclick = () => {
+                toast.remove();
+                if (leadId && window.CRM) {
+                    window.location.hash = "#crm";
+                    setTimeout(() => window.CRM.openLeadDrawer(leadId), 150);
+                }
+            };
+        }
+
+        setTimeout(() => {
+            if (toast.parentElement) toast.remove();
+        }, 10000);
     }
 };

@@ -645,12 +645,25 @@ Escreva em formato Markdown limpo. Use emojis amigáveis no estilo do CRM.
 Pergunta do usuário: "${text}"
 `;
 
-                const res = await fetch(`/api/gemini-proxy`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ model: 'gemini-2.5-flash', contents: [{ parts: [{ text: crmSummaryPrompt }] }]
-                    })
-                });
+                let res;
+                const userApiKey = localStorage.getItem("vellia_gemini_api_key") || localStorage.getItem("gemini_api_key");
+
+                if (userApiKey && userApiKey.trim()) {
+                    const directUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userApiKey.trim()}`;
+                    res = await fetch(directUrl, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: crmSummaryPrompt }] }]
+                        })
+                    });
+                } else {
+                    res = await fetch(`/api/gemini-proxy`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ model: 'gemini-2.5-flash', contents: [{ parts: [{ text: crmSummaryPrompt }] }] })
+                    });
+                }
 
                 if (!res.ok) {
                     throw new Error(`HTTP error! status: ${res.status}`);

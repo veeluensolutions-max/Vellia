@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Vellia AI — Lead Score & Next Best Action Engine
  * Integracao Gemini 2.0 + Engine Heuristico Fallback de Alta Precisao
  */
@@ -132,7 +132,7 @@ Responda ESTRITAMENTE em formato JSON com o seguinte schema:
 }`;
 
         try {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
             const res = await fetch(url, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -154,7 +154,7 @@ Responda ESTRITAMENTE em formato JSON com o seguinte schema:
                     label: parsed.label || "Analisado por IA",
                     summary: parsed.summary || "Analise concluida com sucesso.",
                     nextAction: parsed.nextAction || "Fazer follow-up com o cliente.",
-                    source: "Gemini 2.0 AI"
+                    source: "Gemini 2.5 Flash AI"
                 };
             }
         } catch (err) {
@@ -240,7 +240,7 @@ Responda ESTRITAMENTE em formato JSON com o seguinte schema:
         }
 
         const apiKey = this.getApiKey();
-        const sourceBadge = apiKey ? `⚡ Gemini 2.0 AI` : `🧠 Smart Rules Engine`;
+        const sourceBadge = apiKey ? `⚡ Gemini 2.5 Flash AI` : `🧠 Smart Rules Engine`;
 
         container.innerHTML = `
             <div style="background: var(--bg-card, #1e293b); border: 1px solid var(--border-color, #334155); border-radius: 12px; padding: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">

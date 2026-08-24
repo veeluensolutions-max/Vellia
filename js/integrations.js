@@ -19,7 +19,7 @@ export const Integrations = {
         container.innerHTML = `
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
                 <!-- Meta Ads Card -->
-                <div class="card stat-card" style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="card stat-card" style="display: flex; flex-direction: column; gap: 16px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
                     <div style="display: flex; align-items: center; gap: 12px;">
                         <div style="width: 48px; height: 48px; border-radius: var(--radius-md); background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center;">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
@@ -30,7 +30,7 @@ export const Integrations = {
                         </div>
                     </div>
                     
-                    <div style="background: var(--bg-body); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                    <div style="background: rgba(255, 255, 255, 0.5); padding: 12px; border-radius: var(--radius-md); border: 1px solid rgba(255, 255, 255, 0.8);">
                         <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 8px 0;">URL do Webhook para configurar na campanha:</p>
                         <div style="display: flex; gap: 8px;">
                             <input type="text" class="form-control" value="https://velliacrm.vercel.app/api/meta-webhook" readonly style="font-size: 12px; background: var(--bg-app); cursor: copy;" id="webhook-url-input">
@@ -68,7 +68,7 @@ export const Integrations = {
                 </div>
 
                 <!-- WhatsApp API Card -->
-                <div class="card stat-card" style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="card stat-card" style="display: flex; flex-direction: column; gap: 16px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
                     <div style="display: flex; align-items: center; gap: 12px;">
                         <div style="width: 48px; height: 48px; border-radius: var(--radius-md); background: #dcfce7; color: #16a34a; display: flex; align-items: center; justify-content: center;">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -79,7 +79,7 @@ export const Integrations = {
                         </div>
                     </div>
 
-                    <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; background: var(--bg-body); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                    <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; background: rgba(255, 255, 255, 0.5); border-radius: var(--radius-md); border: 1px solid rgba(255, 255, 255, 0.8);">
                         <div class="form-group" style="margin-bottom: 8px;">
                             <label style="font-size: 11px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">URL do Servidor / Gateway</label>
                             <input type="text" id="wa-api-url" class="form-control" style="font-size: 12px; height: 32px; padding: 6px 10px;" value="${config.apiUrl}" placeholder="https://api.z-api.io">
@@ -108,18 +108,18 @@ export const Integrations = {
                 </div>
 
                 <!-- Google Gemini AI Card -->
-                <div class="card stat-card" style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="card stat-card" style="display: flex; flex-direction: column; gap: 16px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
                     <div style="display: flex; align-items: center; gap: 12px;">
                         <div style="width: 48px; height: 48px; border-radius: var(--radius-md); background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 22px;">
                             🤖
                         </div>
                         <div>
-                            <h3 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0;">Google Gemini 2.0 AI</h3>
+                            <h3 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0;">Google Gemini 2.5 Flash AI</h3>
                             <span style="font-size: 12px; color: var(--text-muted);">Lead Scoring & Análise Preditiva</span>
                         </div>
                     </div>
 
-                    <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; background: var(--bg-body); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                    <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; background: rgba(255, 255, 255, 0.5); border-radius: var(--radius-md); border: 1px solid rgba(255, 255, 255, 0.8);">
                         <div class="form-group" style="margin-bottom: 0;">
                             <label style="font-size: 11px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Chave API do Gemini (Google AI Studio)</label>
                             <input type="password" id="gemini-api-key-input" class="form-control" style="font-size: 12px; height: 34px; padding: 6px 10px;" placeholder="AIzaSy..." value="${localStorage.getItem('vellia_gemini_api_key') || ''}">
@@ -130,7 +130,7 @@ export const Integrations = {
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <span>Status da Inteligência</span>
                             <span id="gemini-status-badge" class="badge" style="${localStorage.getItem('vellia_gemini_api_key') ? 'background: #dcfce7; color: #16a34a;' : 'background: #e0f2fe; color: #0284c7;'} font-size: 11px;">
-                                ${localStorage.getItem('vellia_gemini_api_key') ? '⚡ Gemini 2.0 Ativo' : '🧠 Smart Rules Active'}
+                                ${localStorage.getItem('vellia_gemini_api_key') ? '⚡ Gemini 2.5 Flash Ativo' : '🧠 Smart Rules Active'}
                             </span>
                         </div>
                     </div>
@@ -141,7 +141,7 @@ export const Integrations = {
                 </div>
 
                 <!-- Vellia Docs Card -->
-                <div class="card stat-card" style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="card stat-card" style="display: flex; flex-direction: column; gap: 16px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
                     <div style="display: flex; align-items: center; gap: 12px;">
                         <div style="width: 48px; height: 48px; border-radius: var(--radius-md); background: #f5f3ff; color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 22px;">
                             📄
@@ -152,7 +152,7 @@ export const Integrations = {
                         </div>
                     </div>
 
-                    <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; background: var(--bg-body); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                    <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; background: rgba(255, 255, 255, 0.5); border-radius: var(--radius-md); border: 1px solid rgba(255, 255, 255, 0.8);">
                         <div class="form-group" style="margin-bottom: 8px;">
                             <label style="font-size: 11px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">URL da API do Vellia Docs</label>
                             <input type="text" id="docs-api-url-input" class="form-control" style="font-size: 12px; height: 32px; padding: 6px 10px;" value="${localStorage.getItem('vellia_docs_api_url') || 'http://localhost:3001'}" placeholder="http://localhost:3001">
@@ -179,7 +179,7 @@ export const Integrations = {
             </div>
 
             <!-- AI AUTOPILOT CONSOLE -->
-            <div class="autopilot-container" id="ai-autopilot-panel">
+            <div class="autopilot-container" id="ai-autopilot-panel" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05); border-radius: 16px; padding: 24px; margin-top: 24px;">
                 <h3 style="font-size: 15px; font-weight: 800; color: var(--text-primary); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
                     <span>🛰️</span> Painel do Piloto Automático SDR AI
                 </h3>
@@ -204,7 +204,7 @@ export const Integrations = {
             </div>
 
             <!-- Webhook Sandbox Panel -->
-            <div class="card" style="margin-top: 24px; padding: 24px; border-left: 4px solid var(--primary); display: flex; flex-direction: column; gap: 16px;">
+            <div class="card" style="margin-top: 24px; padding: 24px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); border-left: 4px solid var(--primary); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05); display: flex; flex-direction: column; gap: 16px;">
                 <div>
                     <h3 style="font-weight: 800; font-size: 15px; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 8px;">
                         <span>🛠️</span> Meta Webhook Developer Sandbox (Simulador de Endpoints)

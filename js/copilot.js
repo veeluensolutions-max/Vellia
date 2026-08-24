@@ -215,18 +215,32 @@ Instruções importantes para suas respostas:
 Pergunta: "${query}"
 `;
 
-            const res = await fetch("/api/gemini-proxy", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    model: "gemini-2.5-flash",
-                    contents: [
-                        { parts: [{ text: promptPayload }] }
-                    ]
-                })
-            });
+            let res;
+            const userApiKey = localStorage.getItem("vellia_gemini_api_key") || localStorage.getItem("gemini_api_key");
+
+            if (userApiKey && userApiKey.trim()) {
+                // Se o usuário possui chave API configurada no localStorage, chama o Gemini 2.5 Flash diretamente
+                const directUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userApiKey.trim()}`;
+                res = await fetch(directUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: promptPayload }] }]
+                    })
+                });
+            } else {
+                // Tenta pelo proxy serverless do Vercel
+                res = await fetch("/api/gemini-proxy", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        model: "gemini-2.5-flash",
+                        contents: [
+                            { parts: [{ text: promptPayload }] }
+                        ]
+                    })
+                });
+            }
 
             this.removeTypingSkeleton();
 
@@ -235,12 +249,14 @@ Pergunta: "${query}"
                 const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Desculpe, não consegui gerar a resposta.";
                 this.appendMessage(text, false);
             } else {
-                this.appendMessage("Houve uma falha ao comunicar com a IA do Gemini. Verifique os logs e tente novamente.", false);
+                const errorData = await res.json().catch(() => ({}));
+                console.error("Erro na resposta Gemini:", errorData);
+                this.appendMessage("⚠️ **Falha na conexão com Gemini 2.5 Flash**\n\nPor favor, cadastre sua Chave de API do Gemini na aba **Integrações** (ou configure a variável `GEMINI_API_KEY` na Vercel) para ativar o Copiloto em tempo real.", false);
             }
         } catch (e) {
             console.error("Erro ao enviar mensagem para o Copiloto:", e);
             this.removeTypingSkeleton();
-            this.appendMessage("Erro de conexão. Verifique sua rede ou o servidor e tente novamente.", false);
+            this.appendMessage("Erro de conexão. Verifique sua rede ou cadastre sua Chave de API na aba Integrações.", false);
         }
     }
 };

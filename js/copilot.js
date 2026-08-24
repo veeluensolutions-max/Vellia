@@ -251,12 +251,73 @@ Pergunta: "${query}"
             } else {
                 const errorData = await res.json().catch(() => ({}));
                 console.error("Erro na resposta Gemini:", errorData);
-                this.appendMessage("⚠️ **Falha na conexão com Gemini 2.5 Flash**\n\nPor favor, cadastre sua Chave de API do Gemini na aba **Integrações** (ou configure a variável `GEMINI_API_KEY` na Vercel) para ativar o Copiloto em tempo real.", false);
+                this.appendKeyPromptMessage(query);
             }
         } catch (e) {
             console.error("Erro ao enviar mensagem para o Copiloto:", e);
             this.removeTypingSkeleton();
-            this.appendMessage("Erro de conexão. Verifique sua rede ou cadastre sua Chave de API na aba Integrações.", false);
+            this.appendKeyPromptMessage(query);
+        }
+    },
+
+    appendKeyPromptMessage(lastQuery = "") {
+        if (!this.history) return;
+
+        const msgDiv = document.createElement("div");
+        msgDiv.className = "copilot-msg assistant";
+
+        msgDiv.innerHTML = `
+            <div class="copilot-msg-avatar">🔑</div>
+            <div class="copilot-msg-bubble" style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 12px; padding: 14px;">
+                <div style="font-weight: 700; color: var(--primary); font-size: 13px; margin-bottom: 6px;">⚡ Ativar Copiloto Gemini 2.5 Flash</div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.4;">
+                    Cole abaixo sua Chave de API do Google AI Studio (começa com <code>AIzaSy...</code>) para ativar o assistente em tempo real instantaneamente:
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <input type="password" id="copilot-inline-key-input" class="form-control" placeholder="Cole sua chave AIzaSy..." style="font-size: 12px; height: 34px; flex: 1;">
+                    <button type="button" id="btn-save-inline-copilot-key" class="btn btn-primary" style="height: 34px; font-size: 12px; padding: 0 14px; white-space: nowrap;">
+                        Ativar Agora 🚀
+                    </button>
+                </div>
+            </div>
+        `;
+
+        this.history.appendChild(msgDiv);
+        this.history.scrollTop = this.history.scrollHeight;
+
+        const keyInput = msgDiv.querySelector("#copilot-inline-key-input");
+        const btnSave = msgDiv.querySelector("#btn-save-inline-copilot-key");
+
+        if (btnSave && keyInput) {
+            btnSave.addEventListener("click", () => {
+                const keyVal = keyInput.value.trim();
+                if (!keyVal) {
+                    alert("Por favor, cole uma Chave de API válida do Gemini.");
+                    return;
+                }
+
+                localStorage.setItem("vellia_gemini_api_key", keyVal);
+                localStorage.setItem("gemini_api_key", keyVal);
+
+                // Atualizar também input da página de Integrações se existir
+                const mainKeyInput = document.getElementById("gemini-api-key-input");
+                if (mainKeyInput) mainKeyInput.value = keyVal;
+
+                const statusBadge = document.getElementById("gemini-status-badge");
+                if (statusBadge) {
+                    statusBadge.style.background = "#dcfce7";
+                    statusBadge.style.color = "#16a34a";
+                    statusBadge.textContent = "⚡ Gemini 2.5 Flash Ativo";
+                }
+
+                this.appendMessage("✅ **Chave API do Gemini 2.5 Flash salva com sucesso!** Conexão ativada em tempo real.", false);
+
+                // Executar novamente a consulta caso existente
+                if (lastQuery) {
+                    if (this.input) this.input.value = lastQuery;
+                    this.handleSend();
+                }
+            });
         }
     }
 };

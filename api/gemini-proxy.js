@@ -1,4 +1,4 @@
-﻿// api/gemini-proxy.js
+// api/gemini-proxy.js
 // Serverless function - Proxy seguro para a API do Gemini
 // A chave GEMINI_API_KEY fica salva nas variaveis de ambiente do Vercel (nunca exposta no codigo)
 
@@ -16,13 +16,14 @@ export default async function handler(req, res) {
 
     res.setHeader('Access-Control-Allow-Origin', '*');
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const { model = 'gemini-2.5-flash', contents, userApiKey } = req.body || {};
+    const apiKey = process.env.GEMINI_API_KEY || userApiKey;
+    
     if (!apiKey) {
-        return res.status(500).json({ error: 'API key not configured on server.' });
+        return res.status(400).json({ error: 'API key not configured on server nor provided in request.' });
     }
 
     try {
-        const { model = 'gemini-2.5-flash', contents } = req.body;
 
         if (!contents) {
             return res.status(400).json({ error: 'Missing "contents" in request body.' });

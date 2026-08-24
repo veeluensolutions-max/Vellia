@@ -14,6 +14,7 @@ export const Calendar = {
 
     init() {
         this.render();
+        this.renderRemindersWidget();
         this.bindEvents();
     },
 
@@ -585,6 +586,105 @@ export const Calendar = {
             alert("✅ Data destravada com sucesso!");
             this.render();
         }
+    },
+
+    renderRemindersWidget() {
+        const container = document.getElementById("calendar-reminders-widget");
+        if (!container) return;
+
+        const events = this.getEvents();
+        const now = new Date();
+        const todayStr = now.toISOString().split("T")[0];
+
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowStr = tomorrow.toISOString().split("T")[0];
+
+        const upcomingEvents = events.filter(e => {
+            if (e.status === "cancelado" || e.status === "recusado") return false;
+            return e.date === todayStr || e.date === tomorrowStr;
+        });
+
+        const sentList = JSON.parse(localStorage.getItem("vellia_reminders_sent") || "[]");
+
+        container.innerHTML = `
+            <div class="card" style="margin-bottom: 24px; padding: 20px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05); border-radius: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(99, 102, 241, 0.12); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                            ⏰
+                        </div>
+                        <div>
+                            <h3 style="font-size: 15px; font-weight: 800; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 8px;">
+                                Lembretes Automáticos de Agenda & Vistorias
+                            </h3>
+                            <span style="font-size: 12px; color: var(--text-muted);">Compromissos e confirmações de WhatsApp previstos para hoje e amanhã</span>
+                        </div>
+                    </div>
+                </div>
+
+                ${upcomingEvents.length === 0 ? `
+                    <div style="text-align: center; padding: 16px; color: var(--text-muted); font-size: 13px;">
+                        🟢 Nenhum compromisso agendado para hoje ou amanhã.
+                    </div>
+                ` : `
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        ${upcomingEvents.map(ev => {
+                            const isSent = sentList.includes(ev.id);
+                            const isToday = ev.date === todayStr;
+                            const formattedDate = ev.date ? ev.date.split("-").reverse().join("/") : "";
+                            const badgeBg = isToday ? "rgba(239, 68, 68, 0.12)" : "rgba(245, 158, 11, 0.12)";
+                            const badgeColor = isToday ? "#ef4444" : "#d97706";
+                            const dayLabel = isToday ? "HOJE" : "AMANHÃ";
+
+                            return `
+                                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(255, 255, 255, 0.6); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.9); flex-wrap: wrap; gap: 8px;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="font-size: 11px; padding: 3px 8px; border-radius: 6px; background: ${badgeBg}; color: ${badgeColor}; font-weight: 800;">
+                                            ${dayLabel} (${formattedDate})
+                                        </span>
+                                        <div>
+                                            <div style="font-weight: 700; font-size: 13px; color: var(--text-primary);">${ev.title}</div>
+                                            <div style="font-size: 11px; color: var(--text-muted);">${ev.company} • ${ev.contact || 'Cliente'} (${ev.time || '09:00'})</div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <button type="button" class="btn btn-outline btn-sm" onclick="window.Calendar.sendWhatsAppReminder('${ev.id}')" style="font-size: 11.5px; padding: 4px 12px; border-color: #25d366; color: #15803d; font-weight: 700; background: rgba(37, 211, 102, 0.08);">
+                                            ${isSent ? "✓ Confirmado via WA" : "💬 Enviar Lembrete WA"}
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join("")}
+                    </div>
+                `}
+            </div>
+        `;
+    },
+
+    sendWhatsAppReminder(eventId) {
+        const events = this.getEvents();
+        const ev = events.find(e => e.id === eventId);
+        if (!ev) return;
+
+        const rawPhone = ev.phone || "";
+        const cleanPhone = rawPhone.replace(/\D/g, "");
+        const formattedDate = ev.date ? ev.date.split("-").reverse().join("/") : "breve";
+
+        const msg = `Olá ${ev.contact || 'tudo bem'}! Passando para confirmar nosso compromisso agendado:\n\n📌 *${ev.title}*\n🏢 *Empresa:* ${ev.company}\n📅 *Data:* ${formattedDate} às ${ev.time || '09:00'}\n\nCaso precise de qualquer ajuste de horário, por favor responda por aqui. Grande abraço! 🗓️`;
+
+        const encoded = encodeURIComponent(msg);
+        const waUrl = cleanPhone ? `https://wa.me/55${cleanPhone}?text=${encoded}` : `https://wa.me/?text=${encoded}`;
+        
+        window.open(waUrl, "_blank");
+
+        const sentList = JSON.parse(localStorage.getItem("vellia_reminders_sent") || "[]");
+        if (!sentList.includes(eventId)) {
+            sentList.push(eventId);
+            localStorage.setItem("vellia_reminders_sent", JSON.stringify(sentList));
+        }
+
+        this.renderRemindersWidget();
     }
 };
 

@@ -22,6 +22,10 @@ export const Proposals = {
         const btnNew = document.getElementById("btn-new-proposal");
         if (btnNew) btnNew.addEventListener("click", () => this.openModal());
 
+        // Botão Ditado por Voz IA
+        const btnVoice = document.getElementById("btn-voice-dictation-proposal");
+        if (btnVoice) btnVoice.addEventListener("click", () => this.startVoiceProposalDictation());
+
         // Botão Exportar PDF
         const btnExportPDF = document.getElementById("btn-export-pdf-report");
         if (btnExportPDF) {
@@ -1277,5 +1281,122 @@ Seja profissional, direto e use uma linguagem persuasiva focada em fechamento co
 
         this.openOnlineApprovalView(activeProposalId);
         alert(`🎉 Parabéns! Proposta da empresa ${proposal.company} aceita e assinada digitalmente com sucesso!\n\nStatus atualizado para GANHO e Lead convertido no CRM.`);
+    },
+
+    startVoiceProposalDictation() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert("A API de Ditado de Voz (SpeechRecognition) não é suportada por este navegador. Recomendamos usar o Google Chrome ou Microsoft Edge.");
+            return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.lang = "pt-BR";
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        let toast = document.createElement("div");
+        toast.id = "voice-dictation-banner";
+        toast.style.cssText = `
+            position: fixed; top: 25px; left: 50%; transform: translateX(-50%); z-index: 99999;
+            background: linear-gradient(135deg, #1e1b4b, #312e81); border: 2px solid #818cf8;
+            color: #fff; padding: 14px 24px; border-radius: 99px; box-shadow: 0 10px 40px rgba(99,102,241,0.5);
+            display: flex; align-items: center; gap: 12px; font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 13.5px; font-weight: 700; animation: pulse 1.5s infinite alternate;
+        `;
+        toast.innerHTML = `
+            <span style="font-size: 18px;">🔴</span>
+            <span>Escutando... Fale os detalhes da proposta (ex: "Proposta para Empresa X, serviço Y, valor 10 mil")</span>
+        `;
+        document.body.appendChild(toast);
+
+        recognition.start();
+
+        recognition.onresult = async (event) => {
+            const transcript = event.results[0][0].transcript;
+            if (toast) {
+                toast.innerHTML = `<span>🧠 Processando via IA Gemini 2.5 Flash: "${transcript}"</span>`;
+            }
+
+            try {
+                const prompt = `
+Você é um assistente de CRM de vendas.
+Extraia os dados da proposta comercial contidos na seguinte transcrição de áudio:
+
+TRANSCRIÇÃO: "${transcript}"
+
+Responda ESTRITAMENTE em formato JSON com o seguinte schema (sem markdown ou texto adicional):
+{
+  "company": "Nome da empresa ou cliente mencionado",
+  "serviceTitle": "Título do serviço ou produto",
+  "value": 0000,
+  "notes": "Resumo dos pontos importantes"
+}
+`;
+
+                const userApiKey = localStorage.getItem("vellia_gemini_api_key") || localStorage.getItem("gemini_api_key");
+                let res;
+
+                if (userApiKey && userApiKey.trim()) {
+                    const directUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userApiKey.trim()}`;
+                    res = await fetch(directUrl, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+                } else {
+                    res = await fetch("/api/gemini-proxy", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            model: "gemini-2.5-flash",
+                            contents: [{ parts: [{ text: prompt }] }]
+                        })
+                    });
+                }
+
+                if (res.ok) {
+                    const data = await res.json();
+                    let rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                    rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
+                    const parsed = JSON.parse(rawText);
+
+                    if (parsed) {
+                        this.openModal();
+                        setTimeout(() => {
+                            const compInput = document.getElementById("proposal-company");
+                            const valInput = document.getElementById("proposal-value");
+                            const titleInput = document.getElementById("proposal-title");
+                            const notesInput = document.getElementById("proposal-notes");
+
+                            if (compInput && parsed.company) compInput.value = parsed.company;
+                            if (valInput && parsed.value) valInput.value = parsed.value;
+                            if (titleInput && parsed.serviceTitle) titleInput.value = parsed.serviceTitle;
+                            if (notesInput && parsed.notes) notesInput.value = parsed.notes;
+
+                            alert("✨ Formulário de proposta preenchido via ditado por voz!");
+                        }, 200);
+                    }
+                }
+            } catch (err) {
+                console.error("Erro na extração de áudio via IA:", err);
+                alert(`Transcrição capturada: "${transcript}". Abrindo formulário...`);
+                this.openModal();
+            } finally {
+                if (toast) toast.remove();
+            }
+        };
+
+        recognition.onerror = (e) => {
+            console.error("Erro no reconhecimento de voz:", e);
+            if (toast) toast.remove();
+            alert("Não foi possível capturar o áudio. Por favor, verifique a permissão do microfone.");
+        };
+
+        recognition.onend = () => {
+            setTimeout(() => {
+                if (toast && toast.parentElement) toast.remove();
+            }, 3000);
+        };
     }
 };

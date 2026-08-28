@@ -4312,6 +4312,124 @@
         </form>
     </div>
 
+    <!-- Modal: Detalhes do Usuário (Status, Login, Presença e Ações) -->
+    <div id="user-details-modal-overlay" class="modal-overlay" style="z-index:1150; display:none; backdrop-filter: blur(8px);"></div>
+    <div id="user-details-modal" class="modal" style="z-index:1151; max-width: 620px; width: 95%; display:none; background: var(--bg-card, #1e293b); border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4); border-radius: 20px; padding: 0; overflow: hidden;">
+        <!-- Cabeçalho do Modal com Banner e Avatar -->
+        <div style="background: linear-gradient(135deg, rgba(99,102,241,0.2) 0%, rgba(139,92,246,0.1) 100%); padding: 24px; border-bottom: 1px solid var(--border-color); position: relative;">
+            <button id="btn-close-user-details" class="btn-icon-close" aria-label="Fechar" style="position: absolute; top: 16px; right: 16px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-primary);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+
+            <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                <div style="position: relative;">
+                    <div id="user-detail-avatar" style="width: 58px; height: 58px; border-radius: 16px; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; color: #fff; box-shadow: 0 8px 20px rgba(99,102,241,0.3);">
+                        AD
+                    </div>
+                    <span id="user-detail-presence-dot" style="position: absolute; bottom: -2px; right: -2px; width: 14px; height: 14px; border-radius: 50%; background: #10b981; border: 3px solid var(--bg-card, #1e293b);"></span>
+                </div>
+                <div style="flex: 1; min-width: 200px;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;">
+                        <h3 id="user-detail-name" style="margin: 0; font-size: 18px; font-weight: 800; color: var(--text-primary);">Nome do Usuário</h3>
+                        <span id="user-detail-self-tag" style="display:none; font-size: 10px; color: var(--primary); font-weight: 700; background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3); padding: 2px 7px; border-radius: 6px;">Você (Sessão Atual)</span>
+                    </div>
+                    <div style="font-size: 13px; color: var(--text-secondary); font-family: monospace; margin-bottom: 8px;" id="user-detail-email">usuario@vellia.com</div>
+                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                        <span id="user-detail-role-badge" class="badge">Administrador</span>
+                        <span id="user-detail-company-badge" style="font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 6px; background: rgba(0,0,0,0.1); color: var(--text-secondary);">Ambas as Empresas</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Corpo do Modal -->
+        <div style="padding: 24px; max-height: 70vh; overflow-y: auto; display: flex; flex-direction: column; gap: 20px;">
+            
+            <!-- Bloco 1: Status de Presença e Login em Tempo Real -->
+            <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 14px; padding: 16px;">
+                <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                    <span>📶</span> Status de Conexão & Sessão
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;">
+                    <div style="background: var(--bg-card); padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-color);">
+                        <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">Status de Presença</div>
+                        <div id="user-detail-presence-badge" style="font-weight: 700; font-size: 13px; color: #10b981;">🟢 Online Agora</div>
+                    </div>
+                    <div style="background: var(--bg-card); padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-color);">
+                        <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">Último Login Realizado</div>
+                        <div id="user-detail-last-login" style="font-weight: 700; font-size: 12.5px; color: var(--text-primary);">Hoje às 09:35</div>
+                    </div>
+                    <div style="background: var(--bg-card); padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-color);">
+                        <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">Tempo de Inatividade</div>
+                        <div id="user-detail-elapsed" style="font-weight: 700; font-size: 12.5px; color: var(--text-secondary);">Ativo agora</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bloco 2: Métricas Comerciais e Atividades -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 14px; padding: 16px;">
+                    <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                        <span>👥</span> Carteira de Leads
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
+                        <span style="font-size: 13px; color: var(--text-secondary);">Leads Atribuídos:</span>
+                        <span id="user-detail-leads-count" style="font-size: 16px; font-weight: 800; color: var(--text-primary);">0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                        <span style="font-size: 12px; color: var(--text-muted);">Em Negociação:</span>
+                        <span id="user-detail-leads-negotiating" style="font-size: 13px; font-weight: 700; color: #f59e0b;">0</span>
+                    </div>
+                </div>
+
+                <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 14px; padding: 16px;">
+                    <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                        <span>💼</span> Propostas Comerciais
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
+                        <span style="font-size: 13px; color: var(--text-secondary);">Total Propostas:</span>
+                        <span id="user-detail-props-count" style="font-size: 16px; font-weight: 800; color: var(--text-primary);">0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                        <span style="font-size: 12px; color: var(--text-muted);">Valor em Pipeline:</span>
+                        <span id="user-detail-props-value" style="font-size: 13px; font-weight: 700; color: var(--success);">R$ 0,00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bloco 3: Últimas Atividades / Logs -->
+            <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 14px; padding: 16px;">
+                <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                    <span>📜</span> Últimas Atividades Registradas
+                </div>
+                <div id="user-detail-logs-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 140px; overflow-y: auto;">
+                    <!-- Preenchido via JS -->
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Rodapé do Modal com Ações Rápidas -->
+        <div style="padding: 16px 24px; background: var(--bg-surface); border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button type="button" id="btn-user-detail-toggle-status" class="btn btn-outline btn-sm" style="font-size: 12px; gap: 6px;">
+                    ⚡ Alternar Status
+                </button>
+                <button type="button" id="btn-user-detail-reset-pwd" class="btn btn-outline btn-sm" style="font-size: 12px; border-color: rgba(234,179,8,0.4); color: #eab308; gap: 6px;">
+                    🔑 Resetar Senha
+                </button>
+                <button type="button" id="btn-user-detail-pdf" class="btn btn-outline btn-sm" style="font-size: 12px; border-color: rgba(59,130,246,0.4); color: #3b82f6; gap: 6px;">
+                    📄 Relatório PDF
+                </button>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" id="btn-user-detail-edit" class="btn btn-primary btn-sm" style="font-size: 12px; gap: 6px;">
+                    ✏️ Editar Usuário
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal: Cadastro/Edição de Usuários -->
     <div id="users-modal-overlay" class="modal-overlay" style="z-index:1100;"></div>
     <div id="user-config-modal" class="modal" style="z-index:1101; max-width: 500px; background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">

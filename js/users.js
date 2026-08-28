@@ -331,12 +331,38 @@ export const Users = {
             `;
             tr.appendChild(tdLeads);
 
+            // Tornar a linha clicável para abrir a janela de status e opções
+            tr.style.cursor = "pointer";
+            tr.title = `Clique para ver o status, horário de login e opções de ${user.name}`;
+            tr.onclick = (e) => {
+                if (!e.target.closest("button") && !e.target.closest("a")) {
+                    this.openUserDetailsModal(user.id);
+                }
+            };
+
             // Coluna de Ações
             const tdActions = document.createElement("td");
             tdActions.style.cssText = "padding: 14px 16px; text-align: right;";
             
             const actionsDiv = document.createElement("div");
             actionsDiv.style.cssText = "display: flex; gap: 6px; justify-content: flex-end; align-items: center;";
+
+            // Botão Ver Status e Detalhes
+            const viewBtn = document.createElement("button");
+            viewBtn.title = "Abrir Janela de Status, Login e Opções de Uso";
+            viewBtn.className = "user-action-btn user-action-info";
+            viewBtn.style.cssText = `
+                width: 32px; height: 32px; border-radius: 8px; border: 1px solid rgba(99, 102, 241, 0.3);
+                background: rgba(99, 102, 241, 0.08); color: var(--primary);
+                display: flex; align-items: center; justify-content: center;
+                cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+            `;
+            viewBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`;
+            viewBtn.onclick = (e) => {
+                e.stopPropagation();
+                this.openUserDetailsModal(user.id);
+            };
+            actionsDiv.appendChild(viewBtn);
 
             // Botão Editar
             const editBtn = document.createElement("button");
@@ -349,7 +375,10 @@ export const Users = {
                 cursor: pointer; transition: all 0.2s; flex-shrink: 0;
             `;
             editBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
-            editBtn.onclick = () => this.openEditModal(user.id);
+            editBtn.onclick = (e) => {
+                e.stopPropagation();
+                this.openEditModal(user.id);
+            };
             actionsDiv.appendChild(editBtn);
 
             // Botão Reset Senha
@@ -363,7 +392,10 @@ export const Users = {
                 cursor: pointer; transition: all 0.2s; flex-shrink: 0;
             `;
             resetBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
-            resetBtn.onclick = () => this.resetPassword(user.id);
+            resetBtn.onclick = (e) => {
+                e.stopPropagation();
+                this.resetPassword(user.id);
+            };
             actionsDiv.appendChild(resetBtn);
 
             // Botão Relatório PDF
@@ -377,7 +409,8 @@ export const Users = {
                 cursor: pointer; transition: all 0.2s; flex-shrink: 0;
             `;
             reportBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`;
-            reportBtn.onclick = () => {
+            reportBtn.onclick = (e) => {
+                e.stopPropagation();
                 reportBtn.disabled = true;
                 reportBtn.style.opacity = "0.5";
                 try { generatePerformancePDF(user.email); } catch(e) { alert("Erro ao gerar PDF: " + e.message); }
@@ -397,7 +430,10 @@ export const Users = {
                     cursor: pointer; transition: all 0.2s; flex-shrink: 0;
                 `;
                 deleteBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
-                deleteBtn.onclick = () => this.deleteUser(user.id, user.name);
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    this.deleteUser(user.id, user.name);
+                };
                 actionsDiv.appendChild(deleteBtn);
             }
 
@@ -758,5 +794,217 @@ export const Users = {
         `;
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3000);
+    },
+
+    openUserDetailsModal(userId) {
+        const user = Store.getUsers().find(u => u.id === userId);
+        if (!user) return;
+
+        const overlay = document.getElementById("user-details-modal-overlay");
+        const modal = document.getElementById("user-details-modal");
+        if (!overlay || !modal) return;
+
+        const isSelf = Auth.getCurrentUser()?.id === user.id;
+        const allLeads = Store.getLeads() || [];
+        const userLeads = allLeads.filter(l => l && l.owner === user.email);
+        const allProps = Store.getProposals() || [];
+        const userProps = allProps.filter(p => p && (p.owner === user.email || p.seller === user.name));
+        const allLogs = Store.getLogs() || [];
+        const userLogs = allLogs.filter(lg => lg && (lg.user === user.email || lg.details?.includes(user.name))).slice(-8).reverse();
+
+        // Presença e Login
+        const d = user.lastLoginAt ? new Date(user.lastLoginAt) : null;
+        let lastLoginFmt = "Nunca acessou";
+        let elapsedFmt = "Sem conexões registradas";
+        let statusPresence = "offline";
+        let badgeText = "⚪ Offline";
+        let dotColor = "#94a3b8";
+
+        if (isSelf) {
+            statusPresence = "online";
+            badgeText = "🟢 Online Agora (Sessão Ativa)";
+            dotColor = "#10b981";
+            lastLoginFmt = "Sessão Atual Conectada";
+            elapsedFmt = "Ativo neste navegador";
+        } else if (d) {
+            const diffMs = Date.now() - d.getTime();
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMins / 60);
+            const diffDays = Math.floor(diffHours / 24);
+
+            const isToday = new Date().toDateString() === d.toDateString();
+            const isYesterday = new Date(Date.now() - 86400000).toDateString() === d.toDateString();
+            const timeFmt = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+            
+            if (isToday) {
+                lastLoginFmt = `Hoje às ${timeFmt}`;
+            } else if (isYesterday) {
+                lastLoginFmt = `Ontem às ${timeFmt}`;
+            } else {
+                lastLoginFmt = `${d.toLocaleDateString("pt-BR")} às ${timeFmt}`;
+            }
+
+            if (diffMins < 5) {
+                statusPresence = "online";
+                badgeText = "🟢 Online Agora";
+                dotColor = "#10b981";
+                elapsedFmt = "Atividade nos últimos minutos";
+            } else if (diffMins < 15) {
+                statusPresence = "away";
+                badgeText = `🟡 Ausente (${diffMins} min)`;
+                dotColor = "#f59e0b";
+                elapsedFmt = `Inativo há ${diffMins} minutos`;
+            } else {
+                statusPresence = "offline";
+                badgeText = "⚪ Offline";
+                dotColor = "#94a3b8";
+                elapsedFmt = diffHours < 24 ? `Última conexão há ${diffHours}h` : `Última conexão há ${diffDays} dias`;
+            }
+        }
+
+        // Preencher Cabeçalho
+        const roleStyle = ROLE_STYLES[user.role] || ROLE_STYLES.seller;
+        const avatarGrad = AVATAR_GRADIENTS[user.role] || AVATAR_GRADIENTS.seller;
+        const avatarText = (user.avatar || user.name.substring(0, 2)).toUpperCase();
+
+        const elAvatar = document.getElementById("user-detail-avatar");
+        if (elAvatar) {
+            elAvatar.textContent = avatarText;
+            elAvatar.style.background = avatarGrad;
+        }
+
+        const elDot = document.getElementById("user-detail-presence-dot");
+        if (elDot) elDot.style.background = dotColor;
+
+        const elName = document.getElementById("user-detail-name");
+        if (elName) elName.textContent = user.name;
+
+        const elEmail = document.getElementById("user-detail-email");
+        if (elEmail) elEmail.textContent = user.email;
+
+        const selfTag = document.getElementById("user-detail-self-tag");
+        if (selfTag) selfTag.style.display = isSelf ? "inline-block" : "none";
+
+        const roleBadge = document.getElementById("user-detail-role-badge");
+        if (roleBadge) {
+            roleBadge.textContent = roleStyle.label;
+            roleBadge.style.background = roleStyle.bg;
+            roleBadge.style.color = roleStyle.color;
+            roleBadge.style.border = `1px solid ${roleStyle.border}`;
+        }
+
+        const companyBadge = document.getElementById("user-detail-company-badge");
+        if (companyBadge) companyBadge.textContent = user.companyAccess || "Ambas as Empresas";
+
+        // Bloco 1: Presença e Conexão
+        const elPresBadge = document.getElementById("user-detail-presence-badge");
+        if (elPresBadge) {
+            elPresBadge.textContent = badgeText;
+            elPresBadge.style.color = dotColor;
+        }
+
+        const elLastLogin = document.getElementById("user-detail-last-login");
+        if (elLastLogin) elLastLogin.textContent = lastLoginFmt;
+
+        const elElapsed = document.getElementById("user-detail-elapsed");
+        if (elElapsed) elElapsed.textContent = elapsedFmt;
+
+        // Bloco 2: Métricas Comerciais
+        const negotiatingLeads = userLeads.filter(l => l && !["Cliente Ganho", "Cliente Perdido"].includes(l.stage)).length;
+        const elLeadsCount = document.getElementById("user-detail-leads-count");
+        if (elLeadsCount) elLeadsCount.textContent = userLeads.length;
+
+        const elLeadsNeg = document.getElementById("user-detail-leads-negotiating");
+        if (elLeadsNeg) elLeadsNeg.textContent = `${negotiatingLeads} em andamento`;
+
+        const totalPropsVal = userProps.reduce((acc, p) => acc + (parseFloat(p.value) || 0), 0);
+        const elPropsCount = document.getElementById("user-detail-props-count");
+        if (elPropsCount) elPropsCount.textContent = userProps.length;
+
+        const elPropsVal = document.getElementById("user-detail-props-value");
+        if (elPropsVal) elPropsVal.textContent = totalPropsVal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+        // Bloco 3: Logs Recentes
+        const logsContainer = document.getElementById("user-detail-logs-list");
+        if (logsContainer) {
+            logsContainer.innerHTML = "";
+            if (userLogs.length === 0) {
+                logsContainer.innerHTML = `<div style="font-size: 12px; color: var(--text-muted); font-style: italic; padding: 4px 0;">Nenhuma atividade recente registrada nos logs para este usuário.</div>`;
+            } else {
+                userLogs.forEach(lg => {
+                    const logItem = document.createElement("div");
+                    logItem.style.cssText = "display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 12px;";
+                    const time = lg.timestamp ? new Date(lg.timestamp).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "";
+                    logItem.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
+                            <span style="font-size: 10px; font-weight: 700; color: var(--primary); background: rgba(99,102,241,0.12); padding: 2px 6px; border-radius: 4px; flex-shrink: 0;">${lg.action || "AÇÃO"}</span>
+                            <span style="color: var(--text-primary); max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${lg.details || ""}</span>
+                        </div>
+                        <span style="font-size: 11px; color: var(--text-muted); font-family: monospace; white-space: nowrap; margin-left: 8px;">${time}</span>
+                    `;
+                    logsContainer.appendChild(logItem);
+                });
+            }
+        }
+
+        // Rodapé de Ações
+        const btnToggleStatus = document.getElementById("btn-user-detail-toggle-status");
+        if (btnToggleStatus) {
+            const isActive = (user.status || "active") === "active";
+            btnToggleStatus.innerHTML = isActive ? "🔴 Desativar Conta" : "🟢 Ativar Conta";
+            btnToggleStatus.disabled = isSelf;
+            btnToggleStatus.style.opacity = isSelf ? "0.5" : "1";
+            btnToggleStatus.style.cursor = isSelf ? "not-allowed" : "pointer";
+            btnToggleStatus.onclick = () => {
+                this.toggleStatus(user.id);
+                this.openUserDetailsModal(user.id);
+            };
+        }
+
+        const btnResetPwd = document.getElementById("btn-user-detail-reset-pwd");
+        if (btnResetPwd) {
+            btnResetPwd.onclick = () => {
+                this.resetPassword(user.id);
+            };
+        }
+
+        const btnPdf = document.getElementById("btn-user-detail-pdf");
+        if (btnPdf) {
+            btnPdf.onclick = () => {
+                btnPdf.disabled = true;
+                btnPdf.style.opacity = "0.5";
+                try { generatePerformancePDF(user.email); } catch(e) { alert("Erro ao gerar PDF: " + e.message); }
+                setTimeout(() => { btnPdf.disabled = false; btnPdf.style.opacity = "1"; }, 1500);
+            };
+        }
+
+        const btnEdit = document.getElementById("btn-user-detail-edit");
+        if (btnEdit) {
+            btnEdit.onclick = () => {
+                this.closeUserDetailsModal();
+                this.openEditModal(user.id);
+            };
+        }
+
+        const btnClose = document.getElementById("btn-close-user-details");
+        if (btnClose) btnClose.onclick = () => this.closeUserDetailsModal();
+        overlay.onclick = () => this.closeUserDetailsModal();
+
+        overlay.style.display = "block";
+        modal.style.display = "block";
+        modal.classList.add("open");
+    },
+
+    closeUserDetailsModal() {
+        const overlay = document.getElementById("user-details-modal-overlay");
+        const modal = document.getElementById("user-details-modal");
+        if (overlay) overlay.style.display = "none";
+        if (modal) {
+            modal.style.display = "none";
+            modal.classList.remove("open");
+        }
     }
 };
+
+window.UsersModuleOpenDetails = (id) => Users.openUserDetailsModal(id);
+

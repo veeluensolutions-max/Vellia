@@ -40,10 +40,39 @@ const AVATAR_GRADIENTS = {
 
 export const Users = {
     initialized: false,
+    _presenceTimer: null,
 
-    init() {
-        this.renderUsers();
+    async init() {
         this.setupModalEvents();
+        this.renderUsers();
+
+        // 1. Puxar dados mais recentes de login/presença do Supabase
+        try {
+            const SUPABASE_URL = "https://ogrbsonpkiamoytxjshg.supabase.co";
+            const SUPABASE_KEY = "sb_publishable_Wi3eKJi5uyEzqihEDF6Eaw_-i0zcHe7";
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/comercial_users?select=*`, {
+                headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
+            });
+            if (res.ok) {
+                const remoteUsers = await res.json();
+                if (Array.isArray(remoteUsers) && remoteUsers.length > 0) {
+                    localStorage.setItem("comercial_users", JSON.stringify(remoteUsers));
+                    this.renderUsers();
+                }
+            }
+        } catch (e) {
+            console.log("Users presence sync fallback:", e);
+        }
+
+        // 2. Auto-refresh periódico de presença enquanto estiver na visualização de usuários
+        if (!this._presenceTimer) {
+            this._presenceTimer = setInterval(() => {
+                const usersView = document.getElementById("view-users");
+                if (usersView && usersView.style.display !== "none") {
+                    this.renderUsers();
+                }
+            }, 10000); // atualiza a cada 10s
+        }
     },
 
     renderUsers() {
@@ -53,29 +82,97 @@ export const Users = {
         const users = Store.getUsers();
         const leads = Store.getLeads();
 
+        // Filtrar contas reais (ocultar contas de sistema/configurações)
+        const validUsers = users.filter(u => u && u.name && u.role !== "system" && !u.email.includes("config@"));
+
+        // Helper de cálculo de presença e data/hora
+        const getPresenceInfo = (user, isSelf) => {
+            if (isSelf) {
+                return {
+                    status: "online",
+                    badge: `<span class="presence-badge presence-online"><span class="presence-dot pulse"></span> Online Agora</span>`,
+                    timeText: `<span style="font-size: 11px; color: #10b981; font-weight: 600;">Sessão Ativa</span>`
+                };
+            }
+
+            if (!user.lastLoginAt) {
+                return {
+                    status: "offline",
+                    badge: `<span class="presence-badge presence-offline"><span class="presence-dot"></span> Offline</span>`,
+                    timeText: `<span style="font-size: 11px; color: var(--text-muted); font-style: italic;">Nunca acessou</span>`
+                };
+            }
+
+            const lastTime = new Date(user.lastLoginAt).getTime();
+            const diffMs = Date.now() - lastTime;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMins / 60);
+            const diffDays = Math.floor(diffHours / 24);
+
+            const d = new Date(user.lastLoginAt);
+            const isToday = new Date().toDateString() === d.toDateString();
+            const isYesterday = new Date(Date.now() - 86400000).toDateString() === d.toDateString();
+            
+            const timeFmt = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+            let dateFmt = "";
+            if (isToday) {
+                dateFmt = `Hoje às ${timeFmt}`;
+            } else if (isYesterday) {
+                dateFmt = `Ontem às ${timeFmt}`;
+            } else {
+                dateFmt = `${d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} às ${timeFmt}`;
+            }
+
+            if (diffMins < 5) {
+                return {
+                    status: "online",
+                    badge: `<span class="presence-badge presence-online"><span class="presence-dot pulse"></span> Online</span>`,
+                    timeText: `<span style="font-size: 11px; color: #10b981; font-weight: 600;">${dateFmt}</span>`
+                };
+            } else if (diffMins < 15) {
+                return {
+                    status: "away",
+                    badge: `<span class="presence-badge presence-away"><span class="presence-dot"></span> Ausente</span>`,
+                    timeText: `<span style="font-size: 11px; color: #d97706; font-weight: 600;">${dateFmt} <span style="font-size: 10px; opacity: 0.8;">(há ${diffMins}m)</span></span>`
+                };
+            } else {
+                const relativeText = diffHours < 24 ? `há ${diffHours}h` : `há ${diffDays}d`;
+                return {
+                    status: "offline",
+                    badge: `<span class="presence-badge presence-offline"><span class="presence-dot"></span> Offline</span>`,
+                    timeText: `<span style="font-size: 11px; color: var(--text-secondary); font-weight: 500;">${dateFmt} <span style="color: var(--text-muted); font-size: 10px;">(${relativeText})</span></span>`
+                };
+            }
+        };
+
         // Calcular e atualizar KPIs
         const elTotal = document.getElementById("kpi-users-total");
         const elActive = document.getElementById("kpi-users-active");
         const elAdmins = document.getElementById("kpi-users-admins");
         const elSellers = document.getElementById("kpi-users-sellers");
 
-        if (elTotal) {
-            const activeUsers = users.filter(u => (u.status || "active") === "active").length;
-            const admins = users.filter(u => u.role === "admin").length;
-            const sellers = users.filter(u => ["seller", "operacional"].includes(u.role)).length;
+        const currentUserId = Auth.getCurrentUser()?.id;
+        const onlineCount = validUsers.filter(u => {
+            const isSelf = currentUserId === u.id;
+            return getPresenceInfo(u, isSelf).status === "online";
+        }).length;
 
-            elTotal.textContent = users.length;
-            elActive.textContent = activeUsers;
+        if (elTotal) {
+            const admins = validUsers.filter(u => u.role === "admin").length;
+            const sellers = validUsers.filter(u => ["seller", "operacional", "vendedor", "manager", "gerente"].includes(u.role)).length;
+
+            elTotal.textContent = validUsers.length;
+            if (elActive) elActive.textContent = onlineCount;
             elAdmins.textContent = admins;
             elSellers.textContent = sellers;
         }
 
         tableBody.innerHTML = "";
 
-        if (users.length === 0) {
+        if (validUsers.length === 0) {
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="7" style="text-align: center; padding: 48px 24px;">
+                    <td colspan="8" style="text-align: center; padding: 48px 24px;">
                         <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; color: var(--text-muted);">
                             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.4"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                             <span style="font-size: 14px;">Nenhum usuário cadastrado.</span>
@@ -85,46 +182,49 @@ export const Users = {
             return;
         }
 
-        users.forEach(user => {
+        validUsers.forEach(user => {
             // Garantir que usuários antigos sem status sejam tratados como ativos
             const effectiveStatus = user.status || "active";
 
             // Calcular leads trabalhados
             const workedLeads = leads.filter(l => l.owner === user.email && l.stage !== "Cliente Perdido").length;
 
-            // Formatar último login
-            let lastLogin = '<span style="color: var(--text-muted); font-style: italic; font-size: 12px;">Nunca</span>';
-            if (user.lastLoginAt) {
-                const d = new Date(user.lastLoginAt);
-                lastLogin = `<span style="font-size: 12px; color: var(--text-secondary);">${d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} <span style="color: var(--text-muted);">•</span> ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>`;
-            }
+            const isSelf = Auth.getCurrentUser()?.id === user.id;
+            const presence = getPresenceInfo(user, isSelf);
 
             const roleStyle = ROLE_STYLES[user.role] || ROLE_STYLES.seller;
             const avatarGrad = AVATAR_GRADIENTS[user.role] || AVATAR_GRADIENTS.seller;
             const avatarText = (user.avatar || user.name.substring(0, 2)).toUpperCase();
             const isActive = effectiveStatus === "active";
-            const isSelf = Auth.getCurrentUser()?.id === user.id;
 
             // Criar a linha (tr) e preencher os dados
             const tr = document.createElement("tr");
-            tr.style.cssText = "transition: background var(--transition-fast);";
+            tr.style.cssText = "transition: background var(--transition-fast); border-bottom: 1px solid var(--border-color);";
             
             // Coluna de Nome / Perfil
             const tdProfile = document.createElement("td");
             tdProfile.style.cssText = "padding: 14px 16px;";
             tdProfile.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="
-                        width: 36px; height: 36px; border-radius: 10px;
-                        background: ${avatarGrad};
-                        display: flex; align-items: center; justify-content: center;
-                        font-size: 12px; font-weight: 800; color: #fff;
-                        flex-shrink: 0; letter-spacing: 0.5px;
-                        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-                    ">${avatarText}</div>
+                    <div style="position: relative;">
+                        <div style="
+                            width: 38px; height: 38px; border-radius: 12px;
+                            background: ${avatarGrad};
+                            display: flex; align-items: center; justify-content: center;
+                            font-size: 13px; font-weight: 800; color: #fff;
+                            flex-shrink: 0; letter-spacing: 0.5px;
+                            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                        ">${avatarText}</div>
+                        <span style="
+                            position: absolute; bottom: -2px; right: -2px;
+                            width: 10px; height: 10px; border-radius: 50%;
+                            background: ${presence.status === 'online' ? '#10b981' : presence.status === 'away' ? '#f59e0b' : '#94a3b8'};
+                            border: 2px solid var(--bg-card, #fff);
+                        "></span>
+                    </div>
                     <div>
-                        <span style="font-weight: 700; font-size: 13px; color: var(--text-primary); display: block; max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${user.name}">${user.name}</span>
-                        ${isSelf ? '<span style="font-size: 10px; color: var(--primary); font-weight: 600; background: rgba(99,102,241,0.1); padding: 1px 6px; border-radius: 4px;">Você</span>' : ''}
+                        <span style="font-weight: 700; font-size: 13.5px; color: var(--text-primary); display: block; max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${user.name}">${user.name}</span>
+                        ${isSelf ? '<span style="font-size: 10px; color: var(--primary); font-weight: 700; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.25); padding: 1px 6px; border-radius: 4px;">Você (Atual)</span>' : ''}
                     </div>
                 </div>
             `;
@@ -170,11 +270,11 @@ export const Users = {
             `;
             tr.appendChild(tdCompanyAccess);
 
-            // Coluna de Status
+            // Coluna de Status da Conta
             const tdStatus = document.createElement("td");
             tdStatus.style.cssText = "padding: 14px 16px;";
             const statusBtn = document.createElement("button");
-            statusBtn.title = isActive ? "Clique para desativar" : "Clique para ativar";
+            statusBtn.title = isActive ? "Clique para desativar acesso" : "Clique para ativar acesso";
             statusBtn.disabled = isSelf;
             statusBtn.style.cssText = `
                 display: inline-flex; align-items: center; gap: 6px;
@@ -194,7 +294,6 @@ export const Users = {
                     background: ${isActive ? "#16a34a" : "#dc2626"};
                     box-shadow: 0 0 0 2px ${isActive ? "rgba(22,163,74,0.3)" : "rgba(220,38,38,0.3)"};
                     flex-shrink: 0;
-                    ${isActive ? "animation: pulse-status 2s infinite;" : ""}
                 "></span>
                 ${isActive ? "Ativo" : "Inativo"}
             `;
@@ -202,10 +301,15 @@ export const Users = {
             tdStatus.appendChild(statusBtn);
             tr.appendChild(tdStatus);
 
-            // Coluna de Último Login
+            // Coluna de Presença & Último Login (COM STATUS AO VIVO)
             const tdLastLogin = document.createElement("td");
             tdLastLogin.style.cssText = "padding: 14px 16px;";
-            tdLastLogin.innerHTML = lastLogin;
+            tdLastLogin.innerHTML = `
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    ${presence.badge}
+                    ${presence.timeText}
+                </div>
+            `;
             tr.appendChild(tdLastLogin);
 
             // Coluna de Leads Ativos
@@ -311,6 +415,47 @@ export const Users = {
                 @keyframes pulse-status {
                     0%, 100% { box-shadow: 0 0 0 2px rgba(22,163,74,0.3); }
                     50% { box-shadow: 0 0 0 4px rgba(22,163,74,0.1); }
+                }
+                .presence-badge {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                    padding: 3px 9px;
+                    border-radius: 99px;
+                    font-size: 11px;
+                    font-weight: 700;
+                    letter-spacing: 0.2px;
+                    width: fit-content;
+                }
+                .presence-online {
+                    background: rgba(16, 185, 129, 0.12);
+                    color: #10b981;
+                    border: 1px solid rgba(16, 185, 129, 0.28);
+                }
+                .presence-away {
+                    background: rgba(245, 158, 11, 0.12);
+                    color: #d97706;
+                    border: 1px solid rgba(245, 158, 11, 0.28);
+                }
+                .presence-offline {
+                    background: rgba(100, 116, 139, 0.08);
+                    color: var(--text-muted, #64748b);
+                    border: 1px solid rgba(100, 116, 139, 0.2);
+                }
+                .presence-dot {
+                    width: 7px;
+                    height: 7px;
+                    border-radius: 50%;
+                    background: currentColor;
+                }
+                .presence-dot.pulse {
+                    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+                    animation: presence-pulse 2s infinite;
+                }
+                @keyframes presence-pulse {
+                    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+                    70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+                    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
                 }
                 .user-action-btn:hover {
                     background: var(--bg-hover) !important;

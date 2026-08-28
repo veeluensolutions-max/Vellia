@@ -840,6 +840,15 @@ export const Store = {
         return null;
     },
 
+    saveProposals(proposals) {
+        if (Array.isArray(proposals)) {
+            localStorage.setItem("comercial_proposals", JSON.stringify(proposals));
+        } else {
+            const current = this.getProposalsRaw();
+            localStorage.setItem("comercial_proposals", JSON.stringify(current));
+        }
+    },
+
 
     getLogs() {
         const logs = JSON.parse(localStorage.getItem("comercial_logs")) || [];

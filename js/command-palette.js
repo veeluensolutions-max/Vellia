@@ -262,7 +262,9 @@ export const CommandPalette = {
                 action: () => {
                     if (window.navigateTo) window.navigateTo("crm");
                     setTimeout(() => {
-                        if (CRM && typeof CRM.openLeadModal === "function") {
+                        if (CRM && typeof CRM.openLeadDrawer === "function") {
+                            CRM.openLeadDrawer(lead.id);
+                        } else if (CRM && typeof CRM.openLeadModal === "function") {
                             CRM.openLeadModal(lead.id);
                         }
                     }, 250);

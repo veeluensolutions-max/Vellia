@@ -2010,3 +2010,6 @@ Instruções: Retorne APENAS o texto curto pronto da mensagem em tom amigável e
         }
     }
 };
+
+window.openLeadDrawerFromExt = (id) => CRM.openLeadDrawer(id);
+

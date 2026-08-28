@@ -552,6 +552,15 @@ function toggleRealtimePopover(badge) {
                 <code style="font-size: 9.5px; background: rgba(0,0,0,0.2); padding: 2px 4px; border-radius: 4px; color: var(--primary); font-family: monospace;">comercial_tasks (Hybrid Sync)</code>
             </div>
         </div>
+        <button id="btn-simulate-realtime-lead" style="
+            width: 100%; padding: 8px 12px; border-radius: 8px; margin-bottom: 8px;
+            background: linear-gradient(135deg, #10b981, #059669); color: #fff;
+            border: none; font-size: 12px; font-weight: 700;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+            transition: all 0.2s; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+        ">
+            <span>⚡ Disparar Lead Simulado Realtime</span>
+        </button>
         <button id="btn-force-sync-realtime" style="
             width: 100%; padding: 8px 12px; border-radius: 8px;
             background: var(--primary, #6366f1); color: #fff;
@@ -579,6 +588,39 @@ function toggleRealtimePopover(badge) {
             }
         `;
         document.head.appendChild(style);
+    }
+
+    const simBtn = popover.querySelector("#btn-simulate-realtime-lead");
+    if (simBtn) {
+        simBtn.addEventListener("click", () => {
+            const id = `lead_sim_${Date.now()}`;
+            const names = ["Carlos Eduardo", "Ana Paula Souza", "Roberto Mendes", "Mariana Oliveira", "Lucas Ferreira"];
+            const companies = ["TechCorp Solutions", "Indústria Vanguarda", "Grupo Soluções A", "BioEnergia Brasil", "Construtora Horizonte"];
+            const randomName = names[Math.floor(Math.random() * names.length)];
+            const randomComp = companies[Math.floor(Math.random() * companies.length)];
+            
+            const simLead = {
+                id,
+                company: randomComp,
+                contact: randomName,
+                email: `contato@${randomComp.toLowerCase().replace(/[^a-z]/g, '')}.com.br`,
+                whatsapp: "(11) 98888-7766",
+                segment: "Tecnologia / Engenharia",
+                source: "Meta Ads (Simulação Realtime)",
+                stage: "Lead Gerado",
+                owner: "admin@vellia.com",
+                aiScore: 85,
+                createdAt: new Date().toISOString()
+            };
+
+            processIncomingLead(simLead);
+            
+            simBtn.textContent = "✅ Lead Disparado em Tempo Real!";
+            simBtn.style.background = "#10b981";
+            setTimeout(() => {
+                popover.remove();
+            }, 1000);
+        });
     }
 
     const syncBtn = popover.querySelector("#btn-force-sync-realtime");

@@ -268,11 +268,22 @@ Responda ESTRITAMENTE em formato JSON com o seguinte schema:
                 </div>
 
                 <div style="background:rgba(24, 119, 242, 0.06); border:1px dashed rgba(24, 119, 242, 0.3); border-radius:8px; padding:10px 12px; margin-bottom:12px;">
-                    <div style="font-size:11px; font-weight:700; color:#1877F2; text-transform:uppercase; margin-bottom:3px; display:flex; align-items:center; gap:4px;">
+                    <div style="font-size:11px; font-weight:700; color:#1877F2; text-transform:uppercase; margin-bottom:4px; display:flex; align-items:center; gap:4px;">
                         📌 Próxima Ação Sugerida
                     </div>
-                    <div style="font-size:12px; color:var(--text-primary); font-weight:500; line-height:1.4;">
+                    <div style="font-size:12px; color:var(--text-primary); font-weight:500; line-height:1.4; margin-bottom:8px;">
                         ${res.nextAction}
+                    </div>
+                    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">
+                        <button type="button" id="btn-ai-act-wa" class="btn btn-sm" style="font-size:11px; padding:4px 8px; border-radius:6px; background:#10b981; color:#fff; border:none; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+                            💬 Enviar via WhatsApp
+                        </button>
+                        <button type="button" id="btn-ai-act-followup" class="btn btn-sm" style="font-size:11px; padding:4px 8px; border-radius:6px; background:var(--primary, #6366f1); color:#fff; border:none; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+                            📅 Agendar Follow-up
+                        </button>
+                        <button type="button" id="btn-ai-act-proposal" class="btn btn-sm" style="font-size:11px; padding:4px 8px; border-radius:6px; background:rgba(255,255,255,0.08); color:var(--text-primary); border:1px solid var(--border-color); font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+                            📑 Criar Proposta
+                        </button>
                     </div>
                 </div>
 
@@ -286,6 +297,53 @@ Responda ESTRITAMENTE em formato JSON com o seguinte schema:
                 </div>
             </div>
         `;
+
+        // Action Buttons Listeners
+        const btnActWa = document.getElementById("btn-ai-act-wa");
+        if (btnActWa) {
+            btnActWa.addEventListener("click", () => {
+                const chatInput = document.getElementById("chat-input-text");
+                const waChatSec = document.getElementById("drawer-whatsapp-chat-section");
+                if (waChatSec && waChatSec.style.display === "none") {
+                    waChatSec.style.display = "block";
+                }
+                if (chatInput) {
+                    const msg = `Olá ${lead.contact || lead.company}, ${res.nextAction}`;
+                    chatInput.value = msg;
+                    chatInput.focus();
+                    chatInput.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        }
+
+        const btnActFollowup = document.getElementById("btn-ai-act-followup");
+        if (btnActFollowup) {
+            btnActFollowup.addEventListener("click", () => {
+                const ffContainer = document.getElementById("followup-form-container");
+                const ffToggle = document.getElementById("btn-toggle-followup-form");
+                const ffNote = document.getElementById("followup-notes");
+                if (ffContainer) ffContainer.style.display = "block";
+                if (ffToggle) ffToggle.textContent = "✕ Cancelar";
+                if (ffNote) {
+                    ffNote.value = `[Ação Sugerida pela IA]: ${res.nextAction}`;
+                    ffNote.focus();
+                    ffNote.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        }
+
+        const btnActProp = document.getElementById("btn-ai-act-proposal");
+        if (btnActProp) {
+            btnActProp.addEventListener("click", () => {
+                window.location.hash = "#proposals";
+                setTimeout(() => {
+                    const btnNewProp = document.getElementById("btn-open-new-proposal-modal") || document.getElementById("btn-new-proposal");
+                    if (btnNewProp) btnNewProp.click();
+                    const propCompany = document.getElementById("proposal-company");
+                    if (propCompany) propCompany.value = lead.company || "";
+                }, 300);
+            });
+        }
 
         const btnReanalyze = document.getElementById("btn-reanalyze-ai-score");
         if (btnReanalyze) {
@@ -311,3 +369,4 @@ Responda ESTRITAMENTE em formato JSON com o seguinte schema:
         }
     }
 };
+

@@ -34,5 +34,15 @@ export const Audit = {
     logUserCreated(userEmail, createdEmail, role) {
         const details = `Novo usuário criado: ${createdEmail} com perfil ${role}.`;
         return Store.addLog(userEmail, "USER_CREATED", details, "SUCCESS");
+    },
+
+    logLeadUpdate(userEmail, leadName, details) {
+        const fullDetails = `Atualização no lead "${leadName}": ${details}`;
+        return Store.addLog(userEmail, "LEAD_UPDATE", fullDetails, "SUCCESS");
+    },
+
+    log(details, userEmail = "sistema@vellia.com") {
+        return Store.addLog(userEmail, "SYSTEM_LOG", details, "INFO");
     }
 };
+

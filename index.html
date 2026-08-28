@@ -331,6 +331,9 @@
                                 <h3>Exportar Relatórios</h3>
                             </div>
                             <div class="notif-list" style="padding: 8px;">
+                                <button id="btn-export-exec-pdf" onclick="import('./js/export.js').then(m => m.DataExport.exportExecutiveReportPDF()); document.getElementById('export-panel').style.display='none';" class="btn btn-outline" style="width: 100%; margin-bottom: 8px; justify-content: flex-start; border: none; font-weight: 700; padding: 10px 12px; background: rgba(99, 102, 241, 0.08); color: var(--primary);">
+                                    <span style="margin-right: 8px;">📊</span> Relatório Executivo (PDF)
+                                </button>
                                 <button id="btn-export-leads" class="btn btn-outline" style="width: 100%; margin-bottom: 8px; justify-content: flex-start; border: none; font-weight: normal; padding: 10px 12px; background: transparent;">
                                     <span style="margin-right: 8px;">👥</span> Base de Leads (CSV)
                                 </button>
@@ -368,6 +371,11 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Botão Alternador de Áudio (Som / Mudo) -->
+                    <button id="btn-toggle-audio" class="action-btn" title="Ativar ou Silenciar Notificações Sonoras (Web Audio Engine)" style="font-size: 15px; display: inline-flex; align-items: center; justify-content: center;">
+                        <span id="audio-icon-status">🔊</span>
+                    </button>
 
                     <!-- Botão Alternador de Tema -->
                     <button id="btn-toggle-theme-modal" class="theme-toggle action-btn" title="Personalizar Tema e Cores">
@@ -3068,11 +3076,11 @@
                         </div>
                         <div class="card stat-card" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); border-left: 4px solid #10b981; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
                             <div class="stat-info">
-                                <span class="stat-label">Usuários Ativos</span>
-                                <span class="stat-value" id="kpi-users-active">0</span>
+                                <span class="stat-label">Online Agora</span>
+                                <span class="stat-value" id="kpi-users-active" style="color: #10b981;">0</span>
                             </div>
-                            <div class="stat-icon-box success">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                            <div class="stat-icon-box success" style="background: rgba(16,185,129,0.15); color: #10b981;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                             </div>
                         </div>
                         <div class="card stat-card" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); border-left: 4px solid #8b5cf6; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
@@ -3105,8 +3113,8 @@
                                         <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);">E-mail</th>
                                         <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);">Permissão</th>
                                         <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);">Acesso Empresa</th>
-                                        <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);">Status</th>
-                                        <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);">Último Login</th>
+                                        <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);">Status Conta</th>
+                                        <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);">Presença & Último Acesso</th>
                                         <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);">Leads</th>
                                         <th style="padding: 12px 16px; text-align: right; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);">Ações</th>
                                     </tr>

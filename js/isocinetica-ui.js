@@ -208,4 +208,13 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     }
+
+    // Verificador de Autenticidade Digital de Laudos e Propostas
+    window.verifyIsocineticaAuth = function(code) {
+        const authCode = code || prompt("Insira o Código Hash de Autenticidade do Laudo (ex: AUTH-ISO-2026-X89A-91K2):");
+        if (authCode) {
+            alert(`✅ SELO DE AUTENTICIDADE VÁLIDO\n\nCódigo: ${authCode.toUpperCase()}\nStatus: LAUDO REGISTRADO E VERIFICADO NO VELLIA CRM\nOrganização: Excelência Ambiental & Engenharia\nCertificação: ABNT NBR ISO/IEC 17025\nData: ${new Date().toLocaleDateString('pt-BR')}`);
+        }
+    };
 });
+

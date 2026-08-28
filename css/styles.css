@@ -1656,6 +1656,8 @@ a {
     background-color: var(--primary);
 }
 
+.timeline-item.interaction-Ligação .timeline-marker,
+.timeline-item.interaction-Ligacao .timeline-marker,
 .timeline-item.interaction-LigaÃ§Ã£o .timeline-marker {
     background-color: var(--warning);
 }
@@ -1664,6 +1666,8 @@ a {
     background-color: var(--success);
 }
 
+.timeline-item.interaction-Reunião .timeline-marker,
+.timeline-item.interaction-Reuniao .timeline-marker,
 .timeline-item.interaction-ReuniÃ£o .timeline-marker {
     background-color: #8b5cf6;
 }
@@ -2006,10 +2010,10 @@ a {
 }
 
 /* ==========================================================================
-   MÃ“DULO DE PROPOSTAS â€” UTILITÃRIOS EXTRAS
+   MÓDULO DE PROPOSTAS — UTILITÁRIOS EXTRAS
    ========================================================================== */
 
-/* BotÃ£o pequeno */
+/* Botão pequeno */
 .btn-sm {
     padding: 5px 10px;
     font-size: 12px;
@@ -2053,7 +2057,7 @@ a {
 }
 
 /* ==========================================================================
-   DASHBOARD GERENCIAL â€” ETAPA 5
+   DASHBOARD GERENCIAL — ETAPA 5
    ========================================================================== */
 
 .dash-kpi-card {

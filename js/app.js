@@ -30,6 +30,7 @@ import { Leaderboard } from "./leaderboard.js";
 import { ThemeManager } from "./theme-manager.js";
 import { CommandPalette } from "./command-palette.js";
 import { Toast } from "./toast.js";
+import { AudioEngine } from "./audio.js";
 
 // Elementos Globais DOM (Getters Dinâmicos para garantia de não-nulidade)
 const elements = {
@@ -41,7 +42,7 @@ const elements = {
     get loginError() { return document.getElementById("login-error"); },
     get loginErrorText() { return document.getElementById("login-error-text"); },
     get btnLogout() { return document.getElementById("btn-logout"); },
-    get btnThemeToggle() { return document.getElementById("btn-theme-toggle"); },
+    get btnThemeToggle() { return document.getElementById("btn-theme-toggle") || document.getElementById("btn-toggle-theme-modal"); },
     get viewTitle() { return document.getElementById("view-title"); },
     get userAvatar() { return document.getElementById("user-avatar"); },
     get userDisplayName() { return document.getElementById("user-display-name"); },
@@ -149,15 +150,47 @@ function startInactivityTracking() {
     });
 }
 
-function stopInactivityTracking() {
-    if (inactivityTimer) clearTimeout(inactivityTimer);
-    if (inactivityCountdownInterval) clearInterval(inactivityCountdownInterval);
-    closeInactivityModal();
-    
-    const events = ["mousemove", "mousedown", "keypress", "scroll", "touchstart"];
-    events.forEach(event => {
-        window.removeEventListener(event, resetInactivityTimer);
-    });
+// Heartbeat de Presença Online em Tempo Real
+let presenceHeartbeatTimer = null;
+
+function startPresenceHeartbeat(userEmail) {
+    if (presenceHeartbeatTimer) clearInterval(presenceHeartbeatTimer);
+    if (!userEmail) return;
+
+    const ping = async () => {
+        try {
+            const nowIso = new Date().toISOString();
+            const users = Store.getUsers();
+            const idx = users.findIndex(u => u.email && u.email.toLowerCase() === userEmail.toLowerCase());
+            if (idx !== -1) {
+                users[idx].lastLoginAt = nowIso;
+                localStorage.setItem("comercial_users", JSON.stringify(users));
+
+                // Atualizar silenciosamente no Supabase
+                const SUPABASE_URL = "https://ogrbsonpkiamoytxjshg.supabase.co";
+                const SUPABASE_KEY = "sb_publishable_Wi3eKJi5uyEzqihEDF6Eaw_-i0zcHe7";
+                await fetch(`${SUPABASE_URL}/rest/v1/comercial_users?id=eq.${users[idx].id}`, {
+                    method: "PATCH",
+                    headers: {
+                        "apikey": SUPABASE_KEY,
+                        "Authorization": `Bearer ${SUPABASE_KEY}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ lastLoginAt: nowIso })
+                });
+            }
+        } catch (e) {}
+    };
+
+    ping();
+    presenceHeartbeatTimer = setInterval(ping, 45000); // Heartbeat a cada 45 segundos
+}
+
+function stopPresenceHeartbeat() {
+    if (presenceHeartbeatTimer) {
+        clearInterval(presenceHeartbeatTimer);
+        presenceHeartbeatTimer = null;
+    }
 }
 
 // ==========================================================================
@@ -238,6 +271,7 @@ function showLoginScreen() {
     elements.loginForm.reset();
     
     stopInactivityTracking();
+    stopPresenceHeartbeat();
 }
 
 function showAppShell(user) {
@@ -300,8 +334,9 @@ function showAppShell(user) {
     // Ativar verificacao automatica de inspecoes vencendo
     InspectionScheduler.schedulePeriodicCheck();
     
-    // Iniciar monitoramento de inatividade
+    // Iniciar monitoramento de inatividade e presença viva
     startInactivityTracking();
+    startPresenceHeartbeat(user.email);
 
     // Atualizar badge da lixeira
     updateTrashBadge();
@@ -1492,9 +1527,11 @@ function setupEventListeners() {
     }
 
     // Logout
-    elements.btnLogout.addEventListener("click", () => {
-        Auth.logout();
-    });
+    if (elements.btnLogout) {
+        elements.btnLogout.addEventListener("click", () => {
+            Auth.logout();
+        });
+    }
 
     // Inicializar Command Palette (Ctrl + K)
     CommandPalette.init();
@@ -1525,29 +1562,47 @@ function setupEventListeners() {
     }
 
     // Alternar Tema
-    elements.btnThemeToggle.addEventListener("click", () => {
-        toggleTheme();
-    });
+    if (elements.btnThemeToggle) {
+        elements.btnThemeToggle.addEventListener("click", () => {
+            toggleTheme();
+        });
+    }
 
     // Sidebar Hamburger (Mobile & Desktop)
-    elements.menuToggleBtn.addEventListener("click", () => {
-        if (window.innerWidth <= 768) {
-            elements.sidebar.classList.add("open");
-            elements.sidebarOverlay.classList.add("open");
-        } else {
-            const wrapper = document.querySelector(".app-wrapper");
-            if (wrapper) {
-                wrapper.classList.toggle("sidebar-collapsed");
-                // Disparar redimensionamento para ajustar gráficos após a transição
-                setTimeout(() => window.dispatchEvent(new Event('resize')), 300);
+    if (elements.menuToggleBtn) {
+        elements.menuToggleBtn.addEventListener("click", () => {
+            if (window.innerWidth <= 768) {
+                if (elements.sidebar) elements.sidebar.classList.add("open");
+                if (elements.sidebarOverlay) elements.sidebarOverlay.classList.add("open");
+            } else {
+                const wrapper = document.querySelector(".app-wrapper");
+                if (wrapper) {
+                    wrapper.classList.toggle("sidebar-collapsed");
+                    // Disparar redimensionamento para ajustar gráficos após a transição
+                    setTimeout(() => window.dispatchEvent(new Event('resize')), 300);
+                }
             }
-        }
-    });
+        });
+    }
 
-    // Mobile Overlay Click
-    elements.sidebarOverlay.addEventListener("click", () => {
-        closeMobileMenu();
-    });
+    // Audio Engine Mute / Unmute Toggle
+    const btnAudioToggle = document.getElementById("btn-toggle-audio");
+    const audioIconStatus = document.getElementById("audio-icon-status");
+
+    const updateAudioIcon = () => {
+        if (audioIconStatus) {
+            audioIconStatus.textContent = AudioEngine.isEnabled() ? "🔊" : "🔇";
+        }
+    };
+    updateAudioIcon();
+
+    if (btnAudioToggle) {
+        btnAudioToggle.addEventListener("click", () => {
+            const isEnabled = AudioEngine.toggle();
+            updateAudioIcon();
+            Toast.info("Notificações Sonoras", isEnabled ? "Sons ativados com sucesso!" : "Sons silenciados.");
+        });
+    }
 
 
 

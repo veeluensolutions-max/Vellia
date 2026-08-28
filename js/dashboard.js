@@ -734,9 +734,7 @@ export const Dashboard = {
         const canvas = document.getElementById("chart-revenue");
         if (!canvas) return;
 
-        if (charts.revenue) {
-            charts.revenue.destroy();
-        }
+        if (typeof Chart !== 'undefined' && Chart.getChart) { const ex = Chart.getChart(canvas); if (ex) ex.destroy(); } if (charts.revenue) { charts.revenue.destroy(); }
 
         const months = [];
         for (let i = 5; i >= 0; i--) {
@@ -844,9 +842,7 @@ export const Dashboard = {
         const canvas = document.getElementById("chart-conversion");
         if (!canvas) return;
 
-        if (charts.conversion) {
-            charts.conversion.destroy();
-        }
+        if (typeof Chart !== 'undefined' && Chart.getChart) { const ex = Chart.getChart(canvas); if (ex) ex.destroy(); } if (charts.conversion) { charts.conversion.destroy(); }
 
         const total = proposals.length;
         const won = proposals.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)).length;
@@ -945,9 +941,7 @@ export const Dashboard = {
         const canvas = document.getElementById("chart-segments");
         if (!canvas) return;
 
-        if (charts.segments) {
-            charts.segments.destroy();
-        }
+        if (typeof Chart !== 'undefined' && Chart.getChart) { const ex = Chart.getChart(canvas); if (ex) ex.destroy(); } if (charts.segments) { charts.segments.destroy(); }
 
         const segMap = {};
         leads.forEach(l => {
@@ -1024,9 +1018,7 @@ export const Dashboard = {
         const canvas = document.getElementById("chart-sources");
         if (!canvas) return;
 
-        if (charts.sources) {
-            charts.sources.destroy();
-        }
+        if (typeof Chart !== 'undefined' && Chart.getChart) { const ex = Chart.getChart(canvas); if (ex) ex.destroy(); } if (charts.sources) { charts.sources.destroy(); }
 
         const srcMap = {};
         leads.forEach(l => {
@@ -1275,7 +1267,7 @@ export const Dashboard = {
         }
 
         // Week bar chart
-        if (charts.tasksWeek) charts.tasksWeek.destroy();
+        if (typeof Chart !== 'undefined' && Chart.getChart) { const ex = Chart.getChart(weekCanvas); if (ex) ex.destroy(); } if (charts.tasksWeek) charts.tasksWeek.destroy();
         charts.tasksWeek = new Chart(weekCanvas, {
             type: "bar",
             data: {
@@ -1331,7 +1323,7 @@ export const Dashboard = {
         if (pctLabel) pctLabel.textContent = `${donePct}%`;
 
         if (donutCanvas) {
-            if (charts.tasksDonut) charts.tasksDonut.destroy();
+            if (typeof Chart !== 'undefined' && Chart.getChart) { const ex = Chart.getChart(donutCanvas); if (ex) ex.destroy(); } if (charts.tasksDonut) charts.tasksDonut.destroy();
             charts.tasksDonut = new Chart(donutCanvas, {
                 type: "doughnut",
                 data: {

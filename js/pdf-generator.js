@@ -216,9 +216,13 @@ export const PDFGenerator = {
             <div class="logo-title">VELLIA</div>
             <div class="logo-sub">Engineering & Commercial Solutions</div>
         </div>
-        <div class="doc-info">
-            <div><strong>Código Autenticador:</strong> ${codeAuth}</div>
-            <div><strong>Emissão:</strong> ${issueDate}</div>
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=https://velliacrm.vercel.app/verify?auth=${codeAuth}" alt="QR Code de Autenticidade" style="width: 60px; height: 60px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 3px;" />
+            <div class="doc-info">
+                <div style="color: #1877F2; font-weight: 800; font-size: 11px;">🛡️ SELO DE AUTENTICIDADE</div>
+                <div><strong>Código Autenticador:</strong> ${codeAuth}</div>
+                <div><strong>Emissão:</strong> ${issueDate}</div>
+            </div>
         </div>
     </div>
 

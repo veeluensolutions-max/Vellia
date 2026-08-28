@@ -16,7 +16,19 @@ const ROLE_STYLES = {
         color: "#1d4ed8",
         border: "rgba(59, 130, 246, 0.25)"
     },
+    gerente: {
+        label: "Gerente Comercial",
+        bg: "rgba(59, 130, 246, 0.12)",
+        color: "#1d4ed8",
+        border: "rgba(59, 130, 246, 0.25)"
+    },
     seller: {
+        label: "Vendedor",
+        bg: "rgba(100, 116, 139, 0.10)",
+        color: "var(--text-secondary)",
+        border: "rgba(100, 116, 139, 0.2)"
+    },
+    vendedor: {
         label: "Vendedor",
         bg: "rgba(100, 116, 139, 0.10)",
         color: "var(--text-secondary)",
@@ -34,7 +46,9 @@ const ROLE_STYLES = {
 const AVATAR_GRADIENTS = {
     admin: "linear-gradient(135deg, #7c3aed, #a855f7)",
     manager: "linear-gradient(135deg, #1d4ed8, #3b82f6)",
+    gerente: "linear-gradient(135deg, #1d4ed8, #3b82f6)",
     seller: "linear-gradient(135deg, #0ea5e9, #06b6d4)",
+    vendedor: "linear-gradient(135deg, #0ea5e9, #06b6d4)",
     operacional: "linear-gradient(135deg, #f59e0b, #d97706)"
 };
 
@@ -797,202 +811,214 @@ export const Users = {
     },
 
     openUserDetailsModal(userId) {
-        const user = Store.getUsers().find(u => u.id === userId);
-        if (!user) return;
-
-        const overlay = document.getElementById("user-details-modal-overlay");
-        const modal = document.getElementById("user-details-modal");
-        if (!overlay || !modal) return;
-
-        const isSelf = Auth.getCurrentUser()?.id === user.id;
-        const allLeads = Store.getLeads() || [];
-        const userLeads = allLeads.filter(l => l && l.owner === user.email);
-        const allProps = Store.getProposals() || [];
-        const userProps = allProps.filter(p => p && (p.owner === user.email || p.seller === user.name));
-        const allLogs = Store.getLogs() || [];
-        const userLogs = allLogs.filter(lg => lg && (lg.user === user.email || lg.details?.includes(user.name))).slice(-8).reverse();
-
-        // Presença e Login
-        const d = user.lastLoginAt ? new Date(user.lastLoginAt) : null;
-        let lastLoginFmt = "Nunca acessou";
-        let elapsedFmt = "Sem conexões registradas";
-        let statusPresence = "offline";
-        let badgeText = "⚪ Offline";
-        let dotColor = "#94a3b8";
-
-        if (isSelf) {
-            statusPresence = "online";
-            badgeText = "🟢 Online Agora (Sessão Ativa)";
-            dotColor = "#10b981";
-            lastLoginFmt = "Sessão Atual Conectada";
-            elapsedFmt = "Ativo neste navegador";
-        } else if (d) {
-            const diffMs = Date.now() - d.getTime();
-            const diffMins = Math.floor(diffMs / 60000);
-            const diffHours = Math.floor(diffMins / 60);
-            const diffDays = Math.floor(diffHours / 24);
-
-            const isToday = new Date().toDateString() === d.toDateString();
-            const isYesterday = new Date(Date.now() - 86400000).toDateString() === d.toDateString();
-            const timeFmt = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-            
-            if (isToday) {
-                lastLoginFmt = `Hoje às ${timeFmt}`;
-            } else if (isYesterday) {
-                lastLoginFmt = `Ontem às ${timeFmt}`;
-            } else {
-                lastLoginFmt = `${d.toLocaleDateString("pt-BR")} às ${timeFmt}`;
+        try {
+            const users = Store.getUsers();
+            const user = users.find(u => u && u.id === userId);
+            if (!user) {
+                console.warn("Usuário não encontrado para abrir detalhes:", userId);
+                return;
             }
 
-            if (diffMins < 5) {
+            const overlay = document.getElementById("user-details-modal-overlay");
+            const modal = document.getElementById("user-details-modal");
+            if (!overlay || !modal) {
+                console.warn("Modal de detalhes não encontrado no DOM");
+                return;
+            }
+
+            const current = Auth.getCurrentUser();
+            const isSelf = current?.id === user.id;
+            const allLeads = Store.getLeads() || [];
+            const userLeads = allLeads.filter(l => l && l.owner === user.email);
+            const allProps = Store.getProposals() || [];
+            const userProps = allProps.filter(p => p && (p.owner === user.email || p.seller === user.name));
+            const allLogs = Store.getLogs() || [];
+            const userLogs = allLogs.filter(lg => lg && (lg.user === user.email || lg.details?.includes(user.name))).slice(-8).reverse();
+
+            // Presença e Login
+            const d = user.lastLoginAt ? new Date(user.lastLoginAt) : null;
+            let lastLoginFmt = "Nunca acessou";
+            let elapsedFmt = "Sem conexões registradas";
+            let statusPresence = "offline";
+            let badgeText = "⚪ Offline";
+            let dotColor = "#94a3b8";
+
+            if (isSelf) {
                 statusPresence = "online";
-                badgeText = "🟢 Online Agora";
+                badgeText = "🟢 Online Agora (Sessão Ativa)";
                 dotColor = "#10b981";
-                elapsedFmt = "Atividade nos últimos minutos";
-            } else if (diffMins < 15) {
-                statusPresence = "away";
-                badgeText = `🟡 Ausente (${diffMins} min)`;
-                dotColor = "#f59e0b";
-                elapsedFmt = `Inativo há ${diffMins} minutos`;
-            } else {
-                statusPresence = "offline";
-                badgeText = "⚪ Offline";
-                dotColor = "#94a3b8";
-                elapsedFmt = diffHours < 24 ? `Última conexão há ${diffHours}h` : `Última conexão há ${diffDays} dias`;
+                lastLoginFmt = "Sessão Atual Conectada";
+                elapsedFmt = "Ativo neste navegador";
+            } else if (d && !isNaN(d.getTime())) {
+                const diffMs = Date.now() - d.getTime();
+                const diffMins = Math.floor(diffMs / 60000);
+                const diffHours = Math.floor(diffMins / 60);
+                const diffDays = Math.floor(diffHours / 24);
+
+                const isToday = new Date().toDateString() === d.toDateString();
+                const isYesterday = new Date(Date.now() - 86400000).toDateString() === d.toDateString();
+                const timeFmt = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+                
+                if (isToday) {
+                    lastLoginFmt = `Hoje às ${timeFmt}`;
+                } else if (isYesterday) {
+                    lastLoginFmt = `Ontem às ${timeFmt}`;
+                } else {
+                    lastLoginFmt = `${d.toLocaleDateString("pt-BR")} às ${timeFmt}`;
+                }
+
+                if (diffMins < 5) {
+                    statusPresence = "online";
+                    badgeText = "🟢 Online Agora";
+                    dotColor = "#10b981";
+                    elapsedFmt = "Atividade nos últimos minutos";
+                } else if (diffMins < 15) {
+                    statusPresence = "away";
+                    badgeText = `🟡 Ausente (${diffMins} min)`;
+                    dotColor = "#f59e0b";
+                    elapsedFmt = `Inativo há ${diffMins} minutos`;
+                } else {
+                    statusPresence = "offline";
+                    badgeText = "⚪ Offline";
+                    dotColor = "#94a3b8";
+                    elapsedFmt = diffHours < 24 ? `Última conexão há ${diffHours}h` : `Última conexão há ${diffDays} dias`;
+                }
             }
-        }
 
-        // Preencher Cabeçalho
-        const roleStyle = ROLE_STYLES[user.role] || ROLE_STYLES.seller;
-        const avatarGrad = AVATAR_GRADIENTS[user.role] || AVATAR_GRADIENTS.seller;
-        const avatarText = (user.avatar || user.name.substring(0, 2)).toUpperCase();
+            // Preencher Cabeçalho
+            const roleStyle = ROLE_STYLES[user.role] || ROLE_STYLES.seller;
+            const avatarGrad = AVATAR_GRADIENTS[user.role] || AVATAR_GRADIENTS.seller;
+            const avatarText = (user.avatar || (user.name ? user.name.substring(0, 2) : "US")).toUpperCase();
 
-        const elAvatar = document.getElementById("user-detail-avatar");
-        if (elAvatar) {
-            elAvatar.textContent = avatarText;
-            elAvatar.style.background = avatarGrad;
-        }
-
-        const elDot = document.getElementById("user-detail-presence-dot");
-        if (elDot) elDot.style.background = dotColor;
-
-        const elName = document.getElementById("user-detail-name");
-        if (elName) elName.textContent = user.name;
-
-        const elEmail = document.getElementById("user-detail-email");
-        if (elEmail) elEmail.textContent = user.email;
-
-        const selfTag = document.getElementById("user-detail-self-tag");
-        if (selfTag) selfTag.style.display = isSelf ? "inline-block" : "none";
-
-        const roleBadge = document.getElementById("user-detail-role-badge");
-        if (roleBadge) {
-            roleBadge.textContent = roleStyle.label;
-            roleBadge.style.background = roleStyle.bg;
-            roleBadge.style.color = roleStyle.color;
-            roleBadge.style.border = `1px solid ${roleStyle.border}`;
-        }
-
-        const companyBadge = document.getElementById("user-detail-company-badge");
-        if (companyBadge) companyBadge.textContent = user.companyAccess || "Ambas as Empresas";
-
-        // Bloco 1: Presença e Conexão
-        const elPresBadge = document.getElementById("user-detail-presence-badge");
-        if (elPresBadge) {
-            elPresBadge.textContent = badgeText;
-            elPresBadge.style.color = dotColor;
-        }
-
-        const elLastLogin = document.getElementById("user-detail-last-login");
-        if (elLastLogin) elLastLogin.textContent = lastLoginFmt;
-
-        const elElapsed = document.getElementById("user-detail-elapsed");
-        if (elElapsed) elElapsed.textContent = elapsedFmt;
-
-        // Bloco 2: Métricas Comerciais
-        const negotiatingLeads = userLeads.filter(l => l && !["Cliente Ganho", "Cliente Perdido"].includes(l.stage)).length;
-        const elLeadsCount = document.getElementById("user-detail-leads-count");
-        if (elLeadsCount) elLeadsCount.textContent = userLeads.length;
-
-        const elLeadsNeg = document.getElementById("user-detail-leads-negotiating");
-        if (elLeadsNeg) elLeadsNeg.textContent = `${negotiatingLeads} em andamento`;
-
-        const totalPropsVal = userProps.reduce((acc, p) => acc + (parseFloat(p.value) || 0), 0);
-        const elPropsCount = document.getElementById("user-detail-props-count");
-        if (elPropsCount) elPropsCount.textContent = userProps.length;
-
-        const elPropsVal = document.getElementById("user-detail-props-value");
-        if (elPropsVal) elPropsVal.textContent = totalPropsVal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-
-        // Bloco 3: Logs Recentes
-        const logsContainer = document.getElementById("user-detail-logs-list");
-        if (logsContainer) {
-            logsContainer.innerHTML = "";
-            if (userLogs.length === 0) {
-                logsContainer.innerHTML = `<div style="font-size: 12px; color: var(--text-muted); font-style: italic; padding: 4px 0;">Nenhuma atividade recente registrada nos logs para este usuário.</div>`;
-            } else {
-                userLogs.forEach(lg => {
-                    const logItem = document.createElement("div");
-                    logItem.style.cssText = "display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 12px;";
-                    const time = lg.timestamp ? new Date(lg.timestamp).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "";
-                    logItem.innerHTML = `
-                        <div style="display: flex; align-items: center; gap: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
-                            <span style="font-size: 10px; font-weight: 700; color: var(--primary); background: rgba(99,102,241,0.12); padding: 2px 6px; border-radius: 4px; flex-shrink: 0;">${lg.action || "AÇÃO"}</span>
-                            <span style="color: var(--text-primary); max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${lg.details || ""}</span>
-                        </div>
-                        <span style="font-size: 11px; color: var(--text-muted); font-family: monospace; white-space: nowrap; margin-left: 8px;">${time}</span>
-                    `;
-                    logsContainer.appendChild(logItem);
-                });
+            const elAvatar = document.getElementById("user-detail-avatar");
+            if (elAvatar) {
+                elAvatar.textContent = avatarText;
+                elAvatar.style.background = avatarGrad;
             }
+
+            const elDot = document.getElementById("user-detail-presence-dot");
+            if (elDot) elDot.style.background = dotColor;
+
+            const elName = document.getElementById("user-detail-name");
+            if (elName) elName.textContent = user.name || "Usuário";
+
+            const elEmail = document.getElementById("user-detail-email");
+            if (elEmail) elEmail.textContent = user.email || "";
+
+            const selfTag = document.getElementById("user-detail-self-tag");
+            if (selfTag) selfTag.style.display = isSelf ? "inline-block" : "none";
+
+            const roleBadge = document.getElementById("user-detail-role-badge");
+            if (roleBadge) {
+                roleBadge.textContent = roleStyle.label;
+                roleBadge.style.background = roleStyle.bg;
+                roleBadge.style.color = roleStyle.color;
+                roleBadge.style.border = `1px solid ${roleStyle.border}`;
+            }
+
+            const companyBadge = document.getElementById("user-detail-company-badge");
+            if (companyBadge) companyBadge.textContent = user.companyAccess || "Ambas as Empresas";
+
+            // Bloco 1: Presença e Conexão
+            const elPresBadge = document.getElementById("user-detail-presence-badge");
+            if (elPresBadge) {
+                elPresBadge.textContent = badgeText;
+                elPresBadge.style.color = dotColor;
+            }
+
+            const elLastLogin = document.getElementById("user-detail-last-login");
+            if (elLastLogin) elLastLogin.textContent = lastLoginFmt;
+
+            const elElapsed = document.getElementById("user-detail-elapsed");
+            if (elElapsed) elElapsed.textContent = elapsedFmt;
+
+            // Bloco 2: Métricas Comerciais
+            const negotiatingLeads = userLeads.filter(l => l && !["Cliente Ganho", "Cliente Perdido"].includes(l.stage)).length;
+            const elLeadsCount = document.getElementById("user-detail-leads-count");
+            if (elLeadsCount) elLeadsCount.textContent = userLeads.length;
+
+            const elLeadsNeg = document.getElementById("user-detail-leads-negotiating");
+            if (elLeadsNeg) elLeadsNeg.textContent = `${negotiatingLeads} em andamento`;
+
+            const totalPropsVal = userProps.reduce((acc, p) => acc + (parseFloat(p.value) || 0), 0);
+            const elPropsCount = document.getElementById("user-detail-props-count");
+            if (elPropsCount) elPropsCount.textContent = userProps.length;
+
+            const elPropsVal = document.getElementById("user-detail-props-value");
+            if (elPropsVal) elPropsVal.textContent = totalPropsVal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+            // Bloco 3: Logs Recentes
+            const logsContainer = document.getElementById("user-detail-logs-list");
+            if (logsContainer) {
+                logsContainer.innerHTML = "";
+                if (userLogs.length === 0) {
+                    logsContainer.innerHTML = `<div style="font-size: 12px; color: var(--text-muted); font-style: italic; padding: 4px 0;">Nenhuma atividade recente registrada nos logs para este usuário.</div>`;
+                } else {
+                    userLogs.forEach(lg => {
+                        const logItem = document.createElement("div");
+                        logItem.style.cssText = "display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 12px;";
+                        const time = lg.timestamp ? new Date(lg.timestamp).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "";
+                        logItem.innerHTML = `
+                            <div style="display: flex; align-items: center; gap: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
+                                <span style="font-size: 10px; font-weight: 700; color: var(--primary); background: rgba(99,102,241,0.12); padding: 2px 6px; border-radius: 4px; flex-shrink: 0;">${lg.action || "AÇÃO"}</span>
+                                <span style="color: var(--text-primary); max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${lg.details || ""}</span>
+                            </div>
+                            <span style="font-size: 11px; color: var(--text-muted); font-family: monospace; white-space: nowrap; margin-left: 8px;">${time}</span>
+                        `;
+                        logsContainer.appendChild(logItem);
+                    });
+                }
+            }
+
+            // Rodapé de Ações
+            const btnToggleStatus = document.getElementById("btn-user-detail-toggle-status");
+            if (btnToggleStatus) {
+                const isActive = (user.status || "active") === "active";
+                btnToggleStatus.innerHTML = isActive ? "🔴 Desativar Conta" : "🟢 Ativar Conta";
+                btnToggleStatus.disabled = isSelf;
+                btnToggleStatus.style.opacity = isSelf ? "0.5" : "1";
+                btnToggleStatus.style.cursor = isSelf ? "not-allowed" : "pointer";
+                btnToggleStatus.onclick = () => {
+                    this.toggleStatus(user.id);
+                    this.openUserDetailsModal(user.id);
+                };
+            }
+
+            const btnResetPwd = document.getElementById("btn-user-detail-reset-pwd");
+            if (btnResetPwd) {
+                btnResetPwd.onclick = () => {
+                    this.resetPassword(user.id);
+                };
+            }
+
+            const btnPdf = document.getElementById("btn-user-detail-pdf");
+            if (btnPdf) {
+                btnPdf.onclick = () => {
+                    btnPdf.disabled = true;
+                    btnPdf.style.opacity = "0.5";
+                    try { generatePerformancePDF(user.email); } catch(e) { alert("Erro ao gerar PDF: " + e.message); }
+                    setTimeout(() => { btnPdf.disabled = false; btnPdf.style.opacity = "1"; }, 1500);
+                };
+            }
+
+            const btnEdit = document.getElementById("btn-user-detail-edit");
+            if (btnEdit) {
+                btnEdit.onclick = () => {
+                    this.closeUserDetailsModal();
+                    this.openEditModal(user.id);
+                };
+            }
+
+            const btnClose = document.getElementById("btn-close-user-details");
+            if (btnClose) btnClose.onclick = () => this.closeUserDetailsModal();
+            overlay.onclick = () => this.closeUserDetailsModal();
+
+            overlay.style.display = "block";
+            modal.style.display = "flex";
+            modal.classList.add("open");
+        } catch (err) {
+            console.error("Erro ao abrir modal de detalhes:", err);
         }
-
-        // Rodapé de Ações
-        const btnToggleStatus = document.getElementById("btn-user-detail-toggle-status");
-        if (btnToggleStatus) {
-            const isActive = (user.status || "active") === "active";
-            btnToggleStatus.innerHTML = isActive ? "🔴 Desativar Conta" : "🟢 Ativar Conta";
-            btnToggleStatus.disabled = isSelf;
-            btnToggleStatus.style.opacity = isSelf ? "0.5" : "1";
-            btnToggleStatus.style.cursor = isSelf ? "not-allowed" : "pointer";
-            btnToggleStatus.onclick = () => {
-                this.toggleStatus(user.id);
-                this.openUserDetailsModal(user.id);
-            };
-        }
-
-        const btnResetPwd = document.getElementById("btn-user-detail-reset-pwd");
-        if (btnResetPwd) {
-            btnResetPwd.onclick = () => {
-                this.resetPassword(user.id);
-            };
-        }
-
-        const btnPdf = document.getElementById("btn-user-detail-pdf");
-        if (btnPdf) {
-            btnPdf.onclick = () => {
-                btnPdf.disabled = true;
-                btnPdf.style.opacity = "0.5";
-                try { generatePerformancePDF(user.email); } catch(e) { alert("Erro ao gerar PDF: " + e.message); }
-                setTimeout(() => { btnPdf.disabled = false; btnPdf.style.opacity = "1"; }, 1500);
-            };
-        }
-
-        const btnEdit = document.getElementById("btn-user-detail-edit");
-        if (btnEdit) {
-            btnEdit.onclick = () => {
-                this.closeUserDetailsModal();
-                this.openEditModal(user.id);
-            };
-        }
-
-        const btnClose = document.getElementById("btn-close-user-details");
-        if (btnClose) btnClose.onclick = () => this.closeUserDetailsModal();
-        overlay.onclick = () => this.closeUserDetailsModal();
-
-        overlay.style.display = "block";
-        modal.style.display = "block";
-        modal.classList.add("open");
     },
 
     closeUserDetailsModal() {

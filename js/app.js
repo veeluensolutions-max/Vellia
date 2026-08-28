@@ -150,6 +150,17 @@ function startInactivityTracking() {
     });
 }
 
+function stopInactivityTracking() {
+    if (inactivityTimer) clearTimeout(inactivityTimer);
+    if (inactivityCountdownInterval) clearInterval(inactivityCountdownInterval);
+    closeInactivityModal();
+    
+    const events = ["mousemove", "mousedown", "keypress", "scroll", "touchstart"];
+    events.forEach(event => {
+        window.removeEventListener(event, resetInactivityTimer);
+    });
+}
+
 // Heartbeat de Presença Online em Tempo Real
 let presenceHeartbeatTimer = null;
 

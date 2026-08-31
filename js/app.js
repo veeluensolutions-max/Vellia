@@ -31,6 +31,7 @@ import { ThemeManager } from "./theme-manager.js";
 import { CommandPalette } from "./command-palette.js";
 import { Toast } from "./toast.js";
 import { AudioEngine } from "./audio.js";
+import { Calculators } from "./calculators.js";
 
 // Elementos Globais DOM (Getters Dinâmicos para garantia de não-nulidade)
 const elements = {
@@ -220,6 +221,7 @@ function initApp() {
     ChurnAutopilot.init();
     Leaderboard.init();
     ThemeManager.init();
+    Calculators.init();
     
     // Inicializar Workspace
     const savedCompany = localStorage.getItem("activeCompany") || "Veeluen Solutions";
@@ -461,6 +463,8 @@ function navigateTo(viewName) {
         "proposals": { section: "Comercial", page: "Propostas & Vendas" },
         "contracts": { section: "Gestão", page: "Contratos & Renovações" },
         "post-sales": { section: "Clientes", page: "Pós-Venda & Retenção" },
+        "calculators": { section: "Ferramentas", page: "Calculadoras de Serviços" },
+        "isocinetica": { section: "Ferramentas", page: "Calculadora de Isocinética" },
         "ai-agents": { section: "Inteligência", page: "Agentes IA 24/7" },
         "calendar": { section: "Operações", page: "Agenda & Vistorias" },
         "inspections": { section: "Técnico", page: "Laudos & Inspeções" },
@@ -519,6 +523,8 @@ function navigateTo(viewName) {
         Calendar.init();
     } else if (viewName === "pricing") {
         Pricing.init();
+    } else if (viewName === "calculators") {
+        Calculators.init();
     } else if (viewName === "integrations") {
         Integrations.init();
     } else if (viewName === "users") {

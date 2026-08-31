@@ -2344,84 +2344,110 @@
                      VIEW: HUB DE CALCULADORAS DE ORÇAMENTOS
                      ========================================================== -->
                 <div id="view-calculators" class="spa-view" style="display: none;">
-                    <div class="calc-hub-header">
-                        <h2>Calculadora de Orçamentos</h2>
-                        <p>Selecione o módulo de serviço para realizar dimensionamentos e gerar propostas comerciais automáticas</p>
+                    <div class="calc-hub-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+                        <div>
+                            <h2 style="font-size: 22px; font-weight: 800; color: var(--text-primary); margin: 0 0 4px 0;">Calculadoras de Serviços & Dimensionamento</h2>
+                            <p style="color: var(--text-secondary); font-size: 13.5px; margin: 0;">Selecione o serviço para realizar dimensionamento técnico em tempo real e gerar propostas comerciais automáticas.</p>
+                        </div>
                     </div>
 
                     <div class="calculators-grid">
                         
-                        <!-- CARD: Energia Solar Fotovoltaica (EM BREVE) -->
-                        <div class="calc-card" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
-                            <span class="calc-card-status tag-coming">EM BREVE</span>
-                            <div class="calc-card-icon" style="color: var(--text-muted); background: rgba(255, 255, 255, 0.05);">
+                        <!-- CARD 1: Energia Solar Fotovoltaica (ATIVO) -->
+                        <div class="calc-card active" data-calc="solar" style="border-top: 3px solid #f59e0b;">
+                            <span class="calc-card-status tag-active">ATIVO</span>
+                            <div class="calc-card-icon" style="color: #f59e0b; background: rgba(245, 158, 11, 0.12);">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
                             </div>
-                            <h3 style="color: var(--text-primary);">Energia Solar Fotovoltaica</h3>
-                            <p style="color: var(--text-secondary);">Dimensionamento técnico e comercial completo para projetos de energia solar.</p>
+                            <h3>Energia Solar Fotovoltaica</h3>
+                            <p>Dimensionamento de potência (kWp), kits de módulos, geração mensal e payback financeiro.</p>
+                            <div class="calc-card-action" style="color: #f59e0b;">
+                                <span>Abrir Calculadora</span>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            </div>
                         </div>
 
-                        <!-- CARD: Gestão de ETE (EM BREVE) -->
-                        <div class="calc-card" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
-                            <span class="calc-card-status tag-coming">EM BREVE</span>
-                            <div class="calc-card-icon" style="color: var(--text-muted); background: rgba(255, 255, 255, 0.05);">
+                        <!-- CARD 2: Gestão de ETE (ATIVO) -->
+                        <div class="calc-card active" data-calc="ete" style="border-top: 3px solid #0284c7;">
+                            <span class="calc-card-status tag-active">ATIVO</span>
+                            <div class="calc-card-icon" style="color: #0284c7; background: rgba(2, 132, 199, 0.12);">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
                             </div>
-                            <h3 style="color: var(--text-primary);">Gestão de ETE</h3>
-                            <p style="color: var(--text-secondary);">Estações de Tratamento de Efluentes com cálculos químicos e biológicos.</p>
+                            <h3>Gestão e Operação de ETE</h3>
+                            <p>Estações de Tratamento de Efluentes: dosagem química, visitas operacionais e laudos laboratoriais.</p>
+                            <div class="calc-card-action" style="color: #0284c7;">
+                                <span>Abrir Calculadora</span>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            </div>
                         </div>
 
-                        <!-- CARD: Consultoria Ambiental (EM BREVE) -->
-                        <div class="calc-card" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
-                            <span class="calc-card-status tag-coming">EM BREVE</span>
-                            <div class="calc-card-icon" style="color: var(--text-muted); background: rgba(255, 255, 255, 0.05);">
+                        <!-- CARD 3: Consultoria Ambiental (ATIVO) -->
+                        <div class="calc-card active" data-calc="licensing" style="border-top: 3px solid #10b981;">
+                            <span class="calc-card-status tag-active">ATIVO</span>
+                            <div class="calc-card-icon" style="color: #10b981; background: rgba(16, 185, 129, 0.12);">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
                             </div>
-                            <h3 style="color: var(--text-primary);">Consultoria Ambiental</h3>
-                            <p style="color: var(--text-secondary);">Licenciamento, laudos técnicos, relatórios de impacto e gestão integrada.</p>
+                            <h3>Consultoria e Licenciamento Ambiental</h3>
+                            <p>Licenciamento prévio, instalação e operação (LP/LI/LO), elaboração de PGRS, PCA e emissão de ART.</p>
+                            <div class="calc-card-action" style="color: #10b981;">
+                                <span>Abrir Calculadora</span>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            </div>
                         </div>
 
-                        <!-- CARD: Transporte de Resíduos (EM BREVE) -->
-                        <div class="calc-card" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
-                            <span class="calc-card-status tag-coming">EM BREVE</span>
-                            <div class="calc-card-icon" style="color: var(--text-muted); background: rgba(255, 255, 255, 0.05);">
+                        <!-- CARD 4: Transporte de Resíduos (ATIVO) -->
+                        <div class="calc-card active" data-calc="waste" style="border-top: 3px solid #ea580c;">
+                            <span class="calc-card-status tag-active">ATIVO</span>
+                            <div class="calc-card-icon" style="color: #ea580c; background: rgba(234, 88, 12, 0.12);">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
                             </div>
-                            <h3 style="color: var(--text-primary);">Transporte de Resíduos</h3>
-                            <p style="color: var(--text-secondary);">Logística reversa, rotas seguras e transporte especializado de materiais.</p>
+                            <h3>Transporte e Destinação de Resíduos</h3>
+                            <p>Logística de resíduos industriais Classe I e II, frete especializado, coprocessamento e MTR/CDF.</p>
+                            <div class="calc-card-action" style="color: #ea580c;">
+                                <span>Abrir Calculadora</span>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            </div>
                         </div>
 
-                        <!-- CARD: NR-13 (EM BREVE) -->
-                        <div class="calc-card" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
-                            <span class="calc-card-status tag-coming">EM BREVE</span>
-                            <div class="calc-card-icon" style="color: var(--text-muted); background: rgba(255, 255, 255, 0.05);">
+                        <!-- CARD 5: NR-13 (ATIVO) -->
+                        <div class="calc-card active" data-calc="nr13" style="border-top: 3px solid #e11d48;">
+                            <span class="calc-card-status tag-active">ATIVO</span>
+                            <div class="calc-card-icon" style="color: #e11d48; background: rgba(225, 29, 72, 0.12);">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                             </div>
-                            <h3 style="color: var(--text-primary);">NR-13</h3>
-                            <p style="color: var(--text-secondary);">Inspeção de caldeiras, vasos de pressão e tubulações industriais.</p>
+                            <h3>Inspeção de Segurança NR-13</h3>
+                            <p>Inspeção periódica e extraordinária de vasos de pressão, caldeiras, ultrassom, teste hidrostático e ART.</p>
+                            <div class="calc-card-action" style="color: #e11d48;">
+                                <span>Abrir Calculadora</span>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            </div>
                         </div>
 
-                        <!-- CARD: ESG & Carbono (EM BREVE) -->
-                        <div class="calc-card" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
-                            <span class="calc-card-status tag-coming">EM BREVE</span>
-                            <div class="calc-card-icon" style="color: var(--text-muted); background: rgba(255, 255, 255, 0.05);">
+                        <!-- CARD 6: ESG & Carbono (ATIVO) -->
+                        <div class="calc-card active" data-calc="esg" style="border-top: 3px solid #8b5cf6;">
+                            <span class="calc-card-status tag-active">ATIVO</span>
+                            <div class="calc-card-icon" style="color: #8b5cf6; background: rgba(139, 92, 246, 0.12);">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                             </div>
-                            <h3 style="color: var(--text-primary);">ESG & Carbono</h3>
-                            <p style="color: var(--text-secondary);">Relatórios de sustentabilidade e inventário de gases de efeito estufa.</p>
+                            <h3>ESG & Inventário de Carbono (GHG)</h3>
+                            <p>Mapeamento de emissões Escopos 1, 2 e 3 (GHG Protocol), pegada de carbono e metas de sustentabilidade.</p>
+                            <div class="calc-card-action" style="color: #8b5cf6;">
+                                <span>Abrir Calculadora</span>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            </div>
                         </div>
 
-                        <!-- CARD: ISOCINÉTICA (ATIVO) -->
-                        <div id="btn-isocinetica-card" class="calc-card active company-specific" data-company="Excelência Ambiental" style="display: none; background: rgba(99, 102, 241, 0.08); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(99, 102, 241, 0.3); box-shadow: 0 8px 32px rgba(99, 102, 241, 0.15);">
-                            <span class="calc-card-status tag-active" style="background: var(--primary); color: white; border: none;">ATIVO</span>
-                            <div class="calc-card-icon" style="background: rgba(99, 102, 241, 0.2); color: var(--primary);">
+                        <!-- CARD 7: ISOCINÉTICA (ATIVO) -->
+                        <div id="btn-isocinetica-card" class="calc-card active" data-calc="isocinetica" style="border-top: 3px solid var(--primary);">
+                            <span class="calc-card-status tag-active">ATIVO</span>
+                            <div class="calc-card-icon" style="background: rgba(99, 102, 241, 0.12); color: var(--primary);">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
                             </div>
-                            <h3 style="color: var(--text-primary);">Isocinética</h3>
-                            <p style="color: var(--text-secondary);">Ferramenta exclusiva da Excelência Ambiental para amostragem de chaminés.</p>
-                            <div class="calc-card-action" style="color: var(--primary); font-weight: 700;">
-                                Acessar calculadora
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            <h3>Amostragem Isocinética de Chaminés</h3>
+                            <p>Dimensionamento de custos de amostragem de emissões atmosféricas, diárias, pernoite e laudos.</p>
+                            <div class="calc-card-action" style="color: var(--primary);">
+                                <span>Abrir Calculadora Completa</span>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                             </div>
                         </div>
 

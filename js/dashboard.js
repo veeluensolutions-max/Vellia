@@ -149,7 +149,7 @@ export const Dashboard = {
     },
 
     // ===========================================================================
-    // DASHBOARD OPERACIONAL (REDESIGN PREMIUM)
+    // DASHBOARD OPERACIONAL
     // ===========================================================================
     renderOperacionalDashboard(proposals, leads) {
         const container = document.getElementById("dashboard-operacional");
@@ -158,22 +158,16 @@ export const Dashboard = {
         const awaiting = proposals.filter(p => p.status === "Aguardando Agendamento" || p.status === "Ganho");
         const scheduled = proposals.filter(p => p.status === "Agendada");
 
-        const renderList = (list, title, color, badgeBg, isAwaiting) => {
+        const renderList = (list, title, color, isAwaiting) => {
             if (list.length === 0) {
                 return `
-                <div class="card" style="padding: 22px 24px; flex: 1; min-width: 320px; border-top: 3px solid ${color};">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px;">
-                        <h4 style="font-weight: 700; font-size: 14px; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 8px;">
-                            ${title}
-                        </h4>
-                        <span style="font-size: 11px; font-weight: 700; background: ${badgeBg}; color: ${color}; padding: 3px 9px; border-radius: 99px;">0 propostas</span>
-                    </div>
-                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 16px; text-align: center;">
-                        <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(148, 163, 184, 0.08); display: flex; align-items: center; justify-content: center; margin-bottom: 12px; color: var(--text-muted);">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                        </div>
-                        <p style="color: var(--text-muted); font-size: 13px; font-weight: 500; margin: 0;">Nenhuma proposta aguardando nesta fila.</p>
-                    </div>
+                <div class="card" style="padding: 20px; flex: 1; border-top: 4px solid ${color};">
+                    <h4 style="font-weight: 700; margin-bottom: 16px; font-size: 14px; color: var(--text-primary);">
+                        ${title} (0)
+                    </h4>
+                    <p style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px 0;">
+                        Nenhuma proposta encontrada.
+                    </p>
                 </div>`;
             }
 
@@ -182,61 +176,45 @@ export const Dashboard = {
                 const leadName = lead ? (lead.company || lead.contact) : "Lead Desconhecido";
                 
                 return `
-                <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; transition: all 0.2s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.02);" onmouseover="this.style.borderColor='var(--primary-light)'" onmouseout="this.style.borderColor='var(--border-color)'">
+                <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                     <div>
-                        <div style="font-weight: 700; font-size: 13.5px; color: var(--text-primary); margin-bottom: 3px;">
-                            ${leadName} • <span style="font-weight: 600; color: var(--text-secondary);">${p.service || 'Serviço Comercial'}</span>
+                        <div style="font-weight: 700; font-size: 14px; color: var(--text-primary); margin-bottom: 4px;">
+                            ${leadName} - ${p.service}
                         </div>
-                        <div style="font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
-                            <span class="code-font" style="background: var(--bg-app); padding: 1px 5px; border-radius: 4px; border: 1px solid var(--border-color);">#${p.id.substring(0,8)}</span>
-                            <span>Vendedor: <strong>${p.authorEmail || 'Geral'}</strong></span>
-                            ${p.value ? `<span>• <strong>${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.value)}</strong></span>` : ''}
+                        <div style="font-size: 12px; color: var(--text-muted);">
+                            Proposta: #${p.id.substring(0,8)} • Vendedor: ${p.authorEmail}
                         </div>
                     </div>
                     <div>
                         ${isAwaiting ? `
-                            <button onclick="window.Dashboard.markProposalScheduled('${p.id}')" class="btn btn-primary" style="font-size: 11.5px; padding: 6px 14px; border-radius: 8px; gap: 6px;">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                                <span>Marcar Agendada</span>
+                            <button onclick="window.Dashboard.markProposalScheduled('${p.id}')" class="btn btn-primary btn-sm" style="font-size: 11px; padding: 6px 12px;">
+                                ✅ Marcar como Agendada
                             </button>
                         ` : `
-                            <span class="badge badge-success" style="font-size: 11px; padding: 4px 10px;">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 4px;"><polyline points="20 6 9 17 4 12"/></svg>
-                                Agendada
-                            </span>
+                            <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);">🗓️ Agendada</span>
                         `}
                     </div>
                 </div>`;
             }).join("");
 
             return `
-            <div class="card" style="padding: 22px 24px; flex: 1; min-width: 320px; border-top: 3px solid ${color};">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-                    <h4 style="font-weight: 700; font-size: 14px; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 8px;">
-                        ${title}
-                    </h4>
-                    <span style="font-size: 11.5px; font-weight: 700; background: ${badgeBg}; color: ${color}; padding: 3px 10px; border-radius: 99px;">
-                        ${list.length} proposta${list.length !== 1 ? 's' : ''}
-                    </span>
-                </div>
-                <div style="max-height: 440px; overflow-y: auto; padding-right: 2px;">
+            <div class="card" style="padding: 20px; flex: 1; border-top: 4px solid ${color};">
+                <h4 style="font-weight: 700; margin-bottom: 16px; font-size: 14px; color: var(--text-primary);">
+                    ${title} (${list.length})
+                </h4>
+                <div style="max-height: 500px; overflow-y: auto; padding-right: 4px;">
                     ${items}
                 </div>
             </div>`;
         };
 
         container.innerHTML = `
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px;">
-                <div>
-                    <h3 style="font-size: 18px; font-weight: 800; color: var(--text-primary); margin: 0 0 2px 0; letter-spacing: -0.02em;">
-                        Painel de Agendamentos (Operacional)
-                    </h3>
-                    <p style="font-size: 12.5px; color: var(--text-muted); margin: 0;">Acompanhamento de fila e execução de serviços vendidos.</p>
-                </div>
-            </div>
+            <h2 style="font-size: 20px; font-weight: 800; color: var(--text-primary); margin-bottom: 20px;">
+                Painel de Agendamentos (Operacional)
+            </h2>
             <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                ${renderList(awaiting, "Aguardando Agendamento", "#f59e0b", "rgba(245, 158, 11, 0.12)", true)}
-                ${renderList(scheduled, "Já Agendadas", "#10b981", "rgba(16, 185, 129, 0.12)", false)}
+                ${renderList(awaiting, "⏳ Aguardando Agendamento", "#f59e0b", true)}
+                ${renderList(scheduled, "✅ Já Agendadas", "#10b981", false)}
             </div>
         `;
     },
@@ -249,12 +227,13 @@ export const Dashboard = {
                 p.status = "Agendada";
                 Store.saveProposals(proposals);
                 this.renderAll();
+                alert("Proposta marcada como Agendada!");
             }
         }
     },
 
     // ===========================================================================
-    // KPIs GLOBAIS (DESIGN SYSTEM VELLIA 2.0)
+    // KPIs GLOBAIS
     // ===========================================================================
     renderKPIs(leads, proposals) {
         const totalLeads = leads.length;
@@ -297,7 +276,7 @@ export const Dashboard = {
         const fmt = v => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
         // Helper para gerar Sparkline SVG de alta definição
-        const generateSparklineSVG = (points, color = "#6366f1", height = 34, width = 100) => {
+        const generateSparklineSVG = (points, color = "#6366f1", height = 36, width = 110) => {
             if (!points || points.length < 2) points = [12, 18, 15, 24, 28, 38, 42];
             const min = Math.min(...points);
             const max = Math.max(...points);
@@ -306,7 +285,7 @@ export const Dashboard = {
             
             const coords = points.map((p, i) => {
                 const x = i * stepX;
-                const y = height - ((p - min) / range) * (height - 8) - 4;
+                const y = height - ((p - min) / range) * (height - 10) - 5;
                 return { x, y };
             });
 
@@ -325,29 +304,17 @@ export const Dashboard = {
             const gradId = `spark-grad-${Math.random().toString(36).substr(2, 6)}`;
 
             return `
-                <svg class="kpi-sparkline-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="width: 100%; height: 32px; overflow: visible;">
+                <svg class="kpi-sparkline-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="width: 100%; height: 38px; overflow: visible;">
                     <defs>
                         <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stop-color="${color}" stop-opacity="0.3" />
+                            <stop offset="0%" stop-color="${color}" stop-opacity="0.35" />
                             <stop offset="100%" stop-color="${color}" stop-opacity="0.0" />
                         </linearGradient>
                     </defs>
                     <path d="${fillD}" fill="url(#${gradId})" />
-                    <path d="${pathD}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="${pathD}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
             `;
-        };
-
-        // Ícones SVG corporativos minimalistas
-        const svgIcons = {
-            mrr: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>`,
-            tcv: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`,
-            activeClients: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
-            riskClients: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
-            revenue: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
-            pipeline: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`,
-            avgTicket: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`,
-            convRate: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>`
         };
 
         const kpis = [
@@ -355,8 +322,8 @@ export const Dashboard = {
                 id: "kpi-mrr", 
                 val: fmt(mrr), 
                 label: "Receita Recorrente (MRR)", 
-                iconSvg: svgIcons.mrr, 
-                color: "#6366f1", 
+                icon: "🔄", 
+                color: "#8b5cf6", 
                 trend: "+12.5%", 
                 trendPositive: true,
                 sparkData: [10, 15, 14, 22, 28, 35, 42],
@@ -367,7 +334,7 @@ export const Dashboard = {
                 id: "kpi-tcv", 
                 val: fmt(tcv), 
                 label: "Total em Contratos (TCV)", 
-                iconSvg: svgIcons.tcv, 
+                icon: "📜", 
                 color: "#10b981", 
                 trend: "+18.4%", 
                 trendPositive: true,
@@ -379,8 +346,8 @@ export const Dashboard = {
                 id: "kpi-health-active", 
                 val: activeClientsCount, 
                 label: "Clientes Ativos", 
-                iconSvg: svgIcons.activeClients, 
-                color: "#0284c7", 
+                icon: "🟢", 
+                color: "#10b981", 
                 trend: "98% Retenção", 
                 trendPositive: true,
                 sparkData: [8, 12, 14, 15, 18, 20, 22],
@@ -390,7 +357,7 @@ export const Dashboard = {
                 id: "kpi-health-risk", 
                 val: riskClientsCount, 
                 label: "Clientes Em Risco", 
-                iconSvg: svgIcons.riskClients, 
+                icon: "🔴", 
                 color: "#ef4444", 
                 trend: riskClientsCount > 0 ? "Atenção" : "Zero Riscos", 
                 trendPositive: riskClientsCount === 0,
@@ -401,7 +368,7 @@ export const Dashboard = {
                 id: "kpi-revenue", 
                 val: fmt(revenue), 
                 label: "Receita em Propostas", 
-                iconSvg: svgIcons.revenue, 
+                icon: "💰", 
                 color: "#10b981", 
                 trend: "+15.8%", 
                 trendPositive: true,
@@ -413,8 +380,8 @@ export const Dashboard = {
                 id: "kpi-pipeline", 
                 val: fmt(pipeline), 
                 label: "Pipeline em Aberto", 
-                iconSvg: svgIcons.pipeline, 
-                color: "#8b5cf6", 
+                icon: "📊", 
+                color: "#6366f1", 
                 trend: "Em Negociação", 
                 trendPositive: true,
                 sparkData: [30, 28, 35, 42, 38, 45, 52],
@@ -425,7 +392,7 @@ export const Dashboard = {
                 id: "kpi-avg-ticket", 
                 val: fmt(avgTicket), 
                 label: "Ticket Médio", 
-                iconSvg: svgIcons.avgTicket, 
+                icon: "🎯", 
                 color: "#f59e0b", 
                 trend: "+6.3%", 
                 trendPositive: true,
@@ -437,7 +404,7 @@ export const Dashboard = {
                 id: "kpi-conv-rate", 
                 val: `${convRate}%`, 
                 label: "Taxa de Conversão", 
-                iconSvg: svgIcons.convRate, 
+                icon: "📈", 
                 color: convRate >= 30 ? "#10b981" : convRate >= 15 ? "#f59e0b" : "#ef4444", 
                 trend: convRate >= 20 ? "Alta Performance" : "Dentro da Média", 
                 trendPositive: convRate >= 15,
@@ -451,15 +418,15 @@ export const Dashboard = {
 
         container.innerHTML = kpis.map(k => `
             <div class="card stat-card dash-kpi-card modern-kpi-card" 
-                 style="--kpi-color: ${k.color}; ${k.link ? 'cursor: pointer;' : ''}" 
+                 style="--kpi-color: ${k.color}; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05); ${k.link ? 'cursor: pointer;' : ''}" 
                  ${k.link ? `onclick="window.location.hash = '${k.link}'"` : ''}>
                 <div class="kpi-top-row">
                     <div class="stat-info">
                         <span class="stat-label">${k.label}</span>
-                        <span class="stat-value modern-kpi-value tabular-nums" style="font-size: ${k.large ? '21px' : '24px'}; color: var(--text-primary);">${k.val}</span>
+                        <span class="stat-value modern-kpi-value" style="font-size: ${k.large ? '20px' : '24px'}; color: var(--text-primary);">${k.val}</span>
                     </div>
-                    <div class="dash-kpi-icon modern-kpi-icon" style="background: ${k.color}14; color: ${k.color}; border: 1px solid ${k.color}28;">
-                        ${k.iconSvg}
+                    <div class="dash-kpi-icon modern-kpi-icon" style="background: ${k.color}1a; color: ${k.color}; border: 1px solid ${k.color}33;">
+                        <span>${k.icon}</span>
                     </div>
                 </div>
 
@@ -772,7 +739,6 @@ export const Dashboard = {
         const months = [];
         for (let i = 5; i >= 0; i--) {
             const d = new Date();
-            d.setDate(1); // Garante que a virada de mês em dias 29, 30 ou 31 não pule/duplique meses
             d.setMonth(d.getMonth() - i);
             months.push({
                 label: d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "").toUpperCase(),
@@ -794,22 +760,22 @@ export const Dashboard = {
 
         const ctx = canvas.getContext('2d');
         const gradient = ctx.createLinearGradient(0, 0, 0, 250);
-        gradient.addColorStop(0, 'rgba(16, 185, 129, 0.32)');
-        gradient.addColorStop(0.6, 'rgba(16, 185, 129, 0.06)');
+        gradient.addColorStop(0, 'rgba(16, 185, 129, 0.35)');
+        gradient.addColorStop(0.6, 'rgba(16, 185, 129, 0.08)');
         gradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
 
         const glassTooltip = {
-            backgroundColor: 'rgba(15, 23, 42, 0.94)',
+            backgroundColor: 'rgba(15, 23, 42, 0.92)',
             titleColor: '#ffffff',
             bodyColor: '#e2e8f0',
-            borderColor: 'rgba(255, 255, 255, 0.14)',
+            borderColor: 'rgba(255, 255, 255, 0.12)',
             borderWidth: 1,
             padding: 12,
             cornerRadius: 10,
             boxPadding: 6,
             usePointStyle: true,
-            titleFont: { family: "'Plus Jakarta Sans', sans-serif", weight: '700', size: 12 },
-            bodyFont: { family: "'Plus Jakarta Sans', sans-serif", size: 12 }
+            titleFont: { family: 'Inter, sans-serif', weight: '700', size: 12 },
+            bodyFont: { family: 'Inter, sans-serif', size: 12 }
         };
 
         charts.revenue = new Chart(canvas, {
@@ -851,17 +817,15 @@ export const Dashboard = {
                 scales: {
                     x: {
                         grid: { display: false },
-                        ticks: { color: '#64748b', font: { family: "'Plus Jakarta Sans', sans-serif", weight: 600, size: 11.5 } }
+                        ticks: { color: '#64748b', font: { family: 'Inter, sans-serif', weight: 600, size: 11 } }
                     },
                     y: {
                         beginAtZero: true,
                         grid: { color: 'rgba(148, 163, 184, 0.08)' },
                         ticks: {
                             color: '#64748b',
-                            maxTicksLimit: 5,
-                            font: { family: "'Plus Jakarta Sans', sans-serif", size: 11 },
+                            font: { family: 'Inter, sans-serif', size: 11 },
                             callback: function(value) {
-                                if (value === 0) return 'R$ 0';
                                 return value >= 1000 ? 'R$ ' + (value/1000) + 'k' : 'R$ ' + value;
                             }
                         }
@@ -899,17 +863,17 @@ export const Dashboard = {
         gradPending.addColorStop(1, '#4f46e5');
 
         const glassTooltip = {
-            backgroundColor: 'rgba(15, 23, 42, 0.94)',
+            backgroundColor: 'rgba(15, 23, 42, 0.92)',
             titleColor: '#ffffff',
             bodyColor: '#e2e8f0',
-            borderColor: 'rgba(255, 255, 255, 0.14)',
+            borderColor: 'rgba(255, 255, 255, 0.12)',
             borderWidth: 1,
             padding: 12,
             cornerRadius: 10,
             boxPadding: 6,
             usePointStyle: true,
-            titleFont: { family: "'Plus Jakarta Sans', sans-serif", weight: '700', size: 12 },
-            bodyFont: { family: "'Plus Jakarta Sans', sans-serif", size: 12 }
+            titleFont: { family: 'Inter, sans-serif', weight: '700', size: 12 },
+            bodyFont: { family: 'Inter, sans-serif', size: 12 }
         };
 
         charts.conversion = new Chart(canvas, {
@@ -934,7 +898,7 @@ export const Dashboard = {
                         position: 'right',
                         labels: {
                             color: '#64748b',
-                            font: { family: "'Plus Jakarta Sans', sans-serif", weight: 600, size: 11 },
+                            font: { family: 'Inter, sans-serif', weight: 600, size: 11 },
                             usePointStyle: true,
                             padding: 16
                         }
@@ -951,12 +915,12 @@ export const Dashboard = {
             
                     ctx.restore();
                     var fontSize = (height / 114).toFixed(2);
-                    ctx.font = "800 " + fontSize + "em 'Outfit', sans-serif";
+                    ctx.font = "800 " + fontSize + "em Inter, sans-serif";
                     ctx.textBaseline = "middle";
                     
                     const isDark = document.body.classList.contains("dark") || 
                                    document.documentElement.getAttribute("data-theme") === "dark";
-                    ctx.fillStyle = isDark ? "#f8fafc" : "#0f172a";
+                    ctx.fillStyle = isDark ? "#f8fafc" : "#1e293b";
             
                     var convRate = Math.round((won / total) * 100);
                     var text = convRate + "%",
@@ -998,17 +962,17 @@ export const Dashboard = {
         ];
 
         const glassTooltip = {
-            backgroundColor: 'rgba(15, 23, 42, 0.94)',
+            backgroundColor: 'rgba(15, 23, 42, 0.92)',
             titleColor: '#ffffff',
             bodyColor: '#e2e8f0',
-            borderColor: 'rgba(255, 255, 255, 0.14)',
+            borderColor: 'rgba(255, 255, 255, 0.12)',
             borderWidth: 1,
             padding: 12,
             cornerRadius: 10,
             boxPadding: 6,
             usePointStyle: true,
-            titleFont: { family: "'Plus Jakarta Sans', sans-serif", weight: '700', size: 12 },
-            bodyFont: { family: "'Plus Jakarta Sans', sans-serif", size: 12 }
+            titleFont: { family: 'Inter, sans-serif', weight: '700', size: 12 },
+            bodyFont: { family: 'Inter, sans-serif', size: 12 }
         };
 
         charts.segments = new Chart(canvas, {
@@ -1031,7 +995,7 @@ export const Dashboard = {
                         position: 'right',
                         labels: {
                             color: '#64748b',
-                            font: { family: "'Plus Jakarta Sans', sans-serif", size: 11, weight: 600 },
+                            font: { family: 'Inter, sans-serif', size: 11, weight: 600 },
                             usePointStyle: true,
                             padding: 12
                         }
@@ -1084,17 +1048,17 @@ export const Dashboard = {
         });
 
         const glassTooltip = {
-            backgroundColor: 'rgba(15, 23, 42, 0.94)',
+            backgroundColor: 'rgba(15, 23, 42, 0.92)',
             titleColor: '#ffffff',
             bodyColor: '#e2e8f0',
-            borderColor: 'rgba(255, 255, 255, 0.14)',
+            borderColor: 'rgba(255, 255, 255, 0.12)',
             borderWidth: 1,
             padding: 12,
             cornerRadius: 10,
             boxPadding: 6,
             usePointStyle: true,
-            titleFont: { family: "'Plus Jakarta Sans', sans-serif", weight: '700', size: 12 },
-            bodyFont: { family: "'Plus Jakarta Sans', sans-serif", size: 12 }
+            titleFont: { family: 'Inter, sans-serif', weight: '700', size: 12 },
+            bodyFont: { family: 'Inter, sans-serif', size: 12 }
         };
 
         charts.sources = new Chart(canvas, {
@@ -1119,7 +1083,7 @@ export const Dashboard = {
                         position: 'right',
                         labels: {
                             color: '#64748b',
-                            font: { family: "'Plus Jakarta Sans', sans-serif", size: 11, weight: 600 },
+                            font: { family: 'Inter, sans-serif', size: 11, weight: 600 },
                             usePointStyle: true,
                             padding: 12
                         }

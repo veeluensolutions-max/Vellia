@@ -5,20 +5,66 @@ import { analyzeContext } from "./ai.js";
 let draggedLeadId = null;
 
 export const Kanban = {
+    _filtersInitialized: false,
+
     init() {
         CRM.init(); // Garante a inicializacao dos modais globais e eventos do CRM
+        this.initFilters();
         this.renderKanban();
+    },
+
+    initFilters() {
+        if (this._filtersInitialized) return;
+
+        const searchInput = document.getElementById("kanban-search");
+        if (searchInput) {
+            searchInput.addEventListener("input", () => this.renderKanban());
+        }
+
+        const ownerSelect = document.getElementById("kanban-filter-owner");
+        const ownerGroup = document.getElementById("kanban-filter-owner-group");
+        const session = JSON.parse(localStorage.getItem("comercial_session"));
+
+        if (session && session.role !== "seller" && ownerGroup && ownerSelect) {
+            ownerGroup.style.display = "block";
+            const users = Store.getUsers();
+            const sellers = users.filter(u => u.role === "seller" || u.role === "admin" || u.role === "manager");
+            
+            ownerSelect.innerHTML = `<option value="all">Todos os Vendedores</option>` +
+                sellers.map(s => `<option value="${s.email}">${s.name}</option>`).join("");
+
+            ownerSelect.addEventListener("change", () => this.renderKanban());
+        }
+
+        this._filtersInitialized = true;
     },
 
     renderKanban() {
         const ctx = analyzeContext();
         let leads = Store.getLeads();
         
-        // Importar Auth se não estiver importado no topo, mas podemos usar localStorage direto para evitar dependência circular se preferirmos,
-        // mas Auth provavelmente está acessível. Kanban importa Auth? Não, então vamos pegar direto do localStorage ou adicionar import.
         const session = JSON.parse(localStorage.getItem("comercial_session"));
         if (session && session.role === "seller") {
             leads = leads.filter(l => l.owner === session.email);
+        } else {
+            // Filtro por vendedor selecionado no dropdown (se admin/manager)
+            const ownerSelect = document.getElementById("kanban-filter-owner");
+            if (ownerSelect && ownerSelect.value && ownerSelect.value !== "all") {
+                leads = leads.filter(l => l.owner === ownerSelect.value);
+            }
+        }
+
+        // Filtro de busca por texto (Empresa, Contato, Cargo, Segmento)
+        const searchInput = document.getElementById("kanban-search");
+        const searchQuery = searchInput ? searchInput.value.trim().toLowerCase() : "";
+        if (searchQuery) {
+            leads = leads.filter(l => {
+                const comp = (l.company || "").toLowerCase();
+                const cont = (l.contact || "").toLowerCase();
+                const role = (l.role || "").toLowerCase();
+                const seg = (l.segment || "").toLowerCase();
+                return comp.includes(searchQuery) || cont.includes(searchQuery) || role.includes(searchQuery) || seg.includes(searchQuery);
+            });
         }
         
         // Colunas e IDs
@@ -47,6 +93,7 @@ export const Kanban = {
             if (columns[stage]) columns[stage].innerHTML = "";
             if (counters[stage]) counters[stage].textContent = "0";
         });
+
         // Rerrenderizar ao receber update de score dos agentes, exclusão ou restauração de lead
         if (!this._scoreListenerBound) {
             window.addEventListener("vellia:agentScoreUpdated", () => this.renderKanban());
@@ -55,7 +102,7 @@ export const Kanban = {
             this._scoreListenerBound = true;
         }
 
-        // Contadores locais
+        // Contadores locais e valor total do pipeline
         const stageCounts = {
             "Contato": 0,
             "Lead Gerado": 0,
@@ -65,6 +112,9 @@ export const Kanban = {
             "Cliente Fechado": 0,
             "Cliente Perdido": 0
         };
+
+        let totalPipelineValue = 0;
+        const proposals = Store.getProposals();
 
         // Renderizar cada Lead
         leads.forEach(lead => {
@@ -99,8 +149,11 @@ export const Kanban = {
                 timeColor = "var(--warning)";
             }
 
-            const leadProps = Store.getProposals().filter(p => p.leadId === lead.id && p.status !== "Perdido");
+            const leadProps = proposals.filter(p => p.leadId === lead.id && p.status !== "Perdido");
             const leadValue = leadProps.reduce((s, p) => s + (p.value || 0), 0);
+            if (lead.stage !== "Cliente Perdido") {
+                totalPipelineValue += leadValue;
+            }
             
             const users = Store.getUsers();
             const ownerUser = users.find(u => u && u.email === lead.owner);
@@ -148,28 +201,28 @@ export const Kanban = {
                 scoreBg = "rgba(245, 158, 11, 0.12)"; scoreBorder = "rgba(245, 158, 11, 0.3)";
             }
 
-            card.style.borderLeft = `4px solid ${cardColor}`;
-            card.style.boxShadow = `var(--shadow-sm), 0 2px 12px ${glowColor}`;
+            card.style.borderLeft = `3.5px solid ${cardColor}`;
+            card.style.boxShadow = `0 1px 3px rgba(0,0,0,0.04), 0 2px 8px ${glowColor}`;
 
             // Micro-animações de Hover Premium
             card.addEventListener("mouseenter", () => {
                 if (!card.classList.contains("dragging")) {
-                    card.style.transform = "translateY(-3px)";
+                    card.style.transform = "translateY(-2px)";
                     card.style.borderColor = `${cardColor}60`;
-                    card.style.boxShadow = `var(--shadow-md), 0 6px 20px ${cardColor}22`;
+                    card.style.boxShadow = `var(--shadow-md), 0 4px 14px ${cardColor}18`;
                 }
             });
             card.addEventListener("mouseleave", () => {
                 if (!card.classList.contains("dragging")) {
                     card.style.transform = "";
                     card.style.borderColor = "";
-                    card.style.boxShadow = `var(--shadow-sm), 0 2px 12px ${glowColor}`;
+                    card.style.boxShadow = `0 1px 3px rgba(0,0,0,0.04), 0 2px 8px ${glowColor}`;
                 }
             });
 
             let tempBadge = "";
             if (lead.stage !== "Cliente Fechado" && lead.stage !== "Cliente Perdido") {
-                tempBadge = `<span class="badge ai-score-badge" data-lead-id="${lead.id}" style="font-size: 9px; padding: 2px 7px; border-radius: 99px; background: ${scoreBg}; color: ${scoreColor}; border: 1px solid ${scoreBorder}; display: inline-flex; align-items: center; gap: 3px;" title="Score SDR Agent: ${aiScore}/100 — Prioridade ${scoreLabel}">${scoreIcon} <strong style='font-size:9px;'>${aiScore}</strong></span>`;
+                tempBadge = `<span class="badge ai-score-badge" data-lead-id="${lead.id}" style="font-size: 9.5px; padding: 2px 7px; border-radius: 99px; background: ${scoreBg}; color: ${scoreColor}; border: 1px solid ${scoreBorder}; display: inline-flex; align-items: center; gap: 3px;" title="Score SDR Agent: ${aiScore}/100 — Prioridade ${scoreLabel}">${scoreIcon} <strong style='font-size:9.5px;'>${aiScore}</strong></span>`;
             }
 
             const fmtVal = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(leadValue);
@@ -179,7 +232,7 @@ export const Kanban = {
                 <div style="margin: 2px 0 0 0;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
                         <span style="font-size: 9px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px;">Score IA</span>
-                        <span style="font-size: 9px; font-weight: 800; color: ${scoreColor};">${aiScore}/100</span>
+                        <span style="font-size: 9.5px; font-weight: 800; color: ${scoreColor};">${aiScore}/100</span>
                     </div>
                     <div style="background: var(--border-color); border-radius: 99px; height: 4px; overflow: hidden;">
                         <div class="kanban-score-bar" data-score="${aiScore}" style="width: 0%; height: 100%; border-radius: 99px; background: linear-gradient(90deg, ${scoreColor}99, ${scoreColor}); transition: width 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);"></div>
@@ -192,14 +245,14 @@ export const Kanban = {
             if (lead.stage !== "Cliente Fechado" && lead.stage !== "Cliente Perdido") {
                 if (daysNoContact >= 7) {
                     coldLeadBanner = `
-                        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); font-size: 10px; font-weight: 700; border-radius: 4px; padding: 4px 8px; margin-top: 8px; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.15);">
+                        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); font-size: 10px; font-weight: 700; border-radius: 4px; padding: 4px 8px; margin-top: 4px; display: flex; align-items: center; gap: 6px;">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                             Lead Frio - Retomar Contato!
                         </div>
                     `;
                 } else if (daysNoContact >= 3) {
                     coldLeadBanner = `
-                        <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid var(--warning); color: var(--warning); font-size: 10px; font-weight: 700; border-radius: 4px; padding: 4px 8px; margin-top: 8px; display: flex; align-items: center; gap: 6px;">
+                        <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid var(--warning); color: var(--warning); font-size: 10px; font-weight: 700; border-radius: 4px; padding: 4px 8px; margin-top: 4px; display: flex; align-items: center; gap: 6px;">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                             Esfriando - Faça Contato
                         </div>
@@ -207,31 +260,45 @@ export const Kanban = {
                 }
             }
 
+            // Tratamento elegante de fallbacks para contatos nulos ou vazios
+            const compTitle = (lead.company && lead.company !== "null" && lead.company !== "---") ? lead.company : (lead.contact && lead.contact !== "null" ? lead.contact : "Lead sem identificação");
+            const contSubtitle = (lead.contact && lead.contact !== "null" && lead.contact !== "---") ? lead.contact : "";
+            const roleSubtitle = (lead.role && lead.role !== "null" && lead.role !== "---") ? lead.role : "";
+            
+            let contactLine = "";
+            if (contSubtitle && roleSubtitle) {
+                contactLine = `<div class="kanban-card-contact">${contSubtitle} • <span style="color:var(--text-muted); font-size:11px;">${roleSubtitle}</span></div>`;
+            } else if (contSubtitle) {
+                contactLine = `<div class="kanban-card-contact">${contSubtitle}</div>`;
+            } else if (roleSubtitle) {
+                contactLine = `<div class="kanban-card-contact" style="color:var(--text-muted); font-size:11px;">${roleSubtitle}</div>`;
+            }
+
             card.innerHTML = `
-                <div class="kanban-card-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                <div class="kanban-card-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
                     <div style="display: flex; gap: 4px; align-items: center;">
-                        <span class="badge ${priorityClass}" style="font-size: 9px; padding: 2px 6px; border-radius: 99px;">${priority}</span>
+                        <span class="badge ${priorityClass}" style="font-size: 9.5px; padding: 2px 6px; border-radius: 99px;">${priority}</span>
                         ${tempBadge}
                     </div>
-                    <div class="user-avatar" style="width: 22px; height: 22px; font-size: 9px; font-weight: 700; margin-left: auto;" title="Responsável: ${ownerName}">
+                    <div class="user-avatar" style="width: 22px; height: 22px; font-size: 9px; font-weight: 700; margin-left: auto; border: 1.5px solid var(--border-color);" title="Responsável: ${ownerName}">
                         ${avatar}
                     </div>
                 </div>
-                <div class="kanban-card-company">${lead.company}</div>
-                <div class="kanban-card-contact">${lead.contact} • <span style="font-size:11px; color:var(--text-muted);">${lead.role || 'Sem cargo'}</span></div>
+                <div class="kanban-card-company">${compTitle}</div>
+                ${contactLine}
                 
                 ${leadValue > 0 ? `
-                <div class="kanban-card-value" style="font-size: 13px; font-weight: 800; color: var(--success); margin: 4px 0 2px 0;">
+                <div class="kanban-card-value" style="font-size: 13px; font-weight: 800; color: #10b981; margin: 3px 0 1px 0;">
                     ${fmtVal}
                 </div>
                 ` : ""}
                 
                 ${scoreBarHtml}
 
-                <div class="kanban-card-details" style="margin-top: 4px;">
-                    <span class="kanban-card-tag">${lead.segment}</span>
+                <div class="kanban-card-details">
+                    <span class="kanban-card-tag">${lead.segment || 'Geral'}</span>
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <span class="kanban-card-time" style="color: ${timeColor}; font-weight: 500;">
+                        <span class="kanban-card-time" style="color: ${timeColor};">
                             🕒 ${daysNoContact === 0 ? 'Hoje' : `${daysNoContact}d`}
                         </span>
                         <button class="kanban-card-wa-btn" data-id="${lead.id}" onclick="event.stopPropagation(); window.WhatsApp?.openModalForLead('${lead.id}')" title="Enviar WhatsApp">
@@ -254,8 +321,8 @@ export const Kanban = {
             // Animação de entrada staggered
             const cardIndex = stageCounts[lead.stage] - 1;
             card.style.opacity = "0";
-            card.style.transform = "translateY(12px)";
-            card.style.transition = "opacity 0.35s ease, transform 0.35s ease";
+            card.style.transform = "translateY(10px)";
+            card.style.transition = "opacity 0.25s ease, transform 0.25s ease";
 
             container.appendChild(card);
 
@@ -269,10 +336,23 @@ export const Kanban = {
                     if (bar) {
                         setTimeout(() => {
                             bar.style.width = `${bar.dataset.score}%`;
-                        }, 100);
+                        }, 80);
                     }
-                }, Math.min(cardIndex * 50, 400));
+                }, Math.min(cardIndex * 35, 300));
             });
+        });
+
+        // Adicionar empty states para colunas sem cards
+        Object.keys(columns).forEach(stage => {
+            const container = columns[stage];
+            if (container && stageCounts[stage] === 0) {
+                container.innerHTML = `
+                    <div class="kanban-empty-column">
+                        <div class="kanban-empty-icon">📭</div>
+                        <span>Nenhum lead nesta etapa</span>
+                    </div>
+                `;
+            }
         });
 
         // Atualizar contadores no topo das colunas
@@ -281,6 +361,17 @@ export const Kanban = {
                 counters[stage].textContent = stageCounts[stage];
             }
         });
+
+        // Atualizar resumo no topo do Kanban
+        const totalLeadsEl = document.getElementById("kanban-summary-total-leads");
+        if (totalLeadsEl) {
+            totalLeadsEl.textContent = leads.length;
+        }
+
+        const totalValueEl = document.getElementById("kanban-summary-total-value");
+        if (totalValueEl) {
+            totalValueEl.textContent = totalPipelineValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+        }
 
         // Configurar zonas de Drop (containers de cards de cada coluna)
         Object.keys(columns).forEach(stage => {
@@ -315,13 +406,11 @@ export const Kanban = {
         draggedLeadId = leadId;
         e.dataTransfer.setData("text/plain", leadId);
         e.dataTransfer.effectAllowed = "move";
-        // Delay para garantir que o card visualmente suma após pegá-lo
         requestAnimationFrame(() => e.currentTarget.classList.add("dragging"));
     },
 
     handleDragEnd(e) {
         e.currentTarget.classList.remove("dragging");
-        // Limpar todos os estados visuais de drag
         document.querySelectorAll(".kanban-col-cards").forEach(col => {
             col.classList.remove("drag-over");
         });
@@ -332,7 +421,6 @@ export const Kanban = {
     handleDragOver(e) {
         e.preventDefault();
         e.dataTransfer.dropEffect = "move";
-        // Mostrar placeholder de inserção por posição
         const container = e.currentTarget;
         const beforeCard = this._getDropPosition(e, container);
         this._removePlaceholders();
@@ -352,7 +440,6 @@ export const Kanban = {
     },
 
     handleDragLeave(e, container) {
-        // Verificar se está realmente saindo do container e não de um filho (card)
         if (!container.contains(e.relatedTarget)) {
             container.classList.remove("drag-over");
             this._removePlaceholders();
@@ -369,10 +456,8 @@ export const Kanban = {
         const lead = Store.getLeadById(leadId);
         if (!lead) return;
 
-        // Se o estágio for o mesmo, não faz nada
         if (lead.stage === targetStage) return;
 
-        // Registrar listener único para recarregar Kanban quando a mudança ocorrer
         const onStageChanged = () => {
             this.renderKanban();
             window.removeEventListener("vellia:stageChanged", onStageChanged);
@@ -382,7 +467,6 @@ export const Kanban = {
         window.addEventListener("vellia:stageChanged", onStageChanged, { once: true });
         window.addEventListener("vellia:stageCancelled", onStageChanged, { once: true });
 
-        // Chamar fluxo de transição com justificativa do CRM
         CRM.triggerStageChange(leadId, targetStage);
     }
 };

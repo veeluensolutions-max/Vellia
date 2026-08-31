@@ -1797,20 +1797,68 @@
                 </div>
 
                 <div id="view-kanban" class="spa-view" style="display: none;">
-                    <div class="crm-header-bar" style="margin-bottom: 16px;">
+                    <!-- Kanban Header Bar -->
+                    <div class="crm-header-bar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
                         <div>
-                            <h3 style="font-weight: 700;">Funil de Vendas Kanban</h3>
-                            <p style="color: var(--text-secondary); font-size: 13px;">Arraste e solte os cards para atualizar a etapa comercial de cada lead.</p>
+                            <h3 style="font-weight: 800; font-size: 20px; color: var(--text-primary); margin: 0 0 4px 0;">Funil de Vendas Kanban</h3>
+                            <p style="color: var(--text-secondary); font-size: 13px; margin: 0;">Arraste e solte os cards para atualizar a etapa comercial em tempo real.</p>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <!-- View Switcher -->
+                            <div class="crm-view-switcher">
+                                <button class="view-switch-btn" onclick="window.location.hash = '#crm'" title="Visualização em Lista/Tabela">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                                    <span>Tabela</span>
+                                </button>
+                                <button class="view-switch-btn active" data-target="kanban" title="Visualização em Pipeline Kanban">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></svg>
+                                    <span>Kanban</span>
+                                </button>
+                            </div>
+
+                            <button id="btn-kanban-new-lead" onclick="document.getElementById('btn-new-lead')?.click()" class="btn btn-primary" style="gap: 6px;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                <span>Novo Lead</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Barra de Filtros & Métricas Rápidas do Kanban -->
+                    <div class="card" style="padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+                        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex-grow: 1;">
+                            <div class="input-wrapper" style="min-width: 240px; flex-grow: 1; max-width: 380px;">
+                                <input type="text" id="kanban-search" class="filter-control" placeholder="Filtrar por empresa, contato ou cargo..." style="width: 100%; padding-left: 36px; height: 38px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 12px; color: var(--text-muted);"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            </div>
+
+                            <div id="kanban-filter-owner-group" style="min-width: 180px; display: none;">
+                                <select id="kanban-filter-owner" class="filter-control" style="height: 38px; font-size: 13px;">
+                                    <option value="all">Todos os Vendedores</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Resumo de Pipeline do Kanban -->
+                        <div style="display: flex; align-items: center; gap: 14px;">
+                            <div style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text-secondary);">
+                                <span style="font-weight: 600;">Leads:</span>
+                                <strong id="kanban-summary-total-leads" style="color: var(--text-primary); font-variant-numeric: tabular-nums;">0</strong>
+                            </div>
+                            <div style="height: 16px; width: 1px; background: var(--border-color);"></div>
+                            <div style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text-secondary);">
+                                <span style="font-weight: 600;">Pipeline:</span>
+                                <strong id="kanban-summary-total-value" style="color: #10b981; font-variant-numeric: tabular-nums;">R$ 0</strong>
+                            </div>
                         </div>
                     </div>
                     
-                    <!-- Quadro Kanban Horizontal -->
+                    <!-- Quadro Kanban Horizontal Responsivo -->
                     <div class="kanban-board-container">
-                        <div class="kanban-board" style="min-width: 1750px;">
+                        <div class="kanban-board">
                             
                             <!-- Coluna 1: Contato -->
                             <div class="kanban-col" data-stage="Contato">
-                                <div class="kanban-col-header" style="border-top-color: #94a3b8;">
+                                <div class="kanban-col-header" style="border-top-color: #64748b;">
                                     <span class="kanban-col-title">1. Contato</span>
                                     <span class="kanban-col-count" id="count-Contato">0</span>
                                 </div>
@@ -1819,7 +1867,7 @@
 
                             <!-- Coluna 2: Lead Gerado -->
                             <div class="kanban-col" data-stage="Lead Gerado">
-                                <div class="kanban-col-header" style="border-top-color: var(--primary);">
+                                <div class="kanban-col-header" style="border-top-color: #6366f1;">
                                     <span class="kanban-col-title">2. Lead Gerado</span>
                                     <span class="kanban-col-count" id="count-Lead-Gerado">0</span>
                                 </div>
@@ -1837,7 +1885,7 @@
 
                             <!-- Coluna 4: Proposta Enviada -->
                             <div class="kanban-col" data-stage="Proposta Enviada">
-                                <div class="kanban-col-header" style="border-top-color: var(--warning);">
+                                <div class="kanban-col-header" style="border-top-color: #f59e0b;">
                                     <span class="kanban-col-title">4. Proposta Enviada</span>
                                     <span class="kanban-col-count" id="count-Proposta-Enviada">0</span>
                                 </div>
@@ -1855,7 +1903,7 @@
 
                             <!-- Coluna 6: Cliente Fechado -->
                             <div class="kanban-col" data-stage="Cliente Fechado">
-                                <div class="kanban-col-header" style="border-top-color: var(--success);">
+                                <div class="kanban-col-header" style="border-top-color: #10b981;">
                                     <span class="kanban-col-title">6. Cliente Fechado</span>
                                     <span class="kanban-col-count" id="count-Cliente-Fechado">0</span>
                                 </div>
@@ -1864,7 +1912,7 @@
 
                             <!-- Coluna 7: Cliente Perdido -->
                             <div class="kanban-col" data-stage="Cliente Perdido">
-                                <div class="kanban-col-header" style="border-top-color: var(--danger);">
+                                <div class="kanban-col-header" style="border-top-color: #ef4444;">
                                     <span class="kanban-col-title">7. Cliente Perdido</span>
                                     <span class="kanban-col-count" id="count-Cliente-Perdido">0</span>
                                 </div>

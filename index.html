@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vellia - Sistema Comercial Inteligente</title>
     <link rel="icon" type="image/png" href="favicon.png">
+    <!-- Google Fonts Harmonizadas: Plus Jakarta Sans + Outfit + JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet">
     <!-- CSS Customizado -->
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/isocinetica.css">
@@ -472,13 +476,13 @@
                             </button>
                         </div>
                         <!-- KPIs dinâmicos — preenchidos via dashboard.js -->
-                        <div id="dashboard-kpis" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; margin-bottom: 28px;">
+                        <div id="dashboard-kpis" class="kpis-grid-responsive" style="margin-bottom: 28px;">
                             <!-- Carregado via JS -->
                         </div>
 
                         <!-- Linha 1: Funil + Receita Mensal -->
                         <div class="grid-2col" style="margin-bottom: 24px;">
-                            <div class="card" style="padding: 20px 24px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
+                            <div class="card" style="padding: 22px 24px;">
                                 <h4 style="font-weight: 700; margin-bottom: 18px; font-size: 13px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
                                     <span>🔻</span> Funil de Conversão — Taxas por Etapa
                                 </h4>
@@ -487,7 +491,7 @@
                                 </div>
                             </div>
 
-                            <div class="card" style="padding: 20px 24px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
+                            <div class="card" style="padding: 22px 24px;">
                                 <h4 style="font-weight: 700; margin-bottom: 18px; font-size: 13px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
                                     <span>📈</span> Receita Mensal — Últimos 6 Meses
                                 </h4>
@@ -499,7 +503,7 @@
 
                         <!-- Linha 2: Conversão + Segmentos + Origem dos Leads -->
                         <div class="grid-cols-3" style="margin-bottom: 24px;">
-                            <div class="card" style="padding: 20px 24px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
+                            <div class="card" style="padding: 22px 24px;">
                                 <h4 style="font-weight: 700; margin-bottom: 18px; font-size: 13px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
                                     <span>🎯</span> Taxa de Conversão de Propostas
                                 </h4>
@@ -508,7 +512,7 @@
                                 </div>
                             </div>
 
-                            <div class="card" style="padding: 20px 24px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
+                            <div class="card" style="padding: 22px 24px;">
                                 <h4 style="font-weight: 700; margin-bottom: 18px; font-size: 13px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
                                     <span>🏢</span> Leads por Segmento de Mercado
                                 </h4>
@@ -517,7 +521,7 @@
                                 </div>
                             </div>
 
-                            <div class="card" style="padding: 20px 24px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
+                            <div class="card" style="padding: 22px 24px;">
                                 <h4 style="font-weight: 700; margin-bottom: 18px; font-size: 13px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
                                     <span>📢</span> Origem dos Leads (Canais)
                                 </h4>
@@ -529,14 +533,14 @@
 
                         <!-- Linha 3: Ranking + Feed de Atividade -->
                         <div class="grid-2col" style="margin-bottom: 24px;">
-                            <div class="card" style="padding: 20px 24px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
+                            <div class="card" style="padding: 22px 24px;">
                                 <h4 style="font-weight: 700; margin-bottom: 18px; font-size: 13px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
                                     <span>🏆</span> Ranking de Vendedores
                                 </h4>
                                 <div id="chart-ranking"><!-- Carregado via JS --></div>
                             </div>
 
-                            <div class="card" style="padding: 20px 24px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
+                            <div class="card" style="padding: 22px 24px;">
                                 <h4 style="font-weight: 700; margin-bottom: 18px; font-size: 13px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
                                     <span>⚡</span> Atividade Recente
                                 </h4>
@@ -544,12 +548,12 @@
                             </div>
                         </div>
                         <!-- 🎯 Painel de Metas & Comissões -->
-                        <div id="dashboard-goals-commissions-panel" class="card" style="order: 999; padding: 22px 26px; margin-bottom: 24px; border-left: 4px solid #10b981; background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid rgba(255, 255, 255, 0.05); border-right: 1px solid rgba(255, 255, 255, 0.05); border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                        <div id="dashboard-goals-commissions-panel" class="card" style="order: 999; padding: 22px 26px; margin-bottom: 24px; border-left: 4px solid #10b981;">
                             <!-- Preenchido via Dashboard.renderGoalsCommissionPanel() -->
                         </div>
 
                         <!-- Linha 4: Painel de Gestão de Tarefas (Admin/Gerente) -->
-                        <div class="card" style="padding: 20px 24px; border-left: 4px solid var(--primary); background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid rgba(255, 255, 255, 0.05); border-right: 1px solid rgba(255, 255, 255, 0.05); border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                        <div class="card" style="padding: 22px 24px; border-left: 4px solid var(--primary);">
                             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
                                 <div>
                                     <h4 style="font-weight: 700; font-size: 14px; color: var(--text-primary); margin: 0 0 4px 0; display: flex; align-items: center; gap: 8px;">

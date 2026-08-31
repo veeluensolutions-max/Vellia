@@ -36,8 +36,8 @@ export const Calculators = {
         if (document.getElementById("calculator-modal-overlay")) return;
 
         const modalHtml = `
-            <div id="calculator-modal-overlay" class="modal-overlay" style="display: none; z-index: 2000; backdrop-filter: blur(8px);"></div>
-            <div id="calculator-modal" class="modal" style="display: none; z-index: 2001; max-width: 920px; width: 94%; max-height: 90vh; border-radius: 20px; box-shadow: 0 25px 60px rgba(0,0,0,0.3); border: 1px solid var(--border-color); background: var(--bg-surface); overflow: hidden; display: none; flex-direction: column;">
+            <div id="calculator-modal-overlay" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.65); z-index: 2490; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);"></div>
+            <div id="calculator-modal" class="modal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2500; max-width: 960px; width: 94%; max-height: 90vh; border-radius: 20px; box-shadow: 0 25px 60px rgba(0,0,0,0.4); border: 1px solid var(--border-color); background: var(--bg-surface); opacity: 1; overflow: hidden; flex-direction: column;">
                 <!-- Header -->
                 <div style="padding: 18px 24px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; background: var(--bg-surface);">
                     <div style="display: flex; align-items: center; gap: 12px;">
@@ -155,6 +155,9 @@ export const Calculators = {
         const modal = document.getElementById("calculator-modal");
         overlay.style.display = "block";
         modal.style.display = "flex";
+        modal.style.opacity = "1";
+        modal.style.transform = "translate(-50%, -50%) scale(1)";
+        modal.classList.add("open");
         document.body.style.overflow = "hidden";
     },
 
@@ -162,7 +165,11 @@ export const Calculators = {
         const overlay = document.getElementById("calculator-modal-overlay");
         const modal = document.getElementById("calculator-modal");
         if (overlay) overlay.style.display = "none";
-        if (modal) modal.style.display = "none";
+        if (modal) {
+            modal.style.display = "none";
+            modal.style.opacity = "0";
+            modal.classList.remove("open");
+        }
         document.body.style.overflow = "";
     },
 

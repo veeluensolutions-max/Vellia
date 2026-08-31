@@ -299,6 +299,21 @@
                 </div>
 
                 <div class="header-actions">
+                    <!-- Alternador de Empresas / Workspace no Topo -->
+                    <div class="company-selector-container workspace-header-switcher" style="display: flex; align-items: center; gap: 8px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 10px; padding: 5px 12px; box-shadow: var(--shadow-sm);">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-size: 13px;">🏢</span>
+                            <span style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Empresa:</span>
+                        </div>
+                        <div style="position: relative; display: flex; align-items: center;">
+                            <select id="header-workspace-select" class="workspace-select-el" onchange="window.switchCompany(this.value, true)" style="appearance: none; -webkit-appearance: none; background: transparent; border: none; color: var(--text-primary); font-size: 12.5px; font-weight: 700; outline: none; cursor: pointer; padding-right: 20px; font-family: inherit;">
+                                <option value="Veeluen Solutions" style="background: var(--bg-surface); color: var(--text-primary);">Veeluen Solutions</option>
+                                <option value="Excelência Ambiental" style="background: var(--bg-surface); color: var(--text-primary);">Excelência Ambiental</option>
+                            </select>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="position: absolute; right: 0; pointer-events: none; color: var(--text-muted);"><path d="M6 9l6 6 6-6"/></svg>
+                        </div>
+                    </div>
+
                     <!-- Trigger Command Palette (Ctrl + K) -->
                     <button id="btn-command-palette-trigger" class="cmd-palette-trigger" title="Buscar e Ações Rápidas (Ctrl + K)">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>

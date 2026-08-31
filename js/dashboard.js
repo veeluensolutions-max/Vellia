@@ -1902,6 +1902,8 @@ export const Dashboard = {
                     badge = `<span class="badge badge-danger" style="background:#fee2e2; color:#dc2626; font-size:11px;">🔴 Em Risco</span>`;
                 }
 
+                const barColor = st.pct >= 100 ? '#10b981' : st.pct >= 50 ? '#6366f1' : st.pct > 0 ? '#f59e0b' : 'var(--border-color)';
+
                 return `
                     <tr style="border-bottom: 1px solid var(--border-color);">
                         <td style="padding: 12px 16px; display: flex; align-items: center; gap: 10px;">
@@ -1918,9 +1920,9 @@ export const Dashboard = {
                         <td style="padding: 12px 16px;">
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <div style="width: 70px; height: 6px; background: var(--bg-app); border-radius: 99px; overflow: hidden; border: 1px solid var(--border-color);">
-                                    <div style="width: ${st.pct}%; height: 100%; background: #1877F2; border-radius: 99px;"></div>
+                                    <div style="width: ${st.pct}%; height: 100%; background: ${barColor}; border-radius: 99px; transition: width 0.6s ease;"></div>
                                 </div>
-                                <span style="font-weight: 700; font-size: 12px;">${st.pct}%</span>
+                                <span style="font-weight: 700; font-size: 12px; color: ${barColor === 'var(--border-color)' ? 'var(--text-muted)' : barColor};">${st.pct}%</span>
                             </div>
                         </td>
                         <td style="padding: 12px 16px; font-weight: 700; color: #8b5cf6;">R$ ${st.commission.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
@@ -1965,10 +1967,10 @@ export const Dashboard = {
                     </div>
                 </div>
 
-                <!-- Tabela da Equipe -->
-                <div class="table-responsive" style="margin-bottom: 18px;">
-                    <table class="custom-table" style="width: 100%;">
-                        <thead>
+                <!-- Tabela da Equipe com rolagem interna compacta -->
+                <div class="table-responsive" style="margin-bottom: 18px; max-height: 420px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+                    <table class="custom-table" style="width: 100%; margin: 0;">
+                        <thead style="position: sticky; top: 0; z-index: 2; background: var(--bg-surface);">
                             <tr>
                                 <th>Vendedor</th>
                                 <th>Fechado (Mês)</th>

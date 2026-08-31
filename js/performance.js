@@ -96,6 +96,7 @@ export const Performance = {
         // Últimos 6 meses para simplificar visualização
         for (let i = 5; i >= 0; i--) {
             const d = new Date();
+            d.setDate(1); // Garante que a virada de mês em dias 29, 30 ou 31 não pule/duplique meses
             d.setMonth(d.getMonth() - i);
             const monthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
             labels.push(d.toLocaleDateString("pt-BR", { month: 'short' }));

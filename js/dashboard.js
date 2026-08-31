@@ -161,11 +161,14 @@ export const Dashboard = {
         const renderList = (list, title, color, isAwaiting) => {
             if (list.length === 0) {
                 return `
-                <div class="card" style="padding: 20px; flex: 1; border-top: 4px solid ${color};">
-                    <h4 style="font-weight: 700; margin-bottom: 16px; font-size: 14px; color: var(--text-primary);">
-                        ${title} (0)
-                    </h4>
-                    <p style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px 0;">
+                <div class="card" style="padding: 20px; flex: 1; min-width: 300px; border-top: 2px solid ${color};">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                        <h4 style="font-weight: 700; font-size: 14px; color: var(--text-primary); margin: 0;">
+                            ${title}
+                        </h4>
+                        <span style="font-size: 11px; font-weight: 700; color: ${color}; background: ${color}1a; padding: 2px 8px; border-radius: 99px;">0</span>
+                    </div>
+                    <p style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 24px 0;">
                         Nenhuma proposta encontrada.
                     </p>
                 </div>`;
@@ -198,10 +201,13 @@ export const Dashboard = {
             }).join("");
 
             return `
-            <div class="card" style="padding: 20px; flex: 1; border-top: 4px solid ${color};">
-                <h4 style="font-weight: 700; margin-bottom: 16px; font-size: 14px; color: var(--text-primary);">
-                    ${title} (${list.length})
-                </h4>
+            <div class="card" style="padding: 20px; flex: 1; min-width: 300px; border-top: 2px solid ${color};">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                    <h4 style="font-weight: 700; font-size: 14px; color: var(--text-primary); margin: 0;">
+                        ${title}
+                    </h4>
+                    <span style="font-size: 11px; font-weight: 700; color: ${color}; background: ${color}1a; padding: 2px 8px; border-radius: 99px;">${list.length}</span>
+                </div>
                 <div style="max-height: 500px; overflow-y: auto; padding-right: 4px;">
                     ${items}
                 </div>
@@ -323,7 +329,7 @@ export const Dashboard = {
                 val: fmt(mrr), 
                 label: "Receita Recorrente (MRR)", 
                 icon: "🔄", 
-                color: "#8b5cf6", 
+                color: "#6366f1", 
                 trend: "+12.5%", 
                 trendPositive: true,
                 sparkData: [10, 15, 14, 22, 28, 35, 42],
@@ -335,7 +341,7 @@ export const Dashboard = {
                 val: fmt(tcv), 
                 label: "Total em Contratos (TCV)", 
                 icon: "📜", 
-                color: "#10b981", 
+                color: "#06b6d4", 
                 trend: "+18.4%", 
                 trendPositive: true,
                 sparkData: [20, 25, 22, 34, 38, 48, 55],
@@ -346,7 +352,7 @@ export const Dashboard = {
                 id: "kpi-health-active", 
                 val: activeClientsCount, 
                 label: "Clientes Ativos", 
-                icon: "🟢", 
+                icon: "👥", 
                 color: "#10b981", 
                 trend: "98% Retenção", 
                 trendPositive: true,
@@ -357,7 +363,7 @@ export const Dashboard = {
                 id: "kpi-health-risk", 
                 val: riskClientsCount, 
                 label: "Clientes Em Risco", 
-                icon: "🔴", 
+                icon: "⚠️", 
                 color: "#ef4444", 
                 trend: riskClientsCount > 0 ? "Atenção" : "Zero Riscos", 
                 trendPositive: riskClientsCount === 0,
@@ -418,14 +424,14 @@ export const Dashboard = {
 
         container.innerHTML = kpis.map(k => `
             <div class="card stat-card dash-kpi-card modern-kpi-card" 
-                 style="--kpi-color: ${k.color}; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05); ${k.link ? 'cursor: pointer;' : ''}" 
+                 style="--kpi-color: ${k.color}; ${k.link ? 'cursor: pointer;' : ''}" 
                  ${k.link ? `onclick="window.location.hash = '${k.link}'"` : ''}>
                 <div class="kpi-top-row">
                     <div class="stat-info">
                         <span class="stat-label">${k.label}</span>
-                        <span class="stat-value modern-kpi-value" style="font-size: ${k.large ? '20px' : '24px'}; color: var(--text-primary);">${k.val}</span>
+                        <span class="stat-value modern-kpi-value" style="font-size: ${k.large ? '20px' : '24px'}; color: var(--text-primary); font-variant-numeric: tabular-nums;">${k.val}</span>
                     </div>
-                    <div class="dash-kpi-icon modern-kpi-icon" style="background: ${k.color}1a; color: ${k.color}; border: 1px solid ${k.color}33;">
+                    <div class="dash-kpi-icon modern-kpi-icon" style="background: ${k.color}14; color: ${k.color}; border: 1px solid ${k.color}26;">
                         <span>${k.icon}</span>
                     </div>
                 </div>
@@ -739,6 +745,7 @@ export const Dashboard = {
         const months = [];
         for (let i = 5; i >= 0; i--) {
             const d = new Date();
+            d.setDate(1); // Garante que a virada de mês em dias 29, 30 ou 31 não pule/duplique meses
             d.setMonth(d.getMonth() - i);
             months.push({
                 label: d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "").toUpperCase(),
@@ -824,8 +831,11 @@ export const Dashboard = {
                         grid: { color: 'rgba(148, 163, 184, 0.08)' },
                         ticks: {
                             color: '#64748b',
+                            maxTicksLimit: 4,
+                            precision: 0,
                             font: { family: 'Inter, sans-serif', size: 11 },
                             callback: function(value) {
+                                if (value === 0) return 'R$ 0';
                                 return value >= 1000 ? 'R$ ' + (value/1000) + 'k' : 'R$ ' + value;
                             }
                         }

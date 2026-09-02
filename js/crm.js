@@ -4,6 +4,7 @@ import { Audit } from "./audit.js";
 import { SDR } from "./sdr.js";
 import { LeadAIScore } from "./ai-score.js";
 import { CrossSelling } from "./cross-selling.js";
+import { CNPJService } from "./cnpj-service.js";
 
 let activeLeadId = null;
 let pendingStageChange = null;
@@ -55,8 +56,52 @@ export const CRM = {
             btnDeleteLead: document.getElementById("btn-delete-lead"),
             btnCloseEditLead: document.getElementById("btn-close-edit-lead"),
             btnCancelEditLead: document.getElementById("btn-cancel-edit-lead"),
-            editLeadForm: document.getElementById("edit-lead-form")
+            editLeadForm: document.getElementById("edit-lead-form"),
+            leadCnpjInput: document.getElementById("lead-cnpj"),
+            btnLookupCnpj: document.getElementById("btn-lookup-cnpj"),
+            editLeadCnpjInput: document.getElementById("edit-lead-cnpj"),
+            btnEditLookupCnpj: document.getElementById("btn-edit-lookup-cnpj")
         };
+
+        // Eventos de Consulta Inteligente de CNPJ (Novo Lead)
+        if (elements.leadCnpjInput) {
+            elements.leadCnpjInput.addEventListener("input", (e) => {
+                e.target.value = CNPJService.formatCNPJ(e.target.value);
+                const digits = CNPJService.cleanDigits(e.target.value);
+                if (digits.length === 14) {
+                    this.lookupCNPJ('new');
+                }
+            });
+            elements.leadCnpjInput.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    this.lookupCNPJ('new');
+                }
+            });
+        }
+        if (elements.btnLookupCnpj) {
+            elements.btnLookupCnpj.addEventListener("click", () => this.lookupCNPJ('new'));
+        }
+
+        // Eventos de Consulta Inteligente de CNPJ (Edição de Lead)
+        if (elements.editLeadCnpjInput) {
+            elements.editLeadCnpjInput.addEventListener("input", (e) => {
+                e.target.value = CNPJService.formatCNPJ(e.target.value);
+                const digits = CNPJService.cleanDigits(e.target.value);
+                if (digits.length === 14) {
+                    this.lookupCNPJ('edit');
+                }
+            });
+            elements.editLeadCnpjInput.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    this.lookupCNPJ('edit');
+                }
+            });
+        }
+        if (elements.btnEditLookupCnpj) {
+            elements.btnEditLookupCnpj.addEventListener("click", () => this.lookupCNPJ('edit'));
+        }
 
         // Modal Novo Lead
         if (elements.btnNewLead) elements.btnNewLead.addEventListener("click", () => this.openNewLeadModal());
@@ -412,11 +457,17 @@ export const CRM = {
         const activePill = this.activePillFilter || "all";
 
         const filteredLeads = leads.filter(lead => {
+            const cleanQueryDigits = searchQuery.replace(/\D/g, "");
+            const leadCnpjDigits = (lead.cnpj || "").replace(/\D/g, "");
+            const matchesCnpj = cleanQueryDigits.length >= 3 && leadCnpjDigits.includes(cleanQueryDigits);
+
             const matchesSearch =
                 (lead.company || "").toLowerCase().includes(searchQuery) ||
                 (lead.contact || "").toLowerCase().includes(searchQuery) ||
                 (lead.segment || "").toLowerCase().includes(searchQuery) ||
-                (lead.email || "").toLowerCase().includes(searchQuery);
+                (lead.email || "").toLowerCase().includes(searchQuery) ||
+                (lead.cnpj && lead.cnpj.toLowerCase().includes(searchQuery)) ||
+                matchesCnpj;
 
             const matchesStage = stageFilter === "all" || lead.stage === stageFilter;
             const matchesOwner = !isAdmin || ownerFilterValue === "all" || lead.owner === ownerFilterValue;
@@ -525,7 +576,10 @@ export const CRM = {
 
             return `
                 <tr class="clickable-row" data-id="${lead.id}">
-                    <td><strong>${lead.company}</strong></td>
+                    <td>
+                        <strong>${lead.company}</strong>
+                        ${lead.cnpj ? `<div style="font-size: 11px; font-family: monospace; color: var(--primary); font-weight: 500;">${CNPJService.formatCNPJ(lead.cnpj)}</div>` : ''}
+                    </td>
                     <td>
                         <div style="font-weight: 600;">${lead.contact}</div>
                         <div style="font-size: 12px; color: var(--text-muted);">${lead.role || 'Sem cargo'}</div>
@@ -717,6 +771,121 @@ export const CRM = {
 
 
     // ==========================================================================
+    // CONSULTA E ENRIQUECIMENTO AUTOMÁTICO DE CNPJ (RECEITA / BRASILAPI)
+    // ==========================================================================
+
+    async lookupCNPJ(type = 'new') {
+        const inputId = type === 'new' ? 'lead-cnpj' : 'edit-lead-cnpj';
+        const statusId = type === 'new' ? 'lead-cnpj-status' : 'edit-lead-cnpj-status';
+        const btnIconId = type === 'new' ? 'btn-lookup-cnpj-icon' : 'btn-edit-lookup-cnpj-icon';
+        const btnTextId = type === 'new' ? 'btn-lookup-cnpj-text' : 'btn-edit-lookup-cnpj-text';
+
+        const input = document.getElementById(inputId);
+        const statusEl = document.getElementById(statusId);
+        const btnIcon = document.getElementById(btnIconId);
+        const btnText = document.getElementById(btnTextId);
+
+        const rawValue = input?.value || '';
+        const digits = CNPJService.cleanDigits(rawValue);
+
+        if (digits.length !== 14) {
+            if (statusEl) {
+                statusEl.textContent = '❌ CNPJ deve ter 14 dígitos.';
+                statusEl.style.color = '#ef4444';
+            }
+            alert('Por favor, informe um CNPJ completo com 14 dígitos.');
+            return;
+        }
+
+        // Feedback de carregamento
+        if (statusEl) {
+            statusEl.textContent = '🔄 Consultando Receita Federal / BrasilAPI...';
+            statusEl.style.color = 'var(--primary)';
+        }
+        if (btnIcon) btnIcon.textContent = '⏳';
+        if (btnText) btnText.textContent = 'Consultando...';
+
+        try {
+            const data = await CNPJService.fetchCompanyByCNPJ(digits);
+
+            // Preencher os campos conforme o tipo (new ou edit)
+            const prefix = type === 'new' ? 'lead-' : 'edit-lead-';
+
+            const setVal = (field, val) => {
+                const el = document.getElementById(prefix + field);
+                if (el && val) el.value = val;
+            };
+
+            setVal('company', data.companyName);
+            if (data.contactName) setVal('contact', data.contactName);
+            if (data.contactRole) setVal('role', data.contactRole);
+            if (data.email) setVal('email', data.email);
+            if (data.phone) setVal('phone', data.phone);
+            if (data.whatsapp) setVal('whatsapp', data.whatsapp);
+            if (data.phone2) setVal('phone2', data.phone2);
+            if (data.city) setVal('city', data.city);
+            if (data.state) setVal('state', data.state);
+            if (data.segment) setVal('segment', data.segment);
+
+            // Observações enriquecidas com dados cadastrais
+            const notesEl = document.getElementById(prefix + 'notes');
+            if (notesEl) {
+                const currentNotes = notesEl.value.trim();
+                const enrichmentNotes = `[Dados Cadastrais Receita Federal]\nRazão Social: ${data.razaoSocial}\nSituação: ${data.situacaoCadastral} (${data.dataSituacao || 'Ativa'})\nEndereço: ${data.address}\nCNAE: ${data.cnaeDescription || data.cnaeCode || 'N/A'}${data.capitalSocial ? `\nCapital Social: ${data.capitalSocial}` : ''}${data.porte ? `\nPorte: ${data.porte}` : ''}`;
+                
+                if (!currentNotes) {
+                    notesEl.value = enrichmentNotes;
+                } else if (!currentNotes.includes("Dados Cadastrais Receita Federal")) {
+                    notesEl.value = `${currentNotes}\n\n${enrichmentNotes}`;
+                }
+            }
+
+            input.value = data.cnpjFormatted;
+
+            if (statusEl) {
+                statusEl.textContent = `✅ ${data.razaoSocial} (${data.situacaoCadastral})`;
+                statusEl.style.color = '#10b981';
+            }
+
+            // Toast de sucesso
+            const toast = document.createElement("div");
+            toast.style.cssText = `
+                position: fixed; bottom: 24px; right: 24px; z-index: 99999;
+                background: var(--bg-card, #1e293b);
+                border: 1px solid rgba(16, 185, 129, 0.4);
+                border-left: 4px solid #10b981;
+                border-radius: 12px;
+                padding: 14px 20px;
+                display: flex; align-items: center; gap: 12px;
+                box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+                font-family: 'Inter', sans-serif;
+                animation: vellia-slide-in 0.3s ease;
+                min-width: 300px;
+            `;
+            toast.innerHTML = `
+                <span style="font-size: 22px;">⚡</span>
+                <div>
+                    <div style="font-weight: 700; color: var(--text-primary, #f1f5f9); font-size: 13px;">Lead Enriquecido com Sucesso!</div>
+                    <div style="font-size: 11px; color: var(--text-muted, #64748b); margin-top: 2px;">${data.companyName} (${data.situacaoCadastral})</div>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+
+        } catch (err) {
+            console.error("Erro ao consultar CNPJ:", err);
+            if (statusEl) {
+                statusEl.textContent = `❌ ${err.message}`;
+                statusEl.style.color = '#ef4444';
+            }
+            alert(`Não foi possível obter os dados do CNPJ:\n${err.message}`);
+        } finally {
+            if (btnIcon) btnIcon.textContent = '🔍';
+            if (btnText) btnText.textContent = type === 'new' ? 'Buscar Dados' : 'Sincronizar';
+        }
+    },
+
+    // ==========================================================================
     // EDIÇÃO DE LEADS
     // ==========================================================================
 
@@ -726,6 +895,14 @@ export const CRM = {
         if (!lead) return;
 
         document.getElementById("edit-lead-id").value    = lead.id;
+        const cnpjInput = document.getElementById("edit-lead-cnpj");
+        if (cnpjInput) cnpjInput.value = lead.cnpj ? CNPJService.formatCNPJ(lead.cnpj) : "";
+        const cnpjStatus = document.getElementById("edit-lead-cnpj-status");
+        if (cnpjStatus) {
+            cnpjStatus.textContent = lead.cnpj ? "CNPJ cadastrado" : "Sincronize com a Receita Federal";
+            cnpjStatus.style.color = "var(--text-muted)";
+        }
+
         document.getElementById("edit-lead-company").value = lead.company || "";
         document.getElementById("edit-lead-contact").value = lead.contact || "";
         document.getElementById("edit-lead-role").value    = lead.role || "";
@@ -758,6 +935,7 @@ export const CRM = {
         if (!id) return;
 
         const updatedData = {
+            cnpj     : CNPJService.cleanDigits(document.getElementById("edit-lead-cnpj")?.value || ""),
             company  : document.getElementById("edit-lead-company").value.trim(),
             contact  : document.getElementById("edit-lead-contact").value.trim(),
             role     : document.getElementById("edit-lead-role").value.trim(),
@@ -920,6 +1098,13 @@ export const CRM = {
         document.getElementById("drawer-lead-notes").textContent = lead.notes || "Sem observações.";
         document.getElementById("drawer-lead-location").textContent = `${lead.city || "-"} / ${lead.state || "-"}`;
         document.getElementById("drawer-lead-source").textContent = `${lead.segment} (${lead.source})`;
+
+        const cnpjEl = document.getElementById("drawer-lead-cnpj");
+        if (cnpjEl) {
+            cnpjEl.innerHTML = lead.cnpj 
+                ? `<span style="font-family: monospace; font-weight: 600; color: var(--primary);">${CNPJService.formatCNPJ(lead.cnpj)}</span>` 
+                : "Não informado";
+        }
 
         // Configurar select de estágios
         const stageSelect = document.getElementById("drawer-change-stage");
@@ -1481,6 +1666,11 @@ export const CRM = {
     
     openNewLeadModal() {
         document.getElementById("new-lead-form").reset();
+        const statusEl = document.getElementById("lead-cnpj-status");
+        if (statusEl) {
+            statusEl.textContent = "Digite o CNPJ para auto-completar";
+            statusEl.style.color = "var(--text-muted)";
+        }
         document.getElementById("new-lead-modal").classList.add("open");
         document.getElementById("modal-overlay").style.display = "block";
     },
@@ -1496,6 +1686,7 @@ export const CRM = {
 
         const getVal = (id) => document.getElementById(id)?.value.trim() || "";
 
+        const cnpj = CNPJService.cleanDigits(getVal("lead-cnpj"));
         const company = getVal("lead-company");
         const contact = getVal("lead-contact");
         const role = getVal("lead-role");
@@ -1528,6 +1719,7 @@ export const CRM = {
 
         // Salvar lead
         const newLead = Store.addLead({
+            cnpj,
             company,
             contact,
             role,

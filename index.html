@@ -3303,6 +3303,10 @@
                         <span class="info-label">Segmento / Origem</span>
                         <span class="info-value" id="drawer-lead-source">-</span>
                     </div>
+                    <div class="info-item">
+                        <span class="info-label">CNPJ / Situação</span>
+                        <span class="info-value" id="drawer-lead-cnpj">-</span>
+                    </div>
                 </div>
             </div>
 
@@ -3551,6 +3555,25 @@
         </div>
         <form id="new-lead-form" onsubmit="return false;">
             <div class="modal-body">
+                <!-- Busca Inteligente por CNPJ (Receita Federal / BrasilAPI) -->
+                <div style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(99, 102, 241, 0.05)); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                        <label for="lead-cnpj" style="margin: 0; font-size: 12px; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 6px;">
+                            <span>⚡</span> Preenchimento Rápido por CNPJ
+                        </label>
+                        <span id="lead-cnpj-status" style="font-size: 11px; color: var(--text-muted);">Digite o CNPJ para auto-completar</span>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <div style="position: relative; flex: 1;">
+                            <input type="text" id="lead-cnpj" class="form-control" style="padding: 9px 12px; font-size: 13.5px; font-family: monospace; letter-spacing: 0.5px;" placeholder="00.000.000/0000-00" maxlength="18">
+                        </div>
+                        <button type="button" id="btn-lookup-cnpj" class="btn btn-primary" style="height: 38px; padding: 0 14px; font-size: 12.5px; display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+                            <span id="btn-lookup-cnpj-icon">🔍</span>
+                            <span id="btn-lookup-cnpj-text">Buscar Dados</span>
+                        </button>
+                    </div>
+                </div>
+
                 <div class="grid-modal-2col" style="margin-bottom: 16px;">
                     <div class="form-group">
                         <label for="lead-company">Empresa *</label>
@@ -3672,6 +3695,25 @@
         <form id="edit-lead-form" onsubmit="return false;">
             <input type="hidden" id="edit-lead-id">
             <div class="modal-body">
+                <!-- Busca Inteligente por CNPJ (Receita Federal / BrasilAPI) -->
+                <div style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(99, 102, 241, 0.05)); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                        <label for="edit-lead-cnpj" style="margin: 0; font-size: 12px; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 6px;">
+                            <span>⚡</span> CNPJ & Dados Cadastrais
+                        </label>
+                        <span id="edit-lead-cnpj-status" style="font-size: 11px; color: var(--text-muted);">Sincronize com a Receita Federal</span>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <div style="position: relative; flex: 1;">
+                            <input type="text" id="edit-lead-cnpj" class="form-control" style="padding: 9px 12px; font-size: 13.5px; font-family: monospace; letter-spacing: 0.5px;" placeholder="00.000.000/0000-00" maxlength="18">
+                        </div>
+                        <button type="button" id="btn-edit-lookup-cnpj" class="btn btn-primary" style="height: 38px; padding: 0 14px; font-size: 12.5px; display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+                            <span id="btn-edit-lookup-cnpj-icon">🔍</span>
+                            <span id="btn-edit-lookup-cnpj-text">Sincronizar</span>
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Linha 1: Empresa + Contato -->
                 <div class="grid-modal-2col" style="margin-bottom: 16px;">
                     <div class="form-group">

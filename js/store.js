@@ -549,6 +549,7 @@ export const Store = {
         const newLead = {
             id: `lead_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
             workspace: localStorage.getItem('activeCompany') || 'Veeluen Solutions',
+            cnpj: lead.cnpj || "",
             company: lead.company,
             contact: lead.contact,
             role: lead.role || "",

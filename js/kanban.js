@@ -54,16 +54,20 @@ export const Kanban = {
             }
         }
 
-        // Filtro de busca por texto (Empresa, Contato, Cargo, Segmento)
+        // Filtro de busca por texto (Empresa, Contato, Cargo, Segmento, CNPJ)
         const searchInput = document.getElementById("kanban-search");
         const searchQuery = searchInput ? searchInput.value.trim().toLowerCase() : "";
         if (searchQuery) {
+            const cleanQueryDigits = searchQuery.replace(/\D/g, "");
             leads = leads.filter(l => {
                 const comp = (l.company || "").toLowerCase();
                 const cont = (l.contact || "").toLowerCase();
                 const role = (l.role || "").toLowerCase();
                 const seg = (l.segment || "").toLowerCase();
-                return comp.includes(searchQuery) || cont.includes(searchQuery) || role.includes(searchQuery) || seg.includes(searchQuery);
+                const cnpj = (l.cnpj || "").toLowerCase();
+                const cnpjDigits = (l.cnpj || "").replace(/\D/g, "");
+                const matchesDigits = cleanQueryDigits.length >= 3 && cnpjDigits.includes(cleanQueryDigits);
+                return comp.includes(searchQuery) || cont.includes(searchQuery) || role.includes(searchQuery) || seg.includes(searchQuery) || cnpj.includes(searchQuery) || matchesDigits;
             });
         }
         

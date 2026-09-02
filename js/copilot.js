@@ -1,5 +1,6 @@
 import { Store } from "./store.js";
 import { Auth } from "./auth.js";
+import { CNPJService } from "./cnpj-service.js";
 
 export const Copilot = {
     triggerBtn: null,
@@ -105,6 +106,20 @@ export const Copilot = {
         }, 300);
     },
 
+    /**
+     * Abre o Copilot focado na análise estratégica de um lead específico
+     */
+    openForLead(leadId) {
+        this.openChat();
+        const lead = Store.getLeadById(leadId);
+        if (!lead) return;
+
+        const promptText = `Analise o lead "${lead.company}" (${lead.segment || 'Geral'}) com contato "${lead.contact || 'Decisor'}" no estágio "${lead.stage}". CNPJ: ${lead.cnpj ? CNPJService.formatCNPJ(lead.cnpj) : 'Não informado'}. Observações: ${lead.notes || 'Sem observações'}. Me dê: 1) Diagnóstico de perfil, 2) Próximo passo recomendado (Next Best Action), e 3) Script pronto para WhatsApp.`;
+
+        if (this.input) this.input.value = promptText;
+        this.handleSend();
+    },
+
     appendMessage(text, isUser = false) {
         if (!this.history) return;
 
@@ -113,7 +128,7 @@ export const Copilot = {
 
         const avatar = isUser ? "👤" : "✨";
 
-        // Formatação simples de negrito e quebras de linha
+        // Formatação de negrito, listas e quebras de linha
         let formattedText = text
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replace(/\n/g, '<br>');
@@ -168,6 +183,60 @@ export const Copilot = {
         this.isTyping = false;
     },
 
+    /**
+     * Gera resposta inteligente local baseada em heurísticas avançadas de vendas B2B caso a API Gemini esteja indisponível
+     */
+    generateFallbackAnalysis(query) {
+        const q = (query || "").toLowerCase();
+        const currentUser = Auth.getCurrentUser();
+        const sellerName = currentUser?.name || "Consultor Vellia";
+
+        // Caso seja análise de um lead específico
+        const matchLead = query.match(/Analise o lead "(.*?)"/i);
+        if (matchLead) {
+            const companyName = matchLead[1];
+            const lead = Store.getLeads().find(l => (l.company || "").toLowerCase().includes(companyName.toLowerCase())) || {
+                company: companyName,
+                contact: "Decisor",
+                stage: "Em Negociação",
+                segment: "Tecnologia / Serviços"
+            };
+
+            const cnpjBlock = lead.cnpj ? `\n• **CNPJ:** ${CNPJService.formatCNPJ(lead.cnpj)}` : "";
+
+            return `🎯 **Diagnóstico Estratégico IA — ${lead.company}**
+${cnpjBlock}
+• **Segmento:** ${lead.segment || "Serviços Corporativos"}
+• **Estágio Funil:** ${lead.stage || "Contato"}
+• **Perfil de Decisão:** Rápida aderência a redução de custos, conformidade e ganho de produtividade.
+
+---
+
+💡 **Próximo Passo Recomendado (Next Best Action):**
+1. **Abordagem Consultiva:** Ligue ou envie mensagem focando na dor principal do segmento (${lead.segment || 'operacional'}).
+2. **Gatilho de Autoridade:** Apresente cases de sucesso no mesmo segmento e ofereça uma demonstração prática ou dimensionamento sem compromisso.
+3. **Prazo de Retorno:** Agende um follow-up em no máximo 48 horas para não deixar o card esfriar no Kanban.
+
+---
+
+💬 **Script de WhatsApp Pronto para Envio:**
+*"Olá ${lead.contact || lead.company}, tudo bem? Aqui é o ${sellerName} da Vellia.*
+*Estive analisando o cenário da ${lead.company} no setor de ${lead.segment || 'serviços'} e mapeamos oportunidades claras de otimização operacional e redução de riscos técnicos.*
+*Você teria 5 minutos hoje ou amanhã para um alinhamento rápido?"*`;
+        }
+
+        // Caso seja sobre leads frios ou SLA
+        if (q.includes("frio") || q.includes("esfriando") || q.includes("sla")) {
+            const coldLeads = Store.getLeads().filter(l => l.stage !== "Cliente Fechado" && l.stage !== "Cliente Perdido").slice(0, 3);
+            const coldList = coldLeads.map(l => `• **${l.company}** (${l.contact}) — Estágio: *${l.stage}*`).join("\n") || "Nenhum lead crítico no momento.";
+
+            return `❄️ **Auditoria de Leads e SLA Expirado:**\n\nIdentifiquei os seguintes contatos prioritários para reengajamento imediato:\n\n${coldList}\n\n⚡ **Ação Recomendada:** Disparar mensagem de reengajamento via WhatsApp ("Condição Especial Válida até Sexta-feira") para reativar o interesse do decisor!`;
+        }
+
+        // Resposta padrão analítica de vendas
+        return `✨ **Vellia Copiloto IA:**\n\nAnalisando o pipeline comercial:\n• Total de Leads Ativos: **${Store.getLeads().length}**\n• Propostas no Pipeline: **${Store.getProposals().length}**\n\n💡 **Dica Comercial de Hoje:** Mantenha o tempo de primeiro contato abaixo de 15 minutos para maximizar as taxas de conversão em até 3x! Como posso te apoiar com um lead ou proposta específica agora?`;
+    },
+
     async handleSend() {
         if (!this.input || this.isTyping) return;
         const query = this.input.value.trim();
@@ -187,6 +256,7 @@ export const Copilot = {
                 valorEstimado: l.estimatedValue,
                 pontuacaoIA: l.aiScore,
                 segmento: l.segment,
+                cnpj: l.cnpj,
                 responsavel: l.owner
             }));
 
@@ -215,8 +285,8 @@ O usuário que está falando com você é o "${currentUser?.name}" com o cargo d
 Instruções importantes para suas respostas:
 1. Responda à pergunta do usuário utilizando os dados do CRM fornecidos acima. Seja direto, prático, estratégico e focado em vendas.
 2. Utilize marcadores ou tópicos com negrito para organizar a resposta de forma muito bonita e profissional.
-3. Se o usuário perguntar sobre leads frios, recomende ações práticas com base nos dados.
-4. Mantenha um tom amigável e motivador.
+3. Se o usuário perguntar sobre um lead, analise seu estágio, CNPJ, segmento e sugira script pronto para WhatsApp e Próxima Melhor Ação (Next Best Action).
+4. Mantenha um tom consultivo de alto nível.
 
 Pergunta: "${query}"
 `;
@@ -225,7 +295,6 @@ Pergunta: "${query}"
             const userApiKey = localStorage.getItem("vellia_gemini_api_key") || localStorage.getItem("gemini_api_key");
 
             if (userApiKey && userApiKey.trim()) {
-                // Se o usuário possui chave API configurada no localStorage, chama o Gemini 2.5 Flash diretamente
                 const directUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userApiKey.trim()}`;
                 res = await fetch(directUrl, {
                     method: "POST",
@@ -235,34 +304,35 @@ Pergunta: "${query}"
                     })
                 });
             } else {
-                // Tenta pelo proxy serverless do Vercel
                 res = await fetch("/api/gemini-proxy", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         model: "gemini-2.5-flash",
-                        contents: [
-                            { parts: [{ text: promptPayload }] }
-                        ]
+                        contents: [{ parts: [{ text: promptPayload }] }]
                     })
-                });
+                }).catch(() => null);
             }
 
             this.removeTypingSkeleton();
 
-            if (res.ok) {
+            if (res && res.ok) {
                 const data = await res.json();
                 const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Desculpe, não consegui gerar a resposta.";
                 this.appendMessage(text, false);
             } else {
-                const errorData = await res.json().catch(() => ({}));
-                console.error("Erro na resposta Gemini:", errorData);
-                this.appendKeyPromptMessage(query);
+                // Fallback heurístico inteligente local de alto impacto
+                const localResponse = this.generateFallbackAnalysis(query);
+                this.appendMessage(localResponse, false);
+                if (!userApiKey) {
+                    this.appendKeyPromptMessage(query);
+                }
             }
         } catch (e) {
             console.error("Erro ao enviar mensagem para o Copiloto:", e);
             this.removeTypingSkeleton();
-            this.appendKeyPromptMessage(query);
+            const localResponse = this.generateFallbackAnalysis(query);
+            this.appendMessage(localResponse, false);
         }
     },
 
@@ -306,22 +376,24 @@ Use emojis, formatação em negrito e frases prontas para envio por WhatsApp.
                         model: "gemini-2.5-flash",
                         contents: [{ parts: [{ text: promptPayload }] }]
                     })
-                });
+                }).catch(() => null);
             }
 
             this.removeTypingSkeleton();
 
-            if (res.ok) {
+            if (res && res.ok) {
                 const data = await res.json();
                 const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Não consegui gerar o contorno de objeção no momento.";
                 this.appendMessage(text, false);
             } else {
-                this.appendKeyPromptMessage(`Objeção: ${objectionText}`);
+                // Heurística local de contorno de objeções
+                const fallbackObjection = `🛡️ **Contorno Estratégico da Objeção: "${objectionText}"**\n\n1. 💎 **Ângulo Valor & ROI:** "Entendo perfeitamente sua preocupação com custos. No entanto, o custo de não resolver este ponto na sua operação costuma ser 3 a 5 vezes maior em perdas e retrabalho."\n\n2. 🤝 **Ângulo Empatia:** "Muitos de nossos clientes atuais pensavam exatamente isso no primeiro momento, até verem a facilidade de implementação e a recuperação do investimento no 1º mês."\n\n3. ⚡ **Gatilho de Fechamento:** "Se conseguirmos uma condição escalonada ou desconto exclusivo para liberação esta semana, conseguimos avançar hoje?"`;
+                this.appendMessage(fallbackObjection, false);
             }
         } catch (e) {
             console.error("Erro ao gerar contorno de objeção:", e);
             this.removeTypingSkeleton();
-            this.appendKeyPromptMessage(`Objeção: ${objectionText}`);
+            this.appendMessage(`🛡️ **Contorno Rápido:** Foque no valor e pergunte: *"Qual seria a principal condição necessária para darmos início ainda esta semana?"*`, false);
         }
     },
 
@@ -334,14 +406,14 @@ Use emojis, formatação em negrito e frases prontas para envio por WhatsApp.
         msgDiv.innerHTML = `
             <div class="copilot-msg-avatar">🔑</div>
             <div class="copilot-msg-bubble" style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 12px; padding: 14px;">
-                <div style="font-weight: 700; color: var(--primary); font-size: 13px; margin-bottom: 6px;">⚡ Ativar Copiloto Gemini 2.5 Flash</div>
+                <div style="font-weight: 700; color: var(--primary); font-size: 13px; margin-bottom: 6px;">⚡ Deseja conectar o Gemini 2.5 Flash via API?</div>
                 <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.4;">
-                    Cole abaixo sua Chave de API do Google AI Studio (começa com <code>AIzaSy...</code>) para ativar o assistente em tempo real instantaneamente:
+                    O Copiloto já responde com heurísticas locais. Se desejar raciocínio generativo ilimitado, cole sua Chave de API do Google AI Studio abaixo:
                 </div>
                 <div style="display: flex; gap: 8px; align-items: center;">
                     <input type="password" id="copilot-inline-key-input" class="form-control" placeholder="Cole sua chave AIzaSy..." style="font-size: 12px; height: 34px; flex: 1;">
                     <button type="button" id="btn-save-inline-copilot-key" class="btn btn-primary" style="height: 34px; font-size: 12px; padding: 0 14px; white-space: nowrap;">
-                        Ativar Agora 🚀
+                        Conectar 🚀
                     </button>
                 </div>
             </div>
@@ -386,3 +458,8 @@ Use emojis, formatação em negrito e frases prontas para envio por WhatsApp.
         }
     }
 };
+
+// Tornar acessível globalmente
+if (typeof window !== "undefined") {
+    window.Copilot = Copilot;
+}

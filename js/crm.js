@@ -161,6 +161,14 @@ export const CRM = {
                 if (activeLeadId) window.Proposals?.openModal(activeLeadId);
             });
         }
+        const btnQuickCopilot = document.getElementById("btn-drawer-quick-copilot");
+        if (btnQuickCopilot) {
+            btnQuickCopilot.addEventListener("click", () => {
+                if (activeLeadId && window.Copilot) {
+                    window.Copilot.openForLead(activeLeadId);
+                }
+            });
+        }
 
         // Ouvintes de evento do Chat WhatsApp / SDR Takeover
         const btnTakeover = document.getElementById("btn-takeover-chat");

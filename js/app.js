@@ -212,6 +212,10 @@ function stopPresenceHeartbeat() {
 function initApp() {
     setupEventListeners();
     setupTheme();
+    window.WhatsApp = WhatsApp;
+    window.Copilot = Copilot;
+    window.CRM = CRM;
+    window.Proposals = Proposals;
     WhatsApp.init();
     Pricing.init();
     Copilot.init();

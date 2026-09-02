@@ -1574,9 +1574,12 @@ export const CRM = {
         Store.updateLeadStage(activeLeadId, pendingStageChange, currentUser.email, reason);
         Audit.logStageChange(currentUser.email, lead.company, oldStage, pendingStageChange, reason);
 
+        const targetStage = pendingStageChange;
+        const currentLeadId = activeLeadId;
+
         this.closeQualifyLeadModal();
 
-        const updatedLead = Store.getLeadById(activeLeadId);
+        const updatedLead = Store.getLeadById(currentLeadId);
         const stageSelect = document.getElementById("drawer-change-stage");
         if (stageSelect) stageSelect.value = updatedLead.stage;
 
@@ -1584,6 +1587,9 @@ export const CRM = {
         this.renderLeadsTable();
         pendingStageChange = null;
         window.dispatchEvent(new CustomEvent("vellia:stageChanged"));
+
+        // Sugestão Inteligente de Follow-up via WhatsApp
+        this.showWhatsAppFollowupSuggestion(currentLeadId, targetStage);
     },
 
     cancelQualifyLeadRequest() {
@@ -1615,6 +1621,8 @@ export const CRM = {
         if (!lead || !currentUser) return;
 
         const oldStage = lead.stage;
+        const targetStage = pendingStageChange;
+        const currentLeadId = activeLeadId;
 
         // Efetivar mudança no banco
         Store.updateLeadStage(activeLeadId, pendingStageChange, currentUser.email, reason);
@@ -1647,6 +1655,90 @@ export const CRM = {
 
         // Notificar outros módulos (ex: Kanban) que o estágio foi alterado
         window.dispatchEvent(new CustomEvent("vellia:stageChanged"));
+
+        // Sugestão Inteligente de Follow-up via WhatsApp
+        if (targetStage !== "Cliente Perdido") {
+            this.showWhatsAppFollowupSuggestion(currentLeadId, targetStage);
+        }
+    },
+
+    showWhatsAppFollowupSuggestion(leadId, targetStage) {
+        const lead = Store.getLeadById(leadId);
+        if (!lead) return;
+
+        const templateMap = {
+            "Lead Qualificado": "welcome",
+            "Proposta Enviada": "proposal",
+            "Negociação": "closing_urgency",
+            "Cliente Fechado": "post_sales"
+        };
+
+        const templateType = templateMap[targetStage] || "followup";
+
+        const oldToast = document.getElementById("wa-followup-toast");
+        if (oldToast) oldToast.remove();
+
+        const toast = document.createElement("div");
+        toast.id = "wa-followup-toast";
+        toast.style.cssText = `
+            position: fixed; bottom: 24px; right: 24px; z-index: 99999;
+            background: var(--bg-card, #1e293b);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            border-left: 4px solid #10b981;
+            border-radius: 12px;
+            padding: 14px 18px;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.35);
+            font-family: 'Inter', sans-serif;
+            animation: vellia-slide-in 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            max-width: 380px;
+            display: flex; flex-direction: column; gap: 10px;
+        `;
+
+        toast.innerHTML = `
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <span style="font-size: 22px;">💬</span>
+                    <div>
+                        <div style="font-weight: 700; color: var(--text-primary, #f1f5f9); font-size: 13px;">Estágio: ${targetStage}</div>
+                        <div style="font-size: 11.5px; color: var(--text-muted, #94a3b8); margin-top: 2px;">Deseja enviar WhatsApp para <strong>${lead.contact || lead.company}</strong>?</div>
+                    </div>
+                </div>
+                <button type="button" id="btn-close-wa-followup-toast" style="background: none; border: none; font-size: 16px; cursor: pointer; color: var(--text-muted); padding: 0;">✕</button>
+            </div>
+            <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 2px;">
+                <button type="button" id="btn-dismiss-wa-followup" class="btn btn-secondary" style="height: 28px; padding: 0 10px; font-size: 11.5px; border-radius: 6px;">Agora não</button>
+                <button type="button" id="btn-open-wa-followup" class="btn btn-primary" style="height: 28px; padding: 0 12px; font-size: 11.5px; border-radius: 6px; background: #10b981; border-color: #10b981; display: flex; align-items: center; gap: 5px;">
+                    <span>📲</span> Abrir WhatsApp
+                </button>
+            </div>
+        `;
+
+        document.body.appendChild(toast);
+
+        const dismiss = () => {
+            toast.style.opacity = "0";
+            toast.style.transform = "translateY(10px)";
+            toast.style.transition = "all 0.25s ease";
+            setTimeout(() => toast.remove(), 250);
+        };
+
+        toast.querySelector("#btn-close-wa-followup-toast")?.addEventListener("click", dismiss);
+        toast.querySelector("#btn-dismiss-wa-followup")?.addEventListener("click", dismiss);
+        toast.querySelector("#btn-open-wa-followup")?.addEventListener("click", () => {
+            dismiss();
+            if (window.WhatsApp) {
+                window.WhatsApp.openModalForLead(leadId);
+                const select = document.getElementById("wa-template-select");
+                if (select) {
+                    select.value = templateType;
+                    window.WhatsApp.updateTemplateMessage();
+                }
+            }
+        });
+
+        setTimeout(() => {
+            if (document.body.contains(toast)) dismiss();
+        }, 9000);
     },
 
     cancelStageChangeRequest() {

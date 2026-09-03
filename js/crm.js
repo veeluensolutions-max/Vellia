@@ -1061,6 +1061,12 @@ export const CRM = {
     // CONTROLE DE DRAWERS (DETALHES DO LEAD)
     // ==========================================================================
     
+    openScannerFromDrawer() {
+        if (window.VisionOCR) {
+            window.VisionOCR.openModal(activeLeadId);
+        }
+    },
+
     openLeadDrawer(id) {
         const lead = Store.getLeadById(id);
         if (!lead) return;

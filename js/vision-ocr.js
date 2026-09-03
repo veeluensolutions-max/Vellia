@@ -133,7 +133,8 @@ export const VisionOCR = {
 
     openModal(leadId = null, defaultDocType = "auto") {
         this.currentLeadId = leadId;
-        if (!this.modal) this.modal = document.getElementById("vision-scanner-modal");
+        this.modal = document.getElementById("vision-scanner-modal");
+        const overlay = document.getElementById("vision-scanner-modal-overlay") || document.getElementById("modal-overlay");
         if (!this.modal) return;
 
         this.resetScanner();
@@ -150,18 +151,30 @@ export const VisionOCR = {
             }
         }
 
+        if (overlay) {
+            overlay.style.display = "block";
+            overlay.onclick = () => this.closeModal();
+        }
+
         this.modal.style.display = "flex";
-        requestAnimationFrame(() => {
-            this.modal.classList.add("active");
-        });
+        this.modal.classList.add("open");
+        this.modal.classList.add("active");
+        this.modal.style.opacity = "1";
+        this.modal.style.transform = "translate(-50%, -50%) scale(1)";
     },
 
     closeModal() {
+        this.modal = document.getElementById("vision-scanner-modal");
+        const overlay = document.getElementById("vision-scanner-modal-overlay") || document.getElementById("modal-overlay");
         if (!this.modal) return;
+        this.modal.classList.remove("open");
         this.modal.classList.remove("active");
+        this.modal.style.opacity = "0";
+        this.modal.style.transform = "translate(-50%, -50%) scale(0.95)";
         setTimeout(() => {
-            this.modal.style.display = "none";
-        }, 250);
+            if (this.modal) this.modal.style.display = "none";
+            if (overlay) overlay.style.display = "none";
+        }, 200);
     },
 
     resetScanner() {

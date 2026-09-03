@@ -1,6 +1,7 @@
 import { Store } from "./store.js";
 import { Auth } from "./auth.js";
 import { CNPJService } from "./cnpj-service.js";
+import { QualificationAI } from "./qualification-ai.js";
 
 export const Copilot = {
     triggerBtn: null,

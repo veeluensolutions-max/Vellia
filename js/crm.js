@@ -5,6 +5,8 @@ import { SDR } from "./sdr.js";
 import { LeadAIScore } from "./ai-score.js";
 import { CrossSelling } from "./cross-selling.js";
 import { CNPJService } from "./cnpj-service.js";
+import { QualificationAI } from "./qualification-ai.js";
+import { VisionOCR } from "./vision-ocr.js";
 
 let activeLeadId = null;
 let pendingStageChange = null;
@@ -161,6 +163,16 @@ export const CRM = {
                 if (activeLeadId) window.Proposals?.openModal(activeLeadId);
             });
         }
+        const btnCrmScanner = document.getElementById("btn-crm-scanner");
+        if (btnCrmScanner) {
+            btnCrmScanner.addEventListener("click", () => VisionOCR.openModal());
+        }
+
+        const btnDrawerScanner = document.getElementById("btn-drawer-quick-scanner");
+        if (btnDrawerScanner) {
+            btnDrawerScanner.addEventListener("click", () => VisionOCR.openModal(activeLeadId));
+        }
+
         const btnQuickCopilot = document.getElementById("btn-drawer-quick-copilot");
         if (btnQuickCopilot) {
             btnQuickCopilot.addEventListener("click", () => {
@@ -1142,6 +1154,10 @@ export const CRM = {
 
         // Renderizar Widget de AI Lead Score
         LeadAIScore.render(lead);
+
+        // Renderizar Matriz BANT / SPIN Selling e Hub de Objeções IA
+        QualificationAI.renderDrawerQualification(lead);
+        QualificationAI.renderObjectionHub(lead);
 
         // Renderizar Widget de Cadência SDR
         SDR.renderCadenceWidget(lead.id);

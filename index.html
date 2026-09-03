@@ -6,9 +6,9 @@
     <title>Vellia - Sistema Comercial Inteligente</title>
     <link rel="icon" type="image/png" href="favicon.png">
     <!-- CSS Customizado -->
-    <link rel="stylesheet" href="css/styles.css?v=20260831_1710">
-    <link rel="stylesheet" href="css/isocinetica.css?v=20260831_1710">
-    <link rel="stylesheet" href="css/calculators.css?v=20260831_1710">
+    <link rel="stylesheet" href="css/styles.css?v=20260903_0955">
+    <link rel="stylesheet" href="css/isocinetica.css?v=20260903_0955">
+    <link rel="stylesheet" href="css/calculators.css?v=20260903_0955">
     <!-- Chart.js para dashboards -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- jsPDF (Geração de PDF) -->
@@ -1716,6 +1716,10 @@
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
                                 <span>🤖 Distribuição IA</span>
                             </button>
+                            <button id="btn-crm-scanner" class="btn btn-outline" style="border-color: #10b981; color: #10b981; font-weight: 700; display: flex; align-items: center; gap: 6px;" title="Escanear Documento, Laudo ou Cartão com Visão IA">
+                                <span>📷</span>
+                                <span>Scanner IA</span>
+                            </button>
                             <button id="btn-new-lead" class="btn btn-primary">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                 <span>Novo Lead</span>
@@ -1831,6 +1835,10 @@
                                 </button>
                             </div>
 
+                            <button id="btn-kanban-scanner" onclick="window.VisionOCR?.openModal()" class="btn btn-outline" style="border-color: #10b981; color: #10b981; font-weight: 700; display: flex; align-items: center; gap: 6px;" title="Escanear Documento ou Laudo com Visão IA">
+                                <span>📷</span>
+                                <span>Scanner IA</span>
+                            </button>
                             <button id="btn-kanban-new-lead" onclick="document.getElementById('btn-new-lead')?.click()" class="btn btn-primary" style="gap: 6px;">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                 <span>Novo Lead</span>
@@ -3257,6 +3265,9 @@
                 <button type="button" class="drawer-quick-btn prop" id="btn-drawer-quick-prop" title="Emitir Proposta">
                     <span>📝</span> Proposta
                 </button>
+                <button type="button" class="drawer-quick-btn" id="btn-drawer-quick-scanner" title="Escanear Laudo ou Documento com Visão IA" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(59, 130, 246, 0.15)); border: 1px solid rgba(16, 185, 129, 0.35); color: #10b981;">
+                    <span>📷</span> Scanner IA
+                </button>
                 <button type="button" class="drawer-quick-btn" id="btn-drawer-quick-copilot" title="Estratégia IA com Copiloto" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.15)); border: 1px solid rgba(99, 102, 241, 0.35); color: var(--primary);">
                     <span>✨</span> Copiloto IA
                 </button>
@@ -3369,6 +3380,20 @@
                     <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
                         <span style="font-size:13px; font-weight:700; color:var(--text-muted);">🤖 Carregando análise de IA...</span>
                     </div>
+                </div>
+            </div>
+
+            <!-- Seção: Matriz de Qualificação BANT & SPIN Selling IA -->
+            <div class="drawer-section" id="drawer-bant-spin-section" style="border-top: 1px solid var(--border-color); padding-top: 16px;">
+                <div id="drawer-bant-spin-container">
+                    <!-- Renderizado dinamicamente pelo QualificationAI -->
+                </div>
+            </div>
+
+            <!-- Seção: Hub de Contorno de Objeções IA -->
+            <div class="drawer-section" id="drawer-objection-hub-section" style="border-top: 1px solid var(--border-color); padding-top: 16px;">
+                <div id="drawer-objection-hub-container">
+                    <!-- Renderizado dinamicamente pelo QualificationAI -->
                 </div>
             </div>
             
@@ -5231,6 +5256,205 @@
     </div>
 
     <!-- ==========================================================
+         MODAL SCANNER STUDIO IA (VISÃO COMPUTACIONAL & OCR)
+         ========================================================== -->
+    <div id="vision-scanner-modal" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 10050;">
+        <div class="modal-content" style="max-width: 960px; width: 95%; max-height: 90vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 16px; border: 1px solid var(--border-color); background: var(--bg-surface); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);">
+            <!-- Header do Modal -->
+            <div style="padding: 18px 24px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; background: var(--bg-card);">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(59, 130, 246, 0.2)); display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid rgba(16, 185, 129, 0.3);">
+                        📷
+                    </div>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: var(--text-primary);">Scanner IA de Documentos & Laudos</h3>
+                            <span id="vision-lead-context-badge" class="badge" style="display: none; font-size: 10.5px; padding: 2px 8px; border-radius: 99px; background: rgba(99, 102, 241, 0.15); color: var(--primary); border: 1px solid rgba(99, 102, 241, 0.3); font-weight: 700;">
+                                Vincular ao Lead
+                            </span>
+                        </div>
+                        <span style="font-size: 12px; color: var(--text-muted); display: block; margin-top: 2px;">
+                            Visão Computacional Gemini 2.5 Flash &bull; Extração Automática de Dados Técnicos e Comerciais
+                        </span>
+                    </div>
+                </div>
+                <button type="button" id="btn-close-vision-modal" class="btn-close" title="Fechar">&times;</button>
+            </div>
+
+            <!-- Seletor de Tipo de Documento -->
+            <div style="padding: 12px 24px; background: var(--bg-body); border-bottom: 1px solid var(--border-color); display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Tipo de Documento:</span>
+                <button type="button" class="btn btn-sm vision-doc-type-pill active" data-doctype="auto" style="font-size: 11.5px; padding: 4px 10px; border-radius: 20px;">
+                    🔍 Detecção Automática
+                </button>
+                <button type="button" class="btn btn-sm vision-doc-type-pill" data-doctype="technical_report" style="font-size: 11.5px; padding: 4px 10px; border-radius: 20px;">
+                    📑 Laudo / Inspeção Técnica
+                </button>
+                <button type="button" class="btn btn-sm vision-doc-type-pill" data-doctype="business_card" style="font-size: 11.5px; padding: 4px 10px; border-radius: 20px;">
+                    💳 Cartão de Visita
+                </button>
+                <button type="button" class="btn btn-sm vision-doc-type-pill" data-doctype="competitor_proposal" style="font-size: 11.5px; padding: 4px 10px; border-radius: 20px;">
+                    📄 Proposta de Concorrente
+                </button>
+                <button type="button" class="btn btn-sm vision-doc-type-pill" data-doctype="equipment_plate" style="font-size: 11.5px; padding: 4px 10px; border-radius: 20px;">
+                    🏷️ Placa de Máquina / Motor
+                </button>
+            </div>
+
+            <!-- Corpo do Modal -->
+            <div class="modal-body" style="padding: 20px 24px; overflow-y: auto; flex: 1;">
+                <!-- View 1: Dropzone de Upload e Câmera -->
+                <div id="vision-upload-view" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 280px;">
+                    <div id="vision-dropzone" style="width: 100%; border: 2px dashed rgba(99, 102, 241, 0.4); border-radius: 16px; padding: 40px 20px; text-align: center; background: rgba(99, 102, 241, 0.03); transition: all 0.2s ease; cursor: pointer;">
+                        <div style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(16, 185, 129, 0.15)); display: flex; align-items: center; justify-content: center; font-size: 30px; margin: 0 auto 16px;">
+                            📤
+                        </div>
+                        <h4 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0 0 6px;">Arraste e solte o documento ou foto aqui</h4>
+                        <p style="font-size: 13px; color: var(--text-muted); margin: 0 0 20px;">Suporta laudos em PDF/imagem, propostas, cartões de visita e fotos de placas técnicas (PNG, JPG, WEBP)</p>
+                        
+                        <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                            <button type="button" id="btn-vision-trigger-upload" class="btn btn-primary" style="height: 38px; padding: 0 20px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                                <span>📁</span> Selecionar do Computador
+                            </button>
+                            <button type="button" id="btn-vision-trigger-camera" class="btn btn-outline" style="height: 38px; padding: 0 20px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                                <span>📷</span> Tirar Foto com a Câmera
+                            </button>
+                        </div>
+                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 16px;">
+                            💡 Dica: Você também pode pressionar <kbd style="padding: 2px 6px; border-radius: 4px; background: var(--bg-surface); border: 1px solid var(--border-color); font-family: monospace;">Ctrl + V</kbd> para colar uma imagem copiada da área de transferência.
+                        </div>
+                    </div>
+
+                    <!-- Inputs de arquivo ocultos -->
+                    <input type="file" id="vision-file-input" accept="image/*,.pdf" style="display: none;">
+                    <input type="file" id="vision-camera-input" accept="image/*" capture="environment" style="display: none;">
+                </div>
+
+                <!-- View 2: Progresso / Carregamento -->
+                <div id="vision-progress-box" style="display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 260px; gap: 16px;">
+                    <div style="width: 50px; height: 50px; border: 4px solid var(--primary); border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+                    <div style="text-align: center;">
+                        <h4 id="vision-progress-text" style="font-size: 15px; font-weight: 700; color: var(--text-primary); margin: 0 0 6px;">Examinando documento com Visão IA...</h4>
+                        <span style="font-size: 12px; color: var(--text-muted);">Reconhecendo textos, carimbos, tabelas e parâmetros técnicos...</span>
+                    </div>
+                </div>
+
+                <!-- View 3: Resultados Estruturados (Lado a Lado) -->
+                <div id="vision-results-view" style="display: none; grid-template-columns: 320px 1fr; gap: 20px; align-items: start;">
+                    <!-- Coluna Esquerda: Preview da Imagem -->
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; max-height: 420px; display: flex; align-items: center; justify-content: center; padding: 8px;">
+                            <img id="vision-preview-img" src="" alt="Documento Escaneado" style="max-width: 100%; max-height: 380px; object-fit: contain; border-radius: 8px;">
+                        </div>
+                        <button type="button" id="btn-vision-reset" class="btn btn-outline btn-sm" style="width: 100%; height: 32px; font-size: 12px;">
+                            🔄 Trocar Documento / Imagem
+                        </button>
+                    </div>
+
+                    <!-- Coluna Direita: Ficha de Dados Estruturados -->
+                    <div style="display: flex; flex-direction: column; gap: 14px;">
+                        <!-- Badges de Status do Documento -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                            <div style="display: flex; gap: 6px; align-items: center;">
+                                <span id="vision-res-doctype-badge" class="badge" style="background: #dbeafe; color: #1e40af; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 99px;">
+                                    Documento Analisado
+                                </span>
+                                <span id="vision-res-confidence-badge" class="badge" style="background: #dcfce7; color: #16a34a; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 99px;">
+                                    Precisão: 95%
+                                </span>
+                            </div>
+                            <span id="vision-res-source-badge" style="font-size: 11px; color: var(--text-muted); font-weight: 600;">
+                                Gemini 2.5 Flash Vision
+                            </span>
+                        </div>
+
+                        <!-- Seção 1: Dados da Empresa & Contato -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div class="form-group" style="margin: 0; grid-column: span 2;">
+                                <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Empresa / Razão Social</label>
+                                <input type="text" id="vision-res-company" class="form-control" style="height: 34px; font-size: 13px; font-weight: 700;">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">CNPJ</label>
+                                <input type="text" id="vision-res-cnpj" class="form-control" style="height: 34px; font-size: 12px; font-family: monospace;">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Contato / Responsável</label>
+                                <input type="text" id="vision-res-contact" class="form-control" style="height: 34px; font-size: 12px;">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Cargo</label>
+                                <input type="text" id="vision-res-role" class="form-control" style="height: 34px; font-size: 12px;">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">WhatsApp / Telefone</label>
+                                <input type="text" id="vision-res-phone" class="form-control" style="height: 34px; font-size: 12px;">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">E-mail</label>
+                                <input type="email" id="vision-res-email" class="form-control" style="height: 34px; font-size: 12px;">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Localização / Cidade</label>
+                                <input type="text" id="vision-res-address" class="form-control" style="height: 34px; font-size: 12px;">
+                            </div>
+                        </div>
+
+                        <!-- Seção 2: Dados Técnicos / Equipamentos / Laudo -->
+                        <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+                            <span style="font-size: 11.5px; font-weight: 800; color: var(--primary); text-transform: uppercase;">⚙️ Detalhes Técnicos & Ativos Identificados</span>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                <div class="form-group" style="margin: 0; grid-column: span 2;">
+                                    <label style="font-size: 10.5px; font-weight: 600; color: var(--text-muted);">Equipamento / Descrição do Ativo</label>
+                                    <input type="text" id="vision-res-equipment" class="form-control" style="height: 32px; font-size: 12px;">
+                                </div>
+                                <div class="form-group" style="margin: 0;">
+                                    <label style="font-size: 10.5px; font-weight: 600; color: var(--text-muted);">Modelo / Tag</label>
+                                    <input type="text" id="vision-res-model" class="form-control" style="height: 32px; font-size: 12px;">
+                                </div>
+                                <div class="form-group" style="margin: 0;">
+                                    <label style="font-size: 10.5px; font-weight: 600; color: var(--text-muted);">Nº de Série</label>
+                                    <input type="text" id="vision-res-serial" class="form-control" style="height: 32px; font-size: 12px;">
+                                </div>
+                                <div class="form-group" style="margin: 0; grid-column: span 2;">
+                                    <label style="font-size: 10.5px; font-weight: 600; color: var(--text-muted);">Normas Regulamentadoras Citadas</label>
+                                    <input type="text" id="vision-res-norms" class="form-control" style="height: 32px; font-size: 12px;">
+                                </div>
+                                <div class="form-group" style="margin: 0; grid-column: span 2;">
+                                    <label style="font-size: 10.5px; font-weight: 600; color: var(--text-muted);">Observações Técnicas / Preços / Não Conformidades</label>
+                                    <textarea id="vision-res-observations" class="form-control" style="min-height: 50px; font-size: 12px; resize: vertical;"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Seção 3: Insights Comerciais IA -->
+                        <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 10px; font-size: 12px;">
+                            <strong style="color: #10b981; display: block; margin-bottom: 2px;">💡 Insights Estratégicos de Abordagem Comercial:</strong>
+                            <span id="vision-res-commercial-insights" style="color: var(--text-primary); line-height: 1.4;">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer com Ações -->
+            <div style="padding: 14px 24px; border-top: 1px solid var(--border-color); background: var(--bg-card); display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap;">
+                <button type="button" class="btn btn-outline" onclick="VisionOCR.closeModal()" style="height: 38px; font-size: 13px;">
+                    Cancelar
+                </button>
+                <button type="button" id="btn-vision-action-update-lead" class="btn btn-outline" style="display: none; height: 38px; font-size: 13px; font-weight: 700; border-color: var(--primary); color: var(--primary);">
+                    🔄 Injetar no Lead Aberto
+                </button>
+                <button type="button" id="btn-vision-action-create-inspection" class="btn btn-outline" style="height: 38px; font-size: 13px; font-weight: 700;">
+                    📋 Salvar como Inspeção
+                </button>
+                <button type="button" id="btn-vision-action-create-lead" class="btn btn-primary" style="height: 38px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #10b981, #059669); border: none;">
+                    <span>➕</span> Criar Novo Lead no Funil
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================================
          COMMAND PALETTE MODAL (CTRL + K SPOTLIGHT)
          ========================================================== -->
     <div id="cmd-palette-overlay" class="cmd-palette-overlay" style="display: none;">
@@ -5257,10 +5481,10 @@
     </div>
 
     <!-- Script Principal da Aplicação -->
-    <script src="js/isocinetica-calculator.js?v=20260831_1710"></script>
-    <script src="js/isocinetica-pdf.js?v=20260831_1710"></script>
-    <script type="module" src="js/isocinetica-ui.js?v=20260831_1710"></script>
-    <script type="module" src="js/app.js?v=20260831_1710"></script>
+    <script src="js/isocinetica-calculator.js?v=20260903_0955"></script>
+    <script src="js/isocinetica-pdf.js?v=20260903_0955"></script>
+    <script type="module" src="js/isocinetica-ui.js?v=20260903_0955"></script>
+    <script type="module" src="js/app.js?v=20260903_0955"></script>
 </body>
 </html>
 

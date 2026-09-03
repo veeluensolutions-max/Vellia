@@ -32,6 +32,8 @@ import { CommandPalette } from "./command-palette.js";
 import { Toast } from "./toast.js";
 import { AudioEngine } from "./audio.js";
 import { Calculators } from "./calculators.js";
+import { QualificationAI } from "./qualification-ai.js";
+import { VisionOCR } from "./vision-ocr.js";
 
 // Elementos Globais DOM (Getters Dinâmicos para garantia de não-nulidade)
 const elements = {
@@ -1606,7 +1608,8 @@ function setupEventListeners() {
         });
     }
 
-
+    // Inicializar Scanner IA de Documentos (Vision OCR)
+    VisionOCR.init();
 
     // Roteamento SPA ao clicar na Sidebar
     elements.menuItems.forEach(item => {
@@ -1703,6 +1706,7 @@ window.CRM = CRM;
 window.Kanban = Kanban;
 window.CommandPalette = CommandPalette;
 window.Toast = Toast;
+window.VisionOCR = VisionOCR;
 
 // ==========================================================================
 // WORKSPACE / COMPANY SWITCHER

@@ -142,6 +142,17 @@ export const CommandPalette = {
                 }
             },
             {
+                id: "act-vision-scanner",
+                category: "Inteligência & IA",
+                title: "Scanner IA de Documentos & Laudos",
+                subtitle: "Escanear laudo, proposta concorrente ou cartão de visita",
+                icon: `<span style="font-size:16px;">📷</span>`,
+                badge: "Visão IA",
+                action: () => {
+                    if (window.VisionOCR) window.VisionOCR.openModal();
+                }
+            },
+            {
                 id: "act-new-proposal",
                 category: "Ações Rápidas",
                 title: "Gerar Proposta Comercial",

@@ -472,6 +472,30 @@
                     <!-- Dashboard Gerente / Admin (Executivo) — ETAPA 5 -->
                     <div id="dashboard-exec" style="display: flex; flex-direction: column;">
 
+                        <!-- Barra de Ferramentas & Filtros Rápidos do Dashboard -->
+                        <div class="dashboard-toolbar">
+                            <div class="dashboard-toolbar-left">
+                                <div class="dashboard-live-beacon">
+                                    <div class="beacon-dot"></div>
+                                    <span>Sync em Tempo Real</span>
+                                </div>
+                                <span style="font-size: 13px; color: var(--text-muted); font-weight: 500;">Métricas e Performance Comercial</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <div class="dashboard-timeframe-group" id="dashboard-timeframe-selector">
+                                    <button type="button" class="timeframe-pill-btn active" data-period="all" onclick="window.Dashboard.setTimeframe('all')">Todos</button>
+                                    <button type="button" class="timeframe-pill-btn" data-period="today" onclick="window.Dashboard.setTimeframe('today')">Hoje</button>
+                                    <button type="button" class="timeframe-pill-btn" data-period="7d" onclick="window.Dashboard.setTimeframe('7d')">7 Dias</button>
+                                    <button type="button" class="timeframe-pill-btn" data-period="month" onclick="window.Dashboard.setTimeframe('month')">Este Mês</button>
+                                    <button type="button" class="timeframe-pill-btn" data-period="quarter" onclick="window.Dashboard.setTimeframe('quarter')">Trimestre</button>
+                                </div>
+                                <button type="button" class="btn btn-outline" style="padding: 7px 12px; font-size: 12px;" onclick="window.Dashboard.renderAll();" title="Recarregar Métricas">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                                    <span>Atualizar</span>
+                                </button>
+                            </div>
+                        </div>
+
                         <!-- Alerta de Intervenção da Diretoria (Fase 6) -->
                         <div id="dashboard-intervention-alert" class="card" style="display: none; background: rgba(220, 38, 38, 0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-left: 4px solid var(--danger); border-top: 1px solid rgba(220, 38, 38, 0.2); border-right: 1px solid rgba(220, 38, 38, 0.2); border-bottom: 1px solid rgba(220, 38, 38, 0.2); margin-bottom: 24px; padding: 16px; align-items: center; justify-content: space-between;">
                             <div>
@@ -486,26 +510,35 @@
                                 Ver Negociações
                             </button>
                         </div>
+
                         <!-- KPIs dinâmicos — preenchidos via dashboard.js -->
-                        <div id="dashboard-kpis" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; margin-bottom: 28px;">
+                        <div id="dashboard-kpis" class="dashboard-kpi-grid">
                             <!-- Carregado via JS -->
                         </div>
 
                         <!-- Linha 1: Funil + Receita Mensal -->
                         <div class="grid-2col" style="margin-bottom: 24px;">
-                            <div class="card" style="padding: 20px 24px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
-                                <h4 style="font-weight: 700; margin-bottom: 18px; font-size: 13px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
-                                    <span>🔻</span> Funil de Conversão — Taxas por Etapa
-                                </h4>
+                            <div class="dashboard-card">
+                                <div class="dashboard-card-header">
+                                    <h4 class="dashboard-card-title">
+                                        <span class="title-icon-badge">🔻</span>
+                                        <span>Funil de Conversão — Taxas por Etapa</span>
+                                    </h4>
+                                    <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); background: var(--bg-app); padding: 3px 8px; border-radius: 99px;">Pipeline Ativo</span>
+                                </div>
                                 <div id="funnel-conversion" style="width: 100%;">
                                     <!-- Preenchido via Dashboard.renderFunnelChart() -->
                                 </div>
                             </div>
 
-                            <div class="card" style="padding: 20px 24px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
-                                <h4 style="font-weight: 700; margin-bottom: 18px; font-size: 13px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
-                                    <span>📈</span> Receita Mensal — Últimos 6 Meses
-                                </h4>
+                            <div class="dashboard-card">
+                                <div class="dashboard-card-header">
+                                    <h4 class="dashboard-card-title">
+                                        <span class="title-icon-badge">📈</span>
+                                        <span>Receita Mensal — Histórico Consolidado</span>
+                                    </h4>
+                                    <span style="font-size: 11px; font-weight: 700; color: #10b981; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); padding: 3px 8px; border-radius: 99px;">R$ Ganhos</span>
+                                </div>
                                 <div style="position: relative; height: 280px; width: 100%;">
                                     <canvas id="chart-revenue"></canvas>
                                 </div>
@@ -514,29 +547,38 @@
 
                         <!-- Linha 2: Conversão + Segmentos + Origem dos Leads -->
                         <div class="grid-cols-3" style="margin-bottom: 24px;">
-                            <div class="card" style="padding: 20px 24px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
-                                <h4 style="font-weight: 700; margin-bottom: 18px; font-size: 13px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
-                                    <span>🎯</span> Taxa de Conversão de Propostas
-                                </h4>
-                                <div style="position: relative; height: 280px; width: 100%;">
+                            <div class="dashboard-card">
+                                <div class="dashboard-card-header">
+                                    <h4 class="dashboard-card-title">
+                                        <span class="title-icon-badge">🎯</span>
+                                        <span>Conversão de Propostas</span>
+                                    </h4>
+                                </div>
+                                <div style="position: relative; height: 260px; width: 100%;">
                                     <canvas id="chart-conversion"></canvas>
                                 </div>
                             </div>
 
-                            <div class="card" style="padding: 20px 24px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
-                                <h4 style="font-weight: 700; margin-bottom: 18px; font-size: 13px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
-                                    <span>🏢</span> Leads por Segmento de Mercado
-                                </h4>
-                                <div style="position: relative; height: 280px; width: 100%;">
+                            <div class="dashboard-card">
+                                <div class="dashboard-card-header">
+                                    <h4 class="dashboard-card-title">
+                                        <span class="title-icon-badge">🏢</span>
+                                        <span>Leads por Segmento</span>
+                                    </h4>
+                                </div>
+                                <div style="position: relative; height: 260px; width: 100%;">
                                     <canvas id="chart-segments"></canvas>
                                 </div>
                             </div>
 
-                            <div class="card" style="padding: 20px 24px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
-                                <h4 style="font-weight: 700; margin-bottom: 18px; font-size: 13px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
-                                    <span>📢</span> Origem dos Leads (Canais)
-                                </h4>
-                                <div style="position: relative; height: 280px; width: 100%;">
+                            <div class="dashboard-card">
+                                <div class="dashboard-card-header">
+                                    <h4 class="dashboard-card-title">
+                                        <span class="title-icon-badge">📢</span>
+                                        <span>Origem dos Leads</span>
+                                    </h4>
+                                </div>
+                                <div style="position: relative; height: 260px; width: 100%;">
                                     <canvas id="chart-sources"></canvas>
                                 </div>
                             </div>
@@ -544,17 +586,25 @@
 
                         <!-- Linha 3: Ranking + Feed de Atividade -->
                         <div class="grid-2col" style="margin-bottom: 24px;">
-                            <div class="card" style="padding: 20px 24px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
-                                <h4 style="font-weight: 700; margin-bottom: 18px; font-size: 13px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
-                                    <span>🏆</span> Ranking de Vendedores
-                                </h4>
+                            <div class="dashboard-card">
+                                <div class="dashboard-card-header">
+                                    <h4 class="dashboard-card-title">
+                                        <span class="title-icon-badge">🏆</span>
+                                        <span>Ranking & Performance dos Vendedores</span>
+                                    </h4>
+                                    <span style="font-size: 11px; font-weight: 700; color: var(--primary); background: rgba(99,102,241,0.1); padding: 3px 8px; border-radius: 99px;">Gamificação XP</span>
+                                </div>
                                 <div id="chart-ranking"><!-- Carregado via JS --></div>
                             </div>
 
-                            <div class="card" style="padding: 20px 24px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
-                                <h4 style="font-weight: 700; margin-bottom: 18px; font-size: 13px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
-                                    <span>⚡</span> Atividade Recente
-                                </h4>
+                            <div class="dashboard-card">
+                                <div class="dashboard-card-header">
+                                    <h4 class="dashboard-card-title">
+                                        <span class="title-icon-badge">⚡</span>
+                                        <span>Atividade Recente em Tempo Real</span>
+                                    </h4>
+                                    <span class="badge badge-success" style="font-size: 10px; padding: 2px 8px;">● Live Feed</span>
+                                </div>
                                 <div id="dash-activity-feed"><!-- Carregado via JS --></div>
                             </div>
                         </div>

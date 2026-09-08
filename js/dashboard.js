@@ -5,6 +5,46 @@ import { PostSales } from "./post-sales.js";
 const charts = {};
 
 export const Dashboard = {
+    currentTimeframe: "all",
+
+    setTimeframe(period) {
+        this.currentTimeframe = period;
+        const group = document.getElementById("dashboard-timeframe-selector");
+        if (group) {
+            group.querySelectorAll(".timeframe-pill-btn").forEach(btn => {
+                btn.classList.toggle("active", btn.dataset.period === period);
+            });
+        }
+        this.renderAll();
+    },
+
+    filterByTimeframe(items, dateField = "createdAt") {
+        if (!this.currentTimeframe || this.currentTimeframe === "all") return items;
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        
+        return items.filter(item => {
+            const raw = item[dateField] || item.closedAt || item.created_at || item.updatedAt;
+            if (!raw) return true;
+            const itemDate = new Date(raw);
+            if (isNaN(itemDate.getTime())) return true;
+            
+            if (this.currentTimeframe === "today") {
+                return itemDate >= startOfToday;
+            } else if (this.currentTimeframe === "7d") {
+                const limit = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                return itemDate >= limit;
+            } else if (this.currentTimeframe === "month") {
+                return itemDate.getMonth() === now.getMonth() && itemDate.getFullYear() === now.getFullYear();
+            } else if (this.currentTimeframe === "quarter") {
+                const currentQuarter = Math.floor(now.getMonth() / 3);
+                const itemQuarter = Math.floor(itemDate.getMonth() / 3);
+                return itemQuarter === currentQuarter && itemDate.getFullYear() === now.getFullYear();
+            }
+            return true;
+        });
+    },
+
     init() {
         this.renderAll();
         this.bindEvents();
@@ -19,11 +59,18 @@ export const Dashboard = {
         const refreshDashboardData = () => {
             const viewDashboard = document.getElementById("view-dashboard");
             if (viewDashboard && viewDashboard.style.display !== "none") {
-                const proposals = Store.getProposals();
-                const leads = Store.getLeads();
-                this.renderVendorRanking(proposals);
-                this.renderKPIs(leads, proposals);
-                this.renderRecentActivity(leads, proposals);
+                let proposals = Store.getProposals();
+                let leads = Store.getLeads();
+                const session = JSON.parse(localStorage.getItem("comercial_session"));
+                if (session && session.role === "seller") {
+                    leads = leads.filter(l => l.owner === session.email);
+                    proposals = proposals.filter(p => p.authorEmail === session.email);
+                }
+                const filteredLeads = this.filterByTimeframe(leads, "createdAt");
+                const filteredProposals = this.filterByTimeframe(proposals, "createdAt");
+                this.renderVendorRanking(filteredProposals);
+                this.renderKPIs(filteredLeads, filteredProposals);
+                this.renderRecentActivity(filteredLeads, filteredProposals);
             }
         };
 
@@ -49,7 +96,9 @@ export const Dashboard = {
                     currentProposals = currentProposals.filter(p => p.authorEmail === session.email);
                 }
                 
-                this.renderRecentActivity(currentLeads, currentProposals);
+                const filteredLeads = this.filterByTimeframe(currentLeads, "createdAt");
+                const filteredProposals = this.filterByTimeframe(currentProposals, "createdAt");
+                this.renderRecentActivity(filteredLeads, filteredProposals);
             }
         }, 5000); // A cada 5 segundos
     },
@@ -111,6 +160,9 @@ export const Dashboard = {
             proposals = proposals.filter(p => p.authorEmail === session.email);
         }
 
+        const filteredLeads = this.filterByTimeframe(leads, "createdAt");
+        const filteredProposals = this.filterByTimeframe(proposals, "createdAt");
+
         const execDash = document.getElementById("dashboard-exec");
         const opDash = document.getElementById("dashboard-operacional");
 
@@ -133,18 +185,18 @@ export const Dashboard = {
                 if (opDash) opDash.style.display = "none";
             }
 
-            this.renderKPIs(leads, proposals);
+            this.renderKPIs(filteredLeads, filteredProposals);
             this.renderGoalsCommissionPanel();
-            this.renderFunnelChart(leads);
-            this.renderRevenueChart(proposals);
-            this.renderConversionDonut(proposals);
-            this.renderSegmentBreakdown(leads);
-            this.renderSourcesChart(leads);
-            this.renderVendorRanking(proposals);
-            this.renderRecentActivity(leads, proposals);
+            this.renderFunnelChart(filteredLeads);
+            this.renderRevenueChart(filteredProposals);
+            this.renderConversionDonut(filteredProposals);
+            this.renderSegmentBreakdown(filteredLeads);
+            this.renderSourcesChart(filteredLeads);
+            this.renderVendorRanking(filteredProposals);
+            this.renderRecentActivity(filteredLeads, filteredProposals);
             this.renderTasksWeekChart();
             this.renderMetaAdsPanel();
-            this.renderChannelRoiMatrix(leads, proposals);
+            this.renderChannelRoiMatrix(filteredLeads, filteredProposals);
         }
     },
 

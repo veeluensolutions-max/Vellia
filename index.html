@@ -6,9 +6,9 @@
     <title>Vellia - Sistema Comercial Inteligente</title>
     <link rel="icon" type="image/png" href="favicon.png">
     <!-- CSS Customizado -->
-    <link rel="stylesheet" href="css/styles.css?v=20260903_1010">
-    <link rel="stylesheet" href="css/isocinetica.css?v=20260903_1010">
-    <link rel="stylesheet" href="css/calculators.css?v=20260903_1010">
+    <link rel="stylesheet" href="css/styles.css?v=20260921_1140">
+    <link rel="stylesheet" href="css/isocinetica.css?v=20260921_1140">
+    <link rel="stylesheet" href="css/calculators.css?v=20260921_1140">
     <!-- Chart.js para dashboards -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- jsPDF (Geração de PDF) -->
@@ -137,122 +137,136 @@
         <!-- Overlay da Sidebar para Dispositivos Móveis -->
         <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
-        <!-- Barra Lateral de Navegação (Sidebar) -->
+        <!-- Barra Lateral de Navegação (Sidebar SaaS 2026) -->
         <aside class="app-sidebar">
             <div class="sidebar-top">
-                <div class="sidebar-header" style="flex-direction: column; align-items: stretch; gap: 15px; padding-bottom: 5px;">
-                    <div class="sidebar-logo" style="justify-content: flex-start;">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                <div class="sidebar-header">
+                    <div class="sidebar-logo">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
                         <span>Vellia CRM</span>
                     </div>
                     
-                    <!-- Workspace Switcher -->
-                    <div class="workspace-switcher" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 4px;">
-                        <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Empresa Atual</span>
-                        <div style="position: relative; display: flex; align-items: center;">
-                            <select id="workspace-select" onchange="window.switchCompany(this.value)" style="appearance: none; -webkit-appearance: none; background: transparent; border: none; color: #fff; font-size: 13px; font-weight: 600; width: 100%; outline: none; cursor: pointer; padding-right: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                <option value="Veeluen Solutions" style="background: #1e293b; color: #fff;">Veeluen Solutions</option>
-                                <option value="Excelência Ambiental" style="background: #1e293b; color: #fff;">Excelência Ambiental</option>
+                    <!-- Workspace Switcher Card -->
+                    <div class="workspace-switcher-card">
+                        <span class="workspace-switcher-label">Empresa Atual</span>
+                        <div class="workspace-select-wrapper">
+                            <select id="workspace-select" class="workspace-select-control" onchange="window.switchCompany(this.value)">
+                                <option value="Veeluen Solutions">Veeluen Solutions</option>
+                                <option value="Excelência Ambiental">Excelência Ambiental</option>
                             </select>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2" style="position: absolute; right: 0; pointer-events: none;"><path d="M6 9l6 6 6-6"/></svg>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2" style="position: absolute; right: 0; pointer-events: none;"><path d="M6 9l6 6 6-6"/></svg>
                         </div>
                     </div>
-                    <style>
-                        .workspace-switcher { transition: border-color 0.2s; }
-                        .workspace-switcher:hover { border-color: rgba(255,255,255,0.2) !important; }
-                    </style>
                 </div>
 
                 <nav>
+                    <!-- GRUPO 1: PRINCIPAL -->
+                    <div class="sidebar-group-title">Principal</div>
                     <ul class="sidebar-menu">
                         <li class="menu-item active" data-view="dashboard" id="menu-dashboard">
                             <a href="#dashboard">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
                                 <span>Dashboard</span>
                             </a>
                         </li>
                         <li class="menu-item" data-view="crm" id="menu-crm">
                             <a href="#crm">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                                 <span>Contatos & Leads</span>
-                            </a>
-                        </li>
-                        <li class="menu-item" data-view="trash" id="menu-trash">
-                            <a href="#trash">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                                <span>Lixeira <span id="trash-count" style="font-size:10px; background:rgba(239,68,68,0.15); color:#ef4444; border-radius:10px; padding:1px 6px; margin-left:4px; font-weight:700; display:none;"></span></span>
                             </a>
                         </li>
                         <li class="menu-item" data-view="kanban" id="menu-kanban">
                             <a href="#kanban">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12H3M21 6H3M21 18H3"/></svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12H3M21 6H3M21 18H3"/></svg>
                                 <span>Funil Kanban</span>
                             </a>
                         </li>
                         <li class="menu-item" data-view="proposals" id="menu-proposals">
                             <a href="#proposals">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                                 <span>Propostas & Vendas</span>
                             </a>
                         </li>
+                    </ul>
+
+                    <!-- GRUPO 2: OPERAÇÃO -->
+                    <div class="sidebar-group-title">Operação</div>
+                    <ul class="sidebar-menu">
                         <li class="menu-item" data-view="contracts" id="menu-contracts">
                             <a href="#contracts">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
                                 <span>Gestão de Contratos</span>
                             </a>
                         </li>
-                        <li class="menu-item" data-view="post-sales" id="menu-post-sales">
-                            <a href="#post-sales">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-                                <span>Pós-Venda / Inativos</span>
-                            </a>
-                        </li>
-                        <li class="menu-item" data-view="calculators" id="menu-calculators">
-                            <a href="#calculators">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="16" y1="18" x2="16" y2="18"/><line x1="12" y1="18" x2="12" y2="18"/><line x1="8" y1="18" x2="8" y2="18"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="8" y1="10" x2="8" y2="10"/></svg>
-                                <span>Calculadoras</span>
-                            </a>
-                        </li>
-
-                        <li class="menu-item" data-view="team" id="menu-team">
-                            <a href="#team">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                                <span>Equipe Comercial</span>
-                            </a>
                         <li class="menu-item" data-view="calendar" id="menu-calendar">
                             <a href="#calendar">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                                 <span>Agenda & Vistorias</span>
                             </a>
                         </li>
                         <li class="menu-item" data-view="inspections" id="menu-inspections">
                             <a href="#inspections">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                 <span>Inspeções & Renovação</span>
                             </a>
                         </li>
+                        <li class="menu-item" data-view="post-sales" id="menu-post-sales">
+                            <a href="#post-sales">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                                <span>Pós-Venda</span>
+                            </a>
+                        </li>
+                    </ul>
+
+                    <!-- GRUPO 3: AUTOMAÇÃO -->
+                    <div class="sidebar-group-title">Automação</div>
+                    <ul class="sidebar-menu">
                         <li class="menu-item" data-view="ai-agents" id="menu-ai-agents">
                             <a href="#ai-agents">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
                                 <span>Agentes IA</span>
                             </a>
                         </li>
                         <li class="menu-item" data-view="integrations" id="menu-integrations">
                             <a href="#integrations">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                                 <span>Integrações</span>
+                            </a>
+                        </li>
+                    </ul>
+
+                    <!-- GRUPO 4: GESTÃO -->
+                    <div class="sidebar-group-title">Gestão</div>
+                    <ul class="sidebar-menu">
+                        <li class="menu-item" data-view="team" id="menu-team">
+                            <a href="#team">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                <span>Equipe Comercial</span>
+                            </a>
+                        </li>
+                        <li class="menu-item" data-view="calculators" id="menu-calculators">
+                            <a href="#calculators">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="16" y1="18" x2="16" y2="18"/><line x1="12" y1="18" x2="12" y2="18"/><line x1="8" y1="18" x2="8" y2="18"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="8" y1="10" x2="8" y2="10"/></svg>
+                                <span>Calculadoras</span>
                             </a>
                         </li>
                         <li class="menu-item" data-view="users" id="menu-users" style="display: none;">
                             <a href="#users">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                                 <span>Controle de Usuários</span>
                             </a>
                         </li>
                         <li class="menu-item" data-view="logs" id="menu-logs" style="display: none;">
                             <a href="#logs">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                                 <span>Logs & Auditoria</span>
+                            </a>
+                        </li>
+                        <!-- Lixeira no final -->
+                        <li class="menu-item" data-view="trash" id="menu-trash">
+                            <a href="#trash">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                <span>Lixeira <span id="trash-count" style="font-size:10px; background:rgba(239,68,68,0.15); color:#ef4444; border-radius:10px; padding:1px 6px; margin-left:4px; font-weight:700; display:none;"></span></span>
                             </a>
                         </li>
                     </ul>
@@ -268,14 +282,16 @@
                         <span id="user-display-role" class="user-role">Administrador</span>
                     </div>
                 </div>
-                <button id="btn-change-password" class="logout-btn" style="background: none; border: none; font-size: 12px; margin-bottom: 4px; color: var(--text-secondary); width: 100%; display: flex; align-items: center; gap: 8px; justify-content: flex-start; padding: 10px 16px; cursor: pointer; transition: all var(--transition-fast);" title="Alterar Minha Senha">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                    <span>Alterar Minha Senha</span>
-                </button>
-                <button id="btn-logout" class="logout-btn" title="Sair ou Trocar de Conta">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                    <span>Sair / Trocar Conta</span>
-                </button>
+                <div class="sidebar-user-actions">
+                    <button id="btn-change-password" class="sidebar-btn-compact" title="Alterar Minha Senha">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <span>Senha</span>
+                    </button>
+                    <button id="btn-logout" class="sidebar-btn-compact danger-hover" title="Sair / Trocar Conta">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                        <span>Sair</span>
+                    </button>
+                </div>
             </div>
         </aside>
 
@@ -316,23 +332,18 @@
 
                     <!-- Trigger Command Palette (Ctrl + K) -->
                     <button id="btn-command-palette-trigger" class="cmd-palette-trigger" title="Buscar e Ações Rápidas (Ctrl + K)">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                        <span>Buscar ou comando...</span>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            <span style="font-size: 13px;">Buscar contatos, propostas ou comandos...</span>
+                        </div>
                         <kbd>Ctrl K</kbd>
                     </button>
 
                     <!-- Badge de Status do Realtime -->
-                    <span id="realtime-status-badge" style="
-                        display: inline-flex; align-items: center; gap: 5px;
-                        font-size: 11px; font-weight: 600;
-                        padding: 4px 10px; border-radius: 20px;
-                        background: rgba(245,158,11,0.15);
-                        color: #f59e0b;
-                        border: 1px solid rgba(245,158,11,0.3);
-                        transition: all 0.5s ease;
-                        cursor: default;
-                        white-space: nowrap;
-                    " title="Status da conexão Realtime com Supabase">🔄 Conectando...</span>
+                    <span id="realtime-status-badge" class="realtime-status-pill" title="Status da conexão Realtime com Supabase">
+                        <span class="realtime-dot"></span>
+                        <span id="realtime-status-text">Realtime</span>
+                    </span>
 
                     <!-- Botão Exportação -->
                     <div class="export-wrapper" style="position: relative;">
@@ -472,75 +483,110 @@
                     <!-- Dashboard Gerente / Admin (Executivo) — ETAPA 5 -->
                     <div id="dashboard-exec" style="display: flex; flex-direction: column;">
 
-                        <!-- Barra de Ferramentas & Filtros Rápidos do Dashboard -->
-                        <div class="dashboard-toolbar">
-                            <div class="dashboard-toolbar-left">
-                                <div class="dashboard-live-beacon">
-                                    <div class="beacon-dot"></div>
-                                    <span>Sync em Tempo Real</span>
-                                </div>
-                                <span style="font-size: 13px; color: var(--text-muted); font-weight: 500;">Métricas e Performance Comercial</span>
+                        <!-- Barra de Ferramentas & Filtros Rápidos do Dashboard Executivo -->
+                        <div class="dashboard-toolbar" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
+                            <div>
+                                <h2 style="font-size: 24px; font-weight: 700; color: var(--text-primary); margin: 0 0 4px 0; letter-spacing: -0.025em;">Dashboard</h2>
+                                <p style="font-size: 13.5px; color: var(--text-secondary); margin: 0;">Visão geral da operação comercial</p>
                             </div>
-                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                                <span id="dashboard-last-updated-text" style="font-size: 12px; color: var(--text-muted); font-weight: 500;">Última atualização: agora</span>
                                 <div class="dashboard-timeframe-group" id="dashboard-timeframe-selector">
                                     <button type="button" class="timeframe-pill-btn active" data-period="all" onclick="window.Dashboard.setTimeframe('all')">Todos</button>
                                     <button type="button" class="timeframe-pill-btn" data-period="today" onclick="window.Dashboard.setTimeframe('today')">Hoje</button>
                                     <button type="button" class="timeframe-pill-btn" data-period="7d" onclick="window.Dashboard.setTimeframe('7d')">7 Dias</button>
-                                    <button type="button" class="timeframe-pill-btn" data-period="month" onclick="window.Dashboard.setTimeframe('month')">Este Mês</button>
+                                    <button type="button" class="timeframe-pill-btn" data-period="month" onclick="window.Dashboard.setTimeframe('month')">30 Dias</button>
                                     <button type="button" class="timeframe-pill-btn" data-period="quarter" onclick="window.Dashboard.setTimeframe('quarter')">Trimestre</button>
                                 </div>
-                                <button type="button" class="btn btn-outline" style="padding: 7px 12px; font-size: 12px;" onclick="window.Dashboard.renderAll();" title="Recarregar Métricas">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                                    <span>Atualizar</span>
+                                <button type="button" class="btn btn-outline" style="height: 36px; padding: 0 14px; font-size: 12.5px;" onclick="window.Dashboard.renderAll();" title="Recarregar Métricas">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                                    <span>Atualizar dados</span>
                                 </button>
                             </div>
                         </div>
 
                         <!-- Alerta de Intervenção da Diretoria (Fase 6) -->
-                        <div id="dashboard-intervention-alert" class="card" style="display: none; background: rgba(220, 38, 38, 0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-left: 4px solid var(--danger); border-top: 1px solid rgba(220, 38, 38, 0.2); border-right: 1px solid rgba(220, 38, 38, 0.2); border-bottom: 1px solid rgba(220, 38, 38, 0.2); margin-bottom: 24px; padding: 16px; align-items: center; justify-content: space-between;">
+                        <div id="dashboard-intervention-alert" class="vellia-card" style="display: none; background: rgba(220, 38, 38, 0.06); border-left: 4px solid var(--danger); margin-bottom: 24px; padding: 16px 20px; align-items: center; justify-content: space-between;">
                             <div>
-                                <h3 style="color: var(--danger); font-size: 16px; margin: 0 0 4px 0; display: flex; align-items: center; gap: 8px; text-shadow: 0 0 10px rgba(220, 38, 38, 0.4);">
+                                <h3 style="color: var(--danger); font-size: 15px; font-weight: 700; margin: 0 0 4px 0; display: flex; align-items: center; gap: 8px;">
                                     🚨 Intervenção Necessária
                                 </h3>
                                 <p style="color: var(--text-primary); font-size: 13px; margin: 0;" id="intervention-alert-text">
                                     Existem negociações de alto valor travadas que precisam da sua ajuda.
                                 </p>
                             </div>
-                            <button class="btn btn-danger btn-sm" id="btn-open-interventions" style="box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);">
+                            <button class="btn btn-danger btn-sm" id="btn-open-interventions">
                                 Ver Negociações
                             </button>
                         </div>
 
-                        <!-- KPIs dinâmicos — preenchidos via dashboard.js -->
+                        <!-- PRIMEIRA LINHA — 4 KPIs Compactos Executivos -->
                         <div id="dashboard-kpis" class="dashboard-kpi-grid">
-                            <!-- Carregado via JS -->
+                            <!-- Preenchido via dashboard.js com 4 cards compactos -->
                         </div>
 
-                        <!-- Linha 1: Funil + Receita Mensal -->
-                        <div class="grid-2col" style="margin-bottom: 24px;">
-                            <div class="dashboard-card">
+                        <!-- SEGUNDA LINHA — Performance Comercial (2/3) + Resumo Comercial (1/3) -->
+                        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 24px;" class="grid-2col">
+                            <div class="vellia-card">
                                 <div class="dashboard-card-header">
-                                    <h4 class="dashboard-card-title">
-                                        <span class="title-icon-badge">🔻</span>
-                                        <span>Funil de Conversão — Taxas por Etapa</span>
-                                    </h4>
-                                    <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); background: var(--bg-app); padding: 3px 8px; border-radius: 99px;">Pipeline Ativo</span>
-                                </div>
-                                <div id="funnel-conversion" style="width: 100%;">
-                                    <!-- Preenchido via Dashboard.renderFunnelChart() -->
-                                </div>
-                            </div>
-
-                            <div class="dashboard-card">
-                                <div class="dashboard-card-header">
-                                    <h4 class="dashboard-card-title">
-                                        <span class="title-icon-badge">📈</span>
-                                        <span>Receita Mensal — Histórico Consolidado</span>
-                                    </h4>
-                                    <span style="font-size: 11px; font-weight: 700; color: #10b981; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); padding: 3px 8px; border-radius: 99px;">R$ Ganhos</span>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <h4 class="dashboard-card-title">Performance Comercial</h4>
+                                        <select id="select-revenue-metric" style="font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); outline: none;">
+                                            <option value="revenue">Receita</option>
+                                            <option value="contracts">Contratos</option>
+                                            <option value="conversions">Conversões</option>
+                                        </select>
+                                    </div>
+                                    <span style="font-size: 11.5px; font-weight: 600; color: #16A36A; background: #ECFDF5; border: 1px solid rgba(22,163,106,0.2); padding: 3px 9px; border-radius: var(--radius-xs);">● R$ Fechados</span>
                                 </div>
                                 <div style="position: relative; height: 280px; width: 100%;">
                                     <canvas id="chart-revenue"></canvas>
+                                </div>
+                            </div>
+
+                            <div class="vellia-card">
+                                <div class="dashboard-card-header">
+                                    <h4 class="dashboard-card-title">Resumo Comercial</h4>
+                                    <span style="font-size: 11.5px; font-weight: 600; color: var(--text-muted);">Métricas-Chave</span>
+                                </div>
+                                <div id="dashboard-commercial-summary" class="commercial-summary-list">
+                                    <!-- Preenchido via dashboard.js -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TERCEIRA LINHA — Pipeline Comercial Horizontal -->
+                        <div class="vellia-card" style="margin-bottom: 24px;">
+                            <div class="dashboard-card-header">
+                                <h4 class="dashboard-card-title">
+                                    <span>Pipeline Comercial</span>
+                                </h4>
+                                <span style="font-size: 11.5px; font-weight: 600; color: var(--text-muted);">Volume Financeiro por Etapa</span>
+                            </div>
+                            <div id="dashboard-horizontal-pipeline" class="pipeline-horizontal-wrapper">
+                                <!-- Preenchido via dashboard.js -->
+                            </div>
+                        </div>
+
+                        <!-- QUARTA LINHA — Agenda & Próximas Atividades + Clientes que Exigem Atenção -->
+                        <div class="grid-2col" style="margin-bottom: 24px;">
+                            <div class="vellia-card">
+                                <div class="dashboard-card-header">
+                                    <h4 class="dashboard-card-title">Agenda & Próximas Atividades</h4>
+                                    <a href="#calendar" style="font-size: 12.5px; font-weight: 600; color: var(--primary); text-decoration: none;">Ver agenda completa &rarr;</a>
+                                </div>
+                                <div id="dashboard-next-activities">
+                                    <!-- Preenchido via dashboard.js -->
+                                </div>
+                            </div>
+
+                            <div class="vellia-card">
+                                <div class="dashboard-card-header">
+                                    <h4 class="dashboard-card-title">Clientes que Exigem Atenção</h4>
+                                    <span style="font-size: 11.5px; font-weight: 600; color: var(--warning); background: #FFFBEB; border: 1px solid rgba(245,158,11,0.2); padding: 2px 8px; border-radius: var(--radius-xs);">Ação Recomendada</span>
+                                </div>
+                                <div id="dashboard-attention-clients">
+                                    <!-- Preenchido via dashboard.js -->
                                 </div>
                             </div>
                         </div>
@@ -609,7 +655,7 @@
                             </div>
                         </div>
                         <!-- Linha 4: Painel de Gestão de Tarefas (Admin/Gerente) -->
-                        <div class="card" style="padding: 20px 24px; border-left: 4px solid var(--primary); background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid rgba(255, 255, 255, 0.05); border-right: 1px solid rgba(255, 255, 255, 0.05); border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                        <div class="vellia-card" style="margin-top: 24px;">
                             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
                                 <div>
                                     <h4 style="font-weight: 700; font-size: 14px; color: var(--text-primary); margin: 0 0 4px 0; display: flex; align-items: center; gap: 8px;">
@@ -657,7 +703,7 @@
                         </div>
 
                         <!-- Linha 5: Performance e ROI por Canal de Anúncios -->
-                        <div class="card" style="padding: 20px 24px; margin-top: 24px; border-left: 4px solid var(--primary); background: linear-gradient(135deg, rgba(99,102,241,0.03) 0%, transparent 100%);">
+                        <div class="vellia-card" style="margin-top: 24px;">
                             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
                                 <div>
                                     <h4 style="font-weight: 700; font-size: 14px; color: var(--text-primary); margin: 0 0 4px 0; display: flex; align-items: center; gap: 8px;">
@@ -673,14 +719,14 @@
                         </div>
 
                         <!-- 🎯 Painel de Metas & Comissões (Posicionado abaixo no Dashboard) -->
-                        <div id="dashboard-goals-commissions-panel" class="card" style="padding: 22px 26px; margin-top: 24px; margin-bottom: 24px; border-left: 4px solid #10b981;">
+                        <div id="dashboard-goals-commissions-panel" class="vellia-card" style="margin-top: 24px; margin-bottom: 24px;">
                             <!-- Preenchido via Dashboard.renderGoalsCommissionPanel() -->
                         </div>
 
                     </div>
 
                     <!-- 🟦 Painel de Performance Meta Ads -->
-                    <div id="meta-ads-performance-panel" class="card" style="padding: 24px; margin-top: 24px; border-left: 4px solid #1877F2; background: linear-gradient(135deg, rgba(24,119,242,0.04) 0%, transparent 100%);">
+                    <div id="meta-ads-performance-panel" class="vellia-card" style="margin-top: 24px;">
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
                             <div style="display: flex; align-items: center; gap: 12px;">
                                 <div style="width: 40px; height: 40px; border-radius: 10px; background: #1877F2; display: flex; align-items: center; justify-content: center;">
@@ -928,93 +974,93 @@
                     <div class="grid-3col" style="margin-bottom: 28px; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
                         
                         <!-- Agente 1: SDR AI -->
-                        <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between; border-top: 4px solid #25d366;">
+                        <div class="ai-agent-card" style="border-top: 3px solid #10B981;">
                             <div>
-                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
                                     <div>
-                                        <span style="font-size: 10px; font-weight: 700; color: #25d366; background: rgba(37,211,102,0.1); padding: 3px 8px; border-radius: 99px; text-transform: uppercase;">Triagem & Qualificação</span>
-                                        <h3 style="font-size: 18px; font-weight: 800; margin-top: 8px; color: var(--text-primary);">SDR Agent (Vellin)</h3>
+                                        <span class="ai-agent-badge" style="color: #059669; background: #ECFDF5; border: 1px solid #A7F3D0;">Triagem & Qualificação</span>
+                                        <h3 style="font-size: 16px; font-weight: 700; margin-top: 8px; color: var(--text-primary); letter-spacing: -0.01em;">SDR Agent (Vellin)</h3>
                                     </div>
                                     <!-- Toggle Switch -->
-                                    <label class="switch-container" style="position: relative; display: inline-block; width: 44px; height: 24px;">
+                                    <label class="switch-container" style="position: relative; display: inline-block; width: 40px; height: 22px;">
                                         <input type="checkbox" id="agent-sdr-toggle" checked style="opacity: 0; width: 0; height: 0;">
-                                        <span class="switch-slider" style="position: absolute; cursor: pointer; inset: 0; background-color: #cbd5e1; border-radius: 24px; transition: .4s;"></span>
+                                        <span class="switch-slider" style="position: absolute; cursor: pointer; inset: 0; background-color: #cbd5e1; border-radius: 22px; transition: .3s;"></span>
                                     </label>
                                 </div>
                                 <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px;">Qualifica e tria leads entrantes de forma autônoma via mensagens de WhatsApp simulando diálogos reais.</p>
-                                <div style="font-size: 11px; color: var(--text-muted); background: var(--bg-app); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 12px;">
-                                    <strong>Última ação:</strong> <span id="agent-sdr-last-action">Triagem ativada para novos leads</span>
+                                <div style="font-size: 11.5px; color: #64748B; background: #F8FAFC; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 16px;">
+                                    <strong style="color: #334155;">Última ação:</strong> <span id="agent-sdr-last-action">Triagem ativada para novos leads</span>
                                 </div>
                             </div>
-                            <button class="btn btn-outline" id="btn-config-agent-sdr" style="width: 100%; border-color: #25d366; color: #25d366; font-size: 12px; height: 36px; display: flex; align-items: center; justify-content: center;">Configurar Abordagem</button>
+                            <button class="btn btn-outline" id="btn-config-agent-sdr" style="width: 100%; border-color: #10B981; color: #059669; font-size: 12.5px; font-weight: 600; height: 36px; display: flex; align-items: center; justify-content: center; background: #ECFDF5;">Configurar Abordagem</button>
                         </div>
 
                         <!-- Agente 2: Copywriter AI -->
-                        <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between; border-top: 4px solid var(--primary);">
+                        <div class="ai-agent-card" style="border-top: 3px solid var(--primary);">
                             <div>
-                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
                                     <div>
-                                        <span style="font-size: 10px; font-weight: 700; color: var(--primary); background: var(--primary-glow); padding: 3px 8px; border-radius: 99px; text-transform: uppercase;">Redação & Venda</span>
-                                        <h3 style="font-size: 18px; font-weight: 800; margin-top: 8px; color: var(--text-primary);">Copywriter Agent</h3>
+                                        <span class="ai-agent-badge" style="color: var(--primary); background: rgba(98, 87, 245, 0.08); border: 1px solid rgba(98, 87, 245, 0.2);">Redação Comercial</span>
+                                        <h3 style="font-size: 16px; font-weight: 700; margin-top: 8px; color: var(--text-primary); letter-spacing: -0.01em;">Copywriter Agent</h3>
                                     </div>
-                                    <label class="switch-container" style="position: relative; display: inline-block; width: 44px; height: 24px;">
+                                    <label class="switch-container" style="position: relative; display: inline-block; width: 40px; height: 22px;">
                                         <input type="checkbox" checked disabled style="opacity: 0; width: 0; height: 0;">
-                                        <span class="switch-slider" style="position: absolute; inset: 0; background-color: var(--primary); border-radius: 24px;"></span>
+                                        <span class="switch-slider" style="position: absolute; inset: 0; background-color: var(--primary); border-radius: 22px;"></span>
                                     </label>
                                 </div>
                                 <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px;">Gera escopos de propostas comerciais de alto valor e rascunhos de e-mails/WhatsApp otimizados para vendas.</p>
-                                <div style="font-size: 11px; color: var(--text-muted); background: var(--bg-app); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 12px;">
-                                    <strong>Última ação:</strong> <span id="agent-copy-last-action">Proposta de Consultoria Técnica gerada</span>
+                                <div style="font-size: 11.5px; color: #64748B; background: #F8FAFC; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 16px;">
+                                    <strong style="color: #334155;">Última ação:</strong> <span id="agent-copy-last-action">Proposta de Consultoria Técnica gerada</span>
                                 </div>
                             </div>
                             <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
-                                <button class="btn btn-outline" id="btn-config-agent-copy" style="width: 100%; border-color: var(--primary); color: var(--primary); font-size: 12px; height: 36px; display: flex; align-items: center; justify-content: center;">Configurar Tom da Escrita</button>
-                                <button class="btn btn-primary" id="btn-open-copywriter-panel" style="width: 100%; font-size: 12px; height: 36px; display: flex; align-items: center; justify-content: center; gap: 6px; background: var(--primary); border-color: var(--primary); color: white; cursor: pointer;">
+                                <button class="btn btn-outline" id="btn-config-agent-copy" style="width: 100%; border-color: var(--border-color); color: var(--text-primary); font-size: 12.5px; font-weight: 600; height: 36px; display: flex; align-items: center; justify-content: center;">Configurar Tom da Escrita</button>
+                                <button class="btn btn-primary" id="btn-open-copywriter-panel" style="width: 100%; font-size: 12.5px; font-weight: 600; height: 36px; display: flex; align-items: center; justify-content: center; gap: 6px;">
                                     <span>✍️</span> Acessar Redator Comercial
                                 </button>
                             </div>
                         </div>
 
                         <!-- Agente 3: Analyst Agent -->
-                        <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between; border-top: 4px solid #ca8a04;">
+                        <div class="ai-agent-card" style="border-top: 3px solid #D97706;">
                             <div>
-                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
                                     <div>
-                                        <span style="font-size: 10px; font-weight: 700; color: #ca8a04; background: rgba(234,179,8,0.1); padding: 3px 8px; border-radius: 99px; text-transform: uppercase;">Forecast & Funil</span>
-                                        <h3 style="font-size: 18px; font-weight: 800; margin-top: 8px; color: var(--text-primary);">Analyst Agent</h3>
+                                        <span class="ai-agent-badge" style="color: #D97706; background: #FFFBEB; border: 1px solid #FDE68A;">Forecast & Funil</span>
+                                        <h3 style="font-size: 16px; font-weight: 700; margin-top: 8px; color: var(--text-primary); letter-spacing: -0.01em;">Analyst Agent</h3>
                                     </div>
-                                    <label class="switch-container" style="position: relative; display: inline-block; width: 44px; height: 24px;">
+                                    <label class="switch-container" style="position: relative; display: inline-block; width: 40px; height: 22px;">
                                         <input type="checkbox" id="agent-analyst-toggle" checked style="opacity: 0; width: 0; height: 0;">
-                                        <span class="switch-slider" style="position: absolute; cursor: pointer; inset: 0; background-color: #cbd5e1; border-radius: 24px; transition: .4s;"></span>
+                                        <span class="switch-slider" style="position: absolute; cursor: pointer; inset: 0; background-color: #cbd5e1; border-radius: 22px; transition: .3s;"></span>
                                     </label>
                                 </div>
                                 <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px;">Analisa o funil de vendas, propostas e histórico de leads para estimar probabilidades de forecast e gargalos.</p>
-                                <div style="font-size: 11px; color: var(--text-muted); background: var(--bg-app); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 12px;">
-                                    <strong>Última ação:</strong> <span id="agent-analyst-last-action">Meta mensal recalculada</span>
+                                <div style="font-size: 11.5px; color: #64748B; background: #F8FAFC; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 16px;">
+                                    <strong style="color: #334155;">Última ação:</strong> <span id="agent-analyst-last-action">Meta mensal recalculada</span>
                                 </div>
                             </div>
-                            <button class="btn btn-outline" id="btn-config-agent-analyst" style="width: 100%; border-color: #ca8a04; color: #ca8a04; font-size: 12px; height: 36px; display: flex; align-items: center; justify-content: center;">Configurar Frequência</button>
+                            <button class="btn btn-outline" id="btn-config-agent-analyst" style="width: 100%; border-color: #D97706; color: #B45309; font-size: 12.5px; font-weight: 600; height: 36px; display: flex; align-items: center; justify-content: center; background: #FFFBEB;">Configurar Frequência</button>
                         </div>
 
                         <!-- Agente 4: Guru de Estratégias -->
-                        <div class="card" id="agent-guru-card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between; border-top: 4px solid #8b5cf6;">
+                        <div class="ai-agent-card" id="agent-guru-card" style="border-top: 3px solid #8B5CF6;">
                             <div>
-                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
                                     <div>
-                                        <span style="font-size: 10px; font-weight: 700; color: #8b5cf6; background: rgba(139,92,246,0.1); padding: 3px 8px; border-radius: 99px; text-transform: uppercase;">Planejamento Semanal</span>
-                                        <h3 style="font-size: 18px; font-weight: 800; margin-top: 8px; color: var(--text-primary);">Guru de Estratégias</h3>
+                                        <span class="ai-agent-badge" style="color: #7C3AED; background: #F5F3FF; border: 1px solid #DDD6FE;">Planejamento Semanal</span>
+                                        <h3 style="font-size: 16px; font-weight: 700; margin-top: 8px; color: var(--text-primary); letter-spacing: -0.01em;">Guru de Estratégias</h3>
                                     </div>
-                                    <label class="switch-container" style="position: relative; display: inline-block; width: 44px; height: 24px;">
+                                    <label class="switch-container" style="position: relative; display: inline-block; width: 40px; height: 22px;">
                                         <input type="checkbox" id="agent-guru-toggle" checked style="opacity: 0; width: 0; height: 0;">
-                                        <span class="switch-slider" style="position: absolute; cursor: pointer; inset: 0; background-color: #cbd5e1; border-radius: 24px; transition: .4s;"></span>
+                                        <span class="switch-slider" style="position: absolute; cursor: pointer; inset: 0; background-color: #cbd5e1; border-radius: 22px; transition: .3s;"></span>
                                     </label>
                                 </div>
                                 <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px;">Gera táticas e planejamentos semanais de captação de leads ativos baseados em dados de comportamento.</p>
-                                <div style="font-size: 11px; color: var(--text-muted); background: var(--bg-app); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 12px;">
-                                    <strong>Última ação:</strong> <span id="agent-guru-last-action">Aguardando ativação</span>
+                                <div style="font-size: 11.5px; color: #64748B; background: #F8FAFC; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 16px;">
+                                    <strong style="color: #334155;">Última ação:</strong> <span id="agent-guru-last-action">Aguardando ativação</span>
                                 </div>
                             </div>
-                            <button class="btn btn-primary" id="btn-open-guru-panel" style="width: 100%; font-size: 12px; height: 36px; display: flex; align-items: center; justify-content: center; gap: 6px; background: #8b5cf6; border-color: #8b5cf6; color: white;">
+                            <button class="btn btn-primary" id="btn-open-guru-panel" style="width: 100%; font-size: 12.5px; font-weight: 600; height: 36px; display: flex; align-items: center; justify-content: center; gap: 6px; background: #7C3AED; border-color: #7C3AED;">
                                 <span>🎯</span> Acessar Painel Estratégico
                             </button>
                         </div>
@@ -1594,35 +1640,35 @@
                      VIEW: LOGS DE AUDITORIA (RESTRITO AO ADMIN)
                      ========================================================== -->
                 <div id="view-logs" class="spa-view" style="display: none;">
-                    <!-- Dashboard de Segurança -->
+                    <!-- Dashboard de Segurança & Auditoria -->
                     <div class="grid-3col" style="margin-bottom: 24px;">
-                        <div class="card stat-card" style="padding: 16px 20px;">
-                            <div class="stat-info">
+                        <div class="vellia-card stat-card" style="padding: 18px 22px; display: flex; align-items: center; justify-content: space-between;">
+                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
                                 <span class="stat-label">Total de Eventos</span>
                                 <span id="log-stat-total" class="stat-value" style="font-size: 24px; font-weight: 800;">0</span>
                                 <span style="font-size: 11px; color: var(--text-muted);">Registros na base local</span>
                             </div>
-                            <div class="stat-icon-box" style="background: rgba(99,102,241,0.1); color: var(--primary); width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                            <div class="stat-icon-box" style="background: rgba(98, 87, 245, 0.08); color: var(--primary); width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">
                                 📊
                             </div>
                         </div>
-                        <div class="card stat-card" style="padding: 16px 20px;">
-                            <div class="stat-info">
+                        <div class="vellia-card stat-card" style="padding: 18px 22px; display: flex; align-items: center; justify-content: space-between;">
+                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
                                 <span class="stat-label">Falhas e Alertas</span>
-                                <span id="log-stat-alerts" class="stat-value" style="font-size: 24px; font-weight: 800; color: var(--warning);">0</span>
+                                <span id="log-stat-alerts" class="stat-value" style="font-size: 24px; font-weight: 800; color: #D97706;">0</span>
                                 <span style="font-size: 11px; color: var(--text-muted);">Erros e avisos detectados</span>
                             </div>
-                            <div class="stat-icon-box" style="background: rgba(245,158,11,0.1); color: var(--warning); width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                            <div class="stat-icon-box" style="background: #FFFBEB; color: #D97706; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">
                                 ⚠️
                             </div>
                         </div>
-                        <div class="card stat-card" style="padding: 16px 20px;">
-                            <div class="stat-info">
+                        <div class="vellia-card stat-card" style="padding: 18px 22px; display: flex; align-items: center; justify-content: space-between;">
+                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
                                 <span class="stat-label">Ações Críticas</span>
-                                <span id="log-stat-critical" class="stat-value" style="font-size: 24px; font-weight: 800; color: var(--danger);">0</span>
+                                <span id="log-stat-critical" class="stat-value" style="font-size: 24px; font-weight: 800; color: #DC2626;">0</span>
                                 <span style="font-size: 11px; color: var(--text-muted);">Ações administrativas críticas</span>
                             </div>
-                            <div class="stat-icon-box" style="background: rgba(239,68,68,0.1); color: var(--danger); width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                            <div class="stat-icon-box" style="background: #FEF2F2; color: #DC2626; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">
                                 🔒
                             </div>
                         </div>
@@ -1630,13 +1676,13 @@
 
                     <!-- Gráficos de Auditoria -->
                     <div class="grid-2col" style="margin-bottom: 24px;">
-                        <div class="card" style="padding: 20px 24px; min-height: 280px; display: flex; flex-direction: column;">
+                        <div class="vellia-card" style="padding: 20px 24px; min-height: 280px; display: flex; flex-direction: column;">
                             <h4 style="font-size: 13px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 16px;">Distribuição de Eventos</h4>
                             <div style="position: relative; flex-grow: 1; height: 200px; width: 100%; display: flex; align-items: center; justify-content: center;">
                                 <canvas id="chart-log-distribution"></canvas>
                             </div>
                         </div>
-                        <div class="card" style="padding: 20px 24px; min-height: 280px; display: flex; flex-direction: column;">
+                        <div class="vellia-card" style="padding: 20px 24px; min-height: 280px; display: flex; flex-direction: column;">
                             <h4 style="font-size: 13px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 16px;">Linha do Tempo de Atividade</h4>
                             <div style="position: relative; flex-grow: 1; height: 200px; width: 100%;">
                                 <canvas id="chart-log-timeline"></canvas>
@@ -1644,43 +1690,43 @@
                         </div>
                     </div>
 
-                    <div class="card">
+                    <div class="vellia-card" style="padding: 20px 24px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
                             <div>
-                                <h3 style="font-weight: 700; margin-bottom: 4px;">Logs de Auditoria & Segurança</h3>
-                                <p style="color: var(--text-secondary); font-size: 13px;">Acompanhamento de segurança em tempo real do sistema comercial.</p>
+                                <h3 style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0 0 4px 0;">Logs de Auditoria & Segurança</h3>
+                                <p style="color: var(--text-muted); font-size: 13px; margin: 0;">Acompanhamento de segurança e integridade operacional em tempo real.</p>
                             </div>
                             
                             <!-- Botões de Ação de Log -->
-                            <div style="display: flex; gap: 10px;">
-                                <button id="btn-refresh-logs" class="btn btn-outline" style="padding: 8px 12px;">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                            <div style="display: flex; gap: 8px;">
+                                <button id="btn-refresh-logs" class="btn btn-outline" style="padding: 8px 14px; font-size: 12.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
                                     <span>Atualizar</span>
                                 </button>
-                                <button id="btn-clear-logs" class="btn btn-outline" style="padding: 8px 12px; color: var(--danger); border-color: rgba(239, 68, 68, 0.2);">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                                <button id="btn-clear-logs" class="btn btn-outline" style="padding: 8px 14px; font-size: 12.5px; font-weight: 600; color: #DC2626; border-color: rgba(220, 38, 38, 0.2); display: inline-flex; align-items: center; gap: 6px;">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                                     <span>Limpar Histórico</span>
                                 </button>
                             </div>
                         </div>
 
-                        <!-- Filtro de Busca -->
-                        <div style="margin-bottom: 20px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
-                            <div class="input-wrapper" style="flex-grow: 1; min-width: 250px;">
-                                <input type="text" id="log-search" class="form-control" placeholder="Buscar por ação, usuário ou detalhes..." style="padding-left: 42px; height: 42px;">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="left: 14px; top: 12px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <!-- Filtro de Busca & Pílulas -->
+                        <div style="margin-bottom: 20px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; background: #F8FAFC; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border-color);">
+                            <div style="flex-grow: 1; min-width: 250px; display: flex; align-items: center; gap: 8px; background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 8px; padding: 0 12px;">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #94A3B8;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                <input type="text" id="log-search" class="form-control" placeholder="Buscar por ação, usuário ou detalhes..." style="border: none; background: transparent; height: 36px; padding: 0; font-size: 13px;">
                             </div>
-                            <div id="log-filters" style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                <button class="log-filter-btn active" data-type="all" style="padding: 6px 14px; border: 1px solid var(--primary); background: var(--primary-glow); color: var(--primary); border-radius: 99px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;">🔍 Todos</button>
-                                <button class="log-filter-btn" data-type="sdr" style="padding: 6px 14px; border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-secondary); border-radius: 99px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;">🤖 SDR AI</button>
-                                <button class="log-filter-btn" data-type="sales" style="padding: 6px 14px; border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-secondary); border-radius: 99px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;">💰 Vendas</button>
-                                <button class="log-filter-btn" data-type="security" style="padding: 6px 14px; border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-secondary); border-radius: 99px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;">🔒 Segurança</button>
+                            <div id="log-filters" style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                <button class="log-filter-btn active" data-type="all" style="padding: 6px 14px; border: 1px solid var(--primary); background: rgba(98, 87, 245, 0.1); color: var(--primary); border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;">🔍 Todos</button>
+                                <button class="log-filter-btn" data-type="sdr" style="padding: 6px 14px; border: 1px solid var(--border-color); background: #FFFFFF; color: var(--text-secondary); border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;">🤖 SDR AI</button>
+                                <button class="log-filter-btn" data-type="sales" style="padding: 6px 14px; border: 1px solid var(--border-color); background: #FFFFFF; color: var(--text-secondary); border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;">💰 Vendas</button>
+                                <button class="log-filter-btn" data-type="security" style="padding: 6px 14px; border: 1px solid var(--border-color); background: #FFFFFF; color: var(--text-secondary); border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;">🔒 Segurança</button>
                             </div>
                         </div>
 
                         <!-- Tabela de Logs -->
-                        <div class="table-responsive">
-                            <table class="custom-table">
+                        <div class="table-responsive" style="border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden;">
+                            <table class="custom-table" style="margin: 0;">
                                 <thead>
                                     <tr>
                                         <th>Data/Hora</th>
@@ -1702,32 +1748,32 @@
                      VIEW: LIXEIRA DE LEADS
                      ========================================================== -->
                 <div id="view-trash" class="spa-view" style="display: none;">
-                    <div class="crm-header-bar">
+                    <div class="crm-header-bar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
                         <div>
-                            <h3 style="font-weight: 700;">Lixeira de Leads</h3>
-                            <p style="color: var(--text-secondary); font-size: 13px;">Leads excluídos ficam disponíveis por 30 dias. Restaure ou exclua definitivamente.</p>
+                            <h3 style="font-size: 20px; font-weight: 800; color: var(--text-primary); margin: 0 0 4px 0;">Lixeira de Leads</h3>
+                            <p style="color: var(--text-muted); font-size: 13px; margin: 0;">Leads excluídos ficam retidos por 30 dias com possibilidade de restauração ou limpeza definitiva.</p>
                         </div>
                         <button id="btn-empty-trash" class="btn" style="
                             display: none; gap: 8px; align-items: center;
-                            background: rgba(239,68,68,0.1); color: #ef4444;
-                            border: 1px solid rgba(239,68,68,0.3); border-radius: 10px;
-                            padding: 8px 18px; font-weight: 700; font-size: 13px; cursor: pointer;
+                            background: #FEF2F2; color: #DC2626;
+                            border: 1px solid rgba(220, 38, 38, 0.2); border-radius: 8px;
+                            padding: 8px 16px; font-weight: 700; font-size: 13px; cursor: pointer;
                         ">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                             Esvaziar Lixeira
                         </button>
                     </div>
 
-                    <div class="card" style="overflow: hidden; margin-top: 4px;">
-                        <div style="overflow-x: auto;">
-                            <table class="data-table" style="width: 100%;">
+                    <div class="vellia-card" style="padding: 0; overflow: hidden; margin-top: 4px;">
+                        <div class="table-responsive">
+                            <table class="custom-table" style="width: 100%; margin: 0;">
                                 <thead>
                                     <tr>
                                         <th>Empresa / Contato</th>
-                                        <th>Estágio</th>
+                                        <th>Estágio Anterior</th>
                                         <th>Excluído por</th>
                                         <th>Data da Exclusão</th>
-                                        <th>Expira em</th>
+                                        <th>Retenção Restante</th>
                                         <th>Ações</th>
                                     </tr>
                                 </thead>
@@ -1842,7 +1888,7 @@
                     </div>
 
                     <!-- Tabela de Leads -->
-                    <div class="card">
+                    <div class="vellia-card" style="padding: 0; overflow: hidden; margin-bottom: 24px;">
                         <div class="table-responsive">
                             <table class="custom-table">
                                 <thead>
@@ -1897,7 +1943,7 @@
                     </div>
 
                     <!-- Barra de Filtros & Métricas Rápidas do Kanban -->
-                    <div class="card" style="padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+                    <div class="vellia-card" style="padding: 12px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
                         <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex-grow: 1;">
                             <div class="input-wrapper" style="min-width: 240px; flex-grow: 1; max-width: 380px;">
                                 <input type="text" id="kanban-search" class="filter-control" placeholder="Filtrar por empresa, contato ou cargo..." style="width: 100%; padding-left: 36px; height: 38px;">
@@ -2000,45 +2046,55 @@
                      VIEW: GESTÃO DE CONTRATOS (FASE 2)
                      ========================================================== -->
                 <div id="view-contracts" class="spa-view" style="display: none;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
                         <div>
-                            <h2 style="font-size: 24px; font-weight: 700; color: var(--text-dark);">Gestão de Contratos</h2>
-                            <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">Acompanhe contratos ativos, renovações e faturamentos.</p>
+                            <h2 style="font-size: 20px; font-weight: 700; color: var(--text-primary); margin: 0; letter-spacing: -0.02em;">Gestão de Contratos</h2>
+                            <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px;">Acompanhe contratos ativos, renovações e faturamentos recorrentes.</p>
                         </div>
-                        <button class="btn btn-primary" id="btn-new-contract">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        <button class="btn btn-primary" id="btn-new-contract" style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; padding: 8px 16px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                             <span>Novo Contrato</span>
                         </button>
                     </div>
                     
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
-                        <div class="card stat-card" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
-                            <div class="stat-info">
+                    <!-- KPI Cards de Contratos -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                        <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
                                 <span class="stat-label">Contratos Ativos</span>
                                 <span class="stat-value" id="contract-stat-active">0</span>
                             </div>
-                        </div>
-                        <div class="card stat-card" style="background: rgba(99, 102, 241, 0.08); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(99, 102, 241, 0.2); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
-                            <div class="stat-info">
-                                <span class="stat-label" style="color: var(--primary);">Receita Recorrente (MRR)</span>
-                                <span class="stat-value" id="contract-stat-mrr" style="color: var(--primary-dark);">R$ 0,00</span>
+                            <div class="stat-icon-box" style="background: rgba(98, 87, 245, 0.08); color: var(--primary);">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                             </div>
                         </div>
-                        <div class="card stat-card" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
-                            <div class="stat-info">
-                                <span class="stat-label">Valor Total Contratado (Ativos)</span>
+                        <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
+                                <span class="stat-label">Receita Recorrente (MRR)</span>
+                                <span class="stat-value" id="contract-stat-mrr" style="color: var(--primary);">R$ 0,00</span>
+                            </div>
+                            <div class="stat-icon-box success" style="background: #ECFDF5; color: #16A36A;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                            </div>
+                        </div>
+                        <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
+                                <span class="stat-label">Valor Total Contratado (TCV)</span>
                                 <span class="stat-value" id="contract-stat-tcv">R$ 0,00</span>
+                            </div>
+                            <div class="stat-icon-box" style="background: #F1F5F9; color: #475569;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="card p-4" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
-                        <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+                    <div class="vellia-card" style="padding: 0; overflow: hidden; margin-bottom: 24px;">
+                        <div style="display: flex; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--border-color); flex-wrap: wrap; background: #FFFFFF; align-items: center;">
                             <div class="search-box" style="flex: 1; min-width: 250px; position: relative;">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 10px; top: 10px; color: var(--text-muted);"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                                <input type="text" id="contracts-search" class="form-control" style="padding-left: 36px;" placeholder="Buscar por cliente, CNPJ ou número...">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 12px; top: 11px; color: #94A3B8;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                <input type="text" id="contracts-search" class="form-control" style="padding-left: 38px; height: 38px; font-size: 13px;" placeholder="Buscar por cliente, CNPJ ou número...">
                             </div>
-                            <select id="contracts-filter-status" class="form-control" style="width: auto;">
+                            <select id="contracts-filter-status" class="form-control" style="width: auto; height: 38px; font-size: 13px;">
                                 <option value="all">Todos os Status</option>
                                 <option value="Ativo">Ativos</option>
                                 <option value="Em formalização">Em formalização</option>
@@ -2047,17 +2103,17 @@
                             </select>
                         </div>
                         
-                        <div class="table-responsive">
-                            <table class="table-modern" style="width: 100%;">
+                        <div class="table-responsive" style="margin: 0;">
+                            <table class="custom-table" style="width: 100%; border: none;">
                                 <thead>
                                     <tr>
                                         <th>Número</th>
-                                        <th>Cliente / Lead</th>
+                                        <th>Cliente / Oportunidade</th>
                                         <th>Valor Total</th>
-                                        <th>Recorrente</th>
+                                        <th>Recorrente (MRR)</th>
                                         <th>Vigência</th>
                                         <th>Status</th>
-                                        <th>Ações</th>
+                                        <th style="text-align: right;">Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody id="contracts-table-body">
@@ -2190,40 +2246,60 @@
                      VIEW: PÓS-VENDA E CLIENTES INATIVOS
                      ========================================================== -->
                 <div id="view-post-sales" class="spa-view" style="display: none;">
-                    <div class="view-header">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
                         <div>
-                            <h2 style="font-size: 24px; font-weight: 700; color: var(--text-dark);">Pós-Venda e Relacionamento</h2>
-                            <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">Monitore o engajamento de clientes fechados e identifique quem está esfriando.</p>
+                            <h2 style="font-size: 20px; font-weight: 700; color: var(--text-primary); margin: 0; letter-spacing: -0.02em;">Pós-Venda e Retenção</h2>
+                            <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px;">Monitore a saúde do relacionamento com clientes fechados e previna o churn.</p>
                         </div>
                     </div>
 
                     <!-- Post Sales Stats -->
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
-                        <div class="card p-4" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
-                            <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">Clientes Monitorados</div>
-                            <div id="ps-stat-total" style="font-size: 24px; font-weight: 800; color: var(--primary);">0</div>
+                        <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
+                                <span class="stat-label">Clientes Monitorados</span>
+                                <span class="stat-value" id="ps-stat-total">0</span>
+                            </div>
+                            <div class="stat-icon-box" style="background: rgba(98, 87, 245, 0.08); color: var(--primary);">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                            </div>
                         </div>
-                        <div class="card p-4" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
-                            <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">Clientes Ativos (&lt;60 dias)</div>
-                            <div id="ps-stat-active" style="font-size: 24px; font-weight: 800; color: var(--success);">0</div>
+                        <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
+                                <span class="stat-label">Ativos (&lt; 60 dias)</span>
+                                <span class="stat-value" id="ps-stat-active" style="color: #059669;">0</span>
+                            </div>
+                            <div class="stat-icon-box success" style="background: #ECFDF5; color: #16A36A;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                            </div>
                         </div>
-                        <div class="card p-4" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); border-left: 4px solid var(--warning); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
-                            <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">Em Risco (60 a 90 dias)</div>
-                            <div id="ps-stat-risk" style="font-size: 24px; font-weight: 800; color: var(--warning);">0</div>
+                        <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
+                                <span class="stat-label">Em Risco (60-90 dias)</span>
+                                <span class="stat-value" id="ps-stat-risk" style="color: #D97706;">0</span>
+                            </div>
+                            <div class="stat-icon-box warning" style="background: #FFFBEB; color: #D97706;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            </div>
                         </div>
-                        <div class="card p-4" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); border-left: 4px solid var(--danger); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
-                            <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">Inativos (&gt;90 dias)</div>
-                            <div id="ps-stat-inactive" style="font-size: 24px; font-weight: 800; color: var(--danger);">0</div>
+                        <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
+                                <span class="stat-label">Inativos (&gt; 90 dias)</span>
+                                <span class="stat-value" id="ps-stat-inactive" style="color: #DC2626;">0</span>
+                            </div>
+                            <div class="stat-icon-box" style="background: #FEF2F2; color: #DC2626;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                            </div>
                         </div>
                     </div>
                     
-                    <div class="card p-4" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
-                        <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+                    <div class="vellia-card" style="padding: 0; overflow: hidden; margin-bottom: 24px;">
+                        <div style="display: flex; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--border-color); flex-wrap: wrap; background: #FFFFFF; align-items: center;">
                             <div class="search-box" style="flex: 1; min-width: 250px; position: relative;">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 10px; top: 10px; color: var(--text-muted);"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                                <input type="text" id="post-sales-search" class="form-control" style="padding-left: 36px;" placeholder="Buscar cliente por nome ou CNPJ...">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 12px; top: 11px; color: #94A3B8;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                <input type="text" id="post-sales-search" class="form-control" style="padding-left: 38px; height: 38px; font-size: 13px;" placeholder="Buscar cliente por nome ou CNPJ...">
                             </div>
-                            <select id="post-sales-filter" class="form-control" style="width: auto;">
+                            <select id="post-sales-filter" class="form-control" style="width: auto; height: 38px; font-size: 13px;">
                                 <option value="all">Todos os Clientes</option>
                                 <option value="ativo">Somente Ativos</option>
                                 <option value="risco">Somente Em Risco</option>
@@ -2231,20 +2307,20 @@
                             </select>
                         </div>
                         
-                        <div class="table-responsive">
-                            <table class="data-table" id="post-sales-table">
+                        <div class="table-responsive" style="margin: 0;">
+                            <table class="custom-table" id="post-sales-table" style="width: 100%; border: none;">
                                 <thead>
                                     <tr>
                                         <th>Cliente</th>
                                         <th>Responsável</th>
                                         <th>Última Interação</th>
                                         <th>Dias Ocioso</th>
-                                        <th>Status (Relacionamento)</th>
+                                        <th>Status do Relacionamento</th>
                                         <th style="text-align: right;">Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Nenhum cliente fechado encontrado.</td></tr>
+                                    <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 24px;">Nenhum cliente fechado encontrado.</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -2257,70 +2333,74 @@
                 <div id="view-proposals" class="spa-view" style="display: none;">
 
                     <!-- KPI Cards de Propostas -->
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px;">
-                        <div class="card stat-card">
-                            <div class="stat-info">
-                                <span class="stat-label">Total de Propostas</span>
-                                <span class="stat-value" id="prop-stat-total">0</span>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 24px;">
+                        <div class="vellia-card stat-card" style="padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;">
+                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
+                                <span class="stat-label" style="font-size: 11px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.03em;">Total de Propostas</span>
+                                <span class="stat-value" id="prop-stat-total" style="font-size: 20px; font-weight: 700; color: #111827; line-height: 1.2;">0</span>
                             </div>
-                            <div class="stat-icon-box">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            <div class="stat-icon-box" style="width: 36px; height: 36px; border-radius: 8px; background: #F1F3F7; color: #4B5563; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                             </div>
                         </div>
                         
-                        <!-- O Card de Isocinética foi movido para o Hub de Calculadoras -->
-                        <div class="card stat-card">
-                            <div class="stat-info">
-                                <span class="stat-label">Aguardando Retorno</span>
-                                <span class="stat-value" id="prop-stat-sent">0</span>
+                        <div class="vellia-card stat-card" style="padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;">
+                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
+                                <span class="stat-label" style="font-size: 11px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.03em;">Aguardando Retorno</span>
+                                <span class="stat-value" id="prop-stat-sent" style="font-size: 20px; font-weight: 700; color: #111827; line-height: 1.2;">0</span>
                             </div>
-                            <div class="stat-icon-box warning">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                            </div>
-                        </div>
-                        <div class="card stat-card">
-                            <div class="stat-info">
-                                <span class="stat-label">Vendas Ganhas</span>
-                                <span class="stat-value" id="prop-stat-won">0</span>
-                            </div>
-                            <div class="stat-icon-box success">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            <div class="stat-icon-box" style="width: 36px; height: 36px; border-radius: 8px; background: #FFFBEB; color: #D97706; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                             </div>
                         </div>
-                        <div class="card stat-card">
-                            <div class="stat-info">
-                                <span class="stat-label">Perdas</span>
-                                <span class="stat-value" id="prop-stat-lost">0</span>
+
+                        <div class="vellia-card stat-card" style="padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;">
+                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
+                                <span class="stat-label" style="font-size: 11px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.03em;">Vendas Ganhas</span>
+                                <span class="stat-value" id="prop-stat-won" style="font-size: 20px; font-weight: 700; color: #16A36A; line-height: 1.2;">0</span>
                             </div>
-                            <div class="stat-icon-box" style="background: rgba(239,68,68,0.12); color: var(--danger);">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                            </div>
-                        </div>
-                        <div class="card stat-card">
-                            <div class="stat-info">
-                                <span class="stat-label">Receita Gerada</span>
-                                <span class="stat-value" id="prop-stat-revenue" style="font-size: 18px;">R$ 0</span>
-                            </div>
-                            <div class="stat-icon-box success">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                            <div class="stat-icon-box" style="width: 36px; height: 36px; border-radius: 8px; background: #ECFDF5; color: #16A36A; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                             </div>
                         </div>
-                        <div class="card stat-card">
-                            <div class="stat-info">
-                                <span class="stat-label">Em Pipeline</span>
-                                <span class="stat-value" id="prop-stat-pipeline" style="font-size: 18px;">R$ 0</span>
+
+                        <div class="vellia-card stat-card" style="padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;">
+                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
+                                <span class="stat-label" style="font-size: 11px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.03em;">Perdas</span>
+                                <span class="stat-value" id="prop-stat-lost" style="font-size: 20px; font-weight: 700; color: #DC2626; line-height: 1.2;">0</span>
                             </div>
-                            <div class="stat-icon-box" style="background: rgba(99,102,241,0.12); color: var(--primary);">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                            <div class="stat-icon-box" style="width: 36px; height: 36px; border-radius: 8px; background: #FEF2F2; color: #DC2626; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                             </div>
                         </div>
-                        <div class="card stat-card">
-                            <div class="stat-info">
-                                <span class="stat-label">Conversão</span>
-                                <span class="stat-value" id="prop-stat-conv">0%</span>
+
+                        <div class="vellia-card stat-card" style="padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;">
+                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
+                                <span class="stat-label" style="font-size: 11px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.03em;">Receita Gerada</span>
+                                <span class="stat-value" id="prop-stat-revenue" style="font-size: 17px; font-weight: 700; color: #16A36A; line-height: 1.2;">R$ 0</span>
                             </div>
-                            <div class="stat-icon-box warning">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                            <div class="stat-icon-box" style="width: 36px; height: 36px; border-radius: 8px; background: #ECFDF5; color: #16A36A; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                            </div>
+                        </div>
+
+                        <div class="vellia-card stat-card" style="padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;">
+                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
+                                <span class="stat-label" style="font-size: 11px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.03em;">Em Pipeline</span>
+                                <span class="stat-value" id="prop-stat-pipeline" style="font-size: 17px; font-weight: 700; color: #6257F5; line-height: 1.2;">R$ 0</span>
+                            </div>
+                            <div class="stat-icon-box" style="width: 36px; height: 36px; border-radius: 8px; background: #F0EEFF; color: #6257F5; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                            </div>
+                        </div>
+
+                        <div class="vellia-card stat-card" style="padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;">
+                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
+                                <span class="stat-label" style="font-size: 11px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.03em;">Conversão</span>
+                                <span class="stat-value" id="prop-stat-conv" style="font-size: 20px; font-weight: 700; color: #D97706; line-height: 1.2;">0%</span>
+                            </div>
+                            <div class="stat-icon-box" style="width: 36px; height: 36px; border-radius: 8px; background: #FFFBEB; color: #D97706; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
                             </div>
                         </div>
                     </div>
@@ -2361,7 +2441,7 @@
                     </div>
 
                     <!-- Tabela de Propostas -->
-                    <div class="card" style="margin-bottom: 24px;">
+                    <div class="vellia-card" style="padding: 0; overflow: hidden; margin-bottom: 24px;">
                         <div class="table-responsive">
                             <table class="custom-table">
                                 <thead>
@@ -2383,7 +2463,7 @@
                     </div>
 
                     <!-- Análise de Perdas -->
-                    <div class="card" style="padding: 24px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
+                    <div class="vellia-card" style="padding: 22px; margin-bottom: 24px;">
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
                             <h4 style="font-weight: 800; font-size: 15px; text-transform: uppercase; color: var(--text-primary); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px; margin: 0;">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--danger);"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
@@ -2547,7 +2627,7 @@
                     <!-- Formulário e Calculadora (Oculto inicialmente) -->
                     <div id="isocinetica-form-view" class="isocinetica-hidden isocinetica-grid">
                         <!-- Esquerda: Inputs -->
-                        <div class="isocinetica-form-panel" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05); padding: 24px; border-radius: 16px;">
+                        <div class="isocinetica-form-panel">
                             <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 16px;">
                                 <h3 style="font-size: 18px; margin: 0; color: var(--text-primary);">Nova Proposta</h3>
                                 <button class="btn-ghost" id="btn-isocinetica-back" style="font-size: 12px; padding: 4px 8px; color: var(--text-muted);">← Voltar</button>
@@ -2663,7 +2743,7 @@
                         </div>
 
                         <!-- Direita: Resumo e Memória de Cálculo -->
-                        <div class="isocinetica-summary-panel" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05); padding: 24px; border-radius: 16px;">
+                        <div class="isocinetica-summary-panel">
                             <h3 style="font-size: 16px; margin: 0 0 24px 0; color: var(--text-primary); display:flex; align-items:center; gap:8px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 16px;">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> 
                                 Memória de Cálculo
@@ -2828,11 +2908,11 @@
                         </div>
                     </div>
                     <!-- Sub-abas da Equipe Comercial -->
-                    <div class="subtabs-container" style="display: flex; gap: 8px; border-bottom: 1px solid var(--border-color); margin-bottom: 24px; padding-bottom: 8px; flex-wrap: wrap;">
-                        <button class="btn btn-primary subtab-btn active" data-subtab="team-metas" style="padding: 8px 16px; font-size: 13px;">👥 Membros & Metas</button>
-                        <button class="btn btn-outline subtab-btn" data-subtab="team-metas-adv" style="padding: 8px 16px; font-size: 13px;">🎯 Painel de Metas</button>
-                        <button class="btn btn-outline subtab-btn" data-subtab="team-graficos" style="padding: 8px 16px; font-size: 13px;">📊 Gráficos de Performance</button>
-                        <button class="btn btn-outline subtab-btn" data-subtab="team-servicos" style="padding: 8px 16px; font-size: 13px;">📦 Matriz de Serviços</button>
+                    <div class="subtabs-container modern-subtabs" style="margin-bottom: 24px; flex-wrap: wrap;">
+                        <button class="subtab-btn active" data-subtab="team-metas">👥 Membros & Metas</button>
+                        <button class="subtab-btn" data-subtab="team-metas-adv">🎯 Painel de Metas</button>
+                        <button class="subtab-btn" data-subtab="team-graficos">📊 Gráficos de Performance</button>
+                        <button class="subtab-btn" data-subtab="team-servicos">📦 Matriz de Serviços</button>
                     </div>
 
                     <!-- Conteúdo: Sub-aba 1 (Membros e Metas) -->
@@ -2840,16 +2920,16 @@
                         <div id="leaderboard-widget-container"></div>
                         <div id="team-gamification-podium" style="margin-bottom: 24px;"></div>
                         
-                        <div class="card" style="margin-bottom: 24px; padding: 0; overflow: hidden; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
-                            <div style="padding: 16px 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); display: flex; justify-content: space-between; align-items: center;">
-                                <h3 style="font-size: 14px; font-weight: 700; margin: 0; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">Tabela de Performance (Rankeada)</h3>
-                                <button id="btn-export-team-excel" class="btn btn-outline" style="height: 32px; padding: 0 12px; font-size: 12px; gap: 6px; color: var(--success); border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.05);">
+                        <div class="vellia-card" style="margin-bottom: 24px; padding: 0; overflow: hidden;">
+                            <div style="padding: 16px 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: #FFFFFF;">
+                                <h3 style="font-size: 13px; font-weight: 700; margin: 0; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.04em;">Tabela de Performance (Rankeada)</h3>
+                                <button id="btn-export-team-excel" class="btn btn-outline" style="height: 32px; padding: 0 12px; font-size: 12px; gap: 6px; color: #059669; border-color: #A7F3D0; background: #ECFDF5;">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                                     Exportar Excel
                                 </button>
                             </div>
-                            <div class="table-responsive">
-                                <table class="custom-table" style="min-width: 900px;">
+                            <div class="table-responsive" style="margin: 0;">
+                                <table class="custom-table" style="min-width: 900px; width: 100%; border: none;">
                                     <thead>
                                         <tr>
                                             <th style="width: 80px;">Posição</th>
@@ -2871,8 +2951,8 @@
                             </div>
                         </div>
                         
-                        <div class="card" style="margin-bottom: 24px; padding: 20px 24px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
-                            <h4 style="font-weight: 700; margin-bottom: 20px; font-size: 13px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px;">Meu Progresso Individual</h4>
+                        <div class="vellia-card" style="margin-bottom: 24px; padding: 20px 24px;">
+                            <h4 style="font-weight: 700; margin-bottom: 20px; font-size: 13px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.04em;">Meu Progresso Individual</h4>
                             <div id="team-personal-progress" style="display: flex; flex-direction: column; gap: 14px;"></div>
                         </div>
                     </div>
@@ -2881,7 +2961,7 @@
                     <div id="subtab-content-team-metas-adv" class="subtab-content-pane" style="display: none;">
                         <div class="grid-2col" style="margin-bottom: 24px;">
                             <!-- Gráfico de Metas Semanais -->
-                            <div class="card" style="padding: 24px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
+                            <div class="vellia-card" style="padding: 24px;">
                                 <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; color: var(--text-primary);">
                                     <span>📊</span> Metas Semanais — Realizado vs. Meta
                                 </h3>
@@ -2891,7 +2971,7 @@
                             </div>
 
                             <!-- Insight de Metas -->
-                            <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
+                            <div class="vellia-card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
                                 <div>
                                     <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; color: var(--text-primary);">
                                         <span>🔮</span> Insights Proativos de Metas
@@ -3044,41 +3124,41 @@
                      VIEW: INSPEÇÕES & RENOVAÇÃO
                      ========================================================== -->
                 <div id="view-inspections" class="spa-view" style="display: none;">
-                    <!-- Top Filtros e Resumos -->
-                    <div class="card stat-card" style="margin-bottom: 24px; padding: 20px 24px; display: flex; flex-direction: column; gap: 16px;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                    <!-- Header e Filtros -->
+                    <div class="vellia-card" style="margin-bottom: 24px; padding: 20px 24px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 18px;">
                             <div>
-                                <h3 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0;">Central de Inspeções & Renovações</h3>
-                                <p style="font-size: 12px; color: var(--text-muted); margin: 4px 0 0 0;">Monitore os serviços executados e notifique os clientes antes do vencimento anual das vistorias e laudos.</p>
+                                <h3 style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0; letter-spacing: -0.01em;">Central de Inspeções & Renovações</h3>
+                                <p style="font-size: 13px; color: var(--text-muted); margin: 4px 0 0 0;">Monitore laudos técnicos e notifique clientes automaticamente antes do vencimento anual.</p>
                             </div>
                             <div style="display: flex; gap: 8px;">
-                                <button class="btn btn-primary" id="btn-open-checklist-modal" style="font-size: 12px; padding: 7px 14px; gap: 6px; display: inline-flex; align-items: center; cursor: pointer;">
+                                <button class="btn btn-primary" id="btn-open-checklist-modal" style="font-size: 13px; font-weight: 600; padding: 8px 16px; gap: 6px; display: inline-flex; align-items: center;">
                                     📋 Nova Inspeção / Checklist
                                 </button>
-                                <button class="btn btn-outline" style="font-size: 12px; padding: 7px 14px; gap: 6px; display: inline-flex; align-items: center; border-color: var(--primary); color: var(--primary); font-weight: 700; cursor: pointer;" onclick="window.exportInspectionsSummaryPDF()">
-                                    📄 Relatório Geral (PDF)
+                                <button class="btn btn-outline" style="font-size: 13px; font-weight: 600; padding: 8px 16px; gap: 6px; display: inline-flex; align-items: center;" onclick="window.exportInspectionsSummaryPDF()">
+                                    📄 Relatório PDF
                                 </button>
                             </div>
                         </div>
                         
                         <!-- Barra de Filtros -->
-                        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; background: var(--bg-body); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-                            <div style="flex: 1; min-width: 200px; display: flex; align-items: center; gap: 8px; background: var(--bg-app); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0 10px;">
-                                <span>🔍</span>
-                                <input type="text" id="filter-inspection-search" class="form-control" placeholder="Buscar por cliente ou serviço..." style="border: none; background: transparent; height: 34px; padding: 0;">
+                        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; background: #F8FAFC; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border-color);">
+                            <div style="flex: 1; min-width: 220px; display: flex; align-items: center; gap: 8px; background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 8px; padding: 0 12px;">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #94A3B8;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                <input type="text" id="filter-inspection-search" class="form-control" placeholder="Buscar por cliente, laudo ou serviço..." style="border: none; background: transparent; height: 36px; padding: 0; font-size: 13px;">
                             </div>
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">Status:</span>
-                                <select id="filter-inspection-status" class="filter-control" style="height: 36px; padding: 6px 12px; border-radius: 6px; min-width: 165px;">
+                                <select id="filter-inspection-status" class="form-control" style="height: 36px; padding: 6px 12px; min-width: 175px; font-size: 12.5px;">
                                     <option value="all">Todos os Status</option>
-                                    <option value="alerta">🟠 Crítico (Vence em < 3 meses)</option>
-                                    <option value="valida">🟢 Válida (Mais de 3 meses)</option>
-                                    <option value="vencida">🔴 Vencida (Laudo Expirado)</option>
+                                    <option value="alerta">Crítico (Vence em &lt; 3 meses)</option>
+                                    <option value="valida">Válida (Mais de 3 meses)</option>
+                                    <option value="vencida">Vencida (Laudo Expirado)</option>
                                 </select>
                             </div>
                             <div style="display: flex; align-items: center; gap: 8px;">
-                                <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">Ano de Execução:</span>
-                                <select id="filter-inspection-year" class="filter-control" style="height: 36px; padding: 6px 12px; border-radius: 6px; min-width: 100px;">
+                                <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">Ano:</span>
+                                <select id="filter-inspection-year" class="form-control" style="height: 36px; padding: 6px 12px; min-width: 100px; font-size: 12.5px;">
                                     <option value="all">Todos</option>
                                     <option value="2026">2026</option>
                                     <option value="2025">2025</option>
@@ -3090,37 +3170,57 @@
 
                     <!-- Grid de KPIs rápidos -->
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
-                        <div class="card stat-card" style="padding: 16px 20px; border-left: 4px solid var(--primary);">
-                            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">Total de Inspeções</div>
-                            <div style="font-size: 24px; font-weight: 800; color: var(--text-primary); margin-top: 4px;" id="kpi-inspections-total">0</div>
+                        <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
+                                <span class="stat-label">Total de Inspeções</span>
+                                <span class="stat-value" id="kpi-inspections-total">0</span>
+                            </div>
+                            <div class="stat-icon-box" style="background: rgba(98, 87, 245, 0.08); color: var(--primary);">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                            </div>
                         </div>
-                        <div class="card stat-card" style="padding: 16px 20px; border-left: 4px solid #ef4444;">
-                            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">Laudos Vencidos</div>
-                            <div style="font-size: 24px; font-weight: 800; color: #ef4444; margin-top: 4px;" id="kpi-inspections-expired">0</div>
+                        <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
+                                <span class="stat-label">Laudos Vencidos</span>
+                                <span class="stat-value" id="kpi-inspections-expired" style="color: #DC2626;">0</span>
+                            </div>
+                            <div class="stat-icon-box" style="background: #FEF2F2; color: #DC2626;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                            </div>
                         </div>
-                        <div class="card stat-card" style="padding: 16px 20px; border-left: 4px solid #f59e0b;">
-                            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">Críticos (Vence em < 3 meses)</div>
-                            <div style="font-size: 24px; font-weight: 800; color: #f59e0b; margin-top: 4px;" id="kpi-inspections-critical">0</div>
+                        <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
+                                <span class="stat-label">Críticos (&lt; 3 meses)</span>
+                                <span class="stat-value" id="kpi-inspections-critical" style="color: #D97706;">0</span>
+                            </div>
+                            <div class="stat-icon-box warning" style="background: #FFFBEB; color: #D97706;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            </div>
                         </div>
-                        <div class="card stat-card" style="padding: 16px 20px; border-left: 4px solid #10b981;">
-                            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">Laudos Regulares</div>
-                            <div style="font-size: 24px; font-weight: 800; color: #10b981; margin-top: 4px;" id="kpi-inspections-valid">0</div>
+                        <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
+                                <span class="stat-label">Laudos Regulares</span>
+                                <span class="stat-value" id="kpi-inspections-valid" style="color: #059669;">0</span>
+                            </div>
+                            <div class="stat-icon-box success" style="background: #ECFDF5; color: #16A36A;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Tabela de Inspeções -->
-                    <div class="card" style="padding: 0; overflow: hidden; border: 1px solid var(--border-color); border-radius: var(--radius-lg);">
-                        <div class="table-responsive">
-                            <table class="table" style="width: 100%; border-collapse: collapse; margin: 0;">
+                    <div class="vellia-card" style="padding: 0; overflow: hidden; margin-bottom: 24px;">
+                        <div class="table-responsive" style="margin: 0;">
+                            <table class="custom-table" style="width: 100%; border: none;">
                                 <thead>
-                                    <tr style="background: var(--bg-body);">
-                                        <th style="padding: 14px 20px; text-align: left; font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; border-bottom: 1px solid var(--border-color);">Cliente / Empresa</th>
-                                        <th style="padding: 14px 20px; text-align: left; font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; border-bottom: 1px solid var(--border-color);">Serviço Executado</th>
-                                        <th style="padding: 14px 20px; text-align: left; font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; border-bottom: 1px solid var(--border-color);">Data de Execução</th>
-                                        <th style="padding: 14px 20px; text-align: left; font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; border-bottom: 1px solid var(--border-color);">Vencimento</th>
-                                        <th style="padding: 14px 20px; text-align: left; font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; border-bottom: 1px solid var(--border-color);">Prazo Restante</th>
-                                        <th style="padding: 14px 20px; text-align: center; font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; border-bottom: 1px solid var(--border-color);">Status</th>
-                                        <th style="padding: 14px 20px; text-align: center; font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; border-bottom: 1px solid var(--border-color);">Ações de Revenda</th>
+                                    <tr>
+                                        <th>Cliente / Empresa</th>
+                                        <th>Serviço Executado</th>
+                                        <th>Data Execução</th>
+                                        <th>Vencimento</th>
+                                        <th>Prazo Restante</th>
+                                        <th style="text-align: center;">Status</th>
+                                        <th style="text-align: center;">Ações de Revenda</th>
                                     </tr>
                                 </thead>
                                 <tbody id="inspections-table-body">
@@ -3211,59 +3311,59 @@
                     </div>
 
                     <!-- KPI Cards de Usuários -->
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px;">
-                        <div class="card stat-card" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); border-left: 4px solid var(--primary); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
-                            <div class="stat-info">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                        <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
                                 <span class="stat-label">Total de Usuários</span>
                                 <span class="stat-value" id="kpi-users-total">0</span>
                             </div>
-                            <div class="stat-icon-box" style="background: rgba(99,102,241,0.12); color: var(--primary);">
+                            <div class="stat-icon-box" style="background: rgba(98, 87, 245, 0.08); color: var(--primary);">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                             </div>
                         </div>
-                        <div class="card stat-card" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); border-left: 4px solid #10b981; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
-                            <div class="stat-info">
+                        <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
                                 <span class="stat-label">Online Agora</span>
-                                <span class="stat-value" id="kpi-users-active" style="color: #10b981;">0</span>
+                                <span class="stat-value" id="kpi-users-active" style="color: #059669;">0</span>
                             </div>
-                            <div class="stat-icon-box success" style="background: rgba(16,185,129,0.15); color: #10b981;">
+                            <div class="stat-icon-box success" style="background: #ECFDF5; color: #16A36A;">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                             </div>
                         </div>
-                        <div class="card stat-card" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); border-left: 4px solid #8b5cf6; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
-                            <div class="stat-info">
+                        <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
                                 <span class="stat-label">Administradores</span>
                                 <span class="stat-value" id="kpi-users-admins">0</span>
                             </div>
-                            <div class="stat-icon-box" style="background: rgba(139, 92, 246, 0.12); color: #7c3aed;">
+                            <div class="stat-icon-box" style="background: #F5F3FF; color: #7C3AED;">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                             </div>
                         </div>
-                        <div class="card stat-card" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); border-left: 4px solid #f59e0b; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
-                            <div class="stat-info">
+                        <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
                                 <span class="stat-label">Vendedores / Op.</span>
                                 <span class="stat-value" id="kpi-users-sellers">0</span>
                             </div>
-                            <div class="stat-icon-box warning">
+                            <div class="stat-icon-box warning" style="background: #FFFBEB; color: #D97706;">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Tabela Premium Glassmorphism -->
-                    <div class="card" style="padding: 0; overflow: hidden; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05); border-radius: 16px;">
-                        <div class="table-responsive" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
-                            <table style="width: 100%; border-collapse: collapse; min-width: 900px;">
+                    <!-- Tabela de Usuários -->
+                    <div class="vellia-card" style="padding: 0; overflow: hidden; margin-bottom: 24px;">
+                        <div class="table-responsive" style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0;">
+                            <table class="custom-table" style="width: 100%; border: none; min-width: 900px;">
                                 <thead>
-                                    <tr style="background: var(--bg-body); border-bottom: 2px solid var(--border-color);">
-                                        <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);">Usuário</th>
-                                        <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);">E-mail</th>
-                                        <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);">Permissão</th>
-                                        <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);">Acesso Empresa</th>
-                                        <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);">Status Conta</th>
-                                        <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);">Presença & Último Acesso</th>
-                                        <th style="padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);">Leads</th>
-                                        <th style="padding: 12px 16px; text-align: right; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);">Ações</th>
+                                    <tr>
+                                        <th>Usuário</th>
+                                        <th>E-mail</th>
+                                        <th>Permissão</th>
+                                        <th>Acesso Empresa</th>
+                                        <th>Status Conta</th>
+                                        <th>Presença & Último Acesso</th>
+                                        <th>Leads</th>
+                                        <th style="text-align: right;">Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody id="users-table-body">
@@ -4641,13 +4741,13 @@
 
     <!-- Modal: Cadastro/Edição de Usuários -->
     <div id="users-modal-overlay" class="modal-overlay" style="z-index:1100;"></div>
-    <div id="user-config-modal" class="modal" style="z-index:1101; max-width: 500px; background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
-        <div class="modal-header" style="border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 16px;">
+    <div id="user-config-modal" class="modal" style="z-index:1101; max-width: 500px; border-radius: 12px;">
+        <div class="modal-header">
             <h3 class="modal-title" id="user-modal-title" style="display: flex; align-items: center; gap: 8px;">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
                 Novo Usuário
             </h3>
-            <button id="btn-close-users-modal" class="btn-icon-close" aria-label="Fechar" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);">
+            <button id="btn-close-users-modal" class="btn-icon-close" aria-label="Fechar">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
         </div>
@@ -4656,18 +4756,18 @@
             
             <div class="form-group">
                 <label for="user-name" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary);">Nome Completo *</label>
-                <input type="text" id="user-name" class="form-control" required placeholder="Ex: Lucas Vendedor" style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); height: 42px;">
+                <input type="text" id="user-name" class="form-control" required placeholder="Ex: Lucas Vendedor" style="height: 42px;">
             </div>
 
             <div class="form-group">
                 <label for="user-email" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary);">E-mail Corporativo *</label>
-                <input type="email" id="user-email" class="form-control" required placeholder="Ex: lucas@vellia.com" style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); height: 42px;">
+                <input type="email" id="user-email" class="form-control" required placeholder="Ex: lucas@vellia.com" style="height: 42px;">
             </div>
 
             <div class="grid-modal-2col">
                 <div class="form-group">
                     <label for="user-role" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary);">Cargo / Permissão *</label>
-                    <select id="user-role" class="form-control" style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); height: 42px;">
+                    <select id="user-role" class="form-control" style="height: 42px;">
                         <option value="seller">Vendedor</option>
                         <option value="manager">Gerente Comercial</option>
                         <option value="operacional">Operações (Agendamento)</option>
@@ -4676,7 +4776,7 @@
                 </div>
                 <div class="form-group">
                     <label for="user-status" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary);">Status *</label>
-                    <select id="user-status" class="form-control" style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); height: 42px;">
+                    <select id="user-status" class="form-control" style="height: 42px;">
                         <option value="active">Ativo</option>
                         <option value="inactive">Inativo</option>
                     </select>
@@ -4685,7 +4785,7 @@
 
             <div class="form-group">
                 <label for="user-companyAccess" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary);">Acesso a Empresa *</label>
-                <select id="user-companyAccess" class="form-control" style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); height: 42px;">
+                <select id="user-companyAccess" class="form-control" style="height: 42px;">
                     <option value="Ambas">Ambas as Empresas (Acesso Total)</option>
                     <option value="Excelência Ambiental">Somente Excelência Ambiental</option>
                     <option value="Veeluen Solutions">Somente Veeluen Solutions</option>
@@ -4698,40 +4798,40 @@
 
             <div class="form-group" id="password-field-group">
                 <label for="user-password" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary);">Senha Provisória</label>
-                <input type="password" id="user-password" class="form-control" placeholder="Mínimo 6 caracteres" minlength="6" style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); height: 42px;">
+                <input type="password" id="user-password" class="form-control" placeholder="Mínimo 6 caracteres" minlength="6" style="height: 42px;">
                 <span style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; margin-top: 6px;">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                     Deixe em branco se estiver editando e não quiser alterar.
                 </span>
             </div>
 
-            <div class="modal-footer" style="padding: 16px 0 0 0; border-top: 1px solid rgba(255, 255, 255, 0.05); margin-top: 8px;">
-                <button type="button" id="btn-cancel-user" class="btn btn-outline" style="border-color: rgba(255, 255, 255, 0.1); color: var(--text-secondary);">Cancelar</button>
-                <button type="submit" class="btn btn-primary" style="box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);">Salvar Usuário</button>
+            <div class="modal-footer" style="padding: 16px 0 0 0; border-top: 1px solid var(--border-color); margin-top: 8px;">
+                <button type="button" id="btn-cancel-user" class="btn btn-outline">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar Usuário</button>
             </div>
         </form>
     </div>
 
     <!-- Modal: Alterar Própria Senha -->
     <div id="change-password-modal-overlay" class="modal-overlay" style="z-index:1100;"></div>
-    <div id="change-password-modal" class="modal" style="z-index:1101; max-width: 400px; background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
-        <div class="modal-header" style="border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 16px;">
+    <div id="change-password-modal" class="modal" style="z-index:1101; max-width: 400px; border-radius: 12px;">
+        <div class="modal-header">
             <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 Alterar Minha Senha
             </h3>
-            <button id="btn-close-change-pwd-modal" class="btn-icon-close" aria-label="Fechar" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);">
+            <button id="btn-close-change-pwd-modal" class="btn-icon-close" aria-label="Fechar">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
         </div>
         <form id="change-password-form" class="modal-body" style="display: flex; flex-direction: column; gap: 16px; padding-top: 16px;">
             <div class="form-group">
                 <label for="current-pwd" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary);">Senha Atual</label>
-                <input type="password" id="current-pwd" class="form-control" required placeholder="Digite sua senha atual" style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); height: 42px;">
+                <input type="password" id="current-pwd" class="form-control" required placeholder="Digite sua senha atual" style="height: 42px;">
             </div>
             <div class="form-group">
                 <label for="new-pwd" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary);">Nova Senha</label>
-                <input type="password" id="new-pwd" class="form-control" required placeholder="Nova senha (mínimo 6 caracteres)" minlength="6" style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); height: 42px;">
+                <input type="password" id="new-pwd" class="form-control" required placeholder="Nova senha (mínimo 6 caracteres)" minlength="6" style="height: 42px;">
             </div>
             <div class="form-group">
                 <label for="confirm-new-pwd" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary);">Confirmar Nova Senha</label>

@@ -88,29 +88,39 @@ export const Trash = {
                 day: "2-digit", month: "2-digit", year: "numeric",
                 hour: "2-digit", minute: "2-digit"
             });
+            const companyInitials = (lead.company || "LD").substring(0, 2).toUpperCase();
             return `
-                <tr style="border-bottom: 1px solid var(--border-color);">
+                <tr style="border-bottom: 1px solid var(--border-color); transition: background 0.15s ease;" onmouseover="this.style.background='var(--bg-surface-hover)'" onmouseout="this.style.background='transparent'">
                     <td style="padding: 12px 16px;">
-                        <div style="font-weight: 600; color: var(--text-primary); font-size: 13px;">${lead.company || "—"}</div>
-                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${lead.contact || ""}${lead.role ? ` · ${lead.role}` : ""}</div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="table-avatar" style="width: 32px; height: 32px; border-radius: 8px; background: rgba(98, 87, 245, 0.1); color: var(--primary); font-weight: 700; font-size: 11px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                ${companyInitials}
+                            </div>
+                            <div>
+                                <div style="font-weight: 650; color: var(--text-primary); font-size: 13.5px; line-height: 1.2;">${lead.company || "—"}</div>
+                                <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">${lead.contact || ""}${lead.role ? ` · ${lead.role}` : ""}</div>
+                            </div>
+                        </div>
                     </td>
-                    <td style="padding: 12px 16px; font-size: 12px; color: var(--text-secondary);">${lead.stage || "—"}</td>
-                    <td style="padding: 12px 16px; font-size: 12px; color: var(--text-muted);">${lead.deleted_by || "—"}</td>
-                    <td style="padding: 12px 16px; font-size: 12px; color: var(--text-muted);">${deletedDate}</td>
+                    <td style="padding: 12px 16px;">
+                        <span class="status-pill status-formalizing" style="font-size: 11px;">${lead.stage || "—"}</span>
+                    </td>
+                    <td style="padding: 12px 16px; font-size: 12.5px; color: var(--text-secondary); font-weight: 500;">${lead.deleted_by || "—"}</td>
+                    <td style="padding: 12px 16px; font-size: 12px; color: var(--text-muted); font-family: monospace;">${deletedDate}</td>
                     <td style="padding: 12px 16px;">${this._daysBadge(days)}</td>
                     <td style="padding: 12px 16px;">
-                        <div style="display: flex; gap: 8px; align-items: center;">
+                        <div style="display: flex; gap: 6px; align-items: center;">
                             <button class="trash-btn-restore" data-id="${lead.id}" title="Restaurar lead ao CRM" style="
-                                background: rgba(16,185,129,0.1); color: #10b981;
-                                border: 1px solid rgba(16,185,129,0.3); border-radius: 8px;
-                                padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer;
-                                display: flex; align-items: center; gap: 6px;
+                                background: #ECFDF5; color: #059669;
+                                border: 1px solid rgba(16,185,129,0.25); border-radius: 6px;
+                                padding: 5px 10px; font-size: 12px; font-weight: 600; cursor: pointer;
+                                display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s ease;
                             ">↩️ Restaurar</button>
                             ${canPurge ? `<button class="trash-btn-purge" data-id="${lead.id}" title="Excluir definitivamente" style="
-                                background: rgba(239,68,68,0.1); color: #ef4444;
-                                border: 1px solid rgba(239,68,68,0.3); border-radius: 8px;
-                                padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer;
-                                display: flex; align-items: center; gap: 6px;
+                                background: #FEF2F2; color: #DC2626;
+                                border: 1px solid rgba(220,38,38,0.2); border-radius: 6px;
+                                padding: 5px 10px; font-size: 12px; font-weight: 600; cursor: pointer;
+                                display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s ease;
                             ">🗑️ Excluir</button>` : ""}
                         </div>
                     </td>

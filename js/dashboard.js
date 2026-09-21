@@ -143,6 +143,14 @@ export const Dashboard = {
                 window.location.hash = "#kanban";
             });
         }
+
+        const selectRevenueMetric = document.getElementById("select-revenue-metric");
+        if (selectRevenueMetric && !selectRevenueMetric._hasListener) {
+            selectRevenueMetric._hasListener = true;
+            selectRevenueMetric.addEventListener("change", () => {
+                this.renderRevenueChart(this._lastProposals || Store.getProposals());
+            });
+        }
     },
 
     renderAll() {
@@ -162,6 +170,7 @@ export const Dashboard = {
 
         const filteredLeads = this.filterByTimeframe(leads, "createdAt");
         const filteredProposals = this.filterByTimeframe(proposals, "createdAt");
+        this._lastProposals = filteredProposals;
 
         const execDash = document.getElementById("dashboard-exec");
         const opDash = document.getElementById("dashboard-operacional");
@@ -173,21 +182,15 @@ export const Dashboard = {
                 this.renderOperacionalDashboard(proposals, leads);
             }
         } else {
-            // Admin, Manager or Seller
+            // Admin, Manager ou Vendedor
             if (execDash) execDash.style.display = "flex";
-            
-            if (user.role && ["admin", "manager", "gerente", "operacional"].includes(user.role.toLowerCase())) {
-                if (opDash) {
-                    opDash.style.display = "flex";
-                    this.renderOperacionalDashboard(proposals, leads);
-                }
-            } else {
-                if (opDash) opDash.style.display = "none";
-            }
+            if (opDash) opDash.style.display = "none";
 
             this.renderKPIs(filteredLeads, filteredProposals);
-            this.renderGoalsCommissionPanel();
-            this.renderFunnelChart(filteredLeads);
+            this.renderCommercialSummary(filteredLeads, filteredProposals);
+            this.renderHorizontalPipeline(filteredLeads, filteredProposals);
+            this.renderNextActivities(filteredLeads, filteredProposals);
+            this.renderAttentionClients(filteredLeads, filteredProposals);
             this.renderRevenueChart(filteredProposals);
             this.renderConversionDonut(filteredProposals);
             this.renderSegmentBreakdown(filteredLeads);
@@ -197,11 +200,12 @@ export const Dashboard = {
             this.renderTasksWeekChart();
             this.renderMetaAdsPanel();
             this.renderChannelRoiMatrix(filteredLeads, filteredProposals);
+            this.renderGoalsCommissionPanel();
         }
     },
 
     // ===========================================================================
-    // DASHBOARD OPERACIONAL
+    // DASHBOARD OPERACIONAL COMPACTO
     // ===========================================================================
     renderOperacionalDashboard(proposals, leads) {
         const container = document.getElementById("dashboard-operacional");
@@ -210,69 +214,74 @@ export const Dashboard = {
         const awaiting = proposals.filter(p => p.status === "Aguardando Agendamento" || p.status === "Ganho");
         const scheduled = proposals.filter(p => p.status === "Agendada");
 
-        const renderList = (list, title, color, isAwaiting) => {
+        const renderCompactAgendamentosList = (list, title, isAwaiting) => {
             if (list.length === 0) {
                 return `
-                <div class="card" style="padding: 20px; flex: 1; min-width: 300px; border-top: 2px solid ${color};">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-                        <h4 style="font-weight: 700; font-size: 14px; color: var(--text-primary); margin: 0;">
-                            ${title}
-                        </h4>
-                        <span style="font-size: 11px; font-weight: 700; color: ${color}; background: ${color}1a; padding: 2px 8px; border-radius: 99px;">0</span>
+                <div class="vellia-card" style="flex: 1; min-width: 280px; padding: 20px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                        <span style="font-weight: 650; font-size: 13.5px; color: var(--text-primary);">${title}</span>
+                        <span class="badge ${isAwaiting ? 'badge-warning' : 'badge-success'}">0</span>
                     </div>
-                    <p style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 24px 0;">
-                        Nenhuma proposta encontrada.
-                    </p>
+                    <div class="vellia-empty-state" style="padding: 16px 8px;">
+                        <div class="vellia-empty-icon" style="width: 36px; height: 36px; font-size: 15px; margin-bottom: 8px;">📅</div>
+                        <div class="vellia-empty-title" style="font-size: 13px;">Nenhum agendamento pendente</div>
+                        <div class="vellia-empty-desc" style="font-size: 12px; margin-bottom: 10px;">Quando uma proposta precisar de visita, ela aparecerá aqui automaticamente.</div>
+                        <a href="#proposals" class="btn btn-outline" style="font-size: 11.5px; height: 32px; padding: 0 12px;">Ver propostas</a>
+                    </div>
                 </div>`;
             }
 
-            const items = list.map(p => {
+            const visibleItems = list.slice(0, 3).map(p => {
                 const lead = leads.find(l => l.id === p.leadId);
-                const leadName = lead ? (lead.company || lead.contact) : "Lead Desconhecido";
+                const leadName = lead ? (lead.company || lead.contact) : "Lead Comercial";
                 
                 return `
-                <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                    <div>
-                        <div style="font-weight: 700; font-size: 14px; color: var(--text-primary); margin-bottom: 4px;">
-                            ${leadName} - ${p.service}
+                <div style="background: var(--bg-surface-subtle); border: 1px solid var(--border-color-light); border-radius: var(--radius-md); padding: 10px 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                    <div style="min-width: 0;">
+                        <div style="font-weight: 600; font-size: 13px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            ${leadName}
                         </div>
-                        <div style="font-size: 12px; color: var(--text-muted);">
-                            Proposta: #${p.id.substring(0,8)} • Vendedor: ${p.authorEmail}
+                        <div style="font-size: 11.5px; color: var(--text-muted);">
+                            ${p.service || 'Serviço'} • #${p.id.substring(0,6)}
                         </div>
                     </div>
-                    <div>
+                    <div style="flex-shrink: 0;">
                         ${isAwaiting ? `
-                            <button onclick="window.Dashboard.markProposalScheduled('${p.id}')" class="btn btn-primary btn-sm" style="font-size: 11px; padding: 6px 12px;">
-                                ✅ Marcar como Agendada
+                            <button onclick="window.Dashboard.markProposalScheduled('${p.id}')" class="btn btn-primary" style="font-size: 11px; height: 30px; padding: 0 10px;">
+                                Agendar
                             </button>
                         ` : `
-                            <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);">🗓️ Agendada</span>
+                            <span class="badge badge-success" style="font-size: 11px;">🗓️ Agendada</span>
                         `}
                     </div>
                 </div>`;
             }).join("");
 
             return `
-            <div class="card" style="padding: 20px; flex: 1; min-width: 300px; border-top: 2px solid ${color};">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-                    <h4 style="font-weight: 700; font-size: 14px; color: var(--text-primary); margin: 0;">
-                        ${title}
-                    </h4>
-                    <span style="font-size: 11px; font-weight: 700; color: ${color}; background: ${color}1a; padding: 2px 8px; border-radius: 99px;">${list.length}</span>
+            <div class="vellia-card" style="flex: 1; min-width: 280px; padding: 20px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+                    <span style="font-weight: 650; font-size: 13.5px; color: var(--text-primary);">${title}</span>
+                    <span class="badge ${isAwaiting ? 'badge-warning' : 'badge-success'}">${list.length}</span>
                 </div>
-                <div style="max-height: 500px; overflow-y: auto; padding-right: 4px;">
-                    ${items}
+                <div>
+                    ${visibleItems}
+                </div>
+                <div style="margin-top: 10px; text-align: right;">
+                    <a href="#calendar" style="font-size: 12px; font-weight: 600; color: var(--primary); text-decoration: none;">Ver agenda completa &rarr;</a>
                 </div>
             </div>`;
         };
 
         container.innerHTML = `
-            <h2 style="font-size: 20px; font-weight: 800; color: var(--text-primary); margin-bottom: 20px;">
-                Painel de Agendamentos (Operacional)
-            </h2>
-            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                ${renderList(awaiting, "⏳ Aguardando Agendamento", "#f59e0b", true)}
-                ${renderList(scheduled, "✅ Já Agendadas", "#10b981", false)}
+            <div style="margin-bottom: 16px;">
+                <h3 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0 0 2px 0;">
+                    Agendamentos Operacionais
+                </h3>
+                <p style="font-size: 12.5px; color: var(--text-secondary); margin: 0;">Controle rápido de vistorias técnicas e visitas a clientes</p>
+            </div>
+            <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                ${renderCompactAgendamentosList(awaiting, "Aguardando Agendamento", true)}
+                ${renderCompactAgendamentosList(scheduled, "Já Agendadas", false)}
             </div>
         `;
     },
@@ -291,21 +300,9 @@ export const Dashboard = {
     },
 
     // ===========================================================================
-    // KPIs GLOBAIS
+    // PRIMEIRA LINHA — 4 KPIs COMPACTOS EXECUTIVOS
     // ===========================================================================
     renderKPIs(leads, proposals) {
-        const totalLeads = leads.length;
-        const activeLeads = leads.filter(l => l.stage !== "Cliente Fechado" && l.stage !== "Cliente Perdido").length;
-        const closedLeads = leads.filter(l => l.stage === "Cliente Fechado").length;
-        const totalProposals = proposals.length;
-        const wonProposals = proposals.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)).length;
-        const lostProposals = proposals.filter(p => p.status === "Perdido").length;
-        const revenue = proposals.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)).reduce((s, p) => s + (p.value || 0), 0);
-        const pipeline = proposals.filter(p => p.status === "Enviada" || p.status === "Em Negociação").reduce((s, p) => s + (p.value || 0), 0);
-        const convRate = totalProposals > 0 ? Math.round((wonProposals / totalProposals) * 100) : 0;
-        const avgTicket = wonProposals > 0 ? Math.round(revenue / wonProposals) : 0;
-
-        // --- Novos KPIs da Fase 7 ---
         // 1. Receita Recorrente e TCV (Contratos)
         let mrr = 0;
         let tcv = 0;
@@ -328,13 +325,14 @@ export const Dashboard = {
             if (inactivity.status === "Ativo") {
                 activeClientsCount++;
             } else {
-                riskClientsCount++; // "Em Risco" ou "Inativo"
+                riskClientsCount++;
             }
         });
+
         const fmt = v => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
         // Helper para gerar Sparkline SVG de alta definição
-        const generateSparklineSVG = (points, color = "#6366f1", height = 36, width = 110) => {
+        const generateSparklineSVG = (points, color = "#6257F5", height = 30, width = 90) => {
             if (!points || points.length < 2) points = [12, 18, 15, 24, 28, 38, 42];
             const min = Math.min(...points);
             const max = Math.max(...points);
@@ -343,7 +341,7 @@ export const Dashboard = {
             
             const coords = points.map((p, i) => {
                 const x = i * stepX;
-                const y = height - ((p - min) / range) * (height - 10) - 5;
+                const y = height - ((p - min) / range) * (height - 8) - 4;
                 return { x, y };
             });
 
@@ -362,15 +360,15 @@ export const Dashboard = {
             const gradId = `spark-grad-${Math.random().toString(36).substr(2, 6)}`;
 
             return `
-                <svg class="kpi-sparkline-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="width: 100%; height: 38px; overflow: visible;">
+                <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="width: 100%; height: 30px; overflow: visible;">
                     <defs>
                         <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stop-color="${color}" stop-opacity="0.35" />
+                            <stop offset="0%" stop-color="${color}" stop-opacity="0.25" />
                             <stop offset="100%" stop-color="${color}" stop-opacity="0.0" />
                         </linearGradient>
                     </defs>
                     <path d="${fillD}" fill="url(#${gradId})" />
-                    <path d="${pathD}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="${pathD}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
             `;
         };
@@ -379,25 +377,23 @@ export const Dashboard = {
             { 
                 id: "kpi-mrr", 
                 val: fmt(mrr), 
-                label: "Receita Recorrente (MRR)", 
+                label: "Receita Recorrente", 
                 icon: "🔄", 
-                color: "#6366f1", 
-                trend: "+12.5%", 
+                color: "#6257F5", 
+                trend: "↑ 12.5%", 
                 trendPositive: true,
                 sparkData: [10, 15, 14, 22, 28, 35, 42],
-                large: true, 
                 link: "#contracts" 
             },
             { 
                 id: "kpi-tcv", 
                 val: fmt(tcv), 
-                label: "Total em Contratos (TCV)", 
+                label: "Total em Contratos", 
                 icon: "📜", 
-                color: "#06b6d4", 
-                trend: "+18.4%", 
+                color: "#6257F5", 
+                trend: "↑ 18.4%", 
                 trendPositive: true,
                 sparkData: [20, 25, 22, 34, 38, 48, 55],
-                large: true, 
                 link: "#contracts" 
             },
             { 
@@ -405,7 +401,7 @@ export const Dashboard = {
                 val: activeClientsCount, 
                 label: "Clientes Ativos", 
                 icon: "👥", 
-                color: "#10b981", 
+                color: "#16A36A", 
                 trend: "98% Retenção", 
                 trendPositive: true,
                 sparkData: [8, 12, 14, 15, 18, 20, 22],
@@ -414,60 +410,13 @@ export const Dashboard = {
             { 
                 id: "kpi-health-risk", 
                 val: riskClientsCount, 
-                label: "Clientes Em Risco", 
+                label: "Clientes em Risco", 
                 icon: "⚠️", 
-                color: "#ef4444", 
+                color: riskClientsCount > 0 ? "#EF4444" : "#16A36A", 
                 trend: riskClientsCount > 0 ? "Atenção" : "Zero Riscos", 
                 trendPositive: riskClientsCount === 0,
                 sparkData: [5, 4, 6, 3, 4, 2, Math.max(1, riskClientsCount)],
                 link: "#post-sales" 
-            },
-            { 
-                id: "kpi-revenue", 
-                val: fmt(revenue), 
-                label: "Receita em Propostas", 
-                icon: "💰", 
-                color: "#10b981", 
-                trend: "+15.8%", 
-                trendPositive: true,
-                sparkData: [15, 24, 20, 35, 40, 48, 60],
-                large: true, 
-                link: "#performance" 
-            },
-            { 
-                id: "kpi-pipeline", 
-                val: fmt(pipeline), 
-                label: "Pipeline em Aberto", 
-                icon: "📊", 
-                color: "#6366f1", 
-                trend: "Em Negociação", 
-                trendPositive: true,
-                sparkData: [30, 28, 35, 42, 38, 45, 52],
-                large: true, 
-                link: "#kanban" 
-            },
-            { 
-                id: "kpi-avg-ticket", 
-                val: fmt(avgTicket), 
-                label: "Ticket Médio", 
-                icon: "🎯", 
-                color: "#f59e0b", 
-                trend: "+6.3%", 
-                trendPositive: true,
-                sparkData: [12, 14, 13, 16, 18, 19, 22],
-                large: true, 
-                link: "#proposals" 
-            },
-            { 
-                id: "kpi-conv-rate", 
-                val: `${convRate}%`, 
-                label: "Taxa de Conversão", 
-                icon: "📈", 
-                color: convRate >= 30 ? "#10b981" : convRate >= 15 ? "#f59e0b" : "#ef4444", 
-                trend: convRate >= 20 ? "Alta Performance" : "Dentro da Média", 
-                trendPositive: convRate >= 15,
-                sparkData: [10, 14, 18, 15, 22, 26, Math.max(10, convRate)],
-                link: "#performance" 
             }
         ];
 
@@ -475,29 +424,264 @@ export const Dashboard = {
         if (!container) return;
 
         container.innerHTML = kpis.map(k => `
-            <div class="card stat-card dash-kpi-card modern-kpi-card" 
-                 style="--kpi-color: ${k.color}; ${k.link ? 'cursor: pointer;' : ''}" 
+            <div class="modern-kpi-card" 
+                 style="${k.link ? 'cursor: pointer;' : ''}" 
                  ${k.link ? `onclick="window.location.hash = '${k.link}'"` : ''}>
                 <div class="kpi-top-row">
-                    <div class="stat-info">
-                        <span class="stat-label">${k.label}</span>
-                        <span class="stat-value modern-kpi-value" style="font-size: ${k.large ? '20px' : '24px'}; color: var(--text-primary); font-variant-numeric: tabular-nums;">${k.val}</span>
-                    </div>
-                    <div class="dash-kpi-icon modern-kpi-icon" style="background: ${k.color}14; color: ${k.color}; border: 1px solid ${k.color}26;">
+                    <span class="kpi-label">${k.label}</span>
+                    <div class="kpi-icon-small">
                         <span>${k.icon}</span>
                     </div>
                 </div>
 
+                <div class="kpi-value-row">
+                    <div class="kpi-value">${k.val}</div>
+                </div>
+
                 <div class="kpi-bottom-row">
-                    <span class="kpi-trend-pill ${k.trendPositive ? 'trend-up' : 'trend-down'}">
-                        ${k.trendPositive ? '▲' : '▼'} ${k.trend}
+                    <span class="kpi-badge-trend ${k.trendPositive ? 'positive' : 'negative'}">
+                        ${k.trend}
                     </span>
-                    <div class="kpi-sparkline-container">
+                    <div class="kpi-sparkline-box">
                         ${generateSparklineSVG(k.sparkData, k.color)}
                     </div>
                 </div>
             </div>
         `).join("");
+    },
+
+    // ===========================================================================
+    // SEGUNDA LINHA — RESUMO COMERCIAL
+    // ===========================================================================
+    renderCommercialSummary(leads, proposals) {
+        const container = document.getElementById("dashboard-commercial-summary");
+        if (!container) return;
+
+        const totalLeads = leads.length;
+        const openProposals = proposals.filter(p => p.status === "Enviada" || p.status === "Em Negociação").length;
+        const wonProposals = proposals.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)).length;
+        const convRate = proposals.length > 0 ? Math.round((wonProposals / proposals.length) * 100) : 0;
+        const revenue = proposals.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)).reduce((s, p) => s + (p.value || 0), 0);
+        const avgTicket = wonProposals > 0 ? Math.round(revenue / wonProposals) : 0;
+        const fmt = v => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+
+        let avgDays = 4.2;
+        const closedWithDates = proposals.filter(p => p.closedAt && p.createdAt && ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status));
+        if (closedWithDates.length > 0) {
+            const sumDays = closedWithDates.reduce((acc, p) => {
+                const diff = new Date(p.closedAt).getTime() - new Date(p.createdAt).getTime();
+                return acc + Math.max(1, Math.round(diff / (1000 * 60 * 60 * 24)));
+            }, 0);
+            avgDays = Math.max(1, Math.round(sumDays / closedWithDates.length * 10) / 10);
+        }
+
+        container.innerHTML = `
+            <div class="commercial-summary-item">
+                <span class="commercial-summary-label">Novos Leads</span>
+                <span class="commercial-summary-val">${totalLeads}</span>
+            </div>
+            <div class="commercial-summary-item">
+                <span class="commercial-summary-label">Propostas Abertas</span>
+                <span class="commercial-summary-val">${openProposals}</span>
+            </div>
+            <div class="commercial-summary-item">
+                <span class="commercial-summary-label">Taxa de Conversão</span>
+                <span class="commercial-summary-val" style="color: #16A36A;">${convRate}%</span>
+            </div>
+            <div class="commercial-summary-item">
+                <span class="commercial-summary-label">Ticket Médio</span>
+                <span class="commercial-summary-val">${fmt(avgTicket)}</span>
+            </div>
+            <div class="commercial-summary-item">
+                <span class="commercial-summary-label">Tempo Médio Fechamento</span>
+                <span class="commercial-summary-val">${avgDays} dias</span>
+            </div>
+        `;
+    },
+
+    // ===========================================================================
+    // TERCEIRA LINHA — PIPELINE COMERCIAL HORIZONTAL
+    // ===========================================================================
+    renderHorizontalPipeline(leads, proposals) {
+        const container = document.getElementById("dashboard-horizontal-pipeline");
+        if (!container) return;
+
+        const stages = [
+            { key: "Lead", label: "Lead", aliases: ["Novo", "Lead Gerado", "Lead"] },
+            { key: "Contato", label: "Contato", aliases: ["Contato", "Primeiro Contato"] },
+            { key: "Diagnostico", label: "Diagnóstico", aliases: ["Diagnóstico", "Lead Qualificado", "Diagnostico"] },
+            { key: "Proposta", label: "Proposta", aliases: ["Proposta", "Proposta Enviada"] },
+            { key: "Negociacao", label: "Negociação", aliases: ["Negociação", "Em Negociação", "Negociacao"] },
+            { key: "Contrato", label: "Contrato", aliases: ["Contrato", "Cliente Fechado", "Ganho"] }
+        ];
+
+        const fmt = v => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+
+        container.innerHTML = stages.map(st => {
+            const matchedLeads = leads.filter(l => st.aliases.some(a => (l.stage || "").toLowerCase().includes(a.toLowerCase())));
+            const count = matchedLeads.length;
+
+            const stageProposals = proposals.filter(p => {
+                const lead = leads.find(l => l.id === p.leadId);
+                return (lead && st.aliases.some(a => (lead.stage || "").toLowerCase().includes(a.toLowerCase()))) ||
+                       (st.key === "Contrato" && ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)) ||
+                       (st.key === "Negociacao" && p.status === "Em Negociação") ||
+                       (st.key === "Proposta" && p.status === "Enviada");
+            });
+
+            const valSum = stageProposals.reduce((sum, p) => sum + (p.value || 0), 0);
+
+            return `
+                <div class="pipeline-stage-item" onclick="window.location.hash = '#kanban'" style="cursor: pointer;">
+                    <span class="pipeline-stage-name">${st.label}</span>
+                    <span class="pipeline-stage-count">${count}</span>
+                    <span class="pipeline-stage-value">${valSum > 0 ? fmt(valSum) : 'R$ 0,00'}</span>
+                </div>
+            `;
+        }).join("");
+    },
+
+    // ===========================================================================
+    // QUARTA LINHA — AGENDA & PRÓXIMAS ATIVIDADES
+    // ===========================================================================
+    renderNextActivities(leads, proposals) {
+        const container = document.getElementById("dashboard-next-activities");
+        if (!container) return;
+
+        const activities = [];
+
+        // 1. Propostas com agendamento
+        proposals.filter(p => p.status === "Agendada" || p.status === "Aguardando Agendamento").slice(0, 3).forEach(p => {
+            const lead = leads.find(l => l.id === p.leadId);
+            const name = lead ? (lead.company || lead.contact) : "Cliente Comercial";
+            activities.push({
+                type: "Visita Técnica",
+                client: name,
+                time: p.scheduledDate || "Hoje • 14:30",
+                status: p.status === "Agendada" ? "Agendada" : "Pendente"
+            });
+        });
+
+        // 2. Leads com primeiro contato ou negociação
+        leads.filter(l => l.stage === "Primeiro Contato" || l.stage === "Em Negociação").slice(0, 2).forEach(l => {
+            activities.push({
+                type: "Follow-up",
+                client: l.company || l.contact || "Lead",
+                time: "Amanhã • 10:00",
+                status: "Pendente"
+            });
+        });
+
+        if (activities.length === 0) {
+            container.innerHTML = `
+                <div class="vellia-empty-state">
+                    <div class="vellia-empty-icon">📅</div>
+                    <div class="vellia-empty-title">Nenhuma atividade pendente</div>
+                    <div class="vellia-empty-desc">Sua agenda está livre para hoje. Agende novas visitas ou reuniões pelo calendário.</div>
+                    <a href="#calendar" class="btn btn-outline" style="font-size: 12px; height: 32px;">Abrir Agenda</a>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+                ${activities.slice(0, 5).map(act => `
+                    <div class="activity-row-item">
+                        <div>
+                            <div style="font-weight: 600; font-size: 13.5px; color: var(--text-primary); margin-bottom: 2px;">
+                                ${act.type} &bull; ${act.client}
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-muted);">
+                                ${act.time}
+                            </div>
+                        </div>
+                        <span class="badge ${act.status === 'Agendada' ? 'badge-success' : 'badge-warning'}" style="font-size: 11px;">
+                            ${act.status}
+                        </span>
+                    </div>
+                `).join("")}
+            </div>
+        `;
+    },
+
+    // ===========================================================================
+    // QUARTA LINHA — CLIENTES QUE EXIGEM ATENÇÃO
+    // ===========================================================================
+    renderAttentionClients(leads, proposals) {
+        const container = document.getElementById("dashboard-attention-clients");
+        if (!container) return;
+
+        const attentionItems = [];
+
+        // 1. Clientes em risco do pós-venda
+        const closedClients = PostSales.getClosedClients();
+        closedClients.forEach(client => {
+            const inact = PostSales.calculateInactivity(client);
+            if (inact.status === "Em Risco" || inact.status === "Inativo") {
+                attentionItems.push({
+                    client: client.company || client.contact,
+                    reason: `Sem contato há ${inact.days} dias`,
+                    severity: "high",
+                    link: "#post-sales"
+                });
+            }
+        });
+
+        // 2. Propostas paradas em negociação
+        proposals.filter(p => (p.status === "Enviada" || p.status === "Em Negociação")).slice(0, 3).forEach(p => {
+            const lead = leads.find(l => l.id === p.leadId);
+            attentionItems.push({
+                client: lead ? (lead.company || lead.contact) : "Cliente em Negociação",
+                reason: "Proposta aguardando retorno",
+                severity: "medium",
+                link: "#proposals"
+            });
+        });
+
+        // 3. Contratos próximos de renovação
+        if (Store && Store.getContracts) {
+            const contracts = Store.getContracts().filter(c => c.status === 'Ativo');
+            contracts.slice(0, 2).forEach(c => {
+                attentionItems.push({
+                    client: c.client_name || "Cliente Contrato",
+                    reason: "Renovação contratual próxima",
+                    severity: "medium",
+                    link: "#contracts"
+                });
+            });
+        }
+
+        if (attentionItems.length === 0) {
+            container.innerHTML = `
+                <div class="vellia-empty-state">
+                    <div class="vellia-empty-icon">🛡️</div>
+                    <div class="vellia-empty-title">Nenhum cliente em risco</div>
+                    <div class="vellia-empty-desc">Todos os clientes ativos e negociações estão com o acompanhamento em dia.</div>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+                ${attentionItems.slice(0, 5).map(item => `
+                    <div class="activity-row-item" style="cursor: pointer;" onclick="window.location.hash = '${item.link}'">
+                        <div>
+                            <div style="font-weight: 600; font-size: 13.5px; color: var(--text-primary); margin-bottom: 2px;">
+                                ${item.client}
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-muted);">
+                                ${item.reason}
+                            </div>
+                        </div>
+                        <span class="badge ${item.severity === 'high' ? 'badge-danger' : 'badge-warning'}" style="font-size: 11px;">
+                            ${item.severity === 'high' ? 'Crítico' : 'Atenção'}
+                        </span>
+                    </div>
+                `).join("")}
+            </div>
+        `;
     },
 
     // ===========================================================================
@@ -794,10 +978,12 @@ export const Dashboard = {
 
         if (typeof Chart !== 'undefined' && Chart.getChart) { const ex = Chart.getChart(canvas); if (ex) ex.destroy(); } if (charts.revenue) { charts.revenue.destroy(); }
 
+        const metric = document.getElementById("select-revenue-metric")?.value || "revenue";
+
         const months = [];
         for (let i = 5; i >= 0; i--) {
             const d = new Date();
-            d.setDate(1); // Garante que a virada de mês em dias 29, 30 ou 31 não pule/duplique meses
+            d.setDate(1); // Garante que a virada de mês não pule meses
             d.setMonth(d.getMonth() - i);
             months.push({
                 label: d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "").toUpperCase(),
@@ -807,33 +993,65 @@ export const Dashboard = {
         }
 
         const labels = months.map(m => m.label);
-        const data = months.map(m => {
-            return proposals
-                .filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status) && p.closedAt)
-                .filter(p => {
-                    const d = new Date(p.closedAt);
-                    return d.getMonth() === m.month && d.getFullYear() === m.year;
-                })
-                .reduce((sum, p) => sum + (p.value || 0), 0);
-        });
+        let data = [];
+        let datasetLabel = "Receita Realizada (R$)";
+        let tooltipCallback = (context) => " " + new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(context.parsed.y);
+        let yTickCallback = (value) => value === 0 ? 'R$ 0' : (value >= 1000 ? 'R$ ' + (value / 1000).toFixed(0) + 'k' : 'R$ ' + value);
+
+        if (metric === "contracts") {
+            datasetLabel = "Contratos Fechados";
+            data = months.map(m => {
+                return proposals
+                    .filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status) && p.closedAt)
+                    .filter(p => {
+                        const d = new Date(p.closedAt);
+                        return d.getMonth() === m.month && d.getFullYear() === m.year;
+                    }).length;
+            });
+            tooltipCallback = (context) => ` ${context.parsed.y} contrato${context.parsed.y === 1 ? '' : 's'}`;
+            yTickCallback = (value) => `${value}`;
+        } else if (metric === "conversions") {
+            datasetLabel = "Propostas Ganhas";
+            data = months.map(m => {
+                return proposals
+                    .filter(p => p.status === "Ganho" && p.closedAt)
+                    .filter(p => {
+                        const d = new Date(p.closedAt);
+                        return d.getMonth() === m.month && d.getFullYear() === m.year;
+                    }).length;
+            });
+            tooltipCallback = (context) => ` ${context.parsed.y} fechamento${context.parsed.y === 1 ? '' : 's'}`;
+            yTickCallback = (value) => `${value}`;
+        } else {
+            // "revenue"
+            data = months.map(m => {
+                return proposals
+                    .filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status) && p.closedAt)
+                    .filter(p => {
+                        const d = new Date(p.closedAt);
+                        return d.getMonth() === m.month && d.getFullYear() === m.year;
+                    })
+                    .reduce((sum, p) => sum + (p.value || 0), 0);
+            });
+        }
 
         const ctx = canvas.getContext('2d');
-        const gradient = ctx.createLinearGradient(0, 0, 0, 250);
-        gradient.addColorStop(0, 'rgba(16, 185, 129, 0.35)');
-        gradient.addColorStop(0.6, 'rgba(16, 185, 129, 0.08)');
-        gradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 260);
+        gradient.addColorStop(0, 'rgba(98, 87, 245, 0.22)');
+        gradient.addColorStop(0.7, 'rgba(98, 87, 245, 0.04)');
+        gradient.addColorStop(1, 'rgba(98, 87, 245, 0.0)');
 
-        const glassTooltip = {
-            backgroundColor: 'rgba(15, 23, 42, 0.92)',
-            titleColor: '#ffffff',
-            bodyColor: '#e2e8f0',
-            borderColor: 'rgba(255, 255, 255, 0.12)',
+        const modernTooltip = {
+            backgroundColor: '#111827',
+            titleColor: '#F9FAFB',
+            bodyColor: '#E5E7EB',
+            borderColor: 'rgba(255, 255, 255, 0.08)',
             borderWidth: 1,
-            padding: 12,
-            cornerRadius: 10,
-            boxPadding: 6,
+            padding: 10,
+            cornerRadius: 8,
+            boxPadding: 4,
             usePointStyle: true,
-            titleFont: { family: 'Inter, sans-serif', weight: '700', size: 12 },
+            titleFont: { family: 'Inter, sans-serif', weight: '600', size: 11 },
             bodyFont: { family: 'Inter, sans-serif', size: 12 }
         };
 
@@ -842,20 +1060,20 @@ export const Dashboard = {
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Receita Realizada (R$)',
+                    label: datasetLabel,
                     data: data,
-                    borderColor: '#10b981',
+                    borderColor: '#6257F5',
                     backgroundColor: gradient,
-                    borderWidth: 3,
+                    borderWidth: 2,
                     fill: true,
-                    tension: 0.42,
-                    pointBackgroundColor: '#ffffff',
-                    pointBorderColor: '#10b981',
-                    pointBorderWidth: 2.5,
-                    pointRadius: 4,
-                    pointHoverRadius: 7,
-                    pointHoverBackgroundColor: '#10b981',
-                    pointHoverBorderColor: '#ffffff',
+                    tension: 0.38,
+                    pointBackgroundColor: '#FFFFFF',
+                    pointBorderColor: '#6257F5',
+                    pointBorderWidth: 2,
+                    pointRadius: 3.5,
+                    pointHoverRadius: 6,
+                    pointHoverBackgroundColor: '#6257F5',
+                    pointHoverBorderColor: '#FFFFFF',
                     pointHoverBorderWidth: 2
                 }]
             },
@@ -865,31 +1083,26 @@ export const Dashboard = {
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        ...glassTooltip,
+                        ...modernTooltip,
                         callbacks: {
-                            label: function(context) {
-                                return " " + new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(context.parsed.y);
-                            }
+                            label: tooltipCallback
                         }
                     }
                 },
                 scales: {
                     x: {
                         grid: { display: false },
-                        ticks: { color: '#64748b', font: { family: 'Inter, sans-serif', weight: 600, size: 11 } }
+                        ticks: { color: '#9CA3AF', font: { family: 'Inter, sans-serif', weight: 600, size: 11 } }
                     },
                     y: {
                         beginAtZero: true,
-                        grid: { color: 'rgba(148, 163, 184, 0.08)' },
+                        grid: { color: 'rgba(232, 234, 240, 0.6)' },
                         ticks: {
-                            color: '#64748b',
+                            color: '#9CA3AF',
                             maxTicksLimit: 4,
                             precision: 0,
                             font: { family: 'Inter, sans-serif', size: 11 },
-                            callback: function(value) {
-                                if (value === 0) return 'R$ 0';
-                                return value >= 1000 ? 'R$ ' + (value/1000) + 'k' : 'R$ ' + value;
-                            }
+                            callback: yTickCallback
                         }
                     }
                 }

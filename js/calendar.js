@@ -240,28 +240,28 @@ export const Calendar = {
                 <button class="calendar-pill-filter ${this.filterType === 'reuniao' ? 'active' : ''}" data-type="reuniao">💼 Reuniões</button>
             </div>
 
-            <!-- Cards KPI Rápidos com Efeito Glass -->
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px; margin-bottom:20px;">
-                <div class="card stat-card" style="padding:14px 18px; border-left:4px solid #6366f1;">
-                    <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Compromissos no Mês</div>
-                    <div style="font-size:22px; font-weight:800; color:var(--text-primary); margin-top:2px;">${totalCount}</div>
+            <!-- Cards KPI Rápidos -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:16px; margin-bottom:22px;">
+                <div class="vellia-card stat-card" style="padding:16px 20px;">
+                    <span class="stat-label">Compromissos no Mês</span>
+                    <span class="stat-value" style="font-size:24px; font-weight:800; color:var(--text-primary); margin-top:4px;">${totalCount}</span>
                 </div>
-                <div class="card stat-card" style="padding:14px 18px; border-left:4px solid #10b981;">
-                    <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Vistorias Técnicas</div>
-                    <div style="font-size:22px; font-weight:800; color:#10b981; margin-top:2px;">${inspecaoCount}</div>
+                <div class="vellia-card stat-card" style="padding:16px 20px;">
+                    <span class="stat-label">Vistorias Técnicas</span>
+                    <span class="stat-value" style="font-size:24px; font-weight:800; color:#059669; margin-top:4px;">${inspecaoCount}</span>
                 </div>
-                <div class="card stat-card" style="padding:14px 18px; border-left:4px solid #f59e0b;">
-                    <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Pendentes</div>
-                    <div style="font-size:22px; font-weight:800; color:#f59e0b; margin-top:2px;">${pendingCount}</div>
+                <div class="vellia-card stat-card" style="padding:16px 20px;">
+                    <span class="stat-label">Pendentes</span>
+                    <span class="stat-value" style="font-size:24px; font-weight:800; color:#D97706; margin-top:4px;">${pendingCount}</span>
                 </div>
-                <div class="card stat-card" style="padding:14px 18px; border-left:4px solid #8b5cf6;">
-                    <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Concluídos</div>
-                    <div style="font-size:22px; font-weight:800; color:#8b5cf6; margin-top:2px;">${doneCount}</div>
+                <div class="vellia-card stat-card" style="padding:16px 20px;">
+                    <span class="stat-label">Concluídos</span>
+                    <span class="stat-value" style="font-size:24px; font-weight:800; color:var(--primary); margin-top:4px;">${doneCount}</span>
                 </div>
             </div>
 
             <!-- Grade do Calendário -->
-            <div class="calendar-grid-wrapper card" style="padding:18px; border-radius:var(--radius-lg);">
+            <div class="calendar-grid-wrapper vellia-card" style="padding:22px; border-radius:12px;">
                 <div class="calendar-weekdays-header">
                     <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
                 </div>

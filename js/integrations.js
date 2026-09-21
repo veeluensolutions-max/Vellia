@@ -13,135 +13,135 @@ export const Integrations = {
         };
 
         const statusBadge = config.connected 
-            ? `<span class="badge badge-success" id="wa-connection-status-badge" style="background: #dcfce7; color: #16a34a;">🟢 Conectado</span>`
-            : `<span class="badge badge-danger" id="wa-connection-status-badge" style="background: #fee2e2; color: #dc2626;">🔴 Desconectado</span>`;
+            ? `<span class="status-pill status-active" id="wa-connection-status-badge">● Conectado</span>`
+            : `<span class="status-pill status-inactive" id="wa-connection-status-badge">● Desconectado</span>`;
 
         container.innerHTML = `
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px;">
                 <!-- Meta Ads Card -->
-                <div class="card stat-card" style="display: flex; flex-direction: column; gap: 16px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
+                <div class="vellia-card" style="display: flex; flex-direction: column; gap: 16px;">
                     <div style="display: flex; align-items: center; gap: 12px;">
-                        <div style="width: 48px; height: 48px; border-radius: var(--radius-md); background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center;">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                        <div style="width: 44px; height: 44px; border-radius: 10px; background: #E0F2FE; color: #0284C7; display: flex; align-items: center; justify-content: center;">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
                         </div>
                         <div>
-                            <h3 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0;">Meta Ads (Facebook)</h3>
-                            <span style="font-size: 12px; color: var(--text-muted);">Recepção de Leads via Webhook</span>
+                            <h3 style="font-size: 15px; font-weight: 700; color: var(--text-primary); margin: 0; letter-spacing: -0.01em;">Meta Ads (Facebook & Instagram)</h3>
+                            <span style="font-size: 12px; color: var(--text-muted);">Recepção em tempo real de Leads via Webhook</span>
                         </div>
                     </div>
                     
-                    <div style="background: rgba(255, 255, 255, 0.5); padding: 12px; border-radius: var(--radius-md); border: 1px solid rgba(255, 255, 255, 0.8);">
-                        <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 8px 0;">URL do Webhook para configurar na campanha:</p>
+                    <div style="background: #F8FAFC; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <p style="font-size: 11.5px; color: var(--text-muted); margin: 0 0 8px 0; font-weight: 500;">URL do Webhook para configurar no gerenciador de anúncios:</p>
                         <div style="display: flex; gap: 8px;">
-                            <input type="text" class="form-control" value="https://velliacrm.vercel.app/api/meta-webhook" readonly style="font-size: 12px; background: var(--bg-app); cursor: copy;" id="webhook-url-input">
-                            <button class="btn btn-primary" onclick="navigator.clipboard.writeText(document.getElementById('webhook-url-input').value); alert('URL Copiada!')" style="padding: 0 12px;">
+                            <input type="text" class="form-control" value="https://velliacrm.vercel.app/api/meta-webhook" readonly style="font-size: 12px; background: #FFFFFF; cursor: copy; height: 34px;" id="webhook-url-input">
+                            <button class="btn btn-primary" onclick="navigator.clipboard.writeText(document.getElementById('webhook-url-input').value); alert('URL Copiada!')" style="padding: 0 12px; height: 34px; font-size: 12px;">
                                 Copiar
                             </button>
                         </div>
                     </div>
 
-                    <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--text-primary);">
-                        <div style="display: flex; justify-content: space-between;">
-                            <span>Status da Conexão</span>
-                            <span class="badge badge-success" style="background: #dcfce7; color: #16a34a;">🟢 Conectado</span>
+                    <div style="display: flex; flex-direction: column; gap: 10px; font-size: 13px; color: var(--text-primary);">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: #64748B;">Status da Conexão</span>
+                            <span class="status-pill status-active">● Conectado</span>
                         </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
-                            <span>🤖 SDR AI Automático</span>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: #64748B;">🤖 SDR AI Automático</span>
                             <input type="checkbox" id="toggle-sdr-ai" ${config.sdrActive !== false ? "checked" : ""} style="cursor: pointer; width: 16px; height: 16px;">
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span>⚡ Resposta WhatsApp (&lt; 1 min)</span>
-                            <span class="badge badge-success" style="background: #dcfce7; color: #16a34a; font-size: 11px;">⚡ Ativo</span>
+                            <span style="color: #64748B;">⚡ Resposta WhatsApp (&lt; 1 min)</span>
+                            <span class="status-pill status-active">⚡ Ativo</span>
                         </div>
-                        <div style="display: flex; justify-content: space-between;">
-                            <span>Leads Recebidos (Hoje)</span>
-                            <span style="font-weight: 700;" id="meta-leads-count">0</span>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: #64748B;">Leads Recebidos (Hoje)</span>
+                            <span style="font-weight: 700; color: #0F172A;" id="meta-leads-count">0</span>
                         </div>
                     </div>
 
                     <div style="margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border-color); display: flex; flex-wrap: wrap; gap: 8px;">
                         <button class="btn btn-primary" style="flex: 1; font-size: 11.5px; padding: 6px 8px;" onclick="window.simulateMetaLead()">Simular Lead</button>
                         <button class="btn btn-outline" style="flex: 1; font-size: 11.5px; padding: 6px 8px;" onclick="window.simulateMessengerMessage()">Simular Messenger</button>
-                        <button class="btn btn-outline" style="flex: 1; font-size: 11.5px; padding: 6px 8px; border-color: #e1306c; color: #e1306c;" onclick="window.simulateInstagramDirect()">📸 Simular Instagram Direct</button>
+                        <button class="btn btn-outline" style="flex: 1; font-size: 11.5px; padding: 6px 8px; border-color: #E1306C; color: #E1306C;" onclick="window.simulateInstagramDirect()">📸 Simular Instagram</button>
                         <button class="btn btn-outline" style="width: 100%; font-size: 12px; padding: 6px 10px;" onclick="window.openMetaConfigModal()">⚙️ Configurações Meta</button>
                     </div>
                 </div>
 
                 <!-- WhatsApp API Card -->
-                <div class="card stat-card" style="display: flex; flex-direction: column; gap: 16px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
+                <div class="vellia-card" style="display: flex; flex-direction: column; gap: 16px;">
                     <div style="display: flex; align-items: center; gap: 12px;">
-                        <div style="width: 48px; height: 48px; border-radius: var(--radius-md); background: #dcfce7; color: #16a34a; display: flex; align-items: center; justify-content: center;">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        <div style="width: 44px; height: 44px; border-radius: 10px; background: #ECFDF5; color: #059669; display: flex; align-items: center; justify-content: center;">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                         </div>
                         <div>
-                            <h3 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0;">WhatsApp API</h3>
-                            <span style="font-size: 12px; color: var(--text-muted);">Integração ativa de mensagens</span>
+                            <h3 style="font-size: 15px; font-weight: 700; color: var(--text-primary); margin: 0; letter-spacing: -0.01em;">WhatsApp API Gateway</h3>
+                            <span style="font-size: 12px; color: var(--text-muted);">Integração ativa de mensagens e automações</span>
                         </div>
                     </div>
 
-                    <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; background: rgba(255, 255, 255, 0.5); border-radius: var(--radius-md); border: 1px solid rgba(255, 255, 255, 0.8);">
+                    <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; background: #F8FAFC; border-radius: 8px; border: 1px solid var(--border-color);">
                         <div class="form-group" style="margin-bottom: 8px;">
-                            <label style="font-size: 11px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">URL do Servidor / Gateway</label>
-                            <input type="text" id="wa-api-url" class="form-control" style="font-size: 12px; height: 32px; padding: 6px 10px;" value="${config.apiUrl}" placeholder="https://api.z-api.io">
+                            <label style="font-size: 11px; font-weight: 600; color: #64748B; display: block; margin-bottom: 4px;">URL do Servidor / Gateway</label>
+                            <input type="text" id="wa-api-url" class="form-control" style="font-size: 12px; height: 34px; padding: 6px 10px;" value="${config.apiUrl}" placeholder="https://api.z-api.io">
                         </div>
                         <div class="form-group" style="margin-bottom: 8px;">
-                            <label style="font-size: 11px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">ID da Instância</label>
-                            <input type="text" id="wa-api-instance" class="form-control" style="font-size: 12px; height: 32px; padding: 6px 10px;" value="${config.instanceId}" placeholder="Ex: 3B82F6...">
+                            <label style="font-size: 11px; font-weight: 600; color: #64748B; display: block; margin-bottom: 4px;">ID da Instância</label>
+                            <input type="text" id="wa-api-instance" class="form-control" style="font-size: 12px; height: 34px; padding: 6px 10px;" value="${config.instanceId}" placeholder="Ex: 3B82F6...">
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
-                            <label style="font-size: 11px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Token de Autenticação</label>
-                            <input type="password" id="wa-api-token" class="form-control" style="font-size: 12px; height: 32px; padding: 6px 10px;" value="${config.token}" placeholder="••••••••••••">
+                            <label style="font-size: 11px; font-weight: 600; color: #64748B; display: block; margin-bottom: 4px;">Token de Autenticação</label>
+                            <input type="password" id="wa-api-token" class="form-control" style="font-size: 12px; height: 34px; padding: 6px 10px;" value="${config.token}" placeholder="••••••••••••">
                         </div>
                     </div>
 
                     <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--text-primary);">
-                        <div style="display: flex; justify-content: space-between;">
-                            <span>Status da Conexão</span>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: #64748B;">Status da Conexão</span>
                             ${statusBadge}
                         </div>
                     </div>
 
                     <div style="margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border-color); display: flex; gap: 10px;">
-                        <button class="btn btn-primary" style="flex: 1;" id="btn-save-wa-config">${config.connected ? 'Desconectar' : 'Salvar e Conectar'}</button>
-                        <button class="btn btn-outline" style="flex: 1;" id="btn-simulate-wa-incoming" ${config.connected ? '' : 'disabled style="opacity: 0.5; cursor: not-allowed;"'}>Simular Mensagem</button>
+                        <button class="btn btn-primary" style="flex: 1; height: 36px; font-size: 12px; font-weight: 600;" id="btn-save-wa-config">${config.connected ? 'Desconectar' : 'Salvar e Conectar'}</button>
+                        <button class="btn btn-outline" style="flex: 1; height: 36px; font-size: 12px; font-weight: 600;" id="btn-simulate-wa-incoming" ${config.connected ? '' : 'disabled style="opacity: 0.5; cursor: not-allowed;"'}>Simular Msg</button>
                     </div>
                 </div>
 
                 <!-- Google Gemini AI Card -->
-                <div class="card stat-card" style="display: flex; flex-direction: column; gap: 16px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
+                <div class="vellia-card" style="display: flex; flex-direction: column; gap: 16px;">
                     <div style="display: flex; align-items: center; gap: 12px;">
-                        <div style="width: 48px; height: 48px; border-radius: var(--radius-md); background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+                        <div style="width: 44px; height: 44px; border-radius: 10px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 20px;">
                             🤖
                         </div>
                         <div>
-                            <h3 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0;">Google Gemini 2.5 Flash AI</h3>
+                            <h3 style="font-size: 15px; font-weight: 700; color: var(--text-primary); margin: 0; letter-spacing: -0.01em;">Google Gemini 2.5 Flash AI</h3>
                             <span style="font-size: 12px; color: var(--text-muted);">Lead Scoring & Análise Preditiva</span>
                         </div>
                     </div>
 
-                    <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; background: rgba(255, 255, 255, 0.5); border-radius: var(--radius-md); border: 1px solid rgba(255, 255, 255, 0.8);">
+                    <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; background: #F8FAFC; border-radius: 8px; border: 1px solid var(--border-color);">
                         <div class="form-group" style="margin-bottom: 0;">
-                            <label style="font-size: 11px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Chave API do Gemini (Google AI Studio)</label>
+                            <label style="font-size: 11px; font-weight: 600; color: #64748B; display: block; margin-bottom: 4px;">Chave API do Gemini (Google AI Studio)</label>
                             <input type="password" id="gemini-api-key-input" class="form-control" style="font-size: 12px; height: 34px; padding: 6px 10px;" placeholder="AIzaSy..." value="${localStorage.getItem('vellia_gemini_api_key') || ''}">
                         </div>
                     </div>
 
                     <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--text-primary);">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span>Status da Inteligência</span>
-                            <span id="gemini-status-badge" class="badge" style="${localStorage.getItem('vellia_gemini_api_key') ? 'background: #dcfce7; color: #16a34a;' : 'background: #e0f2fe; color: #0284c7;'} font-size: 11px;">
-                                ${localStorage.getItem('vellia_gemini_api_key') ? '⚡ Gemini 2.5 Flash Ativo' : '🧠 Smart Rules Active'}
+                            <span style="color: #64748B;">Status da Inteligência</span>
+                            <span id="gemini-status-badge" class="${localStorage.getItem('vellia_gemini_api_key') ? 'status-pill status-active' : 'status-pill status-risk'}">
+                                ${localStorage.getItem('vellia_gemini_api_key') ? '● Gemini 2.5 Flash Ativo' : '● Smart Rules Active'}
                             </span>
                         </div>
                     </div>
 
                     <div style="margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border-color); display: flex; gap: 10px;">
-                        <button class="btn btn-primary" style="flex: 1;" id="btn-save-gemini-key">Salvar Chave</button>
+                        <button class="btn btn-primary" style="flex: 1; height: 36px; font-size: 12.5px; font-weight: 600;" id="btn-save-gemini-key">Salvar Chave</button>
                     </div>
                 </div>
 
                 <!-- Vellia Docs Card -->
-                <div class="card stat-card" style="display: flex; flex-direction: column; gap: 16px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);">
+                <div class="vellia-card" style="display: flex; flex-direction: column; gap: 16px;">
                     <div style="display: flex; align-items: center; gap: 12px;">
                         <div style="width: 48px; height: 48px; border-radius: var(--radius-md); background: #f5f3ff; color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 22px;">
                             📄

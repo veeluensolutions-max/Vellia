@@ -26,23 +26,19 @@
    PAINEL DE FORMULÁRIO (Esquerda)
    --------------------------------------------------- */
 .isocinetica-form-panel {
-    background: rgba(255, 255, 255, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    border-radius: 24px;
-    padding: 32px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.03), inset 0 1px 0 rgba(255,255,255,1);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: 28px;
+    box-shadow: var(--shadow-sm);
     display: flex;
     flex-direction: column;
-    gap: 32px;
+    gap: 28px;
 }
 
-/* Dark mode overrides (se a classe global dark estiver ativa) */
 [data-theme="dark"] .isocinetica-form-panel {
-    background: rgba(15, 23, 42, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
 }
 
 .isocinetica-form-section {
@@ -178,22 +174,19 @@
    PAINEL DE RESUMO (Direita) - Efeito Neon/Glass
    --------------------------------------------------- */
 .isocinetica-summary-panel {
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.4));
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    border-radius: 24px;
-    padding: 32px;
-    box-shadow: 0 20px 50px rgba(99, 102, 241, 0.08);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: 28px;
+    box-shadow: var(--shadow-sm);
     position: sticky;
     top: 24px;
     height: fit-content;
 }
 
 [data-theme="dark"] .isocinetica-summary-panel {
-    background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
-    border: 1px solid rgba(99, 102, 241, 0.2);
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
 }
 
 .isocinetica-summary-panel h3 {

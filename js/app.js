@@ -757,31 +757,31 @@ function renderLogs() {
         
         let statusBadge = "";
         if (log.status === "SUCCESS") {
-            statusBadge = '<span class="badge badge-success" style="background: rgba(16,185,129,0.1); color: #10b981; border: 1px solid rgba(16,185,129,0.25);">Sucesso</span>';
+            statusBadge = '<span class="status-pill status-active">Sucesso</span>';
         } else if (log.status === "WARN") {
-            statusBadge = '<span class="badge badge-warning" style="background: rgba(245,158,11,0.1); color: #f59e0b; border: 1px solid rgba(245,158,11,0.25);">Aviso</span>';
+            statusBadge = '<span class="status-pill status-risk">Aviso</span>';
         } else if (log.status === "ERROR") {
-            statusBadge = '<span class="badge badge-danger" style="background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.25);">Erro</span>';
+            statusBadge = '<span class="status-pill status-inactive">Erro</span>';
         }
 
         // Custom action badges
-        let actionBadge = `<span class="badge badge-info" style="font-family: monospace; letter-spacing: 0px; text-transform: uppercase;">${log.action}</span>`;
+        let actionBadge = `<span class="status-pill status-formalizing" style="font-family: monospace; font-size: 11px; text-transform: uppercase;">${log.action}</span>`;
         if (log.action.includes("SDR")) {
-            actionBadge = `<span class="badge" style="background: rgba(139,92,246,0.12); color: #8b5cf6; border: 1px solid rgba(139,92,246,0.25); font-family: monospace; letter-spacing: 0px; font-weight: 700; text-transform: uppercase;">🤖 ${log.action}</span>`;
+            actionBadge = `<span class="status-pill" style="background: rgba(98, 87, 245, 0.08); color: var(--primary); font-family: monospace; font-size: 11px; font-weight: 700;">🤖 ${log.action}</span>`;
         } else if (log.action.includes("WHATSAPP")) {
-            actionBadge = `<span class="badge" style="background: rgba(37,211,102,0.12); color: #16a34a; border: 1px solid rgba(37,211,102,0.25); font-family: monospace; letter-spacing: 0px; font-weight: 700; text-transform: uppercase;">💬 ${log.action}</span>`;
+            actionBadge = `<span class="status-pill status-active" style="font-family: monospace; font-size: 11px; font-weight: 700;">💬 ${log.action}</span>`;
         } else if (log.action.includes("SALE_WON")) {
-            actionBadge = `<span class="badge" style="background: rgba(16,185,129,0.12); color: #10b981; border: 1px solid rgba(16,185,129,0.25); font-family: monospace; letter-spacing: 0px; font-weight: 700; text-transform: uppercase;">🏆 ${log.action}</span>`;
+            actionBadge = `<span class="status-pill status-active" style="font-family: monospace; font-size: 11px; font-weight: 700;">🏆 ${log.action}</span>`;
         } else if (log.action.includes("SALE_LOST")) {
-            actionBadge = `<span class="badge" style="background: rgba(239,68,68,0.12); color: #ef4444; border: 1px solid rgba(239,68,68,0.25); font-family: monospace; letter-spacing: 0px; font-weight: 700; text-transform: uppercase;">📉 ${log.action}</span>`;
+            actionBadge = `<span class="status-pill status-inactive" style="font-family: monospace; font-size: 11px; font-weight: 700;">📉 ${log.action}</span>`;
         } else if (log.action.includes("ACCESS_DENIED")) {
-            actionBadge = `<span class="badge" style="background: rgba(220,38,38,0.15); color: #dc2626; border: 1px solid rgba(220,38,38,0.3); font-family: monospace; letter-spacing: 0px; font-weight: 800; text-transform: uppercase; animation: pulse-status 2s infinite;">🚨 ${log.action}</span>`;
+            actionBadge = `<span class="status-pill status-inactive" style="font-family: monospace; font-size: 11px; font-weight: 800;">🚨 ${log.action}</span>`;
         }
 
         return `
-            <tr style="transition: all 0.2s; border-bottom: 1px solid var(--border-color);" onmouseover="this.style.background='var(--bg-surface-hover)'" onmouseout="this.style.background='transparent'">
-                <td style="font-weight: 500; font-family: monospace; font-size: 12px; color: var(--text-secondary);">${formattedDate}</td>
-                <td><strong style="color: var(--text-primary); font-size: 12.5px;">${log.userEmail}</strong></td>
+            <tr style="transition: background 0.15s ease; border-bottom: 1px solid var(--border-color);" onmouseover="this.style.background='var(--bg-surface-hover)'" onmouseout="this.style.background='transparent'">
+                <td style="font-weight: 500; font-family: monospace; font-size: 12px; color: var(--text-muted);">${formattedDate}</td>
+                <td><strong style="color: var(--text-primary); font-size: 12.5px; font-weight: 600;">${log.userEmail}</strong></td>
                 <td>${actionBadge}</td>
                 <td style="color: var(--text-secondary); max-width: 400px; word-break: break-word; font-size: 12.5px;">${log.details}</td>
                 <td>${statusBadge}</td>

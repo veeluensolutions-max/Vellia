@@ -279,33 +279,33 @@ export const Kanban = {
             }
 
             card.innerHTML = `
-                <div class="kanban-card-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                <div class="kanban-card-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
                     <div style="display: flex; gap: 4px; align-items: center;">
-                        <span class="badge ${priorityClass}" style="font-size: 9.5px; padding: 2px 6px; border-radius: 99px;">${priority}</span>
+                        <span class="badge ${priorityClass}" style="font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px;">${priority}</span>
                         ${tempBadge}
                     </div>
-                    <div class="user-avatar" style="width: 22px; height: 22px; font-size: 9px; font-weight: 700; margin-left: auto; border: 1.5px solid var(--border-color);" title="Responsável: ${ownerName}">
+                    <div class="user-avatar" style="width: 20px; height: 20px; font-size: 9px; font-weight: 700; margin-left: auto; border: 1px solid var(--border-color); border-radius: 4px;" title="Responsável: ${ownerName}">
                         ${avatar}
                     </div>
                 </div>
-                <div class="kanban-card-company">${compTitle}</div>
+                <div class="kanban-card-company" style="font-size: 13.5px; font-weight: 600; color: #111827; line-height: 1.3;">${compTitle}</div>
                 ${contactLine}
                 
                 ${leadValue > 0 ? `
-                <div class="kanban-card-value" style="font-size: 13px; font-weight: 800; color: #10b981; margin: 3px 0 1px 0;">
+                <div class="kanban-card-value" style="font-size: 13.5px; font-weight: 700; color: #111827; margin: 4px 0 2px 0;">
                     ${fmtVal}
                 </div>
                 ` : ""}
                 
                 ${scoreBarHtml}
 
-                <div class="kanban-card-details">
-                    <span class="kanban-card-tag">${lead.segment || 'Geral'}</span>
+                <div class="kanban-card-details" style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted); border-top: 1px solid #F1F3F7; padding-top: 8px; margin-top: 4px;">
+                    <span class="kanban-card-tag" style="background: #F3F4F6; border: 1px solid #E5E7EB; color: #4B5563; font-size: 10.5px; font-weight: 500; padding: 2px 6px; border-radius: 4px;">${lead.segment || 'Geral'}</span>
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <span class="kanban-card-time" style="color: ${timeColor};">
+                        <span class="kanban-card-time" style="color: ${timeColor}; font-size: 11px; font-weight: 500;">
                             🕒 ${daysNoContact === 0 ? 'Hoje' : `${daysNoContact}d`}
                         </span>
-                        <button class="kanban-card-wa-btn" data-id="${lead.id}" onclick="event.stopPropagation(); window.WhatsApp?.openModalForLead('${lead.id}')" title="Enviar WhatsApp">
+                        <button class="kanban-card-wa-btn" data-id="${lead.id}" onclick="event.stopPropagation(); window.WhatsApp?.openModalForLead('${lead.id}')" title="Enviar WhatsApp" style="background: none; border: none; cursor: pointer; color: #16A36A; display: flex; align-items: center; padding: 2px;">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
                         </button>
                     </div>

@@ -291,20 +291,27 @@ export const Contracts = {
 
         contracts.forEach(c => {
             const lead = leads.find(l => l.id === c.leadId);
-            const leadDisplay = lead ? `${lead.company}` : 'Desconhecido';
+            const leadDisplay = lead ? (lead.company || 'Cliente sem nome') : 'Desconhecido';
+            const initials = leadDisplay.substring(0, 2).toUpperCase();
             
-            let statusBadge = "badge-gray";
-            if (c.status === "Ativo") statusBadge = "badge-green";
-            else if (c.status === "Em formalização" || c.status === "Aguardando assinatura") statusBadge = "badge-blue";
-            else if (c.status === "Vencendo" || c.status === "Suspenso") statusBadge = "badge-yellow";
-            else if (c.status === "Encerrado" || c.status === "Cancelado" || c.status === "Renovado") statusBadge = "badge-red";
+            let statusPillClass = "status-pill status-inactive";
+            let statusDot = "●";
+            if (c.status === "Ativo") {
+                statusPillClass = "status-pill status-active";
+            } else if (c.status === "Em formalização" || c.status === "Aguardando assinatura") {
+                statusPillClass = "status-pill status-formalizing";
+            } else if (c.status === "Vencendo" || c.status === "Suspenso") {
+                statusPillClass = "status-pill status-risk";
+            } else if (c.status === "Encerrado" || c.status === "Cancelado" || c.status === "Renovado") {
+                statusPillClass = "status-pill status-inactive";
+            }
 
             let actionButtons = `
                 <button class="btn-icon" onclick="window.Contracts.openModal('${c.id}')" title="Editar Contrato">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
-                <button class="btn-icon" style="color: #7c3aed;" onclick="window.Contracts.generateContractDraftAI('${c.id}')" title="Gerar Minuta de Contrato IA">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                <button class="btn-icon" style="color: #7C3AED;" onclick="window.Contracts.generateContractDraftAI('${c.id}')" title="Gerar Minuta de Contrato IA">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                 </button>
             `;
             
@@ -312,21 +319,31 @@ export const Contracts = {
             if (c.status === "Ativo" || c.status === "Vencendo") {
                 actionButtons += `
                 <button class="btn-icon" style="color: var(--primary);" onclick="window.Contracts.renewContract('${c.id}')" title="Renovar Contrato">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                 </button>
                 `;
             }
 
             const tr = document.createElement("tr");
             tr.innerHTML = `
-                <td style="font-weight: 600;">${c.number}</td>
-                <td>${leadDisplay}</td>
-                <td>R$ ${c.totalValue.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                <td>R$ ${c.recurringValue.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                <td>${c.startDate ? new Date(c.startDate).toLocaleDateString('pt-BR') : '-'} até ${c.endDate ? new Date(c.endDate).toLocaleDateString('pt-BR') : '-'}</td>
-                <td><span class="badge ${statusBadge}">${c.status}</span></td>
-                <td style="display: flex; gap: 8px;">
-                    ${actionButtons}
+                <td style="font-weight: 600; font-family: monospace; color: #475569; font-size: 12.5px;">${c.number}</td>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div class="table-avatar">${initials}</div>
+                        <div>
+                            <div style="font-weight: 600; color: #0F172A; font-size: 13px;">${leadDisplay}</div>
+                            <div style="font-size: 11px; color: #94A3B8;">${lead ? (lead.contact || 'Contato não inf.') : '-'}</div>
+                        </div>
+                    </div>
+                </td>
+                <td style="font-weight: 600; color: #0F172A;">R$ ${c.totalValue.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                <td style="font-weight: 600; color: var(--primary);">R$ ${c.recurringValue.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                <td style="font-size: 12.5px; color: #64748B;">${c.startDate ? new Date(c.startDate).toLocaleDateString('pt-BR') : '-'} até ${c.endDate ? new Date(c.endDate).toLocaleDateString('pt-BR') : '-'}</td>
+                <td><span class="${statusPillClass}">${statusDot} ${c.status}</span></td>
+                <td style="text-align: right;">
+                    <div style="display: inline-flex; gap: 6px; justify-content: flex-end;">
+                        ${actionButtons}
+                    </div>
                 </td>
             `;
             tbody.appendChild(tr);

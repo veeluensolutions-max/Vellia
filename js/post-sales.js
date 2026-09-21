@@ -136,31 +136,50 @@ export const PostSales = {
 
         filteredClients.forEach(client => {
             const tr = document.createElement("tr");
+            const initials = (client.company || "C").substring(0, 2).toUpperCase();
             
             const formattedDate = client.inactivity.lastDate 
                 ? new Date(client.inactivity.lastDate).toLocaleDateString('pt-BR') 
                 : "Desconhecida";
 
+            let statusPillClass = "status-pill status-active";
+            let statusDot = "●";
+            if (client.inactivity.status === "Em Risco") {
+                statusPillClass = "status-pill status-risk";
+            } else if (client.inactivity.status === "Inativo") {
+                statusPillClass = "status-pill status-inactive";
+            }
+
+            const ownerName = (client.owner || "Equipe").split('@')[0];
+            const ownerInitial = ownerName.charAt(0).toUpperCase();
+
             tr.innerHTML = `
                 <td>
-                    <div style="font-weight: 600; color: var(--text-primary);">${client.company}</div>
-                    <div style="font-size: 11px; color: var(--text-muted);">${client.contact || "-"}</div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div class="table-avatar">${initials}</div>
+                        <div>
+                            <div style="font-weight: 600; color: #0F172A; font-size: 13px;">${client.company}</div>
+                            <div style="font-size: 11px; color: #94A3B8;">${client.contact || "Sem contato direto"}</div>
+                        </div>
+                    </div>
                 </td>
                 <td>
                     <div style="display: flex; align-items: center; gap: 6px;">
-                        <div class="avatar" style="width: 24px; height: 24px; font-size: 10px;">${client.owner.substring(0, 2).toUpperCase()}</div>
-                        <span style="font-size: 12px;">${client.owner.split('@')[0]}</span>
+                        <div style="width: 22px; height: 22px; border-radius: 50%; background: #EDE9FE; color: #7C3AED; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700;">
+                            ${ownerInitial}
+                        </div>
+                        <span style="font-size: 12.5px; color: #334155; font-weight: 500;">${ownerName}</span>
                     </div>
                 </td>
-                <td>${formattedDate}</td>
-                <td><strong>${client.inactivity.daysInactive}</strong> dias</td>
+                <td style="font-size: 12.5px; color: #64748B;">${formattedDate}</td>
+                <td style="font-size: 12.5px; color: #334155;"><strong style="color: #0F172A; font-weight: 600;">${client.inactivity.daysInactive}</strong> dias</td>
                 <td>
-                    <span class="badge" style="background-color: ${client.inactivity.color}20; color: ${client.inactivity.color}; border: 1px solid ${client.inactivity.color};">
-                        ${client.inactivity.status}
+                    <span class="${statusPillClass}">
+                        ${statusDot} ${client.inactivity.status}
                     </span>
                 </td>
                 <td style="text-align: right;">
-                    <button class="btn btn-outline btn-sm btn-contact" data-id="${client.id}" style="font-size: 11px; padding: 4px 8px; border-color: var(--primary); color: var(--primary);">
+                    <button class="btn btn-outline btn-sm btn-contact" data-id="${client.id}" style="font-size: 11.5px; font-weight: 600; padding: 5px 10px; border-color: var(--border-color); color: var(--text-primary);">
                         Registrar Contato
                     </button>
                 </td>

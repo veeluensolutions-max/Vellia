@@ -255,21 +255,26 @@ export const Proposals = {
 
             return `
                 <tr data-id="${p.id}" style="cursor: pointer;">
-                    <td>
-                        <div style="font-weight: 600; color: var(--text-primary);">${p.company}</div>
-                        <div style="font-size: 11px; color: var(--text-muted);">${p.contact}</div>
+                    <td style="min-width: 180px;">
+                        <div class="table-company-cell">
+                            <div class="table-avatar">${(p.company || 'P').substring(0, 2).toUpperCase()}</div>
+                            <div>
+                                <div style="font-weight: 600; color: var(--text-primary); font-size: 13.5px; line-height: 1.25;">${p.company}</div>
+                                <div style="font-size: 11.5px; color: var(--text-muted);">${p.contact || '—'}</div>
+                            </div>
+                        </div>
                     </td>
                     <td style="max-width: 220px;">
-                        <div style="font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${p.title}">${p.title}</div>
+                        <div style="font-size: 13px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${p.title}">${p.title}</div>
                     </td>
-                    <td style="font-weight: 700; color: var(--success);">${fmt(p.value)}</td>
+                    <td style="font-weight: 700; color: var(--text-primary); font-size: 13.5px;">${fmt(p.value)}</td>
                     <td>${statusBadge}</td>
                     <td style="font-size: 12px; color: var(--text-secondary);">${sentDate}</td>
                     <td style="font-size: 12px; color: ${isExpired ? 'var(--danger)' : 'var(--text-secondary)'};">
                         ${validDate} ${isExpired ? '⚠️' : ''}
                     </td>
                     <td style="text-align: right;">
-                        <button class="btn btn-sm btn-outline btn-view-proposal" data-id="${p.id}" style="font-size: 11px; padding: 4px 10px;">Ver</button>
+                        <button class="btn btn-sm btn-outline btn-view-proposal" data-id="${p.id}" style="font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 6px;">Ver</button>
                     </td>
                 </tr>
             `;
@@ -289,15 +294,15 @@ export const Proposals = {
 
     getStatusBadge(status) {
         const map = {
-            "Enviada": `<span class="badge badge-info">Enviada</span>`,
-            "Em Negociação": `<span class="badge badge-warning">Em Negociação</span>`,
-            "Ganho": `<span class="badge badge-success">✅ Ganho</span>`,
-            "Aguardando Agendamento": `<span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3);">⏳ Aguardando Agendamento</span>`,
-            "Agendada": `<span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);">🗓️ Agendada</span>`,
-            "Perdido": `<span class="badge badge-danger">❌ Perdido</span>`,
-            "Cancelada": `<span class="badge" style="background: var(--bg-surface); color: var(--text-muted); border: 1px solid var(--border-color);">Cancelada</span>`
+            "Enviada": `<span class="badge" style="background: #EFF6FF; color: #2563EB; border: 1px solid #BFDBFE; font-size: 11px; font-weight: 600; border-radius: 6px; padding: 3px 8px;">Enviada</span>`,
+            "Em Negociação": `<span class="badge" style="background: #FAF5FF; color: #7C3AED; border: 1px solid #E9D5FF; font-size: 11px; font-weight: 600; border-radius: 6px; padding: 3px 8px;">Em Negociação</span>`,
+            "Ganho": `<span class="badge" style="background: #ECFDF5; color: #16A36A; border: 1px solid #A7F3D0; font-size: 11px; font-weight: 600; border-radius: 6px; padding: 3px 8px;">● Ganho</span>`,
+            "Aguardando Agendamento": `<span class="badge" style="background: #FFFBEB; color: #D97706; border: 1px solid #FDE68A; font-size: 11px; font-weight: 600; border-radius: 6px; padding: 3px 8px;">⏳ Aguardando</span>`,
+            "Agendada": `<span class="badge" style="background: #ECFDF5; color: #16A36A; border: 1px solid #A7F3D0; font-size: 11px; font-weight: 600; border-radius: 6px; padding: 3px 8px;">🗓️ Agendada</span>`,
+            "Perdido": `<span class="badge" style="background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; font-size: 11px; font-weight: 600; border-radius: 6px; padding: 3px 8px;">● Perdido</span>`,
+            "Cancelada": `<span class="badge" style="background: #F3F4F6; color: #4B5563; border: 1px solid #E5E7EB; font-size: 11px; font-weight: 600; border-radius: 6px; padding: 3px 8px;">Cancelada</span>`
         };
-        return map[status] || `<span class="badge">${status}</span>`;
+        return map[status] || `<span class="badge" style="background: #F3F4F6; color: #4B5563; border: 1px solid #E5E7EB; font-size: 11px; font-weight: 600; border-radius: 6px; padding: 3px 8px;">${status}</span>`;
     },
 
     // ==========================================================================

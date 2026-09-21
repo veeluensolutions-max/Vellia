@@ -458,15 +458,25 @@ export const Notifications = {
             container.style.position = "fixed";
             container.style.top = "20px";
             container.style.right = "20px";
+            container.style.maxWidth = "calc(100vw - 40px)";
             container.style.zIndex = "99999";
             container.style.display = "flex";
             container.style.flexDirection = "column";
             container.style.gap = "10px";
+            container.style.pointerEvents = "none";
             document.body.appendChild(container);
         }
 
+        // Limita a no máximo 3 toasts simultâneos para não cobrir a tela
+        while (container.children.length >= 3) {
+            const oldest = container.firstElementChild;
+            if (oldest) oldest.remove();
+            else break;
+        }
+
         const toast = document.createElement("div");
-        toast.style.background = "rgba(15, 23, 42, 0.9)";
+        toast.style.pointerEvents = "auto";
+        toast.style.background = "rgba(15, 23, 42, 0.95)";
         toast.style.backdropFilter = "blur(12px)";
         toast.style.border = "1px solid rgba(255, 255, 255, 0.08)";
         toast.style.borderRadius = "12px";

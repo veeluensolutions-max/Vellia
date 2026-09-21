@@ -596,32 +596,37 @@ export const CRM = {
 
             return `
                 <tr class="clickable-row" data-id="${lead.id}">
-                    <td>
-                        <strong>${lead.company}</strong>
-                        ${lead.cnpj ? `<div style="font-size: 11px; font-family: monospace; color: var(--primary); font-weight: 500;">${CNPJService.formatCNPJ(lead.cnpj)}</div>` : ''}
+                    <td style="min-width: 180px;">
+                        <div class="table-company-cell">
+                            <div class="table-avatar">${(lead.company || 'L').substring(0, 2).toUpperCase()}</div>
+                            <div>
+                                <div style="font-weight: 600; color: var(--text-primary); font-size: 13.5px; line-height: 1.25;">${lead.company}</div>
+                                ${lead.cnpj ? `<div style="font-size: 11px; font-family: monospace; color: var(--text-muted); font-weight: 500; margin-top: 1px;">${CNPJService.formatCNPJ(lead.cnpj)}</div>` : ''}
+                            </div>
+                        </div>
                     </td>
                     <td>
-                        <div style="font-weight: 600;">${lead.contact}</div>
-                        <div style="font-size: 12px; color: var(--text-muted);">${lead.role || 'Sem cargo'}</div>
+                        <div style="font-weight: 600; color: var(--text-primary); font-size: 13px;">${lead.contact}</div>
+                        <div style="font-size: 11.5px; color: var(--text-muted);">${lead.role || 'Sem cargo'}</div>
                     </td>
                     <td>
-                        <div style="font-size: 13px;">${lead.email || 'N/D'}</div>
-                        <div style="font-size: 13px; font-weight: 500; color: var(--text-secondary);">${lead.whatsapp || lead.phone || 'N/D'}</div>
+                        <div style="font-size: 12.5px; color: var(--text-primary);">${lead.email || '—'}</div>
+                        <div style="font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-top: 1px;">${lead.whatsapp || lead.phone || '—'}</div>
                     </td>
                     <td>
-                        <span style="font-size: 13px;">${lead.segment}</span>
+                        <span style="font-size: 12.5px; font-weight: 500; color: var(--text-primary);">${lead.segment}</span>
                         <div style="font-size: 11px; color: var(--text-muted);">Canal: ${lead.source}</div>
                     </td>
                     <td>
-                        <span class="badge ${stageBadgeClass}">${lead.stage}</span>
+                        <span class="badge ${stageBadgeClass}" style="font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px;">${lead.stage}</span>
                         <div style="margin-top: 4px;">
                             ${(() => {
                                 const m = getLeadMinutesSLA(lead);
                                 if (lead.stage === "Cliente Fechado" || lead.stage === "Cliente Perdido") return "";
-                                if (m < 15) return `<span style="font-size: 10px; font-weight: 800; background: rgba(16, 185, 129, 0.12); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); padding: 2px 7px; border-radius: 99px; display: inline-flex; align-items: center; gap: 3px;">⏱️ ${m}m (SLA OK)</span>`;
-                                if (m <= 60) return `<span style="font-size: 10px; font-weight: 800; background: rgba(245, 158, 11, 0.15); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.3); padding: 2px 7px; border-radius: 99px; display: inline-flex; align-items: center; gap: 3px;">⏱️ ${m}m (ALERTA)</span>`;
+                                if (m < 15) return `<span style="font-size: 10px; font-weight: 600; background: #ECFDF5; color: #16A36A; border: 1px solid #A7F3D0; padding: 1.5px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">⏱️ ${m}m SLA</span>`;
+                                if (m <= 60) return `<span style="font-size: 10px; font-weight: 600; background: #FFFBEB; color: #D97706; border: 1px solid #FDE68A; padding: 1.5px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">⏱️ ${m}m Alerta</span>`;
                                 const h = Math.floor(m / 60);
-                                return `<span style="font-size: 10px; font-weight: 800; background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); padding: 2px 7px; border-radius: 99px; display: inline-flex; align-items: center; gap: 3px;">🚨 ${h}h+ (ESTOURADO)</span>`;
+                                return `<span style="font-size: 10px; font-weight: 600; background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; padding: 1.5px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">🚨 ${h}h+ Atrasado</span>`;
                             })()}
                         </div>
                     </td>
@@ -630,11 +635,11 @@ export const CRM = {
                         ${ownerCell}
                     </td>
                     <td style="text-align: right;" onclick="event.stopPropagation();">
-                        <button class="btn btn-outline btn-wa-lead" data-id="${lead.id}" style="padding: 6px; font-size: 12px; border-color: #25d366; color: #25d366; margin-right: 6px; display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; vertical-align: middle;" title="Enviar WhatsApp">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                        <button class="btn btn-outline btn-wa-lead" data-id="${lead.id}" style="padding: 0; font-size: 12px; border-color: #25d366; color: #25d366; margin-right: 6px; display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 6px; vertical-align: middle;" title="Enviar WhatsApp">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
                         </button>
-                        <button class="btn btn-outline btn-view-lead" data-id="${lead.id}" style="padding: 6px 10px; font-size: 12px; vertical-align: middle;">
-                            Ver Detalhes
+                        <button class="btn btn-outline btn-view-lead" data-id="${lead.id}" style="padding: 5px 11px; font-size: 12px; font-weight: 600; border-radius: 6px; vertical-align: middle;">
+                            Detalhes
                         </button>
                     </td>
                 </tr>

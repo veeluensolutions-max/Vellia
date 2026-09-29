@@ -6180,27 +6180,28 @@ input:checked + .switch-slider::before {
     position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%) scale(0.95);
-    opacity: 0;
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
     width: 95%;
     max-width: 680px;
     max-height: 90vh;
     height: 88vh;
     display: none;
     flex-direction: column;
-    z-index: 10050;
+    z-index: 99999 !important;
     border-radius: 20px;
-    background: var(--bg-surface);
-    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    background: #ffffff !important;
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 0, 0, 0.1);
     border: 1px solid var(--border-color);
     overflow: hidden;
-    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+    transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
 #inspection-checklist-modal.open {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-    display: flex;
+    opacity: 1 !important;
+    transform: translate(-50%, -50%) scale(1) !important;
+    display: flex !important;
+    z-index: 99999 !important;
 }
 
 .insp-modal-header {

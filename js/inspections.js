@@ -613,15 +613,15 @@ export const Inspections = {
 
         if (overlay) {
             overlay.style.display = "block";
+            overlay.style.zIndex = "99990";
             overlay.classList.add("open");
         }
         if (modal) {
             modal.style.display = "flex";
+            modal.style.zIndex = "99999";
+            modal.style.opacity = "1";
+            modal.style.transform = "translate(-50%, -50%) scale(1)";
             modal.classList.add("open");
-            setTimeout(() => {
-                modal.style.opacity = "1";
-                modal.style.transform = "translate(-50%, -50%) scale(1)";
-            }, 10);
         }
 
         if (autoAction === "file") {
@@ -644,15 +644,12 @@ export const Inspections = {
         if (modal) {
             modal.classList.remove("open");
             modal.style.opacity = "0";
-            modal.style.transform = "translate(-50%, -50%) scale(0.95)";
+            modal.style.display = "none";
         }
         if (overlay) {
             overlay.classList.remove("open");
+            overlay.style.display = "none";
         }
-        setTimeout(() => {
-            if (modal) modal.style.display = "none";
-            if (overlay) overlay.style.display = "none";
-        }, 250);
     },
 
     calculateScore() {

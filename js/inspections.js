@@ -658,12 +658,15 @@ export const Inspections = {
     calculateScore() {
         const itemSelects = document.querySelectorAll(".checklist-item-select");
         const scoreVal = document.getElementById("checklist-score-val");
+        const scoreStatus = document.getElementById("checklist-score-status");
         const scoreBar = document.getElementById("checklist-score-bar");
+        const footerScore = document.getElementById("footer-score-indicator");
 
         let totalEvaluated = 0;
         let conformeCount = 0;
         itemSelects.forEach(sel => {
             const val = sel.value;
+            sel.setAttribute("data-status", val);
             if (val !== "N/A") {
                 totalEvaluated++;
                 if (val === "Conforme") {
@@ -674,20 +677,46 @@ export const Inspections = {
 
         const score = totalEvaluated > 0 ? Math.round((conformeCount / totalEvaluated) * 100) : 100;
         
-        if (scoreVal) scoreVal.textContent = `${score}%`;
+        let statusLabel = "Totalmente Regular";
+        let statusColor = "#10b981";
+        let barBg = "linear-gradient(90deg, #10b981, #34d399)";
+        let badgeBg = "rgba(16, 185, 129, 0.15)";
+        let badgeBorder = "rgba(16, 185, 129, 0.3)";
+
+        if (score < 50) {
+            statusLabel = "Crítico / Irregular";
+            statusColor = "#ef4444";
+            barBg = "linear-gradient(90deg, #ef4444, #f87171)";
+            badgeBg = "rgba(239, 68, 68, 0.15)";
+            badgeBorder = "rgba(239, 68, 68, 0.3)";
+        } else if (score < 80) {
+            statusLabel = "Atenção / Parcial";
+            statusColor = "#f59e0b";
+            barBg = "linear-gradient(90deg, #f59e0b, #fbbf24)";
+            badgeBg = "rgba(245, 158, 11, 0.15)";
+            badgeBorder = "rgba(245, 158, 11, 0.3)";
+        }
+
+        if (scoreVal) {
+            scoreVal.textContent = `${score}%`;
+            scoreVal.style.color = statusColor;
+        }
+        if (scoreStatus) {
+            scoreStatus.textContent = statusLabel;
+            scoreStatus.style.color = statusColor;
+        }
         if (scoreBar) {
             scoreBar.style.width = `${score}%`;
-            if (score >= 80) {
-                scoreBar.style.background = "#10b981";
-                if (scoreVal) scoreVal.style.color = "#10b981";
-            } else if (score >= 50) {
-                scoreBar.style.background = "#f59e0b";
-                if (scoreVal) scoreVal.style.color = "#f59e0b";
-            } else {
-                scoreBar.style.background = "#ef4444";
-                if (scoreVal) scoreVal.style.color = "#ef4444";
-            }
+            scoreBar.style.background = barBg;
+            scoreBar.style.boxShadow = `0 0 10px ${statusColor}66`;
         }
+        if (footerScore) {
+            footerScore.textContent = `${score}% ${statusLabel}`;
+            footerScore.style.color = statusColor;
+            footerScore.style.background = badgeBg;
+            footerScore.style.borderColor = badgeBorder;
+        }
+
         return score;
     },
 
@@ -789,16 +818,16 @@ export const Inspections = {
     },
 
     async callGeminiVisionForInspection(base64Data, mimeType, apiKey) {
-        const prompt = `Analise este laudo técnico de engenharia ou vistoria predial/industrial.
+        const prompt = `Analise este laudo técnico ambiental ou industrial.
 Extraia e retorne EXCLUSIVAMENTE um objeto JSON (sem formatação markdown) com:
 {
-  "company": "Razão social ou nome da empresa/condomínio",
-  "serviceName": "Laudo de SPDA" | "Laudo de Incêndio (AVCB)" | "Laudo de Instalações Elétricas (NR-10)" | "Laudo de Gás (GN/GLP)" | "Vistoria Predial Geral",
+  "company": "Razão social ou nome da empresa/condomínio/indústria",
+  "serviceName": "AMOSTRAGEM ISOCINÉTICA DE EMISSÕES ATMOSFÉRICAS" | "MONITORAMENTO DA QUALIDADE DO AR" | "MONITORAMENTO DO NÍVEL DE PRESSÃO SONORA EM AMBIENTES EXTERNOS (Ruído Ambiental)" | "INSPEÇÃO DE SEGURANÇA - NR13" | "TESTE DE ESTANQUEIDADE" | "PROGRAMA DE GERENCIAMENTO DE RESÍDUOS SÓLIDOS (PGRS)" | "OUTROS",
   "executionDate": "YYYY-MM-DD",
   "expiryDate": "YYYY-MM-DD",
   "score": 100 ou entre 40 e 100 se houver irregularidades,
   "isIrregular": false,
-  "notes": "Resumo do parecer técnico, ART e engenheiro responsável"
+  "notes": "Resumo do parecer técnico, parâmetros medidos, ART e engenheiro responsável"
 }`;
 
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
@@ -846,7 +875,7 @@ Extraia e retorne EXCLUSIVAMENTE um objeto JSON (sem formatação markdown) com:
         }
 
         if (!detectedCompany) {
-            const companyMatch = originalText.match(/(?:Cliente|Razão Social|Tomador|Contratante|Empresa|Proprietário|Condomínio|Edifício)[\s:]+([A-Za-z0-9À-ÿ\.\-\s]{3,50})/i);
+            const companyMatch = originalText.match(/(?:Cliente|Razão Social|Tomador|Contratante|Empresa|Proprietário|Condomínio|Edifício|Indústria|Unidade)[\s:]+([A-Za-z0-9À-ÿ\.\-\s]{3,50})/i);
             if (companyMatch && companyMatch[1]) {
                 detectedCompany = companyMatch[1].trim().replace(/\r?\n.*/g, "");
             } else if (filename) {
@@ -855,21 +884,25 @@ Extraia e retorne EXCLUSIVAMENTE um objeto JSON (sem formatação markdown) com:
             }
         }
 
-        // 2. Identificar Serviço Inspecionado
-        let serviceName = "Vistoria Predial Geral";
-        if (text.includes("spda") || text.includes("para-raios") || text.includes("pára-raios") || text.includes("descargas atmosféricas") || text.includes("5419")) {
-            serviceName = "Laudo de SPDA";
-        } else if (text.includes("avcb") || text.includes("clcb") || text.includes("incêndio") || text.includes("incendio") || text.includes("extintor") || text.includes("hidrante") || text.includes("bombeiros")) {
-            serviceName = "Laudo de Incêndio (AVCB)";
-        } else if (text.includes("nr-10") || text.includes("nr10") || text.includes("elétrica") || text.includes("eletrica") || text.includes("subestação") || text.includes("quadro elétrico") || text.includes("5410")) {
-            serviceName = "Laudo de Instalações Elétricas (NR-10)";
-        } else if (text.includes("gás") || text.includes("gas") || text.includes("glp") || text.includes("gn") || text.includes("estanqueidade")) {
-            serviceName = "Laudo de Gás (GN/GLP)";
+        // 2. Identificar Serviço Inspecionado (7 Serviços Oficiais)
+        let serviceName = "OUTROS";
+        if (text.includes("isocinética") || text.includes("isocinetica") || text.includes("amostragem isocinética") || text.includes("emissões atmosféricas") || text.includes("emissao atmosferica") || text.includes("chaminé") || text.includes("chamine") || text.includes("dutos de exaustão") || text.includes("mp (material particulado)")) {
+            serviceName = "AMOSTRAGEM ISOCINÉTICA DE EMISSÕES ATMOSFÉRICAS";
+        } else if (text.includes("qualidade do ar") || text.includes("ar ambiente") || text.includes("conama 491") || text.includes("partículas inaláveis") || text.includes("pm10") || text.includes("pm2.5") || text.includes("gases poluentes")) {
+            serviceName = "MONITORAMENTO DA QUALIDADE DO AR";
+        } else if (text.includes("ruído") || text.includes("ruido") || text.includes("pressão sonora") || text.includes("pressao sonora") || text.includes("ruído ambiental") || text.includes("ruido ambiental") || text.includes("nbr 10151") || text.includes("decibéis") || text.includes("decibeis") || text.includes("dba") || text.includes("acústico")) {
+            serviceName = "MONITORAMENTO DO NÍVEL DE PRESSÃO SONORA EM AMBIENTES EXTERNOS (Ruído Ambiental)";
+        } else if (text.includes("nr-13") || text.includes("nr13") || text.includes("caldeira") || text.includes("caldeiras") || text.includes("vaso de pressão") || text.includes("vasos de pressão") || text.includes("tubulação industrial") || text.includes("tanque metálico")) {
+            serviceName = "INSPEÇÃO DE SEGURANÇA - NR13";
+        } else if (text.includes("estanqueidade") || text.includes("teste de estanqueidade") || text.includes("estanque") || text.includes("vazamento de gás") || text.includes("glp") || text.includes("gn") || text.includes("rede de gás")) {
+            serviceName = "TESTE DE ESTANQUEIDADE";
+        } else if (text.includes("pgrs") || text.includes("resíduos sólidos") || text.includes("residuos solidos") || text.includes("gerenciamento de resíduos") || text.includes("plano de gerenciamento de resíduos")) {
+            serviceName = "PROGRAMA DE GERENCIAMENTO DE RESÍDUOS SÓLIDOS (PGRS)";
         }
 
         // 3. Identificar Data de Execução
         let executionDate = new Date().toISOString().split("T")[0];
-        const dateMatch = originalText.match(/(?:Data(?:\s+da\s+(?:Vistoria|Inspeção|Realização))?|Executado\s+em|Emissão)[\s:]*([0-3]?[0-9][/\-\.][0-1]?[0-9][/\-\.][1-2][0-9]{3})/i) ||
+        const dateMatch = originalText.match(/(?:Data(?:\s+da\s+(?:Vistoria|Inspeção|Realização|Coleta|Medição))?|Executado\s+em|Emissão)[\s:]*([0-3]?[0-9][/\-\.][0-1]?[0-9][/\-\.][1-2][0-9]{3})/i) ||
                            originalText.match(/\b([0-3][0-9][/\-\.][0-1][0-9][/\-\.](?:202[0-9]))\b/);
 
         if (dateMatch && dateMatch[1]) {
@@ -887,7 +920,7 @@ Extraia e retorne EXCLUSIVAMENTE um objeto JSON (sem formatação markdown) com:
 
         // 4. Identificar Data de Vencimento
         let expiryDate = "";
-        const expiryMatch = originalText.match(/(?:Validade|Vencimento|Próxima\s+(?:Vistoria|Inspeção)|Válido\s+até)[\s:]*([0-3]?[0-9][/\-\.][0-1]?[0-9][/\-\.][1-2][0-9]{3})/i);
+        const expiryMatch = originalText.match(/(?:Validade|Vencimento|Próxima\s+(?:Vistoria|Inspeção|Campanha)|Válido\s+até)[\s:]*([0-3]?[0-9][/\-\.][0-1]?[0-9][/\-\.][1-2][0-9]{3})/i);
         if (expiryMatch && expiryMatch[1]) {
             const rawD = expiryMatch[1].replace(/[\-\.]/g, "/");
             const parts = rawD.split("/");
@@ -909,18 +942,18 @@ Extraia e retorne EXCLUSIVAMENTE um objeto JSON (sem formatação markdown) com:
 
         // 5. Conformidade e Score
         let score = 100;
-        let isIrregular = text.includes("não conforme") || text.includes("irregularidade") || text.includes("reprovado") || text.includes("risco grave") || text.includes("pendência crítica");
+        let isIrregular = text.includes("não conforme") || text.includes("irregularidade") || text.includes("reprovado") || text.includes("acima do limite") || text.includes("ultrapassou o limite") || text.includes("pendência crítica");
         if (isIrregular) {
             score = 60;
         }
 
         // 6. Parecer Técnico
         let notes = "";
-        const conclusionMatch = originalText.match(/(?:Conclusão|Parecer Técnico|Considerações Finais|Recomendações)[\s:]+([^\r\n]{10,250})/i);
+        const conclusionMatch = originalText.match(/(?:Conclusão|Parecer Técnico|Considerações Finais|Recomendações|Resultado)[\s:]+([^\r\n]{10,250})/i);
         if (conclusionMatch && conclusionMatch[1]) {
             notes = conclusionMatch[1].trim();
         } else {
-            notes = `Laudo de ${serviceName} importado com sucesso. Parâmetros técnicos em conformidade com normas regulamentadoras vigentes.`;
+            notes = `Laudo técnico de ${serviceName} registrado. Parâmetros técnicos em conformidade com normas regulamentadoras vigentes.`;
         }
 
         const artMatch = originalText.match(/(?:ART|RRT)[\s:Nº#]+([0-9A-Za-z\.\-]+)/i);
@@ -969,8 +1002,11 @@ Extraia e retorne EXCLUSIVAMENTE um objeto JSON (sem formatação markdown) com:
         }
 
         if (data.serviceName && selectService) {
+            const targetNorm = data.serviceName.toUpperCase().trim();
             for (let i = 0; i < selectService.options.length; i++) {
-                if (selectService.options[i].value === data.serviceName) {
+                const optVal = selectService.options[i].value.toUpperCase().trim();
+                const optText = selectService.options[i].text.toUpperCase().trim();
+                if (optVal === targetNorm || optText.includes(targetNorm) || targetNorm.includes(optVal)) {
                     selectService.selectedIndex = i;
                     break;
                 }

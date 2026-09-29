@@ -6173,4 +6173,130 @@ input:checked + .switch-slider::before {
     border-color: #FED7AA;
 }
 
+/* ==========================================================================
+   MODAL DE INSPEÇÃO & CHECKLIST TÉCNICO - REDESIGN PREMIUM
+   ========================================================================== */
+#inspection-checklist-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.95);
+    opacity: 0;
+    width: 95%;
+    max-width: 680px;
+    max-height: 90vh;
+    height: 88vh;
+    display: none;
+    flex-direction: column;
+    z-index: 10050;
+    border-radius: 20px;
+    background: var(--bg-surface);
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+}
+
+#inspection-checklist-modal.open {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    display: flex;
+}
+
+.insp-modal-header {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-surface);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+}
+
+.insp-modal-body {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    scrollbar-width: thin;
+}
+
+.insp-modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.insp-modal-body::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 99px;
+}
+
+.insp-modal-footer {
+    flex-shrink: 0;
+    padding: 14px 24px;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-app);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.insp-scanner-banner {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.07) 0%, rgba(16, 185, 129, 0.07) 100%);
+    border: 1.5px dashed rgba(99, 102, 241, 0.35);
+    border-radius: 14px;
+    padding: 14px 16px;
+    transition: all 0.25s ease;
+}
+
+.insp-scanner-banner:hover {
+    border-color: rgba(99, 102, 241, 0.6);
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
+}
+
+.insp-item-row {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s ease;
+}
+
+.insp-item-row:hover {
+    border-color: rgba(99, 102, 241, 0.3);
+    background: rgba(99, 102, 241, 0.02);
+}
+
+.checklist-item-select {
+    width: 145px;
+    padding: 5px 10px;
+    height: 32px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+.checklist-item-select[data-status="Conforme"] {
+    background-color: rgba(16, 185, 129, 0.12) !important;
+    color: #059669 !important;
+    border-color: rgba(16, 185, 129, 0.35) !important;
+}
+.checklist-item-select[data-status="Não Conforme"] {
+    background-color: rgba(239, 68, 68, 0.12) !important;
+    color: #dc2626 !important;
+    border-color: rgba(239, 68, 68, 0.35) !important;
+}
+.checklist-item-select[data-status="N/A"] {
+    background-color: rgba(148, 163, 184, 0.12) !important;
+    color: #64748b !important;
+    border-color: rgba(148, 163, 184, 0.3) !important;
+}
+
 

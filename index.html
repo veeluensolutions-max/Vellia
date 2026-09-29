@@ -4939,197 +4939,238 @@
     </div>
 
     <!-- Modal: Checklist de Inspeção Técnica -->
-    <div id="inspection-checklist-modal-overlay" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); z-index: 10040;"></div>
-    <div id="inspection-checklist-modal" class="modal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.95); opacity: 0; max-width: 640px; width: 95%; max-height: 92vh; overflow-y: auto; z-index: 10050; border-radius: 16px; box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.5); transition: transform 0.25s ease, opacity 0.25s ease;">
-        <div class="modal-header">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <div style="width: 34px; height: 34px; border-radius: 8px; background: rgba(99, 102, 241, 0.15); display: flex; align-items: center; justify-content: center; font-size: 18px; border: 1px solid rgba(99, 102, 241, 0.3);">
-                    📋
+    <div id="inspection-checklist-modal-overlay" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 10040;"></div>
+    <div id="inspection-checklist-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-inspection-title">
+        <form id="checklist-form" style="display: flex; flex-direction: column; height: 100%; width: 100%; margin: 0; overflow: hidden;">
+            <!-- Header Fixo -->
+            <div class="insp-modal-header">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(16, 185, 129, 0.15)); display: flex; align-items: center; justify-content: center; font-size: 22px; border: 1px solid rgba(99, 102, 241, 0.3); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.12);">
+                        📋
+                    </div>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <h3 id="modal-inspection-title" class="modal-title" style="margin: 0; font-size: 16.5px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.2px;">Nova Inspeção & Laudo Técnico</h3>
+                            <span class="badge" style="background: rgba(99, 102, 241, 0.12); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.25); font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px;">AMBIENTAL & INDUSTRIAL</span>
+                        </div>
+                        <span style="font-size: 12px; color: var(--text-muted); display: block; margin-top: 2px;">Registre inspeções técnicas ou importe dados automaticamente via PDF / Câmera</span>
+                    </div>
                 </div>
-                <div>
-                    <h3 class="modal-title" style="margin: 0; font-size: 16px; font-weight: 700;">Nova Inspeção & Laudo Técnico</h3>
-                    <span style="font-size: 11.5px; color: var(--text-muted);">Registre laudos técnicos ou importe dados automaticamente de PDF / Câmera</span>
-                </div>
+                <button id="btn-close-checklist-modal-x" class="btn-icon-close" aria-label="Fechar" type="button" style="width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: transparent; border: 1px solid transparent; color: var(--text-muted); cursor: pointer; transition: all 0.2s;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
             </div>
-            <button id="btn-close-checklist-modal-x" class="btn-icon-close" aria-label="Fechar" type="button">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-        </div>
-        <form id="checklist-form" class="modal-body" style="display: flex; flex-direction: column; gap: 14px; padding: 20px;">
-            
-            <!-- Painel Inteligente: Leitura de PDF / Foto por Câmera / Webcam -->
-            <div id="insp-scanner-card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.06), rgba(16, 185, 129, 0.06)); border: 1.5px dashed rgba(99, 102, 241, 0.35); border-radius: 12px; padding: 14px 16px; transition: all 0.25s ease;">
-                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-size: 18px;">⚡</span>
-                        <div>
-                            <span style="font-size: 13px; font-weight: 700; color: var(--text-primary); display: block;">Preenchimento Rápido por PDF ou Câmera</span>
-                            <span style="font-size: 11px; color: var(--text-muted);">Faça upload do laudo em PDF ou tire uma foto para extrair os dados na hora.</span>
+
+            <!-- Corpo Scrollável -->
+            <div class="insp-modal-body">
+                
+                <!-- Painel Inteligente: Leitura de PDF / Foto por Câmera / Webcam -->
+                <div id="insp-scanner-card" class="insp-scanner-banner">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(99, 102, 241, 0.15); display: flex; align-items: center; justify-content: center; font-size: 16px; border: 1px solid rgba(99, 102, 241, 0.25);">
+                                ⚡
+                            </div>
+                            <div>
+                                <span style="font-size: 13.5px; font-weight: 700; color: var(--text-primary); display: block;">Preenchimento Rápido por PDF ou Foto</span>
+                                <span style="font-size: 11.5px; color: var(--text-muted);">Envie o laudo técnico ou capture uma foto para extração automática de dados.</span>
+                            </div>
+                        </div>
+                        <span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.3); font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 99px;">
+                            IA Scanner
+                        </span>
+                    </div>
+
+                    <!-- Botões de Ação Rápida -->
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button type="button" id="btn-insp-upload-pdf" class="btn btn-sm btn-outline" style="flex: 1; min-width: 140px; font-size: 12px; font-weight: 700; padding: 9px 14px; gap: 6px; display: inline-flex; align-items: center; justify-content: center; border-color: #6366f1; color: #6366f1; background: rgba(99, 102, 241, 0.05); border-radius: 10px; cursor: pointer; transition: all 0.2s;">
+                            📄 Upload de PDF / Laudo
+                        </button>
+                        <button type="button" id="btn-insp-use-camera" class="btn btn-sm btn-outline" style="flex: 1; min-width: 140px; font-size: 12px; font-weight: 700; padding: 9px 14px; gap: 6px; display: inline-flex; align-items: center; justify-content: center; border-color: #10b981; color: #10b981; background: rgba(16, 185, 129, 0.05); border-radius: 10px; cursor: pointer; transition: all 0.2s;">
+                            📷 Tirar Foto (Câmera)
+                        </button>
+                        <button type="button" id="btn-insp-open-webcam" class="btn btn-sm btn-outline" style="font-size: 12px; font-weight: 600; padding: 9px 14px; gap: 6px; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; cursor: pointer; border-color: var(--border-color);" title="Usar webcam do notebook/computador">
+                            🎥 Webcam
+                        </button>
+                    </div>
+
+                    <!-- Inputs ocultos para arquivos -->
+                    <input type="file" id="insp-file-input" accept=".pdf,image/*" style="display: none;">
+                    <input type="file" id="insp-camera-input" accept="image/*" capture="environment" style="display: none;">
+
+                    <!-- Loading do Scanner -->
+                    <div id="insp-scanner-loading" style="display: none; align-items: center; gap: 10px; margin-top: 10px; padding: 10px 14px; background: rgba(99, 102, 241, 0.12); border-radius: 10px; border: 1px solid rgba(99, 102, 241, 0.25);">
+                        <div style="width: 18px; height: 18px; border: 2px solid #6366f1; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+                        <span id="insp-scanner-status-text" style="font-size: 12px; font-weight: 600; color: #4338ca;">Lendo documento e extraindo parâmetros técnicos do laudo...</span>
+                    </div>
+
+                    <!-- Notificação de Sucesso com Resumo -->
+                    <div id="insp-scanner-success" style="display: none; margin-top: 10px; padding: 10px 14px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 10px; font-size: 12px; color: #065f46;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                            <span style="font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                                <span>✨</span> <span id="insp-scanner-summary">Dados do laudo lidos e preenchidos automaticamente!</span>
+                            </span>
+                            <button type="button" id="btn-insp-clear-scan" style="background: transparent; border: none; font-size: 11px; color: #047857; text-decoration: underline; cursor: pointer; font-weight: 600;">Desfazer</button>
                         </div>
                     </div>
-                    <span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.3); font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 99px;">
-                        IA Scanner
-                    </span>
-                </div>
 
-                <!-- Botões de Ação Rápida -->
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <button type="button" id="btn-insp-upload-pdf" class="btn btn-sm btn-outline" style="flex: 1; min-width: 140px; font-size: 12px; font-weight: 700; padding: 8px 12px; gap: 6px; display: inline-flex; align-items: center; justify-content: center; border-color: #6366f1; color: #6366f1; background: rgba(99, 102, 241, 0.05); cursor: pointer;">
-                        📄 Upload de PDF / Laudo
-                    </button>
-                    <button type="button" id="btn-insp-use-camera" class="btn btn-sm btn-outline" style="flex: 1; min-width: 140px; font-size: 12px; font-weight: 700; padding: 8px 12px; gap: 6px; display: inline-flex; align-items: center; justify-content: center; border-color: #10b981; color: #10b981; background: rgba(16, 185, 129, 0.05); cursor: pointer;">
-                        📷 Tirar Foto (Câmera)
-                    </button>
-                    <button type="button" id="btn-insp-open-webcam" class="btn btn-sm btn-outline" style="font-size: 12px; font-weight: 600; padding: 8px 12px; gap: 4px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;" title="Usar webcam do notebook/computador">
-                        🎥 Webcam
-                    </button>
-                </div>
-
-                <!-- Inputs ocultos para arquivos -->
-                <input type="file" id="insp-file-input" accept=".pdf,image/*" style="display: none;">
-                <input type="file" id="insp-camera-input" accept="image/*" capture="environment" style="display: none;">
-
-                <!-- Loading do Scanner -->
-                <div id="insp-scanner-loading" style="display: none; align-items: center; gap: 10px; margin-top: 10px; padding: 10px 12px; background: rgba(99, 102, 241, 0.12); border-radius: 8px; border: 1px solid rgba(99, 102, 241, 0.25);">
-                    <div style="width: 18px; height: 18px; border: 2px solid #6366f1; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
-                    <span id="insp-scanner-status-text" style="font-size: 12px; font-weight: 600; color: #4338ca;">Lendo documento e extraindo parâmetros técnicos do laudo...</span>
-                </div>
-
-                <!-- Notificação de Sucesso com Resumo -->
-                <div id="insp-scanner-success" style="display: none; margin-top: 10px; padding: 10px 14px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 8px; font-size: 12px; color: #065f46;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-                        <span style="font-weight: 700; display: flex; align-items: center; gap: 6px;">
-                            <span>✨</span> <span id="insp-scanner-summary">Dados do laudo lidos e preenchidos automaticamente!</span>
-                        </span>
-                        <button type="button" id="btn-insp-clear-scan" style="background: transparent; border: none; font-size: 11px; color: #047857; text-decoration: underline; cursor: pointer; font-weight: 600;">Desfazer</button>
+                    <!-- Área de Webcam ao Vivo -->
+                    <div id="insp-webcam-container" style="display: none; flex-direction: column; gap: 8px; margin-top: 12px; background: #0f172a; border-radius: 12px; padding: 12px; text-align: center; border: 1px solid #334155;">
+                        <div style="font-size: 11.5px; color: #94a3b8; margin-bottom: 4px;">Posicione o laudo em frente à câmera e clique em "Capturar Documento":</div>
+                        <video id="insp-webcam-video" autoplay playsinline style="width: 100%; max-height: 220px; object-fit: contain; border-radius: 8px; background: #000;"></video>
+                        <canvas id="insp-webcam-canvas" style="display: none;"></canvas>
+                        <div style="display: flex; gap: 8px; justify-content: center; margin-top: 4px;">
+                            <button type="button" id="btn-insp-webcam-capture" class="btn btn-sm btn-primary" style="font-size: 12px; padding: 8px 18px; font-weight: 700; border-radius: 8px;">
+                                📸 Capturar Documento
+                            </button>
+                            <button type="button" id="btn-insp-webcam-close" class="btn btn-sm btn-outline" style="font-size: 12px; padding: 8px 14px; color: #e2e8f0; border-color: #475569; border-radius: 8px;">
+                                Fechar Câmera
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Área de Webcam ao Vivo (Desktop/Notebook) -->
-                <div id="insp-webcam-container" style="display: none; flex-direction: column; gap: 8px; margin-top: 12px; background: #0f172a; border-radius: 10px; padding: 10px; text-align: center; border: 1px solid #334155;">
-                    <div style="font-size: 11.5px; color: #94a3b8; margin-bottom: 2px;">Posicione o documento em frente à câmera e clique em "Capturar Foto":</div>
-                    <video id="insp-webcam-video" autoplay playsinline style="width: 100%; max-height: 220px; object-fit: contain; border-radius: 6px; background: #000;"></video>
-                    <canvas id="insp-webcam-canvas" style="display: none;"></canvas>
-                    <div style="display: flex; gap: 8px; justify-content: center;">
-                        <button type="button" id="btn-insp-webcam-capture" class="btn btn-sm btn-primary" style="font-size: 12px; padding: 7px 18px; font-weight: 700;">
-                            📸 Capturar Documento
-                        </button>
-                        <button type="button" id="btn-insp-webcam-close" class="btn btn-sm btn-outline" style="font-size: 12px; padding: 7px 12px; color: #e2e8f0; border-color: #475569;">
-                            Fechar Câmera
+                <!-- Empresa / Cliente -->
+                <div class="form-group" style="margin: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <label for="checklist-lead-select" style="margin: 0; font-weight: 700; font-size: 13px; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                            <span>🏢</span> Empresa / Cliente *
+                        </label>
+                        <button type="button" id="btn-insp-quick-add-lead" style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.25); font-size: 11.5px; color: #6366f1; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; transition: all 0.2s;">
+                            <span>➕</span> Nova Empresa
                         </button>
                     </div>
+                    <select id="checklist-lead-select" class="form-control" required style="font-size: 13.5px; height: 42px; border-radius: 10px;">
+                        <!-- Preenchido via JS -->
+                    </select>
+                </div>
+
+                <!-- Serviço Inspecionado (Lista Atualizada) -->
+                <div class="form-group" style="margin: 0;">
+                    <label for="checklist-service-select" style="font-weight: 700; font-size: 13px; color: var(--text-primary); margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                        <span>🔬</span> Serviço Inspecionado *
+                    </label>
+                    <select id="checklist-service-select" class="form-control" required style="font-size: 13.5px; height: 42px; border-radius: 10px; font-weight: 600; color: var(--text-primary);">
+                        <option value="AMOSTRAGEM ISOCINÉTICA DE EMISSÕES ATMOSFÉRICAS">🌫️ AMOSTRAGEM ISOCINÉTICA DE EMISSÕES ATMOSFÉRICAS</option>
+                        <option value="MONITORAMENTO DA QUALIDADE DO AR">🌬️ MONITORAMENTO DA QUALIDADE DO AR</option>
+                        <option value="MONITORAMENTO DO NÍVEL DE PRESSÃO SONORA EM AMBIENTES EXTERNOS (Ruído Ambiental)">🔊 MONITORAMENTO DO NÍVEL DE PRESSÃO SONORA EM AMBIENTES EXTERNOS (Ruído Ambiental)</option>
+                        <option value="INSPEÇÃO DE SEGURANÇA - NR13">🛡️ INSPEÇÃO DE SEGURANÇA - NR13</option>
+                        <option value="TESTE DE ESTANQUEIDADE">🧪 TESTE DE ESTANQUEIDADE</option>
+                        <option value="PROGRAMA DE GERENCIAMENTO DE RESÍDUOS SÓLIDOS (PGRS)">♻️ PROGRAMA DE GERENCIAMENTO DE RESÍDUOS SÓLIDOS (PGRS)</option>
+                        <option value="OUTROS">📋 OUTROS</option>
+                    </select>
+                </div>
+
+                <!-- Datas de Execução e Vencimento -->
+                <div class="grid-modal-2col" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0;">
+                    <div class="form-group" style="margin: 0;">
+                        <label for="checklist-date-exec" style="font-weight: 700; font-size: 12.5px; color: var(--text-primary); margin-bottom: 5px; display: block;">
+                            📅 Data da Execução *
+                        </label>
+                        <input type="date" id="checklist-date-exec" class="form-control" required style="font-size: 13px; height: 40px; border-radius: 10px;">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label for="checklist-date-expiry" style="font-weight: 700; font-size: 12.5px; color: var(--text-primary); margin-bottom: 5px; display: block;">
+                            ⏳ Previsão de Vencimento *
+                        </label>
+                        <input type="date" id="checklist-date-expiry" class="form-control" required style="font-size: 13px; height: 40px; border-radius: 10px;">
+                    </div>
+                </div>
+
+                <!-- Seção de Critérios do Checklist -->
+                <div style="background: var(--bg-body); padding: 16px; border-radius: 14px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 12px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <h4 style="font-size: 12px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin: 0; letter-spacing: 0.6px; display: flex; align-items: center; gap: 6px;">
+                            <span>📊</span> Itens de Avaliação e Conformidade Técnica
+                        </h4>
+                        <span style="font-size: 11px; color: var(--text-muted);">5 Parâmetros Regulamentares</span>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <!-- Item 1 -->
+                        <div class="insp-item-row">
+                            <span style="font-weight: 600; color: var(--text-primary); font-size: 12.5px;">1. Calibração, Sondas e Estado dos Equipamentos</span>
+                            <select class="form-control checklist-item-select" data-item-name="Calibração, Sondas e Estado dos Equipamentos">
+                                <option value="Conforme">Conforme</option>
+                                <option value="Não Conforme">Não Conforme</option>
+                                <option value="N/A">Não Aplicável (N/A)</option>
+                            </select>
+                        </div>
+                        <!-- Item 2 -->
+                        <div class="insp-item-row">
+                            <span style="font-weight: 600; color: var(--text-primary); font-size: 12.5px;">2. Procedimentos Operacionais e Metodologia de Coleta / Medição</span>
+                            <select class="form-control checklist-item-select" data-item-name="Procedimentos Operacionais e Metodologia de Coleta / Medição">
+                                <option value="Conforme">Conforme</option>
+                                <option value="Não Conforme">Não Conforme</option>
+                                <option value="N/A">Não Aplicável (N/A)</option>
+                            </select>
+                        </div>
+                        <!-- Item 3 -->
+                        <div class="insp-item-row">
+                            <span style="font-weight: 600; color: var(--text-primary); font-size: 12.5px;">3. Atendimento às Normas Regulamentadoras e Limites Legais</span>
+                            <select class="form-control checklist-item-select" data-item-name="Atendimento às Normas Regulamentadoras e Limites Legais">
+                                <option value="Conforme">Conforme</option>
+                                <option value="Não Conforme">Não Conforme</option>
+                                <option value="N/A">Não Aplicável (N/A)</option>
+                            </select>
+                        </div>
+                        <!-- Item 4 -->
+                        <div class="insp-item-row">
+                            <span style="font-weight: 600; color: var(--text-primary); font-size: 12.5px;">4. Condições do Ponto de Amostragem, Isolamento e Segurança</span>
+                            <select class="form-control checklist-item-select" data-item-name="Condições do Ponto de Amostragem, Isolamento e Segurança">
+                                <option value="Conforme">Conforme</option>
+                                <option value="Não Conforme">Não Conforme</option>
+                                <option value="N/A">Não Aplicável (N/A)</option>
+                            </select>
+                        </div>
+                        <!-- Item 5 -->
+                        <div class="insp-item-row">
+                            <span style="font-weight: 600; color: var(--text-primary); font-size: 12.5px;">5. Documentação Técnica, Registros de Campo e Rastreabilidade</span>
+                            <select class="form-control checklist-item-select" data-item-name="Documentação Técnica, Registros de Campo e Rastreabilidade">
+                                <option value="Conforme">Conforme</option>
+                                <option value="Não Conforme">Não Conforme</option>
+                                <option value="N/A">Não Aplicável (N/A)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Placar e Barra de Pontuação Dinâmica -->
+                    <div style="margin-top: 4px; padding-top: 12px; border-top: 1px dashed var(--border-color); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                        <div style="display: flex; flex-direction: column;">
+                            <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Pontuação de Conformidade</span>
+                            <div style="display: flex; align-items: baseline; gap: 6px;">
+                                <span id="checklist-score-val" style="font-size: 22px; font-weight: 800; color: #10b981; line-height: 1;">100%</span>
+                                <span id="checklist-score-status" style="font-size: 11px; font-weight: 700; color: #10b981;">Totalmente Regular</span>
+                            </div>
+                        </div>
+                        <!-- Barra de progresso visual com brilho -->
+                        <div style="flex: 1; min-width: 170px; height: 10px; background: rgba(0,0,0,0.15); border-radius: 99px; overflow: hidden; border: 1px solid var(--border-color); padding: 1px;">
+                            <div id="checklist-score-bar" style="width: 100%; height: 100%; background: linear-gradient(90deg, #10b981, #34d399); border-radius: 99px; transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Parecer Técnico / Observações -->
+                <div class="form-group" style="margin: 0;">
+                    <label for="checklist-notes" style="font-weight: 700; font-size: 12.5px; color: var(--text-primary); margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                        <span>📝</span> Parecer Técnico / Observações de Campo
+                    </label>
+                    <textarea id="checklist-notes" class="form-control" placeholder="Descreva os parâmetros técnicos medidos, condições climáticas, pontos de amostragem, laudos laboratoriais e ART..." style="min-height: 85px; resize: vertical; padding: 12px; border-radius: 10px; font-size: 13px; line-height: 1.45;"></textarea>
                 </div>
             </div>
 
-            <div class="form-group" style="margin-top: 4px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                    <label for="checklist-lead-select" style="margin: 0; font-weight: 600; font-size: 13px;">Empresa / Cliente *</label>
-                    <button type="button" id="btn-insp-quick-add-lead" style="background: transparent; border: none; font-size: 11px; color: var(--primary); font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
-                        <span>➕</span> Nova Empresa
+            <!-- Rodapé Fixo (Sempre Visível) -->
+            <div class="insp-modal-footer">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 12px; font-weight: 600; color: var(--text-muted);">Índice Geral:</span>
+                    <span id="footer-score-indicator" class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 99px;">100% Regular</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button type="button" id="btn-cancel-checklist" class="btn btn-outline" style="padding: 9px 18px; font-size: 12.5px; font-weight: 600; border-radius: 10px; cursor: pointer;">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" style="padding: 9px 22px; font-size: 12.5px; font-weight: 700; border-radius: 10px; display: inline-flex; align-items: center; gap: 7px; cursor: pointer; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);">
+                        <span>💾</span> Salvar Inspeção & Laudo
                     </button>
                 </div>
-                <select id="checklist-lead-select" class="form-control" required style="font-size: 13px;">
-                    <!-- Preenchido via JS -->
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="checklist-service-select">Serviço Inspecionado *</label>
-                <select id="checklist-service-select" class="form-control" required style="font-size: 13px;">
-                    <option value="Laudo de SPDA">⚡ Sistema de Proteção contra Descargas Atmosféricas (SPDA)</option>
-                    <option value="Laudo de Incêndio (AVCB)">🔥 Prevenção e Combate a Incêndio (AVCB)</option>
-                    <option value="Laudo de Instalações Elétricas (NR-10)">🔌 Instalações Elétricas (NR-10)</option>
-                    <option value="Laudo de Gás (GN/GLP)">🛢️ Instalações de Gás Combustível (GN/GLP)</option>
-                    <option value="Vistoria Predial Geral">🏢 Vistoria Predial Geral de Conservação</option>
-                </select>
-            </div>
-
-            <div class="grid-modal-2col" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                <div class="form-group" style="margin: 0;">
-                    <label for="checklist-date-exec">Data da Execução *</label>
-                    <input type="date" id="checklist-date-exec" class="form-control" required style="font-size: 13px; height: 38px;">
-                </div>
-                <div class="form-group" style="margin: 0;">
-                    <label for="checklist-date-expiry">Previsão de Vencimento *</label>
-                    <input type="date" id="checklist-date-expiry" class="form-control" required style="font-size: 13px; height: 38px;">
-                </div>
-            </div>
-
-            <!-- Seção de Critérios do Checklist -->
-            <div style="background: var(--bg-body); padding: 14px; border-radius: 8px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 12px;">
-                <h4 style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin: 0 0 4px 0; letter-spacing: 0.5px;">
-                    📋 Itens de Conformidade Regulamentar
-                </h4>
-
-                <div style="display: flex; flex-direction: column; gap: 10px;">
-                    <!-- Item 1 -->
-                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 12.5px;">
-                        <span style="font-weight: 600; color: var(--text-primary);">1. Estado dos Equipamentos e Conexões</span>
-                        <select class="form-control checklist-item-select" data-item-name="Estado dos Equipamentos e Conexões" style="width: 140px; padding: 4px 8px; height: 30px; font-size: 12px; border-radius: 6px;">
-                            <option value="Conforme">Conforme</option>
-                            <option value="Não Conforme">Não Conforme</option>
-                            <option value="N/A">Não Aplicável (N/A)</option>
-                        </select>
-                    </div>
-                    <!-- Item 2 -->
-                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 12.5px;">
-                        <span style="font-weight: 600; color: var(--text-primary);">2. Sinalização e Isolamento de Segurança</span>
-                        <select class="form-control checklist-item-select" data-item-name="Sinalização e Isolamento de Segurança" style="width: 140px; padding: 4px 8px; height: 30px; font-size: 12px; border-radius: 6px;">
-                            <option value="Conforme">Conforme</option>
-                            <option value="Não Conforme">Não Conforme</option>
-                            <option value="N/A">Não Aplicável (N/A)</option>
-                        </select>
-                    </div>
-                    <!-- Item 3 -->
-                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 12.5px;">
-                        <span style="font-weight: 600; color: var(--text-primary);">3. Testes de Aterramento / Resistência</span>
-                        <select class="form-control checklist-item-select" data-item-name="Testes de Aterramento / Resistência" style="width: 140px; padding: 4px 8px; height: 30px; font-size: 12px; border-radius: 6px;">
-                            <option value="Conforme">Conforme</option>
-                            <option value="Não Conforme">Não Conforme</option>
-                            <option value="N/A">Não Aplicável (N/A)</option>
-                        </select>
-                    </div>
-                    <!-- Item 4 -->
-                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 12.5px;">
-                        <span style="font-weight: 600; color: var(--text-primary);">4. Conformidade Geral de Normas ABNT</span>
-                        <select class="form-control checklist-item-select" data-item-name="Conformidade Geral de Normas ABNT" style="width: 140px; padding: 4px 8px; height: 30px; font-size: 12px; border-radius: 6px;">
-                            <option value="Conforme">Conforme</option>
-                            <option value="Não Conforme">Não Conforme</option>
-                            <option value="N/A">Não Aplicável (N/A)</option>
-                        </select>
-                    </div>
-                    <!-- Item 5 -->
-                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 12.5px;">
-                        <span style="font-weight: 600; color: var(--text-primary);">5. Documentação & Histórico Técnico</span>
-                        <select class="form-control checklist-item-select" data-item-name="Documentação & Histórico Técnico" style="width: 140px; padding: 4px 8px; height: 30px; font-size: 12px; border-radius: 6px;">
-                            <option value="Conforme">Conforme</option>
-                            <option value="Não Conforme">Não Conforme</option>
-                            <option value="N/A">Não Aplicável (N/A)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Pontuação Dinâmica -->
-                <div style="margin-top: 6px; padding-top: 10px; border-top: 1px dashed var(--border-color); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-                    <div style="display: flex; flex-direction: column;">
-                        <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Pontuação de Conformidade</span>
-                        <span id="checklist-score-val" style="font-size: 20px; font-weight: 800; color: #10b981; margin-top: 2px;">100%</span>
-                    </div>
-                    <!-- Barra de progresso visual -->
-                    <div style="flex: 1; min-width: 160px; height: 8px; background: rgba(255,255,255,0.07); border-radius: 99px; overflow: hidden; border: 1px solid var(--border-color);">
-                        <div id="checklist-score-bar" style="width: 100%; height: 100%; background: #10b981; border-radius: 99px; transition: all 0.3s ease;"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="checklist-notes">Parecer Técnico / Observações</label>
-                <textarea id="checklist-notes" class="form-control" placeholder="Descreva os pontos críticos identificados..." style="min-height: 80px; resize: vertical; padding: 10px;"></textarea>
-            </div>
-
-            <div class="modal-footer" style="padding: 0; border: none; margin-top: 4px;">
-                <button type="button" id="btn-cancel-checklist" class="btn btn-outline">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Salvar e Concluir Vistoria</button>
             </div>
         </form>
     </div>

@@ -60,7 +60,7 @@ export const Users = {
         this.setupModalEvents();
         this.renderUsers();
 
-        // 1. Puxar dados mais recentes de login/presença do Supabase
+        // 1. Puxar dados mais recentes de login/presença do Supabase com merge seguro
         try {
             const SUPABASE_URL = "https://ogrbsonpkiamoytxjshg.supabase.co";
             const SUPABASE_KEY = "sb_publishable_Wi3eKJi5uyEzqihEDF6Eaw_-i0zcHe7";
@@ -70,7 +70,19 @@ export const Users = {
             if (res.ok) {
                 const remoteUsers = await res.json();
                 if (Array.isArray(remoteUsers) && remoteUsers.length > 0) {
-                    localStorage.setItem("comercial_users", JSON.stringify(remoteUsers));
+                    const localUsers = JSON.parse(localStorage.getItem("comercial_users")) || [];
+                    const userMap = new Map();
+                    localUsers.forEach(u => {
+                        if (u && u.email) userMap.set(u.email.toLowerCase().trim(), u);
+                    });
+                    remoteUsers.forEach(u => {
+                        if (u && u.email) {
+                            const existing = userMap.get(u.email.toLowerCase().trim());
+                            userMap.set(u.email.toLowerCase().trim(), { ...(existing || {}), ...u });
+                        }
+                    });
+                    const merged = Array.from(userMap.values());
+                    localStorage.setItem("comercial_users", JSON.stringify(merged));
                     this.renderUsers();
                 }
             }
@@ -576,67 +588,103 @@ export const Users = {
         if (btnClose) btnClose.addEventListener("click", closeModal);
         if (btnCancel) btnCancel.addEventListener("click", closeModal);
 
-        form.addEventListener("submit", (e) => {
+        form.addEventListener("submit", async (e) => {
             e.preventDefault();
 
-            const userId = document.getElementById("user-id").value;
-            const name = document.getElementById("user-name").value.trim();
-            const email = document.getElementById("user-email").value.trim().toLowerCase();
-            const role = document.getElementById("user-role").value;
-            const status = document.getElementById("user-status").value;
-            const password = document.getElementById("user-password").value;
-            const companyAccess = document.getElementById("user-companyAccess").value;
+            try {
+                const userId = document.getElementById("user-id").value;
+                const name = document.getElementById("user-name").value.trim();
+                const email = document.getElementById("user-email").value.trim().toLowerCase();
+                const role = document.getElementById("user-role").value;
+                const status = document.getElementById("user-status").value;
+                const password = document.getElementById("user-password").value;
+                const companyAccess = document.getElementById("user-companyAccess").value;
 
-            // Validar força da senha se informada (cadastro ou edição)
-            if (password) {
-                const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.\-_#$])[A-Za-z\d@$!%*?&.\-_#$]{8,}$/;
-                if (!passwordRegex.test(password)) {
-                    alert("Segurança da Senha:\nA senha deve conter pelo menos:\n- 8 caracteres\n- 1 letra maiúscula\n- 1 letra minúscula\n- 1 número\n- 1 caractere especial (ex: @$!%*?&.-_#)");
+                if (!name || !email) {
+                    alert("Por favor, preencha o Nome e o E-mail.");
                     return;
                 }
-            }
 
-            const users = Store.getUsers();
+                // Validação de senha simples e amigável para o cadastro do administrador
+                if (password && password.length < 4) {
+                    alert("A senha de acesso deve conter pelo menos 4 caracteres.");
+                    return;
+                }
 
-            if (userId) {
-                // Modo Edição
-                const idx = users.findIndex(u => u.id === userId);
-                if (idx !== -1) {
-                    users[idx].name = name;
-                    users[idx].role = role;
-                    users[idx].status = status;
-                    users[idx].companyAccess = companyAccess;
-                    if (password) users[idx].password = password;
+                const users = Store.getUsers();
+
+                if (userId) {
+                    // Modo Edição
+                    const idx = users.findIndex(u => u.id === userId);
+                    if (idx !== -1) {
+                        users[idx].name = name;
+                        users[idx].role = role;
+                        users[idx].status = status;
+                        users[idx].companyAccess = companyAccess;
+                        if (password) users[idx].password = password;
+                        Store.saveUsers(users);
+
+                        try {
+                            const cur = Auth.getCurrentUser();
+                            if (cur?.email) {
+                                Store.addLog(cur.email, "USER_MANAGEMENT", `Usuário ${name} (${email}) editado pelo Admin.`, "SUCCESS");
+                            }
+                        } catch(err) {}
+                    }
+                } else {
+                    // Modo Cadastro
+                    const exists = users.some(u => u.email && u.email.toLowerCase().trim() === email);
+                    if (exists) {
+                        alert("Atenção: Este e-mail já está cadastrado no sistema!");
+                        return;
+                    }
+
+                    const newUser = {
+                        id: "usr_" + Date.now(),
+                        name,
+                        email,
+                        role,
+                        status,
+                        companyAccess,
+                        password: password || "123456",
+                        avatar: (name ? name.substring(0, 2) : "US").toUpperCase(),
+                        lastLoginAt: null
+                    };
+
+                    users.push(newUser);
                     Store.saveUsers(users);
-                    Store.addLog(Auth.getCurrentUser().email, "USER_MANAGEMENT", `Usuário ${name} (${email}) editado pelo Admin.`, "SUCCESS");
-                }
-            } else {
-                // Modo Cadastro
-                const exists = users.some(u => u.email === email);
-                if (exists) {
-                    alert("Erro: Este e-mail já está cadastrado!");
-                    return;
+
+                    // Sincronizar individualmente de forma imediata no Supabase
+                    try {
+                        const SUPABASE_URL = "https://ogrbsonpkiamoytxjshg.supabase.co";
+                        const SUPABASE_KEY = "sb_publishable_Wi3eKJi5uyEzqihEDF6Eaw_-i0zcHe7";
+                        fetch(`${SUPABASE_URL}/rest/v1/comercial_users`, {
+                            method: "POST",
+                            headers: {
+                                "apikey": SUPABASE_KEY,
+                                "Authorization": `Bearer ${SUPABASE_KEY}`,
+                                "Content-Type": "application/json",
+                                "Prefer": "resolution=merge-duplicates"
+                            },
+                            body: JSON.stringify(newUser)
+                        }).catch(err => console.warn("Supabase single user upsert:", err));
+                    } catch(err) {}
+
+                    try {
+                        const cur = Auth.getCurrentUser();
+                        if (cur?.email) {
+                            Store.addLog(cur.email, "USER_MANAGEMENT", `Novo usuário ${name} (${email}) cadastrado como ${role} pelo Admin.`, "SUCCESS");
+                        }
+                    } catch(err) {}
                 }
 
-                const newUser = {
-                    id: "usr_" + Date.now(),
-                    name,
-                    email,
-                    role,
-                    status,
-                    companyAccess,
-                    password: password || "123456",
-                    avatar: name.substring(0, 2).toUpperCase(),
-                    lastLoginAt: null
-                };
-
-                users.push(newUser);
-                Store.saveUsers(users);
-                Store.addLog(Auth.getCurrentUser().email, "USER_MANAGEMENT", `Novo usuário ${name} (${email}) cadastrado como ${role} pelo Admin.`, "SUCCESS");
+                closeModal();
+                this.renderUsers();
+                alert(`✅ Usuário "${name}" salvo com sucesso!`);
+            } catch(error) {
+                console.error("Erro ao salvar usuário:", error);
+                alert("Erro ao salvar usuário: " + (error.message || error));
             }
-
-            closeModal();
-            this.renderUsers();
         });
 
         // Inicializar listeners de alteração de senha

@@ -51,7 +51,8 @@ export const Auth = {
             name: user.name,
             email: user.email,
             role: user.role,
-            avatar: user.avatar
+            avatar: user.avatar,
+            companyAccess: user.companyAccess || "Ambas"
         };
 
         localStorage.setItem("comercial_session", JSON.stringify(sessionUser));

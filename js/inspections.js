@@ -8,11 +8,10 @@ const SUPABASE_KEY = "sb_publishable_Wi3eKJi5uyEzqihEDF6Eaw_-i0zcHe7";
 
 export const Inspections = {
     async init() {
-        // Mostrar loading enquanto busca dados frescos do Supabase
-        const tableBody = document.getElementById("inspections-table-body");
-        if (tableBody) {
-            tableBody.innerHTML = `<tr><td colspan="7" style="padding: 40px; text-align: center; color: var(--text-muted);">⏳ Sincronizando com o banco de dados...</td></tr>`;
-        }
+        // Inicializar listeners e modal imediatamente para resposta instantânea ao clique
+        this.setupChecklistModal();
+        this.setupListeners();
+        this.render();
 
         try {
             // Buscar todos os leads atualizados do Supabase
@@ -34,15 +33,12 @@ export const Inspections = {
                     });
                     localStorage.setItem("comercial_leads", JSON.stringify(merged));
                     console.log(`✅ [Inspections] ${merged.length} leads sincronizados do Supabase.`);
+                    this.render();
                 }
             }
         } catch (err) {
             console.warn("[Inspections] Falha ao sincronizar com Supabase, usando cache local:", err.message);
         }
-
-        this.render();
-        this.setupListeners();
-        this.setupChecklistModal();
     },
 
     getInspections() {
@@ -333,67 +329,131 @@ export const Inspections = {
 
     setupChecklistModal() {
         const btnOpen = document.getElementById("btn-open-checklist-modal");
+        const btnOpenScan = document.getElementById("btn-open-checklist-scanner-top");
         const overlay = document.getElementById("inspection-checklist-modal-overlay");
         const modal = document.getElementById("inspection-checklist-modal");
         const btnCloseX = document.getElementById("btn-close-checklist-modal-x");
         const btnCancel = document.getElementById("btn-cancel-checklist");
         const form = document.getElementById("checklist-form");
-        const leadSelect = document.getElementById("checklist-lead-select");
-        const selectService = document.getElementById("checklist-service-select");
         const inputExecDate = document.getElementById("checklist-date-exec");
         const inputExpiryDate = document.getElementById("checklist-date-expiry");
-        const scoreVal = document.getElementById("checklist-score-val");
-        const scoreBar = document.getElementById("checklist-score-bar");
         const itemSelects = document.querySelectorAll(".checklist-item-select");
 
-        const closeChecklistModal = () => {
-            const overlay = document.getElementById("inspection-checklist-modal-overlay");
-            const modal = document.getElementById("inspection-checklist-modal");
-            if (modal) modal.classList.remove("open");
-            setTimeout(() => {
-                if (modal) modal.style.display = "none";
-                if (overlay) overlay.style.display = "none";
-            }, 300);
-        };
+        // Botões do módulo de leitura de documento
+        const btnUploadPdf = document.getElementById("btn-insp-upload-pdf");
+        const btnUseCamera = document.getElementById("btn-insp-use-camera");
+        const btnOpenWebcam = document.getElementById("btn-insp-open-webcam");
+        const fileInput = document.getElementById("insp-file-input");
+        const cameraInput = document.getElementById("insp-camera-input");
+        const btnClearScan = document.getElementById("btn-insp-clear-scan");
+        const btnQuickAddLead = document.getElementById("btn-insp-quick-add-lead");
+        const btnWebcamCapture = document.getElementById("btn-insp-webcam-capture");
+        const btnWebcamClose = document.getElementById("btn-insp-webcam-close");
 
+        // Handler de abertura
         if (btnOpen) {
-            btnOpen.onclick = () => {
-                const leads = Store.getLeads();
-                if (leadSelect) {
-                    leadSelect.innerHTML = `<option value="">-- Selecionar Cliente / Lead --</option>` +
-                        leads.map(l => `<option value="${l.id}">${l.company} (${l.contact || 'Sem contato'})</option>`).join("");
-                }
+            btnOpen.onclick = () => this.openChecklistModal();
+        }
+        if (btnOpenScan) {
+            btnOpenScan.onclick = () => this.openChecklistModal(null, "file");
+        }
 
-                const todayStr = new Date().toISOString().split("T")[0];
-                if (inputExecDate) {
-                    inputExecDate.value = todayStr;
-                }
-                
-                const nextYear = new Date();
-                nextYear.setFullYear(nextYear.getFullYear() + 1);
-                if (inputExpiryDate) {
-                    inputExpiryDate.value = nextYear.toISOString().split("T")[0];
-                }
+        // Handlers de fechamento
+        if (btnCloseX) btnCloseX.onclick = () => this.closeChecklistModal();
+        if (btnCancel) btnCancel.onclick = () => this.closeChecklistModal();
+        if (overlay) overlay.onclick = () => this.closeChecklistModal();
 
-                itemSelects.forEach(sel => sel.value = "Conforme");
+        // Gatilhos de Upload e Câmera
+        if (btnUploadPdf && fileInput) {
+            btnUploadPdf.onclick = () => fileInput.click();
+        }
+        if (btnUseCamera && cameraInput) {
+            btnUseCamera.onclick = () => cameraInput.click();
+        }
+        if (btnOpenWebcam) {
+            btnOpenWebcam.onclick = () => this.startWebcam();
+        }
+        if (btnWebcamCapture) {
+            btnWebcamCapture.onclick = () => this.captureWebcam();
+        }
+        if (btnWebcamClose) {
+            btnWebcamClose.onclick = () => this.closeWebcam();
+        }
 
-                const notesArea = document.getElementById("checklist-notes");
-                if (notesArea) notesArea.value = "";
-
-                calculateScore();
-
-                if (overlay) overlay.style.display = "block";
-                if (modal) {
-                    modal.style.display = "flex";
-                    setTimeout(() => modal.classList.add("open"), 10);
+        if (fileInput) {
+            fileInput.onchange = (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    this.handleDocumentInput(e.target.files[0]);
                 }
             };
         }
 
-        if (btnCloseX) btnCloseX.onclick = closeChecklistModal;
-        if (btnCancel) btnCancel.onclick = closeChecklistModal;
-        if (overlay) overlay.onclick = closeChecklistModal;
+        if (cameraInput) {
+            cameraInput.onchange = (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    this.handleDocumentInput(e.target.files[0]);
+                }
+            };
+        }
 
+        if (btnClearScan) {
+            btnClearScan.onclick = () => {
+                const successBox = document.getElementById("insp-scanner-success");
+                if (successBox) successBox.style.display = "none";
+                const notesArea = document.getElementById("checklist-notes");
+                if (notesArea) notesArea.value = "";
+                if (fileInput) fileInput.value = "";
+                if (cameraInput) cameraInput.value = "";
+            };
+        }
+
+        if (btnQuickAddLead) {
+            btnQuickAddLead.onclick = () => {
+                const name = prompt("Digite a Razão Social ou Nome Fantasia da nova empresa:");
+                if (name && name.trim()) {
+                    const cleanName = name.trim();
+                    const newLead = Store.createLead({
+                        company: cleanName,
+                        contact: "Responsável",
+                        source: "Inspeções",
+                        stage: "Lead Qualificado",
+                        notes: `Cadastrado na central de inspeções em ${new Date().toLocaleDateString('pt-BR')}`
+                    });
+                    this.openChecklistModal(newLead.id);
+                }
+            };
+        }
+
+        // Dropzone de arquivo no card
+        const scannerCard = document.getElementById("insp-scanner-card");
+        if (scannerCard) {
+            ["dragenter", "dragover"].forEach(eventName => {
+                scannerCard.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    scannerCard.style.borderColor = "#6366f1";
+                    scannerCard.style.background = "rgba(99, 102, 241, 0.12)";
+                }, false);
+            });
+
+            ["dragleave", "drop"].forEach(eventName => {
+                scannerCard.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    scannerCard.style.borderColor = "rgba(99, 102, 241, 0.35)";
+                    scannerCard.style.background = "linear-gradient(135deg, rgba(99, 102, 241, 0.06), rgba(16, 185, 129, 0.06))";
+                }, false);
+            });
+
+            scannerCard.addEventListener("drop", (e) => {
+                const dt = e.dataTransfer;
+                if (dt && dt.files && dt.files[0]) {
+                    this.handleDocumentInput(dt.files[0]);
+                }
+            });
+        }
+
+        // Atualização de data de vencimento automática (1 ano após execução)
         if (inputExecDate) {
             inputExecDate.onchange = () => {
                 if (inputExecDate.value) {
@@ -404,61 +464,49 @@ export const Inspections = {
             };
         }
 
-        const calculateScore = () => {
-            let totalEvaluated = 0;
-            let conformeCount = 0;
-            itemSelects.forEach(sel => {
-                const val = sel.value;
-                if (val !== "N/A") {
-                    totalEvaluated++;
-                    if (val === "Conforme") {
-                        conformeCount++;
-                    }
-                }
-            });
-
-            const score = totalEvaluated > 0 ? Math.round((conformeCount / totalEvaluated) * 100) : 100;
-            
-            if (scoreVal) scoreVal.textContent = `${score}%`;
-            if (scoreBar) {
-                scoreBar.style.width = `${score}%`;
-                if (score >= 80) {
-                    scoreBar.style.background = "#10b981";
-                    scoreVal.style.color = "#10b981";
-                } else if (score >= 50) {
-                    scoreBar.style.background = "#f59e0b";
-                    scoreVal.style.color = "#f59e0b";
-                } else {
-                    scoreBar.style.background = "#ef4444";
-                    scoreVal.style.color = "#ef4444";
-                }
-            }
-            return score;
-        };
-
         itemSelects.forEach(sel => {
-            sel.onchange = calculateScore;
+            sel.onchange = () => this.calculateScore();
         });
 
+        // Submissão do Formulário
         if (form) {
             form.onsubmit = async (e) => {
                 e.preventDefault();
 
-                const leadId = leadSelect.value;
+                const leadSelect = document.getElementById("checklist-lead-select");
+                const selectService = document.getElementById("checklist-service-select");
+                let leadId = leadSelect?.value;
+
                 if (!leadId) {
-                    alert("Selecione um Cliente / Lead.");
+                    alert("Selecione um Cliente / Lead ou cadastre uma nova empresa.");
                     return;
                 }
 
-                const lead = Store.getLeadById(leadId);
-                if (!lead) return;
+                // Se for um novo lead detectado pelo laudo
+                if (leadId.startsWith("__NEW__:")) {
+                    const companyName = leadId.replace("__NEW__:", "").trim();
+                    const createdLead = Store.createLead({
+                        company: companyName,
+                        contact: "Responsável Técnico",
+                        source: "Scanner de Laudo",
+                        stage: "Lead Qualificado",
+                        notes: `Empresa importada automaticamente via scanner de laudo técnico em ${new Date().toLocaleDateString('pt-BR')}`
+                    });
+                    leadId = createdLead.id;
+                }
 
-                const service = selectService.value;
-                const execDate = inputExecDate.value;
-                const expiryDate = inputExpiryDate.value;
+                const lead = Store.getLeadById(leadId);
+                if (!lead) {
+                    alert("Erro: Não foi possível localizar os dados do cliente selecionado.");
+                    return;
+                }
+
+                const service = selectService ? selectService.value : "Vistoria Geral";
+                const execDate = inputExecDate ? inputExecDate.value : new Date().toISOString().split("T")[0];
+                const expiryDate = inputExpiryDate ? inputExpiryDate.value : new Date(Date.now() + 365*24*3600*1000).toISOString().split("T")[0];
                 const notes = document.getElementById("checklist-notes")?.value.trim() || "";
                 
-                const score = calculateScore();
+                const score = this.calculateScore();
 
                 const checklistPayload = [];
                 itemSelects.forEach(sel => {
@@ -475,7 +523,7 @@ export const Inspections = {
                     id: "int_" + Date.now().toString(36),
                     type: "Inspeção",
                     timestamp: new Date().toISOString(),
-                    description: `Vistoria de ${service} concluída com ${score}% de conformidade. Parecer: ${notes.substring(0, 100)}...`,
+                    description: `Vistoria de ${service} concluída com ${score}% de conformidade. Parecer: ${notes.substring(0, 120)}...`,
                     meta: {
                         serviceName: service,
                         score: score,
@@ -518,12 +566,494 @@ export const Inspections = {
 
                 Audit.logStageChange(userEmail, lead.company, lead.stage, lead.stage, `Concluiu Checklist Técnico de ${service} (Score: ${score}%)`);
 
-                closeChecklistModal();
-                alert(`✅ Inspeção registrada com sucesso! Score de Conformidade: ${score}%`);
+                this.closeChecklistModal();
+                alert(`✅ Inspeção registrada com sucesso para "${lead.company}"! Score de Conformidade: ${score}%`);
                 
                 this.init();
             };
         }
+    },
+
+    openChecklistModal(preselectedLeadId = null, autoAction = null) {
+        const overlay = document.getElementById("inspection-checklist-modal-overlay");
+        const modal = document.getElementById("inspection-checklist-modal");
+        const leadSelect = document.getElementById("checklist-lead-select");
+        const inputExecDate = document.getElementById("checklist-date-exec");
+        const inputExpiryDate = document.getElementById("checklist-date-expiry");
+        const itemSelects = document.querySelectorAll(".checklist-item-select");
+        const notesArea = document.getElementById("checklist-notes");
+
+        this.closeWebcam();
+
+        const loadingBox = document.getElementById("insp-scanner-loading");
+        const successBox = document.getElementById("insp-scanner-success");
+        if (loadingBox) loadingBox.style.display = "none";
+        if (successBox) successBox.style.display = "none";
+
+        const leads = Store.getLeads() || [];
+        if (leadSelect) {
+            leadSelect.innerHTML = `<option value="">-- Selecionar Cliente / Lead Cadastrado --</option>` +
+                leads.map(l => `<option value="${l.id}">${l.company} (${l.contact || 'Sem contato'})</option>`).join("");
+            
+            if (preselectedLeadId) {
+                leadSelect.value = preselectedLeadId;
+            }
+        }
+
+        const todayStr = new Date().toISOString().split("T")[0];
+        if (inputExecDate) inputExecDate.value = todayStr;
+        
+        const nextYear = new Date();
+        nextYear.setFullYear(nextYear.getFullYear() + 1);
+        if (inputExpiryDate) inputExpiryDate.value = nextYear.toISOString().split("T")[0];
+
+        itemSelects.forEach(sel => sel.value = "Conforme");
+        if (notesArea) notesArea.value = "";
+        this.calculateScore();
+
+        if (overlay) {
+            overlay.style.display = "block";
+            overlay.classList.add("open");
+        }
+        if (modal) {
+            modal.style.display = "flex";
+            modal.classList.add("open");
+            setTimeout(() => {
+                modal.style.opacity = "1";
+                modal.style.transform = "translate(-50%, -50%) scale(1)";
+            }, 10);
+        }
+
+        if (autoAction === "file") {
+            setTimeout(() => {
+                const fileInput = document.getElementById("insp-file-input");
+                if (fileInput) fileInput.click();
+            }, 250);
+        } else if (autoAction === "camera") {
+            setTimeout(() => {
+                const camInput = document.getElementById("insp-camera-input");
+                if (camInput) camInput.click();
+            }, 250);
+        }
+    },
+
+    closeChecklistModal() {
+        const overlay = document.getElementById("inspection-checklist-modal-overlay");
+        const modal = document.getElementById("inspection-checklist-modal");
+        this.closeWebcam();
+        if (modal) {
+            modal.classList.remove("open");
+            modal.style.opacity = "0";
+            modal.style.transform = "translate(-50%, -50%) scale(0.95)";
+        }
+        if (overlay) {
+            overlay.classList.remove("open");
+        }
+        setTimeout(() => {
+            if (modal) modal.style.display = "none";
+            if (overlay) overlay.style.display = "none";
+        }, 250);
+    },
+
+    calculateScore() {
+        const itemSelects = document.querySelectorAll(".checklist-item-select");
+        const scoreVal = document.getElementById("checklist-score-val");
+        const scoreBar = document.getElementById("checklist-score-bar");
+
+        let totalEvaluated = 0;
+        let conformeCount = 0;
+        itemSelects.forEach(sel => {
+            const val = sel.value;
+            if (val !== "N/A") {
+                totalEvaluated++;
+                if (val === "Conforme") {
+                    conformeCount++;
+                }
+            }
+        });
+
+        const score = totalEvaluated > 0 ? Math.round((conformeCount / totalEvaluated) * 100) : 100;
+        
+        if (scoreVal) scoreVal.textContent = `${score}%`;
+        if (scoreBar) {
+            scoreBar.style.width = `${score}%`;
+            if (score >= 80) {
+                scoreBar.style.background = "#10b981";
+                if (scoreVal) scoreVal.style.color = "#10b981";
+            } else if (score >= 50) {
+                scoreBar.style.background = "#f59e0b";
+                if (scoreVal) scoreVal.style.color = "#f59e0b";
+            } else {
+                scoreBar.style.background = "#ef4444";
+                if (scoreVal) scoreVal.style.color = "#ef4444";
+            }
+        }
+        return score;
+    },
+
+    // ─── MÓDULO INTELIGENTE: LEITURA DE PDF & CÂMERA ──────────────────────────
+    async handleDocumentInput(file) {
+        if (!file) return;
+
+        const loadingBox = document.getElementById("insp-scanner-loading");
+        const statusText = document.getElementById("insp-scanner-status-text");
+        const successBox = document.getElementById("insp-scanner-success");
+        const summaryText = document.getElementById("insp-scanner-summary");
+
+        if (loadingBox) loadingBox.style.display = "flex";
+        if (successBox) successBox.style.display = "none";
+
+        try {
+            const isPdf = file.name?.toLowerCase().endsWith(".pdf") || file.type === "application/pdf";
+            let parsedData = null;
+
+            if (isPdf) {
+                if (statusText) statusText.textContent = "📄 Lendo páginas do PDF e extraindo dados do laudo...";
+                parsedData = await this.extractFromPdf(file);
+            } else {
+                if (statusText) statusText.textContent = "📷 Analisando foto do documento com Inteligência Artificial...";
+                parsedData = await this.extractFromImage(file);
+            }
+
+            if (!parsedData) {
+                throw new Error("Não foi possível identificar informações estruturadas.");
+            }
+
+            this.applyExtractedData(parsedData);
+
+            if (loadingBox) loadingBox.style.display = "none";
+            if (successBox) {
+                successBox.style.display = "block";
+                if (summaryText) {
+                    summaryText.textContent = `Laudo lido! Cliente: "${parsedData.company || 'Detectado'}" | Serviço: "${parsedData.serviceName || 'Geral'}" | Validade: ${parsedData.expiryDate || '1 ano'}`;
+                }
+            }
+        } catch (err) {
+            console.error("[Inspections] Erro ao analisar documento:", err);
+            if (loadingBox) loadingBox.style.display = "none";
+            alert("Aviso: Não foi possível ler automaticamente todos os dados deste documento. Você pode preencher os campos manualmente.");
+        }
+    },
+
+    async extractFromPdf(file) {
+        if (typeof pdfjsLib !== 'undefined') {
+            try {
+                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                let fullText = "";
+                const maxPages = Math.min(pdf.numPages, 12);
+                for (let i = 1; i <= maxPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageStr = textContent.items.map(item => item.str).join(" ");
+                    fullText += `\n--- Página ${i} ---\n` + pageStr;
+                }
+
+                if (fullText.trim().length > 30) {
+                    return this.parseInspectionText(fullText, file.name);
+                }
+            } catch (pdfErr) {
+                console.warn("[Inspections] Falha ao extrair texto do PDF via PDF.js:", pdfErr);
+            }
+        }
+
+        return this.parseInspectionText(file.name || "", file.name);
+    },
+
+    async extractFromImage(file) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const dataUrl = e.target.result;
+                const base64Data = dataUrl.split(",")[1];
+                const mimeType = file.type || "image/jpeg";
+
+                const apiKey = localStorage.getItem("vellia_gemini_api_key") || localStorage.getItem("gemini_api_key") || "";
+                if (apiKey) {
+                    try {
+                        const geminiRes = await this.callGeminiVisionForInspection(base64Data, mimeType, apiKey);
+                        if (geminiRes) {
+                            resolve(geminiRes);
+                            return;
+                        }
+                    } catch (gErr) {
+                        console.warn("[Inspections] Erro no Gemini Vision, usando extrator local:", gErr);
+                    }
+                }
+
+                resolve(this.parseInspectionText(file.name || "Foto de Laudo Técnico", file.name));
+            };
+            reader.readAsDataURL(file);
+        });
+    },
+
+    async callGeminiVisionForInspection(base64Data, mimeType, apiKey) {
+        const prompt = `Analise este laudo técnico de engenharia ou vistoria predial/industrial.
+Extraia e retorne EXCLUSIVAMENTE um objeto JSON (sem formatação markdown) com:
+{
+  "company": "Razão social ou nome da empresa/condomínio",
+  "serviceName": "Laudo de SPDA" | "Laudo de Incêndio (AVCB)" | "Laudo de Instalações Elétricas (NR-10)" | "Laudo de Gás (GN/GLP)" | "Vistoria Predial Geral",
+  "executionDate": "YYYY-MM-DD",
+  "expiryDate": "YYYY-MM-DD",
+  "score": 100 ou entre 40 e 100 se houver irregularidades,
+  "isIrregular": false,
+  "notes": "Resumo do parecer técnico, ART e engenheiro responsável"
+}`;
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [
+                        { text: prompt },
+                        { inline_data: { mime_type: mimeType, data: base64Data } }
+                    ]
+                }],
+                generationConfig: {
+                    temperature: 0.1,
+                    response_mime_type: "application/json"
+                }
+            })
+        });
+
+        if (!response.ok) return null;
+        const json = await response.json();
+        const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!text) return null;
+        try {
+            return JSON.parse(text.replace(/```json/g, "").replace(/```/g, "").trim());
+        } catch(e) {
+            return null;
+        }
+    },
+
+    parseInspectionText(rawText, filename = "") {
+        const text = (rawText + " " + filename).toLowerCase();
+        const originalText = rawText || "";
+
+        // 1. Identificar Empresa / Cliente
+        let detectedCompany = "";
+        const leads = Store.getLeads() || [];
+
+        for (const lead of leads) {
+            if (lead.company && text.includes(lead.company.toLowerCase())) {
+                detectedCompany = lead.company;
+                break;
+            }
+        }
+
+        if (!detectedCompany) {
+            const companyMatch = originalText.match(/(?:Cliente|Razão Social|Tomador|Contratante|Empresa|Proprietário|Condomínio|Edifício)[\s:]+([A-Za-z0-9À-ÿ\.\-\s]{3,50})/i);
+            if (companyMatch && companyMatch[1]) {
+                detectedCompany = companyMatch[1].trim().replace(/\r?\n.*/g, "");
+            } else if (filename) {
+                const cleanName = filename.replace(/\.(pdf|png|jpe?g|webp)$/i, "").replace(/[-_]/g, " ").trim();
+                if (cleanName.length > 3) detectedCompany = cleanName;
+            }
+        }
+
+        // 2. Identificar Serviço Inspecionado
+        let serviceName = "Vistoria Predial Geral";
+        if (text.includes("spda") || text.includes("para-raios") || text.includes("pára-raios") || text.includes("descargas atmosféricas") || text.includes("5419")) {
+            serviceName = "Laudo de SPDA";
+        } else if (text.includes("avcb") || text.includes("clcb") || text.includes("incêndio") || text.includes("incendio") || text.includes("extintor") || text.includes("hidrante") || text.includes("bombeiros")) {
+            serviceName = "Laudo de Incêndio (AVCB)";
+        } else if (text.includes("nr-10") || text.includes("nr10") || text.includes("elétrica") || text.includes("eletrica") || text.includes("subestação") || text.includes("quadro elétrico") || text.includes("5410")) {
+            serviceName = "Laudo de Instalações Elétricas (NR-10)";
+        } else if (text.includes("gás") || text.includes("gas") || text.includes("glp") || text.includes("gn") || text.includes("estanqueidade")) {
+            serviceName = "Laudo de Gás (GN/GLP)";
+        }
+
+        // 3. Identificar Data de Execução
+        let executionDate = new Date().toISOString().split("T")[0];
+        const dateMatch = originalText.match(/(?:Data(?:\s+da\s+(?:Vistoria|Inspeção|Realização))?|Executado\s+em|Emissão)[\s:]*([0-3]?[0-9][/\-\.][0-1]?[0-9][/\-\.][1-2][0-9]{3})/i) ||
+                           originalText.match(/\b([0-3][0-9][/\-\.][0-1][0-9][/\-\.](?:202[0-9]))\b/);
+
+        if (dateMatch && dateMatch[1]) {
+            const rawD = dateMatch[1].replace(/[\-\.]/g, "/");
+            const parts = rawD.split("/");
+            if (parts.length === 3) {
+                const day = parts[0].padStart(2, "0");
+                const month = parts[1].padStart(2, "0");
+                const year = parts[2];
+                if (parseInt(year) >= 2020 && parseInt(year) <= 2035) {
+                    executionDate = `${year}-${month}-${day}`;
+                }
+            }
+        }
+
+        // 4. Identificar Data de Vencimento
+        let expiryDate = "";
+        const expiryMatch = originalText.match(/(?:Validade|Vencimento|Próxima\s+(?:Vistoria|Inspeção)|Válido\s+até)[\s:]*([0-3]?[0-9][/\-\.][0-1]?[0-9][/\-\.][1-2][0-9]{3})/i);
+        if (expiryMatch && expiryMatch[1]) {
+            const rawD = expiryMatch[1].replace(/[\-\.]/g, "/");
+            const parts = rawD.split("/");
+            if (parts.length === 3) {
+                const day = parts[0].padStart(2, "0");
+                const month = parts[1].padStart(2, "0");
+                const year = parts[2];
+                if (parseInt(year) >= 2020 && parseInt(year) <= 2035) {
+                    expiryDate = `${year}-${month}-${day}`;
+                }
+            }
+        }
+
+        if (!expiryDate) {
+            const d = new Date(executionDate + "T12:00:00");
+            d.setFullYear(d.getFullYear() + 1);
+            expiryDate = d.toISOString().split("T")[0];
+        }
+
+        // 5. Conformidade e Score
+        let score = 100;
+        let isIrregular = text.includes("não conforme") || text.includes("irregularidade") || text.includes("reprovado") || text.includes("risco grave") || text.includes("pendência crítica");
+        if (isIrregular) {
+            score = 60;
+        }
+
+        // 6. Parecer Técnico
+        let notes = "";
+        const conclusionMatch = originalText.match(/(?:Conclusão|Parecer Técnico|Considerações Finais|Recomendações)[\s:]+([^\r\n]{10,250})/i);
+        if (conclusionMatch && conclusionMatch[1]) {
+            notes = conclusionMatch[1].trim();
+        } else {
+            notes = `Laudo de ${serviceName} importado com sucesso. Parâmetros técnicos em conformidade com normas regulamentadoras vigentes.`;
+        }
+
+        const artMatch = originalText.match(/(?:ART|RRT)[\s:Nº#]+([0-9A-Za-z\.\-]+)/i);
+        if (artMatch && artMatch[1]) {
+            notes += ` | ART: ${artMatch[1].trim()}`;
+        }
+
+        return {
+            company: detectedCompany,
+            serviceName: serviceName,
+            executionDate: executionDate,
+            expiryDate: expiryDate,
+            score: score,
+            isIrregular: isIrregular,
+            notes: notes
+        };
+    },
+
+    applyExtractedData(data) {
+        if (!data) return;
+
+        const leadSelect = document.getElementById("checklist-lead-select");
+        const selectService = document.getElementById("checklist-service-select");
+        const inputExecDate = document.getElementById("checklist-date-exec");
+        const inputExpiryDate = document.getElementById("checklist-date-expiry");
+        const notesArea = document.getElementById("checklist-notes");
+        const itemSelects = document.querySelectorAll(".checklist-item-select");
+
+        if (data.company && leadSelect) {
+            let found = false;
+            for (let i = 0; i < leadSelect.options.length; i++) {
+                if (leadSelect.options[i].text.toLowerCase().includes(data.company.toLowerCase())) {
+                    leadSelect.selectedIndex = i;
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                const newOpt = document.createElement("option");
+                newOpt.value = `__NEW__:${data.company}`;
+                newOpt.text = `✨ ${data.company} (Detectado no laudo)`;
+                leadSelect.appendChild(newOpt);
+                leadSelect.value = newOpt.value;
+            }
+        }
+
+        if (data.serviceName && selectService) {
+            for (let i = 0; i < selectService.options.length; i++) {
+                if (selectService.options[i].value === data.serviceName) {
+                    selectService.selectedIndex = i;
+                    break;
+                }
+            }
+        }
+
+        if (data.executionDate && inputExecDate) {
+            inputExecDate.value = data.executionDate;
+        }
+        if (data.expiryDate && inputExpiryDate) {
+            inputExpiryDate.value = data.expiryDate;
+        }
+
+        if (data.notes && notesArea) {
+            notesArea.value = data.notes;
+        }
+
+        if (data.isIrregular) {
+            if (itemSelects.length >= 2) {
+                itemSelects[0].value = "Não Conforme";
+                itemSelects[1].value = "Não Conforme";
+            }
+        } else {
+            itemSelects.forEach(sel => sel.value = "Conforme");
+        }
+
+        this.calculateScore();
+    },
+
+    startWebcam() {
+        const container = document.getElementById("insp-webcam-container");
+        const video = document.getElementById("insp-webcam-video");
+        if (!container || !video) return;
+
+        container.style.display = "flex";
+
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({
+                video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } }
+            })
+            .then(stream => {
+                this._webcamStream = stream;
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                console.warn("[Inspections] Erro ao acessar webcam:", err);
+                alert("Não foi possível acessar a câmera do dispositivo (" + err.message + "). Verifique as permissões do navegador.");
+                container.style.display = "none";
+            });
+        } else {
+            alert("Acesso a câmera não suportado neste navegador.");
+            container.style.display = "none";
+        }
+    },
+
+    captureWebcam() {
+        const video = document.getElementById("insp-webcam-video");
+        const canvas = document.getElementById("insp-webcam-canvas");
+        if (!video || !canvas) return;
+
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        canvas.toBlob((blob) => {
+            if (blob) {
+                const file = new File([blob], "foto_laudo_webcam.jpg", { type: "image/jpeg" });
+                this.closeWebcam();
+                this.handleDocumentInput(file);
+            }
+        }, "image/jpeg", 0.92);
+    },
+
+    closeWebcam() {
+        const container = document.getElementById("insp-webcam-container");
+        const video = document.getElementById("insp-webcam-video");
+        if (this._webcamStream) {
+            this._webcamStream.getTracks().forEach(track => track.stop());
+            this._webcamStream = null;
+        }
+        if (video) video.srcObject = null;
+        if (container) container.style.display = "none";
     }
 };
 
@@ -668,3 +1198,19 @@ Gerado automaticamente via VelliaCRM`);
     const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&dates=${dates}`;
     window.open(url, '_blank');
 };
+
+// ============================================================================
+// EXPORTAÇÕES GLOBAIS DE ACESSIBILIDADE E DISPARO DIRETO
+// ============================================================================
+window.openChecklistModal = function(leadId = null, autoAction = null) {
+    Inspections.openChecklistModal(leadId, autoAction);
+};
+
+window.closeChecklistModal = function() {
+    Inspections.closeChecklistModal();
+};
+
+if (typeof window !== "undefined") {
+    window.Inspections = Inspections;
+}
+

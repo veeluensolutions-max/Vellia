@@ -1611,6 +1611,11 @@ function setupEventListeners() {
     // Inicializar Scanner IA de Documentos (Vision OCR)
     VisionOCR.init();
 
+    // Pré-inicializar modal de Inspeções e Leitor de Laudos
+    if (typeof Inspections !== "undefined" && Inspections.setupChecklistModal) {
+        Inspections.setupChecklistModal();
+    }
+
     // Roteamento SPA ao clicar na Sidebar
     elements.menuItems.forEach(item => {
         item.addEventListener("click", (e) => {
@@ -1707,6 +1712,7 @@ window.Kanban = Kanban;
 window.CommandPalette = CommandPalette;
 window.Toast = Toast;
 window.VisionOCR = VisionOCR;
+window.Inspections = Inspections;
 
 // ==========================================================================
 // WORKSPACE / COMPANY SWITCHER

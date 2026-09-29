@@ -3131,9 +3131,12 @@
                                 <h3 style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0; letter-spacing: -0.01em;">Central de Inspeções & Renovações</h3>
                                 <p style="font-size: 13px; color: var(--text-muted); margin: 4px 0 0 0;">Monitore laudos técnicos e notifique clientes automaticamente antes do vencimento anual.</p>
                             </div>
-                            <div style="display: flex; gap: 8px;">
-                                <button class="btn btn-primary" id="btn-open-checklist-modal" style="font-size: 13px; font-weight: 600; padding: 8px 16px; gap: 6px; display: inline-flex; align-items: center;">
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <button class="btn btn-primary" id="btn-open-checklist-modal" style="font-size: 13px; font-weight: 600; padding: 8px 16px; gap: 6px; display: inline-flex; align-items: center;" onclick="window.openChecklistModal ? window.openChecklistModal() : null">
                                     📋 Nova Inspeção / Checklist
+                                </button>
+                                <button class="btn btn-outline" id="btn-open-checklist-scanner-top" style="font-size: 13px; font-weight: 600; padding: 8px 16px; gap: 6px; display: inline-flex; align-items: center; border-color: #6366f1; color: #6366f1; background: rgba(99, 102, 241, 0.05);" onclick="window.openChecklistModal ? window.openChecklistModal(null, 'file') : null" title="Carregar PDF ou fotografar laudo com a câmera">
+                                    📷 Ler PDF / Câmera
                                 </button>
                                 <button class="btn btn-outline" style="font-size: 13px; font-weight: 600; padding: 8px 16px; gap: 6px; display: inline-flex; align-items: center;" onclick="window.exportInspectionsSummaryPDF()">
                                     📄 Relatório PDF
@@ -4386,6 +4389,7 @@
                 <span class="info-label">Observações</span>
                 <span class="info-value" id="detail-notes" style="display: block; margin-top: 4px; line-height: 1.5;"></span>
             </div>
+        </div>
         <div class="modal-footer" style="flex-wrap: wrap; gap: 8px;">
             <div style="display: flex; gap: 6px; align-items: center; margin-right: auto;">
                 <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);">🌐 IA Tradutor:</span>
@@ -4925,42 +4929,120 @@
     </div>
 
     <!-- Modal: Checklist de Inspeção Técnica -->
-    <div id="inspection-checklist-modal-overlay" class="modal-overlay" style="z-index:1100;"></div>
-    <div id="inspection-checklist-modal" class="modal" style="z-index:1101; max-width: 550px;">
+    <div id="inspection-checklist-modal-overlay" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); z-index: 10040;"></div>
+    <div id="inspection-checklist-modal" class="modal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.95); opacity: 0; max-width: 640px; width: 95%; max-height: 92vh; overflow-y: auto; z-index: 10050; border-radius: 16px; box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.5); transition: transform 0.25s ease, opacity 0.25s ease;">
         <div class="modal-header">
-            <h3 class="modal-title">📋 Checklist de Inspeção Técnica</h3>
-            <button id="btn-close-checklist-modal-x" class="btn-icon-close" aria-label="Fechar">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 34px; height: 34px; border-radius: 8px; background: rgba(99, 102, 241, 0.15); display: flex; align-items: center; justify-content: center; font-size: 18px; border: 1px solid rgba(99, 102, 241, 0.3);">
+                    📋
+                </div>
+                <div>
+                    <h3 class="modal-title" style="margin: 0; font-size: 16px; font-weight: 700;">Nova Inspeção & Laudo Técnico</h3>
+                    <span style="font-size: 11.5px; color: var(--text-muted);">Registre laudos técnicos ou importe dados automaticamente de PDF / Câmera</span>
+                </div>
+            </div>
+            <button id="btn-close-checklist-modal-x" class="btn-icon-close" aria-label="Fechar" type="button">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
         </div>
-        <form id="checklist-form" class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
-            <div class="form-group">
-                <label for="checklist-lead-select">Empresa / Lead *</label>
-                <select id="checklist-lead-select" class="form-control" required>
+        <form id="checklist-form" class="modal-body" style="display: flex; flex-direction: column; gap: 14px; padding: 20px;">
+            
+            <!-- Painel Inteligente: Leitura de PDF / Foto por Câmera / Webcam -->
+            <div id="insp-scanner-card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.06), rgba(16, 185, 129, 0.06)); border: 1.5px dashed rgba(99, 102, 241, 0.35); border-radius: 12px; padding: 14px 16px; transition: all 0.25s ease;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 18px;">⚡</span>
+                        <div>
+                            <span style="font-size: 13px; font-weight: 700; color: var(--text-primary); display: block;">Preenchimento Rápido por PDF ou Câmera</span>
+                            <span style="font-size: 11px; color: var(--text-muted);">Faça upload do laudo em PDF ou tire uma foto para extrair os dados na hora.</span>
+                        </div>
+                    </div>
+                    <span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.3); font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 99px;">
+                        IA Scanner
+                    </span>
+                </div>
+
+                <!-- Botões de Ação Rápida -->
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" id="btn-insp-upload-pdf" class="btn btn-sm btn-outline" style="flex: 1; min-width: 140px; font-size: 12px; font-weight: 700; padding: 8px 12px; gap: 6px; display: inline-flex; align-items: center; justify-content: center; border-color: #6366f1; color: #6366f1; background: rgba(99, 102, 241, 0.05); cursor: pointer;">
+                        📄 Upload de PDF / Laudo
+                    </button>
+                    <button type="button" id="btn-insp-use-camera" class="btn btn-sm btn-outline" style="flex: 1; min-width: 140px; font-size: 12px; font-weight: 700; padding: 8px 12px; gap: 6px; display: inline-flex; align-items: center; justify-content: center; border-color: #10b981; color: #10b981; background: rgba(16, 185, 129, 0.05); cursor: pointer;">
+                        📷 Tirar Foto (Câmera)
+                    </button>
+                    <button type="button" id="btn-insp-open-webcam" class="btn btn-sm btn-outline" style="font-size: 12px; font-weight: 600; padding: 8px 12px; gap: 4px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;" title="Usar webcam do notebook/computador">
+                        🎥 Webcam
+                    </button>
+                </div>
+
+                <!-- Inputs ocultos para arquivos -->
+                <input type="file" id="insp-file-input" accept=".pdf,image/*" style="display: none;">
+                <input type="file" id="insp-camera-input" accept="image/*" capture="environment" style="display: none;">
+
+                <!-- Loading do Scanner -->
+                <div id="insp-scanner-loading" style="display: none; align-items: center; gap: 10px; margin-top: 10px; padding: 10px 12px; background: rgba(99, 102, 241, 0.12); border-radius: 8px; border: 1px solid rgba(99, 102, 241, 0.25);">
+                    <div style="width: 18px; height: 18px; border: 2px solid #6366f1; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+                    <span id="insp-scanner-status-text" style="font-size: 12px; font-weight: 600; color: #4338ca;">Lendo documento e extraindo parâmetros técnicos do laudo...</span>
+                </div>
+
+                <!-- Notificação de Sucesso com Resumo -->
+                <div id="insp-scanner-success" style="display: none; margin-top: 10px; padding: 10px 14px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 8px; font-size: 12px; color: #065f46;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                        <span style="font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                            <span>✨</span> <span id="insp-scanner-summary">Dados do laudo lidos e preenchidos automaticamente!</span>
+                        </span>
+                        <button type="button" id="btn-insp-clear-scan" style="background: transparent; border: none; font-size: 11px; color: #047857; text-decoration: underline; cursor: pointer; font-weight: 600;">Desfazer</button>
+                    </div>
+                </div>
+
+                <!-- Área de Webcam ao Vivo (Desktop/Notebook) -->
+                <div id="insp-webcam-container" style="display: none; flex-direction: column; gap: 8px; margin-top: 12px; background: #0f172a; border-radius: 10px; padding: 10px; text-align: center; border: 1px solid #334155;">
+                    <div style="font-size: 11.5px; color: #94a3b8; margin-bottom: 2px;">Posicione o documento em frente à câmera e clique em "Capturar Foto":</div>
+                    <video id="insp-webcam-video" autoplay playsinline style="width: 100%; max-height: 220px; object-fit: contain; border-radius: 6px; background: #000;"></video>
+                    <canvas id="insp-webcam-canvas" style="display: none;"></canvas>
+                    <div style="display: flex; gap: 8px; justify-content: center;">
+                        <button type="button" id="btn-insp-webcam-capture" class="btn btn-sm btn-primary" style="font-size: 12px; padding: 7px 18px; font-weight: 700;">
+                            📸 Capturar Documento
+                        </button>
+                        <button type="button" id="btn-insp-webcam-close" class="btn btn-sm btn-outline" style="font-size: 12px; padding: 7px 12px; color: #e2e8f0; border-color: #475569;">
+                            Fechar Câmera
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 4px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <label for="checklist-lead-select" style="margin: 0; font-weight: 600; font-size: 13px;">Empresa / Cliente *</label>
+                    <button type="button" id="btn-insp-quick-add-lead" style="background: transparent; border: none; font-size: 11px; color: var(--primary); font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                        <span>➕</span> Nova Empresa
+                    </button>
+                </div>
+                <select id="checklist-lead-select" class="form-control" required style="font-size: 13px;">
                     <!-- Preenchido via JS -->
                 </select>
             </div>
 
-            <div class="grid-modal-2col">
-                <div class="form-group">
-                    <label for="checklist-service-select">Serviço Inspecionado *</label>
-                    <select id="checklist-service-select" class="form-control" required>
-                        <option value="Laudo de SPDA">⚡ Sistema de Proteção contra Descargas Atmosféricas (SPDA)</option>
-                        <option value="Laudo de Incêndio (AVCB)">🔥 Prevenção e Combate a Incêndio (AVCB)</option>
-                        <option value="Laudo de Instalações Elétricas (NR-10)">🔌 Instalações Elétricas (NR-10)</option>
-                        <option value="Laudo de Gás (GN/GLP)">🛢️ Instalações de Gás Combustível (GN/GLP)</option>
-                        <option value="Vistoria Predial Geral">🏢 Vistoria Predial Geral de Conservação</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="checklist-date-exec">Data da Execução *</label>
-                    <input type="date" id="checklist-date-exec" class="form-control" required>
-                </div>
+            <div class="form-group">
+                <label for="checklist-service-select">Serviço Inspecionado *</label>
+                <select id="checklist-service-select" class="form-control" required style="font-size: 13px;">
+                    <option value="Laudo de SPDA">⚡ Sistema de Proteção contra Descargas Atmosféricas (SPDA)</option>
+                    <option value="Laudo de Incêndio (AVCB)">🔥 Prevenção e Combate a Incêndio (AVCB)</option>
+                    <option value="Laudo de Instalações Elétricas (NR-10)">🔌 Instalações Elétricas (NR-10)</option>
+                    <option value="Laudo de Gás (GN/GLP)">🛢️ Instalações de Gás Combustível (GN/GLP)</option>
+                    <option value="Vistoria Predial Geral">🏢 Vistoria Predial Geral de Conservação</option>
+                </select>
             </div>
 
-            <div class="form-group">
-                <label for="checklist-date-expiry">Previsão de Vencimento *</label>
-                <input type="date" id="checklist-date-expiry" class="form-control" required>
+            <div class="grid-modal-2col" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group" style="margin: 0;">
+                    <label for="checklist-date-exec">Data da Execução *</label>
+                    <input type="date" id="checklist-date-exec" class="form-control" required style="font-size: 13px; height: 38px;">
+                </div>
+                <div class="form-group" style="margin: 0;">
+                    <label for="checklist-date-expiry">Previsão de Vencimento *</label>
+                    <input type="date" id="checklist-date-expiry" class="form-control" required style="font-size: 13px; height: 38px;">
+                </div>
             </div>
 
             <!-- Seção de Critérios do Checklist -->

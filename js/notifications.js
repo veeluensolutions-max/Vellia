@@ -65,21 +65,11 @@ export const Notifications = {
             });
 
             this.sendNativeNotification(leadTitle, leadMsg);
-            this.showNewLeadToast(detail);
         });
 
         // Ouvir criação de novos leads manuais/web
         window.addEventListener("vellia:leadAdded", (e) => {
-            const detail = e.detail || {};
-            if (detail.lead) {
-                this.showNewLeadToast({
-                    id: detail.lead.id,
-                    leadId: detail.lead.id,
-                    contact: detail.lead.contact,
-                    company: detail.lead.company,
-                    source: detail.lead.source || "Manual / Web"
-                });
-            }
+            // Notificações em tela desativadas para manter a interface limpa
         });
 
         // Ouvir notificacoes originadas pelos Agentes de IA
@@ -299,7 +289,6 @@ export const Notifications = {
                 this.sendNativeNotification(item.title, item.message);
                 sentNotifications.push(item.id);
                 updated = true;
-                this.showToastAlert(item.title, item.message, item.type);
             }
         };
 
@@ -451,96 +440,16 @@ export const Notifications = {
     },
 
     showToastAlert(title, message, type) {
-        let container = document.getElementById("toast-container");
-        if (!container) {
-            container = document.createElement("div");
-            container.id = "toast-container";
-            container.style.position = "fixed";
-            container.style.top = "20px";
-            container.style.right = "20px";
-            container.style.maxWidth = "calc(100vw - 40px)";
-            container.style.zIndex = "99999";
-            container.style.display = "flex";
-            container.style.flexDirection = "column";
-            container.style.gap = "10px";
-            container.style.pointerEvents = "none";
-            document.body.appendChild(container);
-        }
-
-        // Limita a no máximo 3 toasts simultâneos para não cobrir a tela
-        while (container.children.length >= 3) {
-            const oldest = container.firstElementChild;
-            if (oldest) oldest.remove();
-            else break;
-        }
-
-        const toast = document.createElement("div");
-        toast.style.pointerEvents = "auto";
-        toast.style.background = "rgba(15, 23, 42, 0.95)";
-        toast.style.backdropFilter = "blur(12px)";
-        toast.style.border = "1px solid rgba(255, 255, 255, 0.08)";
-        toast.style.borderRadius = "12px";
-        toast.style.padding = "14px 18px";
-        toast.style.minWidth = "280px";
-        toast.style.maxWidth = "360px";
-        toast.style.boxShadow = "0 10px 30px rgba(0, 0, 0, 0.25)";
-        toast.style.color = "#ffffff";
-        toast.style.display = "flex";
-        toast.style.alignItems = "flex-start";
-        toast.style.gap = "12px";
-        toast.style.transform = "translateX(120%)";
-        toast.style.transition = "transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease";
-        toast.style.opacity = "0";
-
-        let icon = "🔔";
-        let accentColor = "#6366f1";
-        if (type === "danger") {
-            accentColor = "#ef4444";
-            icon = "🚨";
-        } else if (type === "warning") {
-            accentColor = "#f59e0b";
-            icon = "⚠️";
-        } else if (type === "lead") {
-            accentColor = "#10b981";
-            icon = "🎉";
-        }
-
-        toast.style.borderLeft = `4px solid ${accentColor}`;
-
-        toast.innerHTML = `
-            <div style="font-size: 18px; line-height: 1; margin-top: 1px;">${icon}</div>
-            <div style="flex-grow: 1;">
-                <h5 style="margin: 0; font-size: 13px; font-weight: 700; color: #ffffff; text-align: left;">${title}</h5>
-                <p style="margin: 3px 0 0 0; font-size: 11.5px; color: #cbd5e1; line-height: 1.4; text-align: left;">${message}</p>
-            </div>
-            <button style="background: none; border: none; color: #94a3b8; font-size: 16px; cursor: pointer; padding: 0; line-height: 1; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94a3b8'">×</button>
-        `;
-
-        container.appendChild(toast);
-
-        requestAnimationFrame(() => {
-            toast.style.transform = "translateX(0)";
-            toast.style.opacity = "1";
-        });
-
-        const closeToast = () => {
-            toast.style.transform = "translateX(120%)";
-            toast.style.opacity = "0";
-            setTimeout(() => {
-                toast.remove();
-            }, 350);
-        };
-
-        toast.querySelector("button").onclick = closeToast;
-
-        setTimeout(closeToast, 5000);
+        // Desativado a pedido do usuário: toasts automáticos flutuantes na tela foram desligados
+        // As notificações continuam salvas e organizadas no sino do topo para não poluir o CRM.
+        const container = document.getElementById("toast-container");
+        if (container) container.remove();
     },
 
     addItem(item) {
         if (this.items.find(i => i.id === item.id)) return;
         this.items.unshift({ ...item, read: false });
         this.render();
-        this.showToastAlert(item.title, item.message, item.type);
     },
 
     checkFollowupReminders() {
@@ -659,66 +568,8 @@ export const Notifications = {
     },
 
     showNewLeadToast(detail = {}) {
-        this.playLeadChime();
-
+        // Desativado a pedido do usuário: toasts e popups na tela desativados para não poluir o CRM
         const oldToast = document.getElementById("vellia-new-lead-toast");
         if (oldToast) oldToast.remove();
-
-        const toast = document.createElement("div");
-        toast.id = "vellia-new-lead-toast";
-        toast.style.cssText = `
-            position: fixed; top: 20px; right: 20px; z-index: 99999;
-            background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.2); border-left: 4px solid #22c55e;
-            border-radius: 14px; padding: 14px 18px; min-width: 320px; max-width: 400px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.4); display: flex; flex-direction: column; gap: 8px;
-            animation: vellia-slide-in 0.4s cubic-bezier(0.4,0,0.2,1); font-family: 'Inter', sans-serif; color: #fff;
-        `;
-
-        const contactName = detail.contact || detail.company || "Novo Lead";
-        const companyName = detail.company || "Empresa";
-        const sourceName = detail.source || "Meta Ads / Web";
-        const leadId = detail.leadId || detail.id;
-
-        toast.innerHTML = `
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 18px;">🚨</span>
-                    <span style="font-size: 11px; font-weight: 800; background: rgba(34, 197, 94, 0.2); color: #4ade80; padding: 2px 8px; border-radius: 999px; text-transform: uppercase;">
-                        NOVO LEAD (${sourceName})
-                    </span>
-                </div>
-                <button type="button" class="btn-close-toast" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 16px;">&times;</button>
-            </div>
-            <div>
-                <div style="font-weight: 800; font-size: 14px; color: #f8fafc; margin-bottom: 2px;">${companyName}</div>
-                <div style="font-size: 12px; color: #cbd5e1;">Contato: ${contactName}</div>
-            </div>
-            <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
-                <button type="button" class="btn-attend-lead-action" style="background: linear-gradient(135deg, #22c55e, #16a34a); border: none; color: #fff; font-size: 12px; font-weight: 800; padding: 6px 14px; border-radius: 8px; cursor: pointer;">
-                    ⚡ Atender Lead Agora
-                </button>
-            </div>
-        `;
-
-        document.body.appendChild(toast);
-
-        const btnClose = toast.querySelector(".btn-close-toast");
-        if (btnClose) btnClose.onclick = () => toast.remove();
-
-        const btnAttend = toast.querySelector(".btn-attend-lead-action");
-        if (btnAttend) {
-            btnAttend.onclick = () => {
-                toast.remove();
-                if (leadId && window.CRM) {
-                    window.location.hash = "#crm";
-                    setTimeout(() => window.CRM.openLeadDrawer(leadId), 150);
-                }
-            };
-        }
-
-        setTimeout(() => {
-            if (toast.parentElement) toast.remove();
-        }, 10000);
     }
 };

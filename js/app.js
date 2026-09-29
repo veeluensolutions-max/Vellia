@@ -89,42 +89,16 @@ function checkLockout() {
 }
 
 function resetInactivityTimer() {
-    if (inactivityModalOpen) return;
-
+    // Timer de inatividade desativado permanentemente para não interromper o usuário
     if (inactivityTimer) clearTimeout(inactivityTimer);
     if (inactivityCountdownInterval) clearInterval(inactivityCountdownInterval);
-
-    inactivityTimer = setTimeout(() => {
-        showInactivityWarning();
-    }, INACTIVITY_WARN_TIME);
+    inactivityTimer = null;
+    inactivityCountdownInterval = null;
 }
 
 function showInactivityWarning() {
-    inactivityModalOpen = true;
-    
-    // Abrir modal na tela
-    const overlay = document.getElementById("inactivity-modal-overlay");
-    const modal = document.getElementById("inactivity-modal");
-    const countdownEl = document.getElementById("inactivity-countdown");
-    
-    if (overlay && modal) {
-        overlay.style.display = "block";
-        modal.classList.add("open");
-    }
-
-    let timeLeft = COUNTDOWN_DURATION;
-    if (countdownEl) countdownEl.textContent = timeLeft;
-
-    inactivityCountdownInterval = setInterval(() => {
-        timeLeft--;
-        if (countdownEl) countdownEl.textContent = timeLeft;
-
-        if (timeLeft <= 0) {
-            clearInterval(inactivityCountdownInterval);
-            closeInactivityModal();
-            logoutDueToInactivity();
-        }
-    }, 1000);
+    // Desativado permanentemente
+    return;
 }
 
 function closeInactivityModal() {
@@ -138,30 +112,20 @@ function closeInactivityModal() {
 }
 
 function logoutDueToInactivity() {
-    localStorage.setItem("login_reason", "inactivity");
-    Auth.logout();
+    // Desativado permanentemente
+    return;
 }
 
 function startInactivityTracking() {
+    // Desativado permanentemente: não rastreia inatividade nem desloga usuário
     inactivityModalOpen = false;
     closeInactivityModal();
-    resetInactivityTimer();
-    
-    const events = ["mousemove", "mousedown", "keypress", "scroll", "touchstart"];
-    events.forEach(event => {
-        window.addEventListener(event, resetInactivityTimer);
-    });
 }
 
 function stopInactivityTracking() {
     if (inactivityTimer) clearTimeout(inactivityTimer);
     if (inactivityCountdownInterval) clearInterval(inactivityCountdownInterval);
     closeInactivityModal();
-    
-    const events = ["mousemove", "mousedown", "keypress", "scroll", "touchstart"];
-    events.forEach(event => {
-        window.removeEventListener(event, resetInactivityTimer);
-    });
 }
 
 // Heartbeat de Presença Online em Tempo Real

@@ -5510,6 +5510,50 @@ input:checked + .switch-slider::before {
     box-shadow: 0 2px 8px var(--primary-glow);
 }
 
+/* Pílulas de Seleção de Empresa na Agenda */
+.calendar-company-pill {
+    padding: 7px 16px;
+    font-size: 12.5px;
+    font-weight: 700;
+    border-radius: 10px;
+    border: 1.5px solid var(--border-color);
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    user-select: none;
+}
+
+.calendar-company-pill:hover {
+    border-color: var(--primary-light);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+}
+
+.calendar-company-pill.active-veeluen {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+    border-color: #3b82f6 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
+}
+
+.calendar-company-pill.active-excelencia {
+    background: linear-gradient(135deg, #16a34a, #15803d) !important;
+    border-color: #22c55e !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35) !important;
+}
+
+.calendar-company-pill.active-all {
+    background: linear-gradient(135deg, #6366f1, #4f46e5) !important;
+    border-color: #818cf8 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35) !important;
+}
+
 .calendar-event-card-rich:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);

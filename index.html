@@ -4875,6 +4875,16 @@
         </div>
         <form id="calendar-event-form" class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
             <div class="form-group">
+                <label for="cal-event-workspace" style="font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                    <span>🏢</span> Empresa / Unidade Comercial *
+                </label>
+                <select id="cal-event-workspace" class="form-control" required style="border-left: 4px solid var(--primary); font-weight: 600;">
+                    <option value="Veeluen Solutions">🏢 Veeluen Solutions</option>
+                    <option value="Excelência Ambiental">🌿 Excelência Ambiental</option>
+                </select>
+            </div>
+
+            <div class="form-group">
                 <label for="cal-event-title">Título do Compromisso *</label>
                 <input type="text" id="cal-event-title" class="form-control" required placeholder="Ex: Vistoria Técnica de SPDA">
             </div>

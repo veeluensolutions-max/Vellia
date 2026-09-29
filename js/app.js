@@ -222,6 +222,10 @@ window.switchCompany = function(companyName, shouldReload = false) {
         }
     });
 
+    if (window.Calendar && typeof window.Calendar.setCompany === "function") {
+        window.Calendar.setCompany(companyName);
+    }
+
     if (shouldReload) {
         window.location.reload();
     }

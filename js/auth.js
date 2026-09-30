@@ -45,14 +45,14 @@ export const Auth = {
             Store.saveUsers(users);
         }
 
-        // Criar sessão (sem persistir a senha na sessão por segurança)
+        const isMika = user.email && (user.email.toLowerCase().trim() === "mika@vellia.com" || (user.name && user.name.toLowerCase().includes("mika")));
         const sessionUser = {
             id: user.id,
             name: user.name,
             email: user.email,
             role: user.role,
             avatar: user.avatar,
-            companyAccess: user.companyAccess || "Ambas"
+            companyAccess: user.companyAccess || (isMika ? "Excelência Ambiental" : "Ambas")
         };
 
         localStorage.setItem("comercial_session", JSON.stringify(sessionUser));

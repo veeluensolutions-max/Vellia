@@ -178,9 +178,18 @@ async function syncFromSupabase() {
         const userMap = new Map();
         
         // Adiciona locais primeiro
-        localUsers.forEach(u => userMap.set(u.email.toLowerCase(), u));
-        // Remotos sobrescrevem (sincronização do banco para o local)
-        remoteUsers.forEach(u => userMap.set(u.email.toLowerCase(), u));
+        localUsers.forEach(u => {
+            if (u && u.email) userMap.set(u.email.toLowerCase().trim(), u);
+        });
+        // Remotos mesclam preservando atributos locais (como companyAccess) e fixando Excelência Ambiental para Mika
+        remoteUsers.forEach(u => {
+            if (!u || !u.email) return;
+            const emailKey = u.email.toLowerCase().trim();
+            const existing = userMap.get(emailKey) || {};
+            const isMika = emailKey === 'mika@vellia.com' || (u.name && u.name.toLowerCase().includes('mika'));
+            const companyAccess = u.companyAccess || existing.companyAccess || (isMika ? 'Excelência Ambiental' : 'Ambas');
+            userMap.set(emailKey, { ...existing, ...u, companyAccess });
+        });
         
         const mergedUsers = Array.from(userMap.values());
         localStorage.setItem("comercial_users", JSON.stringify(mergedUsers));
@@ -546,9 +555,21 @@ export const Store = {
     addLead(lead, userEmail = "sistema@vellia.com") {
         const leads = this.getAllLeadsRaw();
         const nowIso = new Date().toISOString();
+        let targetWorkspace = lead.workspace;
+        if (!targetWorkspace) {
+            const isMika = userEmail === "mika@vellia.com" || (typeof Auth !== "undefined" && Auth.getCurrentUser && Auth.getCurrentUser()?.email === "mika@vellia.com");
+            const curAccess = (typeof Auth !== "undefined" && Auth.getCurrentUser) ? Auth.getCurrentUser()?.companyAccess : null;
+            if (curAccess && curAccess !== "Ambas") {
+                targetWorkspace = curAccess;
+            } else if (isMika) {
+                targetWorkspace = "Excelência Ambiental";
+            } else {
+                targetWorkspace = localStorage.getItem('activeCompany') || 'Veeluen Solutions';
+            }
+        }
         const newLead = {
             id: `lead_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-            workspace: localStorage.getItem('activeCompany') || 'Veeluen Solutions',
+            workspace: targetWorkspace,
             cnpj: lead.cnpj || "",
             company: lead.company,
             contact: lead.contact,
@@ -781,7 +802,12 @@ export const Store = {
 
     // PROPOSTAS
     getProposals() {
-        return JSON.parse(localStorage.getItem("comercial_proposals")) || [];
+        const all = this.getProposalsRaw();
+        const activeCompany = localStorage.getItem("activeCompany") || "Veeluen Solutions";
+        return all.filter(p => {
+            const w = p.workspace || "Veeluen Solutions";
+            return w === activeCompany;
+        });
     },
 
     getProposalsRaw() {
@@ -794,9 +820,22 @@ export const Store = {
 
     addProposal(data) {
         const proposals = this.getProposalsRaw();
+        const creator = data.createdBy || "sistema@vellia.com";
+        const isMika = creator === "mika@vellia.com" || (typeof Auth !== "undefined" && Auth.getCurrentUser && Auth.getCurrentUser()?.email === "mika@vellia.com");
+        const curAccess = (typeof Auth !== "undefined" && Auth.getCurrentUser) ? Auth.getCurrentUser()?.companyAccess : null;
+        let ws = data.workspace;
+        if (!ws) {
+            if (curAccess && curAccess !== "Ambas") {
+                ws = curAccess;
+            } else if (isMika) {
+                ws = "Excelência Ambiental";
+            } else {
+                ws = localStorage.getItem('activeCompany') || 'Veeluen Solutions';
+            }
+        }
         const newProposal = {
             id: `prop_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-            workspace: localStorage.getItem('activeCompany') || 'Veeluen Solutions',
+            workspace: ws,
             leadId: data.leadId || "",
             company: data.company || "",
             contact: data.contact || "",

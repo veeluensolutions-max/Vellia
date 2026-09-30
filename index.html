@@ -150,7 +150,7 @@
                     <div class="workspace-switcher-card">
                         <span class="workspace-switcher-label">Empresa Atual</span>
                         <div class="workspace-select-wrapper">
-                            <select id="workspace-select" class="workspace-select-control" onchange="window.switchCompany(this.value)">
+                            <select id="workspace-select" class="workspace-select-control" onchange="window.switchCompany(this.value, true)">
                                 <option value="Veeluen Solutions">Veeluen Solutions</option>
                                 <option value="Excelência Ambiental">Excelência Ambiental</option>
                             </select>
@@ -725,64 +725,9 @@
 
                     </div>
 
-                    <!-- 🟦 Painel de Performance Meta Ads -->
-                    <div id="meta-ads-performance-panel" class="vellia-card" style="margin-top: 24px;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
-                            <div style="display: flex; align-items: center; gap: 12px;">
-                                <div style="width: 40px; height: 40px; border-radius: 10px; background: #1877F2; display: flex; align-items: center; justify-content: center;">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                                </div>
-                                <div>
-                                    <h4 style="font-weight: 800; font-size: 15px; color: var(--text-primary); margin: 0 0 2px 0;">Performance Meta Ads</h4>
-                                    <span style="font-size: 11px; color: var(--text-muted);">Métricas de ROI e Conversão de Campanhas</span>
-                                </div>
-                            </div>
-                            <div style="display: flex; gap: 8px; align-items: center;">
-                                <span id="meta-ads-last-update" style="font-size: 11px; color: var(--text-muted);"></span>
-                                <button id="btn-refresh-meta-stats" onclick="window.refreshMetaAdsPanel()" class="btn btn-outline" style="padding: 6px 12px; font-size: 12px; display: flex; align-items: center; gap: 5px;">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-                                    Atualizar
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- KPIs Meta Ads -->
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; margin-bottom: 20px;">
-                            <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; text-align: center;">
-                                <div style="font-size: 22px; font-weight: 800; color: #1877F2; margin-bottom: 4px;" id="meta-kpi-total-leads">0</div>
-                                <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Leads Captados</div>
-                            </div>
-                            <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; text-align: center;">
-                                <div style="font-size: 22px; font-weight: 800; color: #10b981; margin-bottom: 4px;" id="meta-kpi-converted">0</div>
-                                <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Clientes Fechados</div>
-                            </div>
-                            <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; text-align: center;">
-                                <div style="font-size: 22px; font-weight: 800; color: #8b5cf6; margin-bottom: 4px;" id="meta-kpi-conv-rate">0%</div>
-                                <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Taxa de Conversão</div>
-                            </div>
-                            <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; text-align: center;">
-                                <div style="font-size: 18px; font-weight: 800; color: #f59e0b; margin-bottom: 4px;" id="meta-kpi-revenue">R$ 0</div>
-                                <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Receita Gerada</div>
-                            </div>
-                        </div>
-
-                        <!-- Funil Meta Ads + Gráfico de barras -->
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                            <!-- Funil visual -->
-                            <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px;">
-                                <h5 style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin: 0 0 14px 0;">🔻 Funil Meta Ads → Venda</h5>
-                                <div id="meta-funnel-bars" style="display: flex; flex-direction: column; gap: 10px;">
-                                    <!-- Preenchido via JS -->
-                                </div>
-                            </div>
-                            <!-- Gráfico de segmentos captados -->
-                            <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px;">
-                                <h5 style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin: 0 0 14px 0;">📊 Leads Meta por Segmento</h5>
-                                <div style="position: relative; height: 180px;">
-                                    <canvas id="chart-meta-segments"></canvas>
-                                </div>
-                            </div>
-                        </div>
+                    <!-- ⏱️ Painel de Atividades & Tarefas em Tempo Real (Vendedores e ADM) -->
+                    <div id="live-tasks-monitor-panel" class="vellia-card" style="margin-top: 24px; position: relative; overflow: hidden;">
+                        <!-- Preenchido dinamicamente via Dashboard.renderLiveTasksMonitor() -->
                     </div>
 
                     <!-- Dashboard do Vendedor (Operacional) -->

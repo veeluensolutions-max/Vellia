@@ -1,6 +1,7 @@
 import { Store } from "./store.js";
 import { Auth } from "./auth.js";
 import { PostSales } from "./post-sales.js";
+import { Toast } from "./toast.js";
 
 const charts = {};
 
@@ -50,9 +51,15 @@ export const Dashboard = {
         this.bindEvents();
         this.setupAdminTaskManager();
 
-        // Atualizar painel Meta Ads automaticamente quando chegar lead novo via webhook
-        window.addEventListener("vellia:leadAdded", () => {
-            this.renderMetaAdsPanel();
+        this.renderLiveTasksMonitor();
+        if (!this._liveTimerInterval) {
+            this._liveTimerInterval = setInterval(() => {
+                this.updateLiveTimers();
+            }, 1000);
+        }
+
+        window.addEventListener("vellia:liveTasksChanged", () => {
+            this.renderLiveTasksMonitor();
         });
 
         // Atualização automática em tempo real do ranking e dos KPIs
@@ -198,7 +205,7 @@ export const Dashboard = {
             this.renderVendorRanking(filteredProposals);
             this.renderRecentActivity(filteredLeads, filteredProposals);
             this.renderTasksWeekChart();
-            this.renderMetaAdsPanel();
+            this.renderLiveTasksMonitor();
             this.renderChannelRoiMatrix(filteredLeads, filteredProposals);
             this.renderGoalsCommissionPanel();
         }
@@ -1753,161 +1760,662 @@ export const Dashboard = {
     },
 
     // ===========================================================================
-    // PAINEL META ADS PERFORMANCE
+    // REGISTRO & MONITOR DE ATIVIDADES EM TEMPO REAL (VENDEDORES & ADM)
     // ===========================================================================
-    renderMetaAdsPanel() {
-        const allLeads = Store.getLeads();
+    getLiveActivities() {
+        try {
+            return JSON.parse(localStorage.getItem("vellia_live_activities") || "[]");
+        } catch (e) {
+            return [];
+        }
+    },
 
-        // Todos os leads capturados pelo Meta Ads
-        const metaLeads = allLeads.filter(l =>
-            l.source === "Meta Ads" || l.source === "Facebook" || l.source === "Instagram"
-        );
+    saveLiveActivities(list) {
+        localStorage.setItem("vellia_live_activities", JSON.stringify(list));
+        window.dispatchEvent(new CustomEvent("vellia:liveTasksChanged"));
+    },
 
-        const totalLeads = metaLeads.length;
-        const converted = metaLeads.filter(l => l.stage === "Cliente Fechado").length;
-        const convRate = totalLeads > 0 ? Math.round((converted / totalLeads) * 100) : 0;
-
-        // Receita gerada pelos leads Meta que viraram clientes
-        const proposals = Store.getProposals();
-        const metaRevenue = proposals
-            .filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status) && metaLeads.some(l => l.id === p.leadId))
-            .reduce((sum, p) => sum + (p.value || 0), 0);
-
-        const fmt = v => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
-
-        // Preencher KPIs
-        const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-        set("meta-kpi-total-leads", totalLeads);
-        set("meta-kpi-converted", converted);
-        set("meta-kpi-conv-rate", convRate + "%");
-        set("meta-kpi-revenue", fmt(metaRevenue));
-
-        // Timestamp da última atualização
-        const lastUpdate = document.getElementById("meta-ads-last-update");
-        if (lastUpdate) {
-            lastUpdate.textContent = "Atualizado: " + new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    startLiveActivity(sellerEmail, sellerName, activityText, durationMinutes) {
+        if (!activityText || !activityText.trim()) {
+            Toast.show("Por favor, informe a atividade que será executada.", "warning");
+            return;
         }
 
-        // Funil de etapas
-        const stages = [
-            { label: "Leads Captados",    color: "#1877F2" },
-            { label: "Lead Gerado",        color: "#6366f1" },
-            { label: "Lead Qualificado",   color: "#8b5cf6" },
-            { label: "Proposta Enviada",   color: "#f59e0b" },
-            { label: "Negociação",         color: "#06b6d4" },
-            { label: "Cliente Fechado",    color: "#10b981" },
-        ];
+        const dur = parseInt(durationMinutes) || 30;
+        const now = new Date();
+        const expectedEnd = new Date(now.getTime() + dur * 60000);
+        const workspace = localStorage.getItem("activeCompany") || "Veeluen Solutions";
 
-        const stageCounts = [
-            totalLeads,
-            metaLeads.filter(l => l.stage === "Lead Gerado").length,
-            metaLeads.filter(l => l.stage === "Lead Qualificado").length,
-            metaLeads.filter(l => l.stage === "Proposta Enviada").length,
-            metaLeads.filter(l => l.stage === "Negociação").length,
-            converted,
-        ];
+        const activities = this.getLiveActivities();
 
-        const funnelContainer = document.getElementById("meta-funnel-bars");
-        if (funnelContainer) {
-            funnelContainer.innerHTML = "";
-            const maxCount = stageCounts[0] || 1;
-            stages.forEach((stage, i) => {
-                const count = stageCounts[i];
-                const pct = Math.round((count / maxCount) * 100);
-                const pctOfTotal = totalLeads > 0 ? Math.round((count / totalLeads) * 100) : 0;
-
-                const row = document.createElement("div");
-                row.style.cssText = "display: flex; align-items: center; gap: 10px;";
-
-                const labelEl = document.createElement("span");
-                labelEl.style.cssText = "font-size: 11px; color: var(--text-muted); width: 130px; flex-shrink: 0; font-weight: 600;";
-                labelEl.textContent = stage.label;
-
-                const barWrap = document.createElement("div");
-                barWrap.style.cssText = "flex: 1; background: var(--bg-app); border-radius: 4px; height: 8px; overflow: hidden;";
-
-                const bar = document.createElement("div");
-                bar.style.cssText = `height: 100%; width: 0%; background: ${stage.color}; border-radius: 4px; transition: width 0.9s cubic-bezier(0.4,0,0.2,1);`;
-                barWrap.appendChild(bar);
-
-                const countEl = document.createElement("span");
-                countEl.style.cssText = "font-size: 11px; font-weight: 800; color: var(--text-primary); min-width: 30px; text-align: right;";
-                countEl.textContent = count;
-
-                const pctEl = document.createElement("span");
-                pctEl.style.cssText = "font-size: 10px; color: var(--text-muted); min-width: 32px;";
-                pctEl.textContent = pctOfTotal + "%";
-
-                row.appendChild(labelEl);
-                row.appendChild(barWrap);
-                row.appendChild(countEl);
-                row.appendChild(pctEl);
-                funnelContainer.appendChild(row);
-
-                // Animar barra após render
-                setTimeout(() => { bar.style.width = pct + "%"; }, 100 + i * 60);
-            });
-        }
-
-        // Gráfico doughnut: leads Meta por segmento
-        const segMap = {};
-        metaLeads.forEach(l => {
-            const seg = l.segment || "Outros";
-            segMap[seg] = (segMap[seg] || 0) + 1;
+        // Encerra qualquer atividade anterior em andamento para este vendedor
+        activities.forEach(a => {
+            if (a.sellerEmail === sellerEmail && a.status === "in_progress") {
+                a.status = "completed";
+                a.completedAt = now.toISOString();
+                a.actualMinutes = Math.max(1, Math.round((now.getTime() - new Date(a.startedAt).getTime()) / 60000));
+            }
         });
-        const segLabels = Object.keys(segMap);
-        const segData   = Object.values(segMap);
 
-        const canvas = document.getElementById("chart-meta-segments");
-        if (canvas) {
-            if (charts.metaSegments) charts.metaSegments.destroy();
-            if (segLabels.length === 0) {
-                canvas.style.display = "none";
-                const parent = canvas.parentElement;
-                if (parent && !parent.querySelector(".meta-empty-note")) {
-                    const note = document.createElement("p");
-                    note.className = "meta-empty-note";
-                    note.style.cssText = "text-align: center; color: var(--text-muted); font-size: 12px; margin-top: 60px;";
-                    note.textContent = "Nenhum lead Meta Ads registrado ainda.";
-                    parent.appendChild(note);
+        const newAct = {
+            id: `act_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+            sellerEmail,
+            sellerName,
+            workspace,
+            activity: activityText.trim(),
+            durationMinutes: dur,
+            startedAt: now.toISOString(),
+            expectedEndAt: expectedEnd.toISOString(),
+            status: "in_progress",
+            completedAt: null,
+            actualMinutes: null,
+            date: now.toLocaleDateString("pt-BR")
+        };
+
+        activities.unshift(newAct);
+        this.saveLiveActivities(activities);
+
+        // Sincronizar também no Store/Supabase em comercial_tasks para visibilidade entre computadores
+        try {
+            const currentTasks = Store.getTasks(sellerEmail) || [];
+            currentTasks.unshift({
+                id: newAct.id,
+                owner: sellerEmail,
+                text: `[ATIVIDADE_EXTRA] ${newAct.activity} (${dur} min)`,
+                done: false,
+                date: newAct.date,
+                priority: "high",
+                assignedBy: Auth.getCurrentUser()?.email || sellerEmail,
+                workspace
+            });
+            Store.saveTasks(sellerEmail, currentTasks);
+            Store.addLog(sellerEmail, "LIVE_TASK_STARTED", `Iniciou atividade extra: "${newAct.activity}" (Duração prevista: ${dur}min)`);
+        } catch (e) {}
+
+        Toast.show(`Atividade extra iniciada com sucesso! (${dur} min)`, "success");
+        this.renderLiveTasksMonitor();
+    },
+
+    finishLiveActivity(activityId) {
+        const activities = this.getLiveActivities();
+        const act = activities.find(a => a.id === activityId);
+        if (!act) return;
+
+        const now = new Date();
+        act.status = "completed";
+        act.completedAt = now.toISOString();
+        act.actualMinutes = Math.max(1, Math.round((now.getTime() - new Date(act.startedAt).getTime()) / 60000));
+
+        this.saveLiveActivities(activities);
+
+        try {
+            const currentTasks = Store.getTasks(act.sellerEmail) || [];
+            const t = currentTasks.find(x => x.id === activityId);
+            if (t) {
+                t.done = true;
+                t.priority = "completed";
+                t.text = `[ATIVIDADE_EXTRA] ${act.activity} (Concluída em ${act.actualMinutes} min)`;
+                Store.saveTasks(act.sellerEmail, currentTasks);
+            }
+            Store.addLog(act.sellerEmail, "LIVE_TASK_FINISHED", `Concluiu atividade extra: "${act.activity}" (Tempo real: ${act.actualMinutes}min)`);
+        } catch (e) {}
+
+        Toast.show(`Atividade concluída com sucesso! Tempo dedicado: ${act.actualMinutes} min.`, "success");
+        this.renderLiveTasksMonitor();
+    },
+
+    cancelLiveActivity(activityId) {
+        if (!confirm("Deseja realmente cancelar esta atividade extra em execução?")) return;
+        const activities = this.getLiveActivities();
+        const act = activities.find(a => a.id === activityId);
+        if (act) {
+            act.status = "cancelled";
+            act.completedAt = new Date().toISOString();
+            this.saveLiveActivities(activities);
+        }
+        Toast.show("Atividade cancelada.", "info");
+        this.renderLiveTasksMonitor();
+    },
+
+    renderLiveTasksMonitor() {
+        const container = document.getElementById("live-tasks-monitor-panel");
+        if (!container) return;
+
+        const user = Auth.getCurrentUser();
+        if (!user) return;
+
+        const isAdmin = user.role === "admin" || user.role === "manager";
+        const todayStr = new Date().toLocaleDateString("pt-BR");
+        const allActivities = this.getLiveActivities();
+        const activeCompany = localStorage.getItem("activeCompany") || "Veeluen Solutions";
+
+        // Filtrar atividades pela empresa ativa e pelo dia de hoje
+        const todayActivities = allActivities.filter(a => {
+            const matchesComp = !a.workspace || a.workspace === activeCompany;
+            return matchesComp && (a.date === todayStr || a.status === "in_progress");
+        });
+
+        // Pegar usuários vendedores da empresa
+        const allUsers = Store.getUsers ? Store.getUsers() : [];
+        const sellers = allUsers.filter(u => {
+            if (u.role !== "seller" && u.role !== "manager") return false;
+            if (u.companyAccess && u.companyAccess !== "Ambas" && u.companyAccess !== activeCompany) return false;
+            return true;
+        });
+
+        // Injetar estilos de animação CSS se ainda não existirem
+        if (!document.getElementById("live-tasks-anim-styles")) {
+            const styleEl = document.createElement("style");
+            styleEl.id = "live-tasks-anim-styles";
+            styleEl.textContent = `
+                @keyframes livePulseDot {
+                    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+                    70% { transform: scale(1.1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+                    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
                 }
-            } else {
-                canvas.style.display = "block";
-                const parent = canvas.parentElement;
-                const note = parent ? parent.querySelector(".meta-empty-note") : null;
-                if (note) note.remove();
+                .live-pulse-indicator {
+                    width: 10px; height: 10px; border-radius: 50%; background: #10b981;
+                    display: inline-block; animation: livePulseDot 1.8s infinite;
+                }
+                .quick-task-pill {
+                    font-size: 11.5px; font-weight: 600; padding: 5px 12px; border-radius: 20px;
+                    border: 1px solid var(--border-color); background: var(--bg-body);
+                    color: var(--text-secondary); cursor: pointer; transition: all 0.2s ease;
+                }
+                .quick-task-pill:hover {
+                    border-color: var(--primary); color: var(--primary); background: rgba(99,102,241,0.08);
+                }
+                .duration-btn {
+                    padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border-color);
+                    background: var(--bg-body); font-size: 12px; font-weight: 700;
+                    color: var(--text-primary); cursor: pointer; transition: all 0.2s ease;
+                }
+                .duration-btn.active {
+                    background: var(--primary); color: #fff; border-color: var(--primary);
+                    box-shadow: 0 2px 8px rgba(99,102,241,0.3);
+                }
+            `;
+            document.head.appendChild(styleEl);
+        }
 
-                const palette = ["#1877F2","#6366f1","#8b5cf6","#10b981","#f59e0b","#ef4444","#06b6d4"];
-                charts.metaSegments = new Chart(canvas, {
-                    type: "doughnut",
-                    data: {
-                        labels: segLabels,
-                        datasets: [{
-                            data: segData,
-                            backgroundColor: palette.slice(0, segLabels.length),
-                            borderWidth: 0,
-                            hoverOffset: 4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        cutout: "65%",
-                        plugins: {
-                            legend: {
-                                position: "right",
-                                labels: {
-                                    color: "#64748b",
-                                    font: { family: "Inter, sans-serif", size: 10 },
-                                    usePointStyle: true,
-                                    boxWidth: 8
-                                }
+        if (isAdmin) {
+            // ================================================================
+            // VISÃO DO ADMINISTRADOR / GESTOR
+            // ================================================================
+            const inProgressTotal = todayActivities.filter(a => a.status === "in_progress").length;
+            const completedTotal = todayActivities.filter(a => a.status === "completed").length;
+
+            container.innerHTML = `
+                <!-- Cabeçalho do Painel ADM -->
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(16,185,129,0.25);">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        </div>
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <h4 style="font-weight: 800; font-size: 16px; color: var(--text-primary); margin: 0;">Atividades da Equipe em Tempo Real</h4>
+                                <span class="live-pulse-indicator" title="Monitoramento ao vivo"></span>
+                                <span style="font-size: 11px; font-weight: 800; color: #10b981; background: rgba(16,185,129,0.12); padding: 2px 8px; border-radius: 12px;">AO VIVO</span>
+                            </div>
+                            <span style="font-size: 12px; color: var(--text-muted);">Acompanhamento ao vivo das atividades extras em execução pelos vendedores naquele momento.</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <div style="display: flex; gap: 6px;">
+                            <span style="font-size: 11.5px; background: rgba(16,185,129,0.12); color: #10b981; padding: 5px 10px; border-radius: 6px; font-weight: 700;">
+                                🔥 ${inProgressTotal} em andamento agora
+                            </span>
+                            <span style="font-size: 11.5px; background: var(--bg-body); border: 1px solid var(--border-color); color: var(--text-muted); padding: 5px 10px; border-radius: 6px; font-weight: 600;">
+                                ✅ ${completedTotal} concluídas hoje
+                            </span>
+                        </div>
+                        <button id="btn-refresh-live-tasks" class="btn btn-outline" style="padding: 6px 12px; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                            Atualizar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Grid de Vendedores: Status Ao Vivo (O que estão fazendo agora?) -->
+                <div style="margin-bottom: 24px;">
+                    <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                        <span>👥 Status Atual dos Vendedores (${sellers.length})</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px;">
+                        ${sellers.map(s => {
+                            const activeAct = todayActivities.find(a => a.sellerEmail === s.email && a.status === "in_progress");
+                            const isBusy = !!activeAct;
+
+                            if (isBusy) {
+                                const startTime = new Date(activeAct.startedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+                                return `
+                                <div style="background: linear-gradient(135deg, rgba(16,185,129,0.09) 0%, rgba(5,150,105,0.03) 100%); border: 1.5px solid rgba(16,185,129,0.4); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 14px rgba(16,185,129,0.08); transition: transform 0.2s ease;">
+                                    <div>
+                                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <div style="width: 32px; height: 32px; border-radius: 50%; background: #10b981; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px;">
+                                                    ${(s.name || s.email).substring(0, 2).toUpperCase()}
+                                                </div>
+                                                <div>
+                                                    <div style="font-weight: 800; font-size: 13.5px; color: var(--text-primary);">${s.name || s.email}</div>
+                                                    <div style="font-size: 11px; color: var(--text-muted);">${s.email}</div>
+                                                </div>
+                                            </div>
+                                            <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 800; color: #059669; background: rgba(16,185,129,0.15); padding: 3px 8px; border-radius: 20px;">
+                                                <span class="live-pulse-indicator"></span> EXECUTANDO AGORA
+                                            </span>
+                                        </div>
+
+                                        <div style="background: var(--bg-surface); border: 1px solid rgba(16,185,129,0.25); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px;">
+                                            <div style="font-size: 11px; text-transform: uppercase; color: #059669; font-weight: 800; margin-bottom: 2px;">Atividade em Andamento:</div>
+                                            <div style="font-weight: 700; font-size: 13px; color: var(--text-primary); line-height: 1.4;">${activeAct.activity}</div>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">
+                                            <span>Iniciado às <strong>${startTime}</strong></span>
+                                            <span>Previsão: <strong>${activeAct.durationMinutes} min</strong></span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; font-weight: 700;">
+                                            <span style="color: var(--text-primary);">
+                                                ⏱️ <span class="live-timer-elapsed" data-started="${activeAct.startedAt}" data-duration="${activeAct.durationMinutes}">Calculando...</span>
+                                            </span>
+                                            <button class="btn-admin-finish-task" data-id="${activeAct.id}" style="border: none; background: rgba(16,185,129,0.15); color: #059669; font-weight: 700; font-size: 11px; padding: 3px 8px; border-radius: 6px; cursor: pointer;">
+                                                Concluir
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                `;
+                            } else {
+                                // Vendedor livre
+                                const lastFinished = todayActivities.filter(a => a.sellerEmail === s.email && a.status === "completed")[0];
+                                return `
+                                <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; opacity: 0.9;">
+                                    <div>
+                                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--bg-surface); border: 1px solid var(--border-color); color: var(--text-muted); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px;">
+                                                    ${(s.name || s.email).substring(0, 2).toUpperCase()}
+                                                </div>
+                                                <div>
+                                                    <div style="font-weight: 700; font-size: 13.5px; color: var(--text-primary);">${s.name || s.email}</div>
+                                                    <div style="font-size: 11px; color: var(--text-muted);">${s.email}</div>
+                                                </div>
+                                            </div>
+                                            <span style="font-size: 11px; color: var(--text-muted); background: var(--bg-surface); border: 1px solid var(--border-color); padding: 2px 7px; border-radius: 12px;">
+                                                Disponível
+                                            </span>
+                                        </div>
+                                        <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 6px;">
+                                            ${lastFinished ? `Última: "${lastFinished.activity}" (${lastFinished.actualMinutes || lastFinished.durationMinutes} min)` : "Nenhuma atividade extra registrada hoje."}
+                                        </div>
+                                    </div>
+                                    <div style="margin-top: 10px; display: flex; justify-content: flex-end;">
+                                        <button class="btn-admin-assign-quick" data-email="${s.email}" data-name="${s.name}" style="background: none; border: 1px dashed var(--border-color); padding: 4px 10px; border-radius: 6px; font-size: 11px; color: var(--primary); cursor: pointer; font-weight: 600;">
+                                            + Atribuir Atividade
+                                        </button>
+                                    </div>
+                                </div>
+                                `;
                             }
-                        }
+                        }).join("")}
+                    </div>
+                </div>
+
+                <!-- Tabela de Atividades Extras Registradas Hoje -->
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                        <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;">
+                            📋 Histórico de Atividades Extras do Dia (${todayActivities.length})
+                        </span>
+                    </div>
+
+                    ${todayActivities.length === 0 ? `
+                        <div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 13px; background: var(--bg-body); border-radius: 10px; border: 1px dashed var(--border-color);">
+                            Nenhuma atividade extra foi registrada hoje pelos vendedores ainda.
+                        </div>
+                    ` : `
+                        <div style="overflow-x: auto; background: var(--bg-body); border-radius: 10px; border: 1px solid var(--border-color);">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; text-align: left;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-muted); font-size: 11px; text-transform: uppercase;">
+                                        <th style="padding: 10px 14px;">Vendedor</th>
+                                        <th style="padding: 10px 14px;">Atividade Extra</th>
+                                        <th style="padding: 10px 14px;">Início</th>
+                                        <th style="padding: 10px 14px;">Duração Prevista</th>
+                                        <th style="padding: 10px 14px;">Tempo Real</th>
+                                        <th style="padding: 10px 14px; text-align: right;">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${todayActivities.map(a => {
+                                        const startTime = new Date(a.startedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+                                        let statusBadge = "";
+                                        if (a.status === "in_progress") {
+                                            statusBadge = `<span style="background: rgba(16,185,129,0.15); color: #10b981; font-weight: 800; padding: 3px 8px; border-radius: 6px; font-size: 11px;">🟢 Em Andamento</span>`;
+                                        } else if (a.status === "completed") {
+                                            statusBadge = `<span style="background: rgba(99,102,241,0.12); color: var(--primary); font-weight: 700; padding: 3px 8px; border-radius: 6px; font-size: 11px;">✅ Concluída</span>`;
+                                        } else {
+                                            statusBadge = `<span style="background: rgba(100,116,139,0.12); color: var(--text-muted); padding: 3px 8px; border-radius: 6px; font-size: 11px;">Cancelada</span>`;
+                                        }
+
+                                        return `
+                                        <tr style="border-bottom: 1px solid var(--border-color);">
+                                            <td style="padding: 10px 14px; font-weight: 700; color: var(--text-primary); white-space: nowrap;">
+                                                ${a.sellerName || a.sellerEmail}
+                                            </td>
+                                            <td style="padding: 10px 14px; color: var(--text-primary); font-weight: 500;">
+                                                ${a.activity}
+                                            </td>
+                                            <td style="padding: 10px 14px; color: var(--text-muted); white-space: nowrap;">
+                                                ${startTime}
+                                            </td>
+                                            <td style="padding: 10px 14px; color: var(--text-muted); white-space: nowrap;">
+                                                ${a.durationMinutes} min
+                                            </td>
+                                            <td style="padding: 10px 14px; font-weight: 600; color: var(--text-primary); white-space: nowrap;">
+                                                ${a.actualMinutes ? `${a.actualMinutes} min` : (a.status === "in_progress" ? `<span class="live-timer-elapsed" data-started="${a.startedAt}">...</span>` : "-")}
+                                            </td>
+                                            <td style="padding: 10px 14px; text-align: right; white-space: nowrap;">
+                                                ${statusBadge}
+                                            </td>
+                                        </tr>
+                                        `;
+                                    }).join("")}
+                                </tbody>
+                            </table>
+                        </div>
+                    `}
+                </div>
+            `;
+
+            // Vincular botões do ADM
+            container.querySelectorAll(".btn-admin-finish-task").forEach(btn => {
+                btn.onclick = () => this.finishLiveActivity(btn.getAttribute("data-id"));
+            });
+
+            container.querySelectorAll(".btn-admin-assign-quick").forEach(btn => {
+                btn.onclick = () => {
+                    const email = btn.getAttribute("data-email");
+                    const name = btn.getAttribute("data-name");
+                    const actName = prompt(`Informe a atividade que ${name} irá executar agora:`);
+                    if (actName && actName.trim()) {
+                        const dur = prompt("Duração prevista em minutos (ex: 30, 45, 60):", "30");
+                        this.startLiveActivity(email, name, actName.trim(), parseInt(dur) || 30);
                     }
+                };
+            });
+
+            const btnRefresh = document.getElementById("btn-refresh-live-tasks");
+            if (btnRefresh) btnRefresh.onclick = () => this.renderLiveTasksMonitor();
+
+        } else {
+            // ================================================================
+            // VISÃO DO VENDEDOR (ex: Mika)
+            // ================================================================
+            const currentSellerEmail = user.email;
+            const currentSellerName = user.name || "Vendedor";
+            const myActivities = todayActivities.filter(a => a.sellerEmail === currentSellerEmail);
+            const activeActivity = myActivities.find(a => a.status === "in_progress");
+
+            // Soma de minutos dedicados hoje em atividades extras
+            const totalMinutesToday = myActivities
+                .filter(a => a.status === "completed")
+                .reduce((sum, a) => sum + (a.actualMinutes || a.durationMinutes || 0), 0);
+
+            if (activeActivity) {
+                // VENDEDOR TEM ATIVIDADE EM ANDAMENTO AGORA
+                const startTime = new Date(activeActivity.startedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+
+                container.innerHTML = `
+                    <div style="background: linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(5,150,105,0.04) 100%); border: 1.5px solid #10b981; border-radius: 14px; padding: 22px 24px; position: relative; overflow: hidden; box-shadow: 0 4px 20px rgba(16,185,129,0.12);">
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span class="live-pulse-indicator"></span>
+                                <span style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #059669; background: rgba(16,185,129,0.2); padding: 3px 10px; border-radius: 20px;">
+                                    ATIVIDADE EM EXECUÇÃO AGORA
+                                </span>
+                                <span style="font-size: 12px; color: var(--text-muted);">Iniciada às <strong>${startTime}</strong></span>
+                            </div>
+                            <span style="font-size: 12px; font-weight: 700; color: #059669; background: var(--bg-surface); padding: 4px 10px; border-radius: 8px; border: 1px solid rgba(16,185,129,0.3);">
+                                🎯 Duração planejada: ${activeActivity.durationMinutes} min
+                            </span>
+                        </div>
+
+                        <div style="margin-bottom: 20px;">
+                            <h3 style="font-size: 19px; font-weight: 800; color: var(--text-primary); margin: 0 0 6px 0; line-height: 1.3;">
+                                ${activeActivity.activity}
+                            </h3>
+                            <p style="font-size: 12.5px; color: var(--text-secondary); margin: 0;">
+                                O administrador e a liderança sabem que você está focado nesta tarefa agora.
+                            </p>
+                        </div>
+
+                        <!-- Cronômetro e Barra de Progresso -->
+                        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px 20px; margin-bottom: 20px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 8px;">
+                                <div style="display: flex; align-items: baseline; gap: 8px;">
+                                    <span style="font-size: 26px; font-weight: 800; color: #10b981; font-family: monospace;" class="live-timer-elapsed" data-started="${activeActivity.startedAt}" data-duration="${activeActivity.durationMinutes}">
+                                        00:00
+                                    </span>
+                                    <span style="font-size: 12px; color: var(--text-muted);">decorridos</span>
+                                </div>
+                                <div style="font-size: 13px; font-weight: 700; color: var(--text-secondary);" id="live-timer-remaining">
+                                    Calculando tempo restante...
+                                </div>
+                            </div>
+                            <div style="background: var(--bg-body); border-radius: 6px; height: 10px; overflow: hidden;">
+                                <div id="live-timer-progress-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #10b981, #059669); border-radius: 6px; transition: width 0.8s ease;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Botões de Ação do Vendedor -->
+                        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                            <button id="btn-finish-current-task" class="btn" style="background: #10b981; color: #fff; font-weight: 800; padding: 10px 20px; font-size: 13.5px; border: none; border-radius: 8px; display: flex; align-items: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 12px rgba(16,185,129,0.3);">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                Concluir Atividade Agora
+                            </button>
+                            <button id="btn-cancel-current-task" class="btn btn-outline" style="padding: 10px 16px; font-size: 13px; border-radius: 8px;">
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById("btn-finish-current-task").onclick = () => this.finishLiveActivity(activeActivity.id);
+                document.getElementById("btn-cancel-current-task").onclick = () => this.cancelLiveActivity(activeActivity.id);
+
+            } else {
+                // VENDEDOR NÃO TEM ATIVIDADE EM ANDAMENTO: FORMULÁRIO DE REGISTRO
+                container.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(99,102,241,0.25);">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            </div>
+                            <div>
+                                <h4 style="font-weight: 800; font-size: 15px; color: var(--text-primary); margin: 0 0 2px 0;">Registro de Atividade em Tempo Real</h4>
+                                <span style="font-size: 11.5px; color: var(--text-muted);">Informe qual atividade extra você está iniciando para que o Administrador acompanhe naquele momento.</span>
+                            </div>
+                        </div>
+                        ${totalMinutesToday > 0 ? `
+                            <span style="font-size: 11.5px; font-weight: 700; color: #10b981; background: rgba(16,185,129,0.1); padding: 5px 12px; border-radius: 20px; border: 1px solid rgba(16,185,129,0.2);">
+                                ⏱️ Hoje: ${totalMinutesToday} min dedicados em atividades extras
+                            </span>
+                        ` : ""}
+                    </div>
+
+                    <!-- Formulário de Registro Rápido -->
+                    <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: 12px; padding: 18px 20px; margin-bottom: 16px;">
+                        <div style="margin-bottom: 14px;">
+                            <label style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; display: block; margin-bottom: 6px;">
+                                1. Qual atividade você vai executar agora? *
+                            </label>
+                            <input type="text" id="live-activity-input" class="form-control" placeholder="Ex: Ligando para leads frios, Montagem de proposta técnica nº 1140, Follow-up WhatsApp..." style="height: 44px; font-size: 13.5px;" autofocus>
+                            
+                            <!-- Sugestões Rápidas em Pills -->
+                            <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;">
+                                <button type="button" class="quick-task-pill" data-text="📞 Prospecção Ativa por Telefone">📞 Prospecção Ativa</button>
+                                <button type="button" class="quick-task-pill" data-text="📄 Elaboração de Proposta Comercial">📄 Elaboração de Proposta</button>
+                                <button type="button" class="quick-task-pill" data-text="💬 Follow-up com Clientes via WhatsApp">💬 Follow-up WhatsApp</button>
+                                <button type="button" class="quick-task-pill" data-text="🤝 Reunião de Negociação / Alinhamento">🤝 Reunião com Cliente</button>
+                                <button type="button" class="quick-task-pill" data-text="🔍 Qualificação e Pesquisa de Leads">🔍 Qualificação de Leads</button>
+                                <button type="button" class="quick-task-pill" data-text="📑 Laudo Técnico & Inspeções">📑 Laudo Técnico</button>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 18px;">
+                            <label style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; display: block; margin-bottom: 6px;">
+                                2. Quanto tempo será executada? (Duração prevista) *
+                            </label>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                                <button type="button" class="duration-btn" data-min="15">15 min</button>
+                                <button type="button" class="duration-btn active" data-min="30">30 min</button>
+                                <button type="button" class="duration-btn" data-min="45">45 min</button>
+                                <button type="button" class="duration-btn" data-min="60">1 hora</button>
+                                <button type="button" class="duration-btn" data-min="90">1h 30m</button>
+                                <button type="button" class="duration-btn" data-min="120">2 horas</button>
+                                <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+                                    <input type="number" id="live-activity-custom-min" value="30" min="5" max="480" style="width: 70px; height: 36px; text-align: center; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); font-weight: 700; font-size: 13px;">
+                                    <span style="font-size: 12px; color: var(--text-muted);">min</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <button id="btn-start-seller-activity" class="btn btn-primary" style="padding: 10px 24px; font-size: 14px; font-weight: 800; display: inline-flex; align-items: center; gap: 8px; border-radius: 8px; box-shadow: 0 4px 14px rgba(99,102,241,0.3);">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                Iniciar Atividade Agora
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Histórico das Atividades Concluídas Hoje pelo Vendedor -->
+                    ${myActivities.length > 0 ? `
+                        <div>
+                            <div style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 8px;">
+                                📜 Minhas Atividades Concluídas Hoje (${myActivities.length})
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 6px;">
+                                ${myActivities.map(a => `
+                                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-radius: 8px; background: var(--bg-body); border: 1px solid var(--border-color); font-size: 12px;">
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <span style="color: ${a.status === 'completed' ? '#10b981' : '#64748b'}; font-weight: 700;">
+                                                ${a.status === 'completed' ? '✅' : '❌'}
+                                            </span>
+                                            <span style="font-weight: 600; color: var(--text-primary);">${a.activity}</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 10px; color: var(--text-muted); font-size: 11px;">
+                                            <span>Início: ${new Date(a.startedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
+                                            <span style="background: var(--bg-surface); padding: 2px 6px; border-radius: 4px; font-weight: 700; color: var(--text-primary);">
+                                                ${a.actualMinutes ? `${a.actualMinutes} min gastos` : `${a.durationMinutes} min previstos`}
+                                            </span>
+                                        </div>
+                                    </div>
+                                `).join("")}
+                            </div>
+                        </div>
+                    ` : ""}
+                `;
+
+                // Interatividade do Formulário
+                const inputActivity = document.getElementById("live-activity-input");
+                const customMinInput = document.getElementById("live-activity-custom-min");
+                const durationBtns = container.querySelectorAll(".duration-btn");
+
+                // Clique nas sugestões rápidas
+                container.querySelectorAll(".quick-task-pill").forEach(p => {
+                    p.onclick = () => {
+                        inputActivity.value = p.getAttribute("data-text");
+                        inputActivity.focus();
+                    };
                 });
+
+                // Seleção de botões de duração
+                durationBtns.forEach(btn => {
+                    btn.onclick = () => {
+                        durationBtns.forEach(b => b.classList.remove("active"));
+                        btn.classList.add("active");
+                        customMinInput.value = btn.getAttribute("data-min");
+                    };
+                });
+
+                customMinInput.oninput = () => {
+                    durationBtns.forEach(b => b.classList.remove("active"));
+                };
+
+                // Botão de iniciar atividade
+                document.getElementById("btn-start-seller-activity").onclick = () => {
+                    const text = inputActivity.value.trim();
+                    const dur = parseInt(customMinInput.value) || 30;
+                    this.startLiveActivity(currentSellerEmail, currentSellerName, text, dur);
+                };
             }
         }
+
+        // Executar atualização imediata dos cronômetros
+        this.updateLiveTimers();
+    },
+
+    updateLiveTimers() {
+        const timerEls = document.querySelectorAll(".live-timer-elapsed");
+        if (timerEls.length === 0) return;
+
+        const now = Date.now();
+
+        timerEls.forEach(el => {
+            const startedIso = el.getAttribute("data-started");
+            if (!startedIso) return;
+
+            const startedAt = new Date(startedIso).getTime();
+            if (isNaN(startedAt)) return;
+
+            const elapsedMs = Math.max(0, now - startedAt);
+            const totalSec = Math.floor(elapsedMs / 1000);
+            const hours = Math.floor(totalSec / 3600);
+            const minutes = Math.floor((totalSec % 3600) / 60);
+            const seconds = totalSec % 60;
+
+            const timeStr = hours > 0
+                ? `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+                : `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+            el.textContent = timeStr;
+
+            // Se tiver duração prevista, atualizar cálculo restante e barra
+            const durationMin = parseInt(el.getAttribute("data-duration"));
+            if (durationMin > 0) {
+                const totalPlannedSec = durationMin * 60;
+                const remainingSec = totalPlannedSec - totalSec;
+
+                const remainingEl = document.getElementById("live-timer-remaining");
+                if (remainingEl) {
+                    if (remainingSec > 0) {
+                        const remMin = Math.ceil(remainingSec / 60);
+                        remainingEl.innerHTML = `⏳ <strong>${remMin} min</strong> restantes`;
+                        remainingEl.style.color = "var(--text-secondary)";
+                    } else {
+                        const overMin = Math.floor(Math.abs(remainingSec) / 60);
+                        remainingEl.innerHTML = `⚠️ Tempo previsto excedido em <strong>+${overMin} min</strong>`;
+                        remainingEl.style.color = "#ef4444";
+                    }
+                }
+
+                const progressBar = document.getElementById("live-timer-progress-bar");
+                if (progressBar) {
+                    const pct = Math.min(100, Math.round((totalSec / totalPlannedSec) * 100));
+                    progressBar.style.width = pct + "%";
+                    if (pct >= 100) {
+                        progressBar.style.background = "#ef4444";
+                    } else {
+                        progressBar.style.background = "linear-gradient(90deg, #10b981, #059669)";
+                    }
+                }
+            }
+        });
     },
 
     // ===========================================================================
@@ -2275,7 +2783,8 @@ export const Dashboard = {
 };
 
 // Expor globalmente para os botões no HTML
-window.refreshMetaAdsPanel = () => Dashboard.renderMetaAdsPanel();
+window.refreshLiveTasksMonitor = () => Dashboard.renderLiveTasksMonitor();
+window.refreshMetaAdsPanel = () => Dashboard.renderLiveTasksMonitor();
 window.configureCommissionRate = function(currentRate) {
     const input = prompt("Digite a porcentagem da taxa de comissão padrão para as vendas (ex: 5 para 5%):", currentRate || 5);
     if (input !== null) {

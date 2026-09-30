@@ -272,8 +272,9 @@ function showAppShell(user) {
     configureSidebarMenu(user.role);
 
     // Enforçar restrição de Empresa
-    const companyAccess = user.companyAccess || "Ambas";
-    const workspaceContainers = document.querySelectorAll(".company-selector-container");
+    const isMika = user.email && (user.email.toLowerCase().trim() === "mika@vellia.com" || (user.name && user.name.toLowerCase().includes("mika")));
+    const companyAccess = user.companyAccess || (isMika ? "Excelência Ambiental" : "Ambas");
+    const workspaceContainers = document.querySelectorAll(".company-selector-container, .workspace-switcher-card");
     
     if (companyAccess !== "Ambas") {
         workspaceContainers.forEach(c => c.style.display = "none");

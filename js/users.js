@@ -77,8 +77,11 @@ export const Users = {
                     });
                     remoteUsers.forEach(u => {
                         if (u && u.email) {
-                            const existing = userMap.get(u.email.toLowerCase().trim());
-                            userMap.set(u.email.toLowerCase().trim(), { ...(existing || {}), ...u });
+                            const emailNorm = u.email.toLowerCase().trim();
+                            const existing = userMap.get(emailNorm) || {};
+                            const isMika = emailNorm === "mika@vellia.com" || (u.name && u.name.toLowerCase().includes("mika"));
+                            const companyAccess = u.companyAccess || existing.companyAccess || (isMika ? "Excelência Ambiental" : "Ambas");
+                            userMap.set(emailNorm, { ...existing, ...u, companyAccess });
                         }
                     });
                     const merged = Array.from(userMap.values());

@@ -1915,36 +1915,136 @@ export const Dashboard = {
             return true;
         });
 
-        // Injetar estilos de animação CSS se ainda não existirem
+        // Injetar estilos CSS modernos e sofisticados se ainda não existirem
         if (!document.getElementById("live-tasks-anim-styles")) {
             const styleEl = document.createElement("style");
             styleEl.id = "live-tasks-anim-styles";
             styleEl.textContent = `
                 @keyframes livePulseDot {
                     0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-                    70% { transform: scale(1.1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+                    70% { transform: scale(1.15); box-shadow: 0 0 0 7px rgba(16, 185, 129, 0); }
                     100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
                 }
                 .live-pulse-indicator {
-                    width: 10px; height: 10px; border-radius: 50%; background: #10b981;
-                    display: inline-block; animation: livePulseDot 1.8s infinite;
+                    width: 8px; height: 8px; border-radius: 50%; background: #10b981;
+                    display: inline-block; animation: livePulseDot 1.8s infinite; vertical-align: middle;
+                }
+                .live-task-card {
+                    background: var(--bg-surface);
+                    border: 1px solid var(--border-color);
+                    border-radius: 16px;
+                    padding: 24px 26px;
+                    box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.04);
+                    position: relative;
+                    overflow: hidden;
+                    transition: all 0.3s ease;
+                }
+                .live-task-card::before {
+                    content: '';
+                    position: absolute;
+                    top: 0; left: 0; right: 0;
+                    height: 3px;
+                    background: linear-gradient(90deg, #6366f1, #8b5cf6, #10b981);
+                    opacity: 0.9;
+                }
+                .live-input-box {
+                    display: flex;
+                    align-items: center;
+                    background: var(--bg-body);
+                    border: 1.5px solid var(--border-color);
+                    border-radius: 12px;
+                    padding: 0 14px;
+                    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+                .live-input-box:focus-within {
+                    border-color: #6366f1;
+                    background: var(--bg-surface);
+                    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+                }
+                .live-input-box input {
+                    width: 100%;
+                    border: none;
+                    outline: none;
+                    background: transparent;
+                    color: var(--text-primary);
+                    font-size: 13.5px;
+                    font-weight: 500;
+                    height: 46px;
+                    padding-left: 10px;
+                }
+                .live-input-box input::placeholder {
+                    color: var(--text-muted);
+                    font-size: 13px;
                 }
                 .quick-task-pill {
-                    font-size: 11.5px; font-weight: 600; padding: 5px 12px; border-radius: 20px;
-                    border: 1px solid var(--border-color); background: var(--bg-body);
-                    color: var(--text-secondary); cursor: pointer; transition: all 0.2s ease;
+                    font-size: 12px;
+                    font-weight: 600;
+                    padding: 6px 13px;
+                    border-radius: 10px;
+                    border: 1px solid var(--border-color);
+                    background: var(--bg-body);
+                    color: var(--text-secondary);
+                    cursor: pointer;
+                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                    user-select: none;
                 }
                 .quick-task-pill:hover {
-                    border-color: var(--primary); color: var(--primary); background: rgba(99,102,241,0.08);
+                    border-color: #6366f1;
+                    color: #6366f1;
+                    background: rgba(99, 102, 241, 0.08);
+                    transform: translateY(-1.5px);
+                    box-shadow: 0 4px 12px -2px rgba(99, 102, 241, 0.16);
+                }
+                .quick-task-pill:active {
+                    transform: scale(0.97);
                 }
                 .duration-btn {
-                    padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border-color);
-                    background: var(--bg-body); font-size: 12px; font-weight: 700;
-                    color: var(--text-primary); cursor: pointer; transition: all 0.2s ease;
+                    padding: 7px 14px;
+                    border-radius: 10px;
+                    border: 1px solid var(--border-color);
+                    background: var(--bg-body);
+                    font-size: 12.5px;
+                    font-weight: 600;
+                    color: var(--text-secondary);
+                    cursor: pointer;
+                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+                .duration-btn:hover {
+                    border-color: #6366f1;
+                    color: var(--text-primary);
                 }
                 .duration-btn.active {
-                    background: var(--primary); color: #fff; border-color: var(--primary);
-                    box-shadow: 0 2px 8px rgba(99,102,241,0.3);
+                    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+                    color: #ffffff;
+                    border-color: transparent;
+                    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+                    font-weight: 700;
+                }
+                .btn-live-start {
+                    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+                    color: #ffffff;
+                    border: none;
+                    border-radius: 12px;
+                    padding: 11px 26px;
+                    font-size: 14px;
+                    font-weight: 700;
+                    cursor: pointer;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 8px;
+                    box-shadow: 0 4px 16px -2px rgba(79, 70, 229, 0.4);
+                    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+                .btn-live-start:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 24px -2px rgba(79, 70, 229, 0.55);
+                    background: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%);
+                }
+                .btn-live-start:active {
+                    transform: scale(0.98);
                 }
             `;
             document.head.appendChild(styleEl);
@@ -2179,58 +2279,59 @@ export const Dashboard = {
                 .reduce((sum, a) => sum + (a.actualMinutes || a.durationMinutes || 0), 0);
 
             if (activeActivity) {
-                // VENDEDOR TEM ATIVIDADE EM ANDAMENTO AGORA
+                // VENDEDOR TEM ATIVIDADE EM ANDAMENTO AGORA (MODO COCKPIT DE FOCO)
                 const startTime = new Date(activeActivity.startedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 
                 container.innerHTML = `
-                    <div style="background: linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(5,150,105,0.04) 100%); border: 1.5px solid #10b981; border-radius: 14px; padding: 22px 24px; position: relative; overflow: hidden; box-shadow: 0 4px 20px rgba(16,185,129,0.12);">
-                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+                    <div class="live-task-card" style="background: linear-gradient(135deg, rgba(16,185,129,0.06) 0%, rgba(5,150,105,0.02) 100%); border-color: rgba(16,185,129,0.3); box-shadow: 0 8px 30px -4px rgba(16,185,129,0.12);">
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 18px;">
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 <span class="live-pulse-indicator"></span>
-                                <span style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #059669; background: rgba(16,185,129,0.2); padding: 3px 10px; border-radius: 20px;">
+                                <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; color: #059669; background: rgba(16,185,129,0.16); padding: 4px 12px; border-radius: 20px;">
                                     ATIVIDADE EM EXECUÇÃO AGORA
                                 </span>
-                                <span style="font-size: 12px; color: var(--text-muted);">Iniciada às <strong>${startTime}</strong></span>
+                                <span style="font-size: 12px; color: var(--text-muted);">Iniciada às <strong style="color: var(--text-primary); font-weight: 700;">${startTime}</strong></span>
                             </div>
-                            <span style="font-size: 12px; font-weight: 700; color: #059669; background: var(--bg-surface); padding: 4px 10px; border-radius: 8px; border: 1px solid rgba(16,185,129,0.3);">
-                                🎯 Duração planejada: ${activeActivity.durationMinutes} min
+                            <span style="font-size: 12px; font-weight: 700; color: #059669; background: var(--bg-surface); padding: 5px 12px; border-radius: 10px; border: 1px solid rgba(16,185,129,0.25); display: inline-flex; align-items: center; gap: 6px;">
+                                🎯 Duração planejada: <strong>${activeActivity.durationMinutes} min</strong>
                             </span>
                         </div>
 
-                        <div style="margin-bottom: 20px;">
-                            <h3 style="font-size: 19px; font-weight: 800; color: var(--text-primary); margin: 0 0 6px 0; line-height: 1.3;">
+                        <div style="margin-bottom: 22px;">
+                            <h3 style="font-size: 20px; font-weight: 800; color: var(--text-primary); margin: 0 0 6px 0; line-height: 1.35; letter-spacing: -0.3px;">
                                 ${activeActivity.activity}
                             </h3>
-                            <p style="font-size: 12.5px; color: var(--text-secondary); margin: 0;">
-                                O administrador e a liderança sabem que você está focado nesta tarefa agora.
+                            <p style="font-size: 12.5px; color: var(--text-secondary); margin: 0; display: flex; align-items: center; gap: 6px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                Esta atividade está visível em tempo real no painel do Administrador.
                             </p>
                         </div>
 
-                        <!-- Cronômetro e Barra de Progresso -->
-                        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px 20px; margin-bottom: 20px;">
-                            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 8px;">
-                                <div style="display: flex; align-items: baseline; gap: 8px;">
-                                    <span style="font-size: 26px; font-weight: 800; color: #10b981; font-family: monospace;" class="live-timer-elapsed" data-started="${activeActivity.startedAt}" data-duration="${activeActivity.durationMinutes}">
+                        <!-- Cronômetro e Barra de Progresso Digital -->
+                        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 14px; padding: 18px 22px; margin-bottom: 22px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+                            <div style="display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
+                                <div style="display: flex; align-items: baseline; gap: 10px;">
+                                    <span style="font-size: 34px; font-weight: 900; color: #10b981; font-family: monospace; letter-spacing: -0.5px;" class="live-timer-elapsed" data-started="${activeActivity.startedAt}" data-duration="${activeActivity.durationMinutes}">
                                         00:00
                                     </span>
-                                    <span style="font-size: 12px; color: var(--text-muted);">decorridos</span>
+                                    <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">decorridos</span>
                                 </div>
                                 <div style="font-size: 13px; font-weight: 700; color: var(--text-secondary);" id="live-timer-remaining">
                                     Calculando tempo restante...
                                 </div>
                             </div>
-                            <div style="background: var(--bg-body); border-radius: 6px; height: 10px; overflow: hidden;">
-                                <div id="live-timer-progress-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #10b981, #059669); border-radius: 6px; transition: width 0.8s ease;"></div>
+                            <div style="background: var(--bg-body); border-radius: 99px; height: 8px; overflow: hidden; position: relative;">
+                                <div id="live-timer-progress-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #10b981, #059669); border-radius: 99px; transition: width 0.8s ease;"></div>
                             </div>
                         </div>
 
                         <!-- Botões de Ação do Vendedor -->
                         <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                            <button id="btn-finish-current-task" class="btn" style="background: #10b981; color: #fff; font-weight: 800; padding: 10px 20px; font-size: 13.5px; border: none; border-radius: 8px; display: flex; align-items: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 12px rgba(16,185,129,0.3);">
+                            <button id="btn-finish-current-task" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; font-weight: 800; padding: 11px 24px; font-size: 13.5px; border: none; border-radius: 12px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 16px rgba(16,185,129,0.35); transition: all 0.2s ease;">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                                 Concluir Atividade Agora
                             </button>
-                            <button id="btn-cancel-current-task" class="btn btn-outline" style="padding: 10px 16px; font-size: 13px; border-radius: 8px;">
+                            <button id="btn-cancel-current-task" class="btn btn-outline" style="padding: 11px 18px; font-size: 13px; border-radius: 12px;">
                                 Cancelar
                             </button>
                         </div>
@@ -2241,37 +2342,53 @@ export const Dashboard = {
                 document.getElementById("btn-cancel-current-task").onclick = () => this.cancelLiveActivity(activeActivity.id);
 
             } else {
-                // VENDEDOR NÃO TEM ATIVIDADE EM ANDAMENTO: FORMULÁRIO DE REGISTRO
+                // VENDEDOR NÃO TEM ATIVIDADE EM ANDAMENTO: FORMULÁRIO DE REGISTRO MODERNO E LIMPO
                 container.innerHTML = `
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(99,102,241,0.25);">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <div class="live-task-card">
+                        <!-- Cabeçalho com Ícone e Status -->
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; flex-wrap: wrap; gap: 14px;">
+                            <div style="display: flex; align-items: center; gap: 14px;">
+                                <div style="width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 18px -2px rgba(99,102,241,0.35);">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                </div>
+                                <div>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <h4 style="font-weight: 800; font-size: 15.5px; color: var(--text-primary); margin: 0; letter-spacing: -0.2px;">Registro de Atividade em Tempo Real</h4>
+                                        <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: #10b981; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25); padding: 2px 8px; border-radius: 20px;">
+                                            <span class="live-pulse-indicator"></span> Sincronizado ao ADM
+                                        </span>
+                                    </div>
+                                    <p style="font-size: 12px; color: var(--text-muted); margin: 2px 0 0 0;">Informe a atividade extra que está iniciando para que o administrador acompanhe seu foco naquele momento.</p>
+                                </div>
                             </div>
-                            <div>
-                                <h4 style="font-weight: 800; font-size: 15px; color: var(--text-primary); margin: 0 0 2px 0;">Registro de Atividade em Tempo Real</h4>
-                                <span style="font-size: 11.5px; color: var(--text-muted);">Informe qual atividade extra você está iniciando para que o Administrador acompanhe naquele momento.</span>
-                            </div>
+                            ${totalMinutesToday > 0 ? `
+                                <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #10b981; background: rgba(16,185,129,0.08); padding: 6px 14px; border-radius: 10px; border: 1px solid rgba(16,185,129,0.2);">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                    <span>${totalMinutesToday} min dedicados hoje</span>
+                                </div>
+                            ` : `
+                                <span style="font-size: 11.5px; font-weight: 600; color: var(--text-muted); background: var(--bg-body); border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 10px;">
+                                    ⚡ Pronto para iniciar
+                                </span>
+                            `}
                         </div>
-                        ${totalMinutesToday > 0 ? `
-                            <span style="font-size: 11.5px; font-weight: 700; color: #10b981; background: rgba(16,185,129,0.1); padding: 5px 12px; border-radius: 20px; border: 1px solid rgba(16,185,129,0.2);">
-                                ⏱️ Hoje: ${totalMinutesToday} min dedicados em atividades extras
-                            </span>
-                        ` : ""}
-                    </div>
 
-                    <!-- Formulário de Registro Rápido -->
-                    <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: 12px; padding: 18px 20px; margin-bottom: 16px;">
-                        <div style="margin-bottom: 14px;">
-                            <label style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; display: block; margin-bottom: 6px;">
-                                1. Qual atividade você vai executar agora? *
+                        <!-- 1. Campo de Atividade -->
+                        <div style="margin-bottom: 20px;">
+                            <label style="font-size: 12px; font-weight: 700; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                                Qual atividade você vai executar agora?
                             </label>
-                            <input type="text" id="live-activity-input" class="form-control" placeholder="Ex: Ligando para leads frios, Montagem de proposta técnica nº 1140, Follow-up WhatsApp..." style="height: 44px; font-size: 13.5px;" autofocus>
-                            
-                            <!-- Sugestões Rápidas em Pills -->
-                            <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;">
+                            <div class="live-input-box">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                <input type="text" id="live-activity-input" placeholder="Ex: Ligando para leads frios, Montagem de proposta técnica nº 1140, Follow-up WhatsApp..." autofocus>
+                            </div>
+
+                            <!-- Sugestões Rápidas em Pílulas Modernas -->
+                            <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <span style="font-size: 11px; font-weight: 600; color: var(--text-muted);">Atalhos rápidos:</span>
                                 <button type="button" class="quick-task-pill" data-text="📞 Prospecção Ativa por Telefone">📞 Prospecção Ativa</button>
-                                <button type="button" class="quick-task-pill" data-text="📄 Elaboração de Proposta Comercial">📄 Elaboração de Proposta</button>
+                                <button type="button" class="quick-task-pill" data-text="📄 Elaboração de Proposta Comercial">📄 Proposta Comercial</button>
                                 <button type="button" class="quick-task-pill" data-text="💬 Follow-up com Clientes via WhatsApp">💬 Follow-up WhatsApp</button>
                                 <button type="button" class="quick-task-pill" data-text="🤝 Reunião de Negociação / Alinhamento">🤝 Reunião com Cliente</button>
                                 <button type="button" class="quick-task-pill" data-text="🔍 Qualificação e Pesquisa de Leads">🔍 Qualificação de Leads</button>
@@ -2279,58 +2396,61 @@ export const Dashboard = {
                             </div>
                         </div>
 
-                        <div style="margin-bottom: 18px;">
-                            <label style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; display: block; margin-bottom: 6px;">
-                                2. Quanto tempo será executada? (Duração prevista) *
-                            </label>
-                            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-                                <button type="button" class="duration-btn" data-min="15">15 min</button>
-                                <button type="button" class="duration-btn active" data-min="30">30 min</button>
-                                <button type="button" class="duration-btn" data-min="45">45 min</button>
-                                <button type="button" class="duration-btn" data-min="60">1 hora</button>
-                                <button type="button" class="duration-btn" data-min="90">1h 30m</button>
-                                <button type="button" class="duration-btn" data-min="120">2 horas</button>
-                                <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
-                                    <input type="number" id="live-activity-custom-min" value="30" min="5" max="480" style="width: 70px; height: 36px; text-align: center; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); font-weight: 700; font-size: 13px;">
-                                    <span style="font-size: 12px; color: var(--text-muted);">min</span>
+                        <!-- 2. Linha Integrada: Duração Prevista + Botão Iniciar Atividade -->
+                        <div style="display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding-top: 18px; border-top: 1px solid var(--border-color);">
+                            <div>
+                                <label style="font-size: 12px; font-weight: 700; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 10"/></svg>
+                                    Duração prevista da atividade:
+                                </label>
+                                <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                                    <button type="button" class="duration-btn" data-min="15">15 min</button>
+                                    <button type="button" class="duration-btn active" data-min="30">30 min</button>
+                                    <button type="button" class="duration-btn" data-min="45">45 min</button>
+                                    <button type="button" class="duration-btn" data-min="60">1 hora</button>
+                                    <button type="button" class="duration-btn" data-min="90">1h 30m</button>
+                                    <button type="button" class="duration-btn" data-min="120">2 horas</button>
+                                    <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px; background: var(--bg-body); border: 1px solid var(--border-color); border-radius: 10px; padding: 2px 8px;">
+                                        <input type="number" id="live-activity-custom-min" value="30" min="5" max="480" style="width: 48px; height: 28px; text-align: center; border: none; background: transparent; color: var(--text-primary); font-weight: 700; font-size: 12.5px; outline: none;">
+                                        <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;">min</span>
+                                    </div>
                                 </div>
                             </div>
+
+                            <div>
+                                <button id="btn-start-seller-activity" class="btn-live-start">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                    Iniciar Atividade Agora
+                                </button>
+                            </div>
                         </div>
 
-                        <div>
-                            <button id="btn-start-seller-activity" class="btn btn-primary" style="padding: 10px 24px; font-size: 14px; font-weight: 800; display: inline-flex; align-items: center; gap: 8px; border-radius: 8px; box-shadow: 0 4px 14px rgba(99,102,241,0.3);">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                                Iniciar Atividade Agora
-                            </button>
-                        </div>
+                        <!-- 3. Mini Histórico das Atividades Concluídas Hoje -->
+                        ${myActivities.length > 0 ? `
+                            <div style="margin-top: 22px; padding-top: 16px; border-top: 1px dashed var(--border-color);">
+                                <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                                    <span>📜 Histórico de Hoje</span>
+                                    <span style="background: var(--bg-body); border: 1px solid var(--border-color); padding: 1px 7px; border-radius: 10px; font-size: 10px;">${myActivities.length}</span>
+                                </div>
+                                <div style="display: flex; flex-direction: column; gap: 6px;">
+                                    ${myActivities.map(a => `
+                                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 7px 12px; border-radius: 8px; background: var(--bg-body); border: 1px solid var(--border-color); font-size: 12px;">
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <span style="font-size: 13px;">${a.status === 'completed' ? '✅' : '⚪'}</span>
+                                                <span style="font-weight: 600; color: var(--text-primary);">${a.activity}</span>
+                                            </div>
+                                            <div style="display: flex; align-items: center; gap: 10px; color: var(--text-muted); font-size: 11px;">
+                                                <span>${new Date(a.startedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
+                                                <span style="background: var(--bg-surface); border: 1px solid var(--border-color); padding: 2px 7px; border-radius: 6px; font-weight: 700; color: #10b981;">
+                                                    ${a.actualMinutes ? `${a.actualMinutes} min gastos` : `${a.durationMinutes} min`}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    `).join("")}
+                                </div>
+                            </div>
+                        ` : ""}
                     </div>
-
-                    <!-- Histórico das Atividades Concluídas Hoje pelo Vendedor -->
-                    ${myActivities.length > 0 ? `
-                        <div>
-                            <div style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 8px;">
-                                📜 Minhas Atividades Concluídas Hoje (${myActivities.length})
-                            </div>
-                            <div style="display: flex; flex-direction: column; gap: 6px;">
-                                ${myActivities.map(a => `
-                                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-radius: 8px; background: var(--bg-body); border: 1px solid var(--border-color); font-size: 12px;">
-                                        <div style="display: flex; align-items: center; gap: 8px;">
-                                            <span style="color: ${a.status === 'completed' ? '#10b981' : '#64748b'}; font-weight: 700;">
-                                                ${a.status === 'completed' ? '✅' : '❌'}
-                                            </span>
-                                            <span style="font-weight: 600; color: var(--text-primary);">${a.activity}</span>
-                                        </div>
-                                        <div style="display: flex; align-items: center; gap: 10px; color: var(--text-muted); font-size: 11px;">
-                                            <span>Início: ${new Date(a.startedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
-                                            <span style="background: var(--bg-surface); padding: 2px 6px; border-radius: 4px; font-weight: 700; color: var(--text-primary);">
-                                                ${a.actualMinutes ? `${a.actualMinutes} min gastos` : `${a.durationMinutes} min previstos`}
-                                            </span>
-                                        </div>
-                                    </div>
-                                `).join("")}
-                            </div>
-                        </div>
-                    ` : ""}
                 `;
 
                 // Interatividade do Formulário

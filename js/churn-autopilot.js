@@ -138,77 +138,99 @@ export const ChurnAutopilot = {
         const atRisk = this.analyzeLeads();
         const totalValue = atRisk.reduce((acc, l) => acc + (parseFloat(l.estimatedValue) || 0), 0);
         const formattedVal = totalValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+        const isCollapsed = localStorage.getItem("vellia_churn_widget_collapsed") === "true";
 
         container.innerHTML = `
-            <div class="card" style="margin-bottom: 24px; padding: 20px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05); border-radius: 16px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(239, 68, 68, 0.12); color: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+            <div class="card" style="margin-bottom: 24px; padding: ${isCollapsed ? '14px 20px' : '20px'}; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05); border-radius: 16px; transition: all 0.3s ease;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; ${isCollapsed ? '' : 'margin-bottom: 16px;'}">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(239, 68, 68, 0.12); color: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 18px;">
                             🛡️
                         </div>
                         <div>
-                            <h3 style="font-size: 15px; font-weight: 800; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 8px;">
-                                Piloto Automático — Radar Antichurn IA
-                            </h3>
-                            <span style="font-size: 12px; color: var(--text-muted);">Monitoramento preditivo de estagnação e perda de oportunidade</span>
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <h3 style="font-size: 15px; font-weight: 800; color: var(--text-primary); margin: 0;">
+                                    Piloto Automático — Radar Antichurn IA
+                                </h3>
+                                ${isCollapsed ? `
+                                    <span style="font-size: 11px; padding: 2px 8px; border-radius: 999px; background: rgba(239, 68, 68, 0.1); color: #ef4444; font-weight: 700;">
+                                        ${formattedVal} em risco (${atRisk.length} leads)
+                                    </span>
+                                ` : ''}
+                            </div>
+                            <span style="font-size: 12px; color: var(--text-muted);">Monitoramento preditivo de estagnação e perda de oportunidades</span>
                         </div>
                     </div>
                     
-                    <div style="display: flex; gap: 8px;">
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button type="button" class="btn btn-outline btn-sm" onclick="window.ChurnAutopilot.toggleWidget()" style="font-size: 12px; padding: 6px 12px; border-color: var(--border-color); color: var(--text-secondary); display: flex; align-items: center; gap: 6px;" title="${isCollapsed ? 'Expandir painel do radar' : 'Recolher painel do radar'}">
+                            <span>${isCollapsed ? '➕ Expandir Radar' : '➖ Recolher'}</span>
+                        </button>
                         <button type="button" class="btn btn-primary btn-sm" onclick="window.runChurnScan()" style="font-size: 12px; padding: 6px 14px; display: flex; align-items: center; gap: 6px;">
-                            ⚡ Varredura IA em Tempo Real
+                            ⚡ Varredura IA
                         </button>
                     </div>
                 </div>
 
-                <!-- Estatísticas do Radar -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px;">
-                    <div style="background: rgba(255, 255, 255, 0.5); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.8);">
-                        <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Valor em Risco</div>
-                        <div style="font-size: 20px; font-weight: 800; color: #ef4444;">${formattedVal}</div>
+                <div id="churn-widget-body" style="display: ${isCollapsed ? 'none' : 'block'};">
+                    <!-- Estatísticas do Radar -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                        <div style="background: rgba(255, 255, 255, 0.5); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.8);">
+                            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Valor em Risco</div>
+                            <div style="font-size: 20px; font-weight: 800; color: #ef4444;">${formattedVal}</div>
+                        </div>
+                        <div style="background: rgba(255, 255, 255, 0.5); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.8);">
+                            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Leads Esfriando</div>
+                            <div style="font-size: 20px; font-weight: 800; color: #f97316;">${atRisk.length} Oportunidades</div>
+                        </div>
+                        <div style="background: rgba(255, 255, 255, 0.5); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.8);">
+                            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Nível Crítico</div>
+                            <div style="font-size: 20px; font-weight: 800; color: #dc2626;">${atRisk.filter(l => l.riskScore >= 80).length} Leads</div>
+                        </div>
                     </div>
-                    <div style="background: rgba(255, 255, 255, 0.5); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.8);">
-                        <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Leads Esfriando</div>
-                        <div style="font-size: 20px; font-weight: 800; color: #f97316;">${atRisk.length} Oportunidades</div>
-                    </div>
-                    <div style="background: rgba(255, 255, 255, 0.5); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.8);">
-                        <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Nível Crítico</div>
-                        <div style="font-size: 20px; font-weight: 800; color: #dc2626;">${atRisk.filter(l => l.riskScore >= 80).length} Leads</div>
-                    </div>
-                </div>
 
-                <!-- Lista dos Principais Leads em Risco -->
-                ${atRisk.length === 0 ? `
-                    <div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 13px;">
-                        🟢 Nenhum lead em risco detectado. Todos os contatos estão em dia!
-                    </div>
-                ` : `
-                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                        ${atRisk.slice(0, 4).map(l => `
-                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(255, 255, 255, 0.6); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.9); flex-wrap: wrap; gap: 8px;">
-                                <div style="display: flex; align-items: center; gap: 10px; min-width: 200px;">
-                                    <span style="font-size: 12px; padding: 3px 8px; border-radius: 6px; background: ${l.badgeBg}; color: ${l.riskColor}; font-weight: 800;">
-                                        Risco ${l.riskLevel} (${l.riskScore}%)
-                                    </span>
-                                    <div>
-                                        <div style="font-weight: 700; font-size: 13px; color: var(--text-primary);">${l.company || l.contact}</div>
-                                        <div style="font-size: 11px; color: var(--text-muted);">${l.stage} • ${l.idleDays} dias sem interação</div>
+                    <!-- Lista dos Principais Leads em Risco -->
+                    ${atRisk.length === 0 ? `
+                        <div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 13px;">
+                            🟢 Nenhum lead em risco detectado. Todos os contatos estão em dia!
+                        </div>
+                    ` : `
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            ${atRisk.slice(0, 4).map(l => `
+                                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(255, 255, 255, 0.6); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.9); flex-wrap: wrap; gap: 8px;">
+                                    <div style="display: flex; align-items: center; gap: 10px; min-width: 200px;">
+                                        <span style="font-size: 12px; padding: 3px 8px; border-radius: 6px; background: ${l.badgeBg}; color: ${l.riskColor}; font-weight: 800;">
+                                            Risco ${l.riskLevel} (${l.riskScore}%)
+                                        </span>
+                                        <div>
+                                            <div style="font-weight: 700; font-size: 13px; color: var(--text-primary);">${l.company || l.contact}</div>
+                                            <div style="font-size: 11px; color: var(--text-muted);">${l.stage} • ${l.idleDays} dias sem interação</div>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <span style="font-weight: 800; font-size: 13px; color: var(--text-primary);">
+                                            ${(parseFloat(l.estimatedValue) || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                                        </span>
+                                        <button type="button" class="btn btn-outline btn-sm" onclick="window.ChurnAutopilot.openReengagementModal('${l.id}')" style="font-size: 11.5px; padding: 4px 10px; border-color: var(--primary); color: var(--primary);">
+                                            🤖 Abordagem IA
+                                        </button>
                                     </div>
                                 </div>
-                                <div style="display: flex; align-items: center; gap: 12px;">
-                                    <span style="font-weight: 800; font-size: 13px; color: var(--text-primary);">
-                                        ${(parseFloat(l.estimatedValue) || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                                    </span>
-                                    <button type="button" class="btn btn-outline btn-sm" onclick="window.ChurnAutopilot.openReengagementModal('${l.id}')" style="font-size: 11.5px; padding: 4px 10px; border-color: var(--primary); color: var(--primary);">
-                                        🤖 Abordagem IA
-                                    </button>
-                                </div>
-                            </div>
-                        `).join("")}
-                    </div>
-                `}
+                            `).join("")}
+                        </div>
+                    `}
+                </div>
             </div>
         `;
+    },
+
+    /**
+     * Alterna exibição recolhida / expandida do Radar no rodapé
+     */
+    toggleWidget() {
+        const isCollapsed = localStorage.getItem("vellia_churn_widget_collapsed") === "true";
+        localStorage.setItem("vellia_churn_widget_collapsed", (!isCollapsed).toString());
+        this.renderWidget();
     },
 
     /**

@@ -452,13 +452,8 @@ function navigateTo(viewName) {
     if (viewName === "logs") {
         renderLogs();
     } else if (viewName === "dashboard") {
-        const user = Auth.getCurrentUser();
-        if (user && user.role === "seller") {
-            updateDashboardCounters();
-        } else {
-            Dashboard.init();
-            updateDashboardCounters(); // Ainda atualiza o seller se for vendedor
-        }
+        Dashboard.init();
+        updateDashboardCounters();
     } else if (viewName === "crm") {
         CRM.init();
     } else if (viewName === "kanban") {
@@ -899,6 +894,11 @@ function updateDashboardCounters() {
             // Notificações push de novos leads atribuídos
             checkAndNotifyNewLeads(currentUser.email, myLeads);
 
+            // Renderizar Atividade Extra em Tempo Real do Vendedor
+            if (window.Dashboard && typeof window.Dashboard.renderLiveTasksMonitor === "function") {
+                window.Dashboard.renderLiveTasksMonitor();
+            }
+
         } else {
             // =====================================================================
             // DASHBOARD GERENTE / ADMIN (EXECUTIVO)
@@ -916,6 +916,11 @@ function updateDashboardCounters() {
 
             const execConvCounter = document.getElementById("exec-conversion");
             if (execConvCounter) execConvCounter.textContent = `${conversion}%`;
+
+            // Renderizar Monitor de Atividades da Equipe para o ADM
+            if (window.Dashboard && typeof window.Dashboard.renderLiveTasksMonitor === "function") {
+                window.Dashboard.renderLiveTasksMonitor();
+            }
         }
 
     } catch (e) {

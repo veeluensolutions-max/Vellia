@@ -1878,13 +1878,25 @@ export const Dashboard = {
     },
 
     renderLiveTasksMonitor() {
-        const container = document.getElementById("live-tasks-monitor-panel");
-        if (!container) return;
-
         const user = Auth.getCurrentUser();
         if (!user) return;
 
         const isAdmin = user.role === "admin" || user.role === "manager";
+        let container = null;
+
+        if (isAdmin) {
+            container = document.getElementById("live-tasks-monitor-panel");
+            const sellerContainer = document.getElementById("seller-live-activity-card");
+            if (sellerContainer) sellerContainer.style.display = "none";
+            if (container) container.style.display = "block";
+        } else {
+            container = document.getElementById("seller-live-activity-card") || document.getElementById("live-tasks-monitor-panel");
+            const adminContainer = document.getElementById("live-tasks-monitor-panel");
+            if (adminContainer && container !== adminContainer) adminContainer.style.display = "none";
+            if (container) container.style.display = "block";
+        }
+
+        if (!container) return;
         const todayStr = new Date().toLocaleDateString("pt-BR");
         const allActivities = this.getLiveActivities();
         const activeCompany = localStorage.getItem("activeCompany") || "Veeluen Solutions";

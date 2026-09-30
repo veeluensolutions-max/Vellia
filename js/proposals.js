@@ -4,6 +4,8 @@ import { Audit } from "./audit.js";
 
 let activeProposalId = null;
 let isSaving = false;
+let currentEditingBudgetId = null;
+let currentBudgetAttachments = [];
 
 export const Proposals = {
     _eventsBound: false,
@@ -11,6 +13,7 @@ export const Proposals = {
         this.renderStats();
         this.renderTable();
         this.renderLossAnalysis();
+        this.populateClientsDatalist();
         if (!this._eventsBound) {
             this.bindEvents();
             this._eventsBound = true;
@@ -18,9 +21,69 @@ export const Proposals = {
     },
 
     bindEvents() {
-        // Botão Nova Proposta
+        // Botão Nova Proposta (Abre tela completa estilo GestãoClick)
         const btnNew = document.getElementById("btn-new-proposal");
-        if (btnNew) btnNew.addEventListener("click", () => this.openModal());
+        if (btnNew) btnNew.addEventListener("click", () => this.openBudgetScreen());
+
+        // Controles da tela GestãoClick de Orçamento
+        const btnGcSubmit = document.getElementById("gc-btn-submit");
+        if (btnGcSubmit) btnGcSubmit.addEventListener("click", () => this.saveBudgetProposal());
+
+        const btnGcCancel = document.getElementById("gc-btn-cancel");
+        if (btnGcCancel) btnGcCancel.addEventListener("click", () => this.closeBudgetScreen());
+
+        const btnGcAddService = document.getElementById("gc-btn-add-service");
+        if (btnGcAddService) btnGcAddService.addEventListener("click", () => this.addServiceRow());
+
+        const btnGcAddProduct = document.getElementById("gc-btn-add-product");
+        if (btnGcAddProduct) btnGcAddProduct.addEventListener("click", () => this.addProductRow());
+
+        const btnGcEditNumber = document.getElementById("gc-btn-edit-number");
+        if (btnGcEditNumber) {
+            btnGcEditNumber.addEventListener("click", () => {
+                const numInput = document.getElementById("gc-budget-number");
+                if (numInput) {
+                    numInput.readOnly = false;
+                    numInput.classList.remove("gc-input-readonly");
+                    numInput.focus();
+                }
+            });
+        }
+
+        const btnGcClearSeller = document.getElementById("gc-btn-clear-seller");
+        if (btnGcClearSeller) {
+            btnGcClearSeller.addEventListener("click", () => {
+                const sellerInput = document.getElementById("gc-budget-seller");
+                if (sellerInput) sellerInput.value = "";
+            });
+        }
+
+        const checkGcDelivery = document.getElementById("gc-check-delivery-address");
+        if (checkGcDelivery) {
+            checkGcDelivery.addEventListener("change", (e) => {
+                const container = document.getElementById("gc-delivery-address-container");
+                if (container) container.style.display = e.target.checked ? "block" : "none";
+            });
+        }
+
+        document.querySelectorAll('input[name="gc-payment-type"]').forEach(r => {
+            r.addEventListener("change", (e) => {
+                const container = document.getElementById("gc-installments-container");
+                if (container) container.style.display = e.target.value === "parcelado" ? "block" : "none";
+            });
+        });
+
+        const btnGcSelectFile = document.getElementById("gc-btn-select-file");
+        const inputGcFiles = document.getElementById("gc-budget-files");
+        if (btnGcSelectFile && inputGcFiles) {
+            btnGcSelectFile.addEventListener("click", () => inputGcFiles.click());
+            inputGcFiles.addEventListener("change", (e) => this.handleBudgetFilesUpload(e));
+        }
+
+        ["gc-budget-freight", "gc-total-discount-cash", "gc-total-discount-pct"].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener("input", () => this.recalculateBudgetTotals());
+        });
 
         // Botão Ditado por Voz IA
         const btnVoice = document.getElementById("btn-voice-dictation-proposal");
@@ -39,7 +102,7 @@ export const Proposals = {
             });
         }
 
-        // Fechar modal
+        // Fechar modal legado
         const btnClose = document.getElementById("btn-close-proposal-modal");
         if (btnClose) btnClose.addEventListener("click", () => this.closeModal());
 
@@ -518,113 +581,586 @@ export const Proposals = {
     },
 
     // ==========================================================================
-    // MODAL DE NOVA PROPOSTA
+    // TELA DE ORÇAMENTOS E PROPOSTAS ESTILO GESTÃOCLICK (IDÊNTICA)
     // ==========================================================================
-    openModal(leadData = null, suggestedService = null) {
-        const form = document.getElementById("new-proposal-form");
-        if (form) form.reset();
+    populateClientsDatalist() {
+        const datalist = document.getElementById("gc-clients-datalist");
+        if (!datalist) return;
+        const leads = Store.getLeads();
+        const proposals = Store.getProposals();
+        const names = new Set();
+        leads.forEach(l => { if (l.company) names.add(l.company.trim()); });
+        proposals.forEach(p => { if (p.company) names.add(p.company.trim()); });
+        datalist.innerHTML = Array.from(names).map(name => `<option value="${name}"></option>`).join("");
+    },
 
-        // Se passarem uma string como leadData, tentar buscar o objeto na store
-        if (typeof leadData === 'string') {
-            leadData = window.Store ? window.Store.getLeadById(leadData) : null;
-        }
+    openBudgetScreen(proposalId = null, leadData = null, suggestedService = null) {
+        currentEditingBudgetId = proposalId;
+        currentBudgetAttachments = [];
 
-        // Resetar cards de serviço para o primeiro
-        const cards = document.querySelectorAll("#proposal-service-cards .service-choice-card");
-        cards.forEach((c, idx) => {
-            if (idx === 0) c.classList.add("active");
-            else c.classList.remove("active");
-        });
+        const titleEl = document.getElementById("gc-title-action");
+        const breadcrumbEl = document.getElementById("gc-breadcrumb-action");
+        const submitBtn = document.getElementById("gc-btn-submit");
 
-        // Pré-preencher com dados do lead se fornecido
-        if (leadData) {
-            const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
-            setVal("proposal-company", leadData.company || "");
-            setVal("proposal-contact", leadData.contact || "");
-        }
-        
-        if (suggestedService) {
-            const el = document.getElementById("proposal-service");
-            if (el) el.value = suggestedService;
-            // Atualizar card visual ativo correspondente
-            cards.forEach(c => {
-                if (c.getAttribute("data-service") === suggestedService) c.classList.add("active");
-                else c.classList.remove("active");
+        this.populateClientsDatalist();
+
+        if (proposalId) {
+            const proposal = Store.getProposalById(proposalId);
+            if (!proposal) return;
+
+            if (titleEl) titleEl.textContent = "Editar orçamento";
+            if (breadcrumbEl) breadcrumbEl.textContent = "Editar";
+            if (submitBtn) {
+                submitBtn.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Salvar alterações</span>
+                `;
+            }
+
+            // Preenchimento dos dados do GestãoClick
+            const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ""; };
+            setVal("gc-budget-number", proposal.budgetNumber || proposal.id.slice(-4));
+            setVal("gc-budget-client", proposal.company || "");
+            setVal("gc-budget-seller", proposal.seller || proposal.createdBy || Auth.getCurrentUser()?.name || "San Charles");
+            setVal("gc-budget-date", proposal.sentAt ? new Date(proposal.sentAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+            setVal("gc-budget-delivery-date", proposal.deliveryDate || (proposal.sentAt ? new Date(proposal.sentAt).toISOString().split('T')[0] : ""));
+            setVal("gc-budget-attention", proposal.contact || "");
+            setVal("gc-budget-validity", proposal.validityText || "10 dias");
+            setVal("gc-budget-channel", proposal.channel || "Presencial");
+            setVal("gc-budget-cost-center", proposal.costCenter || "");
+            setVal("gc-budget-intro", proposal.intro || `A VEELUEN Solutions é uma empresa com mais de 12 anos no mercado que atua nas áreas de engenharia e meio ambiente.\n• Ampla atuação em indústrias e construção civil.\n• Está presente em Pernambuco com operação em regiões do Brasil.\n• Seus profissionais possuem 20 anos de mercado nacional, além de amplo conhecimento em diversos ramos da engenharia.`);
+            setVal("gc-budget-tech-desc", proposal.techDescription || "");
+            setVal("gc-budget-freight", (proposal.freight || 0).toFixed(2));
+            setVal("gc-budget-carrier", proposal.carrier || "");
+            setVal("gc-budget-notes", proposal.notes || `Previsão de entrega:\nA combinar.\nCondições de pagamento:\n50% + 50%.`);
+            setVal("gc-budget-internal-notes", proposal.internalNotes || "");
+
+            // Serviços
+            const servicesTbody = document.getElementById("gc-services-tbody");
+            if (servicesTbody) servicesTbody.innerHTML = "";
+            if (Array.isArray(proposal.servicesList) && proposal.servicesList.length > 0) {
+                proposal.servicesList.forEach(s => this.addServiceRow(s));
+            } else {
+                this.addServiceRow({
+                    service: proposal.service || "Licenciamento Ambiental",
+                    details: proposal.title || "",
+                    qty: 1,
+                    price: proposal.value || 0
+                });
+            }
+
+            // Produtos
+            const productsTbody = document.getElementById("gc-products-tbody");
+            if (productsTbody) productsTbody.innerHTML = "";
+            if (Array.isArray(proposal.productsList) && proposal.productsList.length > 0) {
+                proposal.productsList.forEach(p => this.addProductRow(p));
+            }
+
+            // Endereço de entrega
+            const checkDelivery = document.getElementById("gc-check-delivery-address");
+            const containerDelivery = document.getElementById("gc-delivery-address-container");
+            if (proposal.deliveryAddress) {
+                if (checkDelivery) checkDelivery.checked = true;
+                if (containerDelivery) containerDelivery.style.display = "block";
+                setVal("gc-delivery-cep", proposal.deliveryAddress.cep);
+                setVal("gc-delivery-street", proposal.deliveryAddress.street);
+                setVal("gc-delivery-number", proposal.deliveryAddress.number);
+                setVal("gc-delivery-neighborhood", proposal.deliveryAddress.neighborhood);
+                setVal("gc-delivery-city", proposal.deliveryAddress.city);
+                setVal("gc-delivery-state", proposal.deliveryAddress.state);
+            } else {
+                if (checkDelivery) checkDelivery.checked = false;
+                if (containerDelivery) containerDelivery.style.display = "none";
+            }
+
+            // Condições de pagamento
+            const checkPayment = document.getElementById("gc-check-generate-payment");
+            if (checkPayment) checkPayment.checked = proposal.generatePayment !== false;
+            const isParcelado = proposal.paymentType === "parcelado";
+            const radioParcelado = document.querySelector('input[name="gc-payment-type"][value="parcelado"]');
+            const radioVista = document.querySelector('input[name="gc-payment-type"][value="vista"]');
+            if (isParcelado && radioParcelado) radioParcelado.checked = true;
+            else if (radioVista) radioVista.checked = true;
+            const containerInst = document.getElementById("gc-installments-container");
+            if (containerInst) containerInst.style.display = isParcelado ? "block" : "none";
+
+            // Anexos
+            currentBudgetAttachments = Array.isArray(proposal.attachments) ? [...proposal.attachments] : [];
+            this.renderBudgetAttachments();
+
+        } else {
+            // Novo Orçamento
+            if (titleEl) titleEl.textContent = "Adicionar orçamento";
+            if (breadcrumbEl) breadcrumbEl.textContent = "Adicionar";
+            if (submitBtn) {
+                submitBtn.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Cadastrar</span>
+                `;
+            }
+
+            const proposals = Store.getProposals();
+            const nextNumber = 358 + proposals.length;
+            const currentUser = Auth.getCurrentUser();
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            // Tratar leadData se passado como ID ou Objeto
+            if (typeof leadData === "string") {
+                leadData = Store.getLeadById(leadData);
+            }
+
+            const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ""; };
+            setVal("gc-budget-number", nextNumber);
+            setVal("gc-budget-client", leadData?.company || "");
+            setVal("gc-budget-seller", currentUser?.name || "San Charles");
+            setVal("gc-budget-date", todayStr);
+            setVal("gc-budget-delivery-date", todayStr);
+            setVal("gc-budget-attention", leadData?.contact || "");
+            setVal("gc-budget-validity", "10 dias");
+            setVal("gc-budget-channel", "Presencial");
+            setVal("gc-budget-cost-center", "");
+            setVal("gc-budget-intro", `A VEELUEN Solutions é uma empresa com mais de 12 anos no mercado que atua nas áreas de engenharia e meio ambiente.\n• Ampla atuação em indústrias e construção civil.\n• Está presente em Pernambuco com operação em regiões do Brasil.\n• Seus profissionais possuem 20 anos de mercado nacional, além de amplo conhecimento em diversos ramos da engenharia.`);
+            setVal("gc-budget-tech-desc", "");
+            setVal("gc-budget-freight", "0.00");
+            setVal("gc-budget-carrier", "");
+            setVal("gc-budget-notes", `Previsão de entrega:\nA combinar.\nCondições de pagamento:\n50% + 50%.`);
+            setVal("gc-budget-internal-notes", "");
+
+            // Serviços
+            const servicesTbody = document.getElementById("gc-services-tbody");
+            if (servicesTbody) servicesTbody.innerHTML = "";
+            this.addServiceRow({
+                service: suggestedService || (leadData?.service || "Licenciamento Ambiental"),
+                details: "",
+                qty: 1,
+                price: 0
             });
+
+            // Produtos
+            const productsTbody = document.getElementById("gc-products-tbody");
+            if (productsTbody) productsTbody.innerHTML = "";
+
+            // Entrega
+            const checkDelivery = document.getElementById("gc-check-delivery-address");
+            const containerDelivery = document.getElementById("gc-delivery-address-container");
+            if (checkDelivery) checkDelivery.checked = false;
+            if (containerDelivery) containerDelivery.style.display = "none";
+
+            // Pagamento
+            const checkPayment = document.getElementById("gc-check-generate-payment");
+            if (checkPayment) checkPayment.checked = true;
+            const radioVista = document.querySelector('input[name="gc-payment-type"][value="vista"]');
+            if (radioVista) radioVista.checked = true;
+            const containerInst = document.getElementById("gc-installments-container");
+            if (containerInst) containerInst.style.display = "none";
+
+            currentBudgetAttachments = [];
+            this.renderBudgetAttachments();
         }
 
-        this.updatePricingSummary();
+        // Alternar visualização para tela cheia de orçamento
+        const listContainer = document.getElementById("proposals-list-container");
+        const budgetView = document.getElementById("gestaoclick-budget-view");
+        if (listContainer) listContainer.style.display = "none";
+        if (budgetView) budgetView.style.display = "block";
 
-        document.getElementById("proposal-modal")?.classList.add("open");
-        document.getElementById("proposal-modal-overlay").style.display = "block";
+        this.recalculateBudgetTotals();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+
+    closeBudgetScreen() {
+        const listContainer = document.getElementById("proposals-list-container");
+        const budgetView = document.getElementById("gestaoclick-budget-view");
+        if (budgetView) budgetView.style.display = "none";
+        if (listContainer) listContainer.style.display = "block";
+        currentEditingBudgetId = null;
+        this.renderStats();
+        this.renderTable();
+        this.renderLossAnalysis();
+    },
+
+    openModal(leadData = null, suggestedService = null) {
+        this.openBudgetScreen(null, leadData, suggestedService);
     },
 
     closeModal() {
-        document.getElementById("proposal-modal")?.classList.remove("open");
-        document.getElementById("proposal-modal-overlay").style.display = "none";
+        this.closeBudgetScreen();
     },
 
-    saveProposal() {
+    addServiceRow(item = {}) {
+        const tbody = document.getElementById("gc-services-tbody");
+        if (!tbody) return;
+
+        const row = document.createElement("tr");
+        row.className = "gc-item-row";
+        row.innerHTML = `
+            <td class="gc-col-item">
+                <input type="text" class="gc-input gc-item-name" placeholder="Digite para buscar" value="${item.service || ''}">
+            </td>
+            <td class="gc-col-details">
+                <input type="text" class="gc-input gc-item-details" placeholder="" value="${item.details || ''}">
+            </td>
+            <td class="gc-col-qty">
+                <input type="number" min="1" step="1" class="gc-input gc-item-qty" value="${item.qty || 1}">
+            </td>
+            <td class="gc-col-price">
+                <input type="number" min="0" step="0.01" class="gc-input gc-item-price" placeholder="0,00" value="${item.price || ''}">
+            </td>
+            <td class="gc-col-discount">
+                <div class="gc-discount-combo">
+                    <input type="number" min="0" step="0.01" class="gc-input gc-item-discount-val" placeholder="0,00" value="${item.discountVal || ''}">
+                    <select class="gc-select gc-item-discount-type">
+                        <option value="R$" ${item.discountType === 'R$' || !item.discountType ? 'selected' : ''}>R$</option>
+                        <option value="%" ${item.discountType === '%' ? 'selected' : ''}>%</option>
+                    </select>
+                </div>
+            </td>
+            <td class="gc-col-subtotal">
+                <input type="text" class="gc-input gc-input-readonly gc-item-subtotal" value="0,00" readonly>
+            </td>
+            <td class="gc-col-action">
+                <button type="button" class="gc-btn-delete-row" title="Remover item">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </td>
+        `;
+
+        row.querySelectorAll(".gc-item-qty, .gc-item-price, .gc-item-discount-val, .gc-item-discount-type").forEach(el => {
+            el.addEventListener("input", () => this.recalculateBudgetTotals());
+            el.addEventListener("change", () => this.recalculateBudgetTotals());
+        });
+
+        row.querySelector(".gc-btn-delete-row")?.addEventListener("click", () => {
+            row.remove();
+            this.recalculateBudgetTotals();
+        });
+
+        tbody.appendChild(row);
+        this.recalculateBudgetTotals();
+    },
+
+    addProductRow(item = {}) {
+        const tbody = document.getElementById("gc-products-tbody");
+        if (!tbody) return;
+
+        const row = document.createElement("tr");
+        row.className = "gc-item-row";
+        row.innerHTML = `
+            <td class="gc-col-item">
+                <input type="text" class="gc-input gc-item-name" placeholder="Digite para buscar" value="${item.product || ''}">
+            </td>
+            <td class="gc-col-details">
+                <input type="text" class="gc-input gc-item-details" placeholder="" value="${item.details || ''}">
+            </td>
+            <td class="gc-col-qty">
+                <input type="number" min="1" step="1" class="gc-input gc-item-qty" value="${item.qty || 1}">
+            </td>
+            <td class="gc-col-price">
+                <input type="number" min="0" step="0.01" class="gc-input gc-item-price" placeholder="0,00" value="${item.price || ''}">
+            </td>
+            <td class="gc-col-discount">
+                <div class="gc-discount-combo">
+                    <input type="number" min="0" step="0.01" class="gc-input gc-item-discount-val" placeholder="0,00" value="${item.discountVal || ''}">
+                    <select class="gc-select gc-item-discount-type">
+                        <option value="R$" ${item.discountType === 'R$' || !item.discountType ? 'selected' : ''}>R$</option>
+                        <option value="%" ${item.discountType === '%' ? 'selected' : ''}>%</option>
+                    </select>
+                </div>
+            </td>
+            <td class="gc-col-subtotal">
+                <input type="text" class="gc-input gc-input-readonly gc-item-subtotal" value="0,00" readonly>
+            </td>
+            <td class="gc-col-action">
+                <button type="button" class="gc-btn-delete-row" title="Remover item">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </td>
+        `;
+
+        row.querySelectorAll(".gc-item-qty, .gc-item-price, .gc-item-discount-val, .gc-item-discount-type").forEach(el => {
+            el.addEventListener("input", () => this.recalculateBudgetTotals());
+            el.addEventListener("change", () => this.recalculateBudgetTotals());
+        });
+
+        row.querySelector(".gc-btn-delete-row")?.addEventListener("click", () => {
+            row.remove();
+            this.recalculateBudgetTotals();
+        });
+
+        tbody.appendChild(row);
+        this.recalculateBudgetTotals();
+    },
+
+    recalculateBudgetTotals() {
+        const fmt = (v) => new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
+
+        let totalServices = 0;
+        document.querySelectorAll("#gc-services-tbody .gc-item-row").forEach(row => {
+            const qty = parseFloat(row.querySelector(".gc-item-qty")?.value) || 0;
+            const price = parseFloat(row.querySelector(".gc-item-price")?.value) || 0;
+            const discVal = parseFloat(row.querySelector(".gc-item-discount-val")?.value) || 0;
+            const discType = row.querySelector(".gc-item-discount-type")?.value || "R$";
+
+            const raw = qty * price;
+            const discount = discType === "%" ? raw * (discVal / 100) : discVal;
+            const subtotal = Math.max(0, raw - discount);
+
+            const subtotalInput = row.querySelector(".gc-item-subtotal");
+            if (subtotalInput) subtotalInput.value = fmt(subtotal);
+            totalServices += subtotal;
+        });
+
+        let totalProducts = 0;
+        document.querySelectorAll("#gc-products-tbody .gc-item-row").forEach(row => {
+            const qty = parseFloat(row.querySelector(".gc-item-qty")?.value) || 0;
+            const price = parseFloat(row.querySelector(".gc-item-price")?.value) || 0;
+            const discVal = parseFloat(row.querySelector(".gc-item-discount-val")?.value) || 0;
+            const discType = row.querySelector(".gc-item-discount-type")?.value || "R$";
+
+            const raw = qty * price;
+            const discount = discType === "%" ? raw * (discVal / 100) : discVal;
+            const subtotal = Math.max(0, raw - discount);
+
+            const subtotalInput = row.querySelector(".gc-item-subtotal");
+            if (subtotalInput) subtotalInput.value = fmt(subtotal);
+            totalProducts += subtotal;
+        });
+
+        const freight = parseFloat(document.getElementById("gc-budget-freight")?.value) || 0;
+        const discCash = parseFloat(document.getElementById("gc-total-discount-cash")?.value) || 0;
+        const discPct = parseFloat(document.getElementById("gc-total-discount-pct")?.value) || 0;
+
+        const subtotalSum = totalServices + totalProducts + freight;
+        const discountTotal = discCash + (subtotalSum * (discPct / 100));
+        const finalTotal = Math.max(0, subtotalSum - discountTotal);
+
+        const elProd = document.getElementById("gc-total-products");
+        const elServ = document.getElementById("gc-total-services");
+        const elFinal = document.getElementById("gc-total-final");
+
+        if (elProd) elProd.value = fmt(totalProducts);
+        if (elServ) elServ.value = fmt(totalServices);
+        if (elFinal) elFinal.value = fmt(finalTotal);
+    },
+
+    handleBudgetFilesUpload(e) {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        for (let i = 0; i < files.length; i++) {
+            const f = files[i];
+            if (f.size > 5 * 1024 * 1024) {
+                alert(`O arquivo "${f.name}" ultrapassa o tamanho máximo permitido de 5Mb.`);
+                continue;
+            }
+            currentBudgetAttachments.push({
+                name: f.name,
+                size: f.size,
+                type: f.type
+            });
+        }
+        this.renderBudgetAttachments();
+    },
+
+    renderBudgetAttachments() {
+        const list = document.getElementById("gc-attachments-list");
+        if (!list) return;
+
+        if (currentBudgetAttachments.length === 0) {
+            list.innerHTML = "";
+            return;
+        }
+
+        list.innerHTML = currentBudgetAttachments.map((att, idx) => `
+            <span class="gc-attachment-badge">
+                📎 ${att.name} (${(att.size / 1024).toFixed(0)} KB)
+                <button type="button" data-idx="${idx}" style="background:none; border:none; color:#ef4444; font-weight:bold; cursor:pointer; margin-left:4px;">✖</button>
+            </span>
+        `).join("");
+
+        list.querySelectorAll("button[data-idx]").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const idx = parseInt(btn.getAttribute("data-idx"));
+                currentBudgetAttachments.splice(idx, 1);
+                this.renderBudgetAttachments();
+            });
+        });
+    },
+
+    saveBudgetProposal() {
         if (isSaving) return;
         isSaving = true;
 
         const getVal = (id) => document.getElementById(id)?.value.trim() || "";
-        const company = getVal("proposal-company");
-        const contact = getVal("proposal-contact");
-        const title = getVal("proposal-title");
-        const service = getVal("proposal-service");
-        const value = parseFloat(getVal("proposal-value").replace(",", ".")) || 0;
-        const validUntil = getVal("proposal-valid");
-        const notes = getVal("proposal-notes");
 
-        const filesInput = document.getElementById("proposal-files");
-        const attachments = [];
-        if (filesInput && filesInput.files) {
-            for (let i = 0; i < filesInput.files.length; i++) {
-                attachments.push({
-                    name: filesInput.files[i].name,
-                    size: filesInput.files[i].size,
-                    type: filesInput.files[i].type
-                });
+        const company = getVal("gc-budget-client");
+        const budgetNumber = getVal("gc-budget-number");
+        const seller = getVal("gc-budget-seller");
+        const date = getVal("gc-budget-date");
+        const deliveryDate = getVal("gc-budget-delivery-date");
+        const contact = getVal("gc-budget-attention");
+        const validityText = getVal("gc-budget-validity");
+        const channel = getVal("gc-budget-channel");
+        const costCenter = getVal("gc-budget-cost-center");
+        const intro = getVal("gc-budget-intro");
+        const techDescription = getVal("gc-budget-tech-desc");
+        const freight = parseFloat(getVal("gc-budget-freight")) || 0;
+        const carrier = getVal("gc-budget-carrier");
+        const notes = getVal("gc-budget-notes");
+        const internalNotes = getVal("gc-budget-internal-notes");
+
+        // Itens de serviços
+        const servicesList = [];
+        document.querySelectorAll("#gc-services-tbody .gc-item-row").forEach(row => {
+            const service = row.querySelector(".gc-item-name")?.value.trim() || "";
+            const details = row.querySelector(".gc-item-details")?.value.trim() || "";
+            const qty = parseFloat(row.querySelector(".gc-item-qty")?.value) || 1;
+            const price = parseFloat(row.querySelector(".gc-item-price")?.value) || 0;
+            const discountVal = parseFloat(row.querySelector(".gc-item-discount-val")?.value) || 0;
+            const discountType = row.querySelector(".gc-item-discount-type")?.value || "R$";
+            const subtotalStr = row.querySelector(".gc-item-subtotal")?.value.replace(/\./g, "").replace(",", ".") || "0";
+            const subtotal = parseFloat(subtotalStr) || 0;
+
+            if (service) {
+                servicesList.push({ service, details, qty, price, discountVal, discountType, subtotal });
             }
-        }
+        });
 
-        if (!company || !title || !value) {
-            alert("Preencha os campos obrigatórios: Empresa, Título e Valor.");
+        // Itens de produtos
+        const productsList = [];
+        document.querySelectorAll("#gc-products-tbody .gc-item-row").forEach(row => {
+            const product = row.querySelector(".gc-item-name")?.value.trim() || "";
+            const details = row.querySelector(".gc-item-details")?.value.trim() || "";
+            const qty = parseFloat(row.querySelector(".gc-item-qty")?.value) || 1;
+            const price = parseFloat(row.querySelector(".gc-item-price")?.value) || 0;
+            const discountVal = parseFloat(row.querySelector(".gc-item-discount-val")?.value) || 0;
+            const discountType = row.querySelector(".gc-item-discount-type")?.value || "R$";
+            const subtotalStr = row.querySelector(".gc-item-subtotal")?.value.replace(/\./g, "").replace(",", ".") || "0";
+            const subtotal = parseFloat(subtotalStr) || 0;
+
+            if (product) {
+                productsList.push({ product, details, qty, price, discountVal, discountType, subtotal });
+            }
+        });
+
+        const totalFinalStr = document.getElementById("gc-total-final")?.value.replace(/\./g, "").replace(",", ".") || "0";
+        const finalValue = parseFloat(totalFinalStr) || 0;
+
+        if (!company) {
+            alert("Preencha o campo obrigatório: Cliente.");
             isSaving = false;
             return;
         }
 
-        const currentUser = Auth.getCurrentUser();
-        const proposal = Store.addProposal({
-            company,
-            contact,
-            title,
-            service,
-            value,
-            status: "Enviada",
-            sentAt: new Date().toISOString(),
-            validUntil: validUntil ? new Date(validUntil).toISOString() : null,
-            notes,
-            attachments,
-            createdBy: currentUser?.email || "sistema@vellia.com"
-        });
-
-        Audit.logStageChange(currentUser?.email, company, "Nova", "Enviada", `Proposta criada: ${title} - R$ ${value}`);
-
-        this.closeModal();
-        this.renderStats();
-        this.renderTable();
-        this.renderLossAnalysis();
-
-        // Disparar automação de proposta enviada
-        const leads = Store.getLeads();
-        const lead = leads.find(l => l.company.toLowerCase() === company.toLowerCase());
-        if (lead && typeof window.WhatsApp?.sendAutomatedMessage === "function") {
-            window.WhatsApp.sendAutomatedMessage(lead.id, "proposal", { proposalId: proposal.id });
+        if (servicesList.length === 0 && productsList.length === 0) {
+            alert("Adicione pelo menos um serviço ou produto ao orçamento.");
+            isSaving = false;
+            return;
         }
 
+        const mainService = servicesList[0]?.service || (productsList[0]?.product || "Consultoria Técnica");
+        const title = `Orçamento #${budgetNumber} - ${mainService}`;
+
+        // Endereço de entrega
+        let deliveryAddress = null;
+        if (document.getElementById("gc-check-delivery-address")?.checked) {
+            deliveryAddress = {
+                cep: getVal("gc-delivery-cep"),
+                street: getVal("gc-delivery-street"),
+                number: getVal("gc-delivery-number"),
+                neighborhood: getVal("gc-delivery-neighborhood"),
+                city: getVal("gc-delivery-city"),
+                state: getVal("gc-delivery-state")
+            };
+        }
+
+        const generatePayment = document.getElementById("gc-check-generate-payment")?.checked;
+        const paymentType = document.querySelector('input[name="gc-payment-type"]:checked')?.value || "vista";
+
+        const currentUser = Auth.getCurrentUser();
+
+        if (currentEditingBudgetId) {
+            // Edição
+            const updatedProposal = {
+                company,
+                contact,
+                title,
+                service: mainService,
+                value: finalValue,
+                budgetNumber,
+                seller,
+                deliveryDate,
+                validityText,
+                channel,
+                costCenter,
+                intro,
+                techDescription,
+                freight,
+                carrier,
+                deliveryAddress,
+                generatePayment,
+                paymentType,
+                servicesList,
+                productsList,
+                attachments: [...currentBudgetAttachments],
+                notes,
+                internalNotes
+            };
+
+            Store.updateProposal(currentEditingBudgetId, updatedProposal, currentUser ? currentUser.email : "sistema@vellia.com");
+            Audit.logStageChange(currentUser?.email, company, "Atualização", "Orçamento", `Orçamento #${budgetNumber} atualizado: R$ ${finalValue}`);
+            alert(`Orçamento #${budgetNumber} atualizado com sucesso!`);
+        } else {
+            // Nova proposta
+            const newProposal = {
+                company,
+                contact,
+                title,
+                service: mainService,
+                value: finalValue,
+                status: "Enviada",
+                sentAt: date ? new Date(date).toISOString() : new Date().toISOString(),
+                validUntil: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+                budgetNumber,
+                seller,
+                deliveryDate,
+                validityText,
+                channel,
+                costCenter,
+                intro,
+                techDescription,
+                freight,
+                carrier,
+                deliveryAddress,
+                generatePayment,
+                paymentType,
+                servicesList,
+                productsList,
+                attachments: [...currentBudgetAttachments],
+                notes,
+                internalNotes,
+                createdBy: currentUser?.email || "sistema@vellia.com"
+            };
+
+            const created = Store.addProposal(newProposal);
+            Audit.logStageChange(currentUser?.email, company, "Nova", "Enviada", `Orçamento #${budgetNumber} criado: ${title} - R$ ${finalValue}`);
+
+            // WhatsApp automático
+            const leads = Store.getLeads();
+            const lead = leads.find(l => l.company.toLowerCase() === company.toLowerCase());
+            if (lead && typeof window.WhatsApp?.sendAutomatedMessage === "function") {
+                window.WhatsApp.sendAutomatedMessage(lead.id, "proposal", { proposalId: created.id });
+            }
+
+            alert(`Orçamento #${budgetNumber} cadastrado com sucesso!`);
+        }
+
+        this.closeBudgetScreen();
         isSaving = false;
+    },
+
+    saveProposal() {
+        this.saveBudgetProposal();
     },
 
     // ==========================================================================
@@ -757,27 +1293,11 @@ export const Proposals = {
     // ==========================================================================
     // EDIÇÃO DE PROPOSTA
     // ==========================================================================
-    openEditProposalModal() {
-        if (!activeProposalId) return;
-        const proposal = Store.getProposalById(activeProposalId);
-        if (!proposal) return;
-
-        document.getElementById("edit-proposal-id").value = proposal.id;
-        document.getElementById("edit-prop-number").value = proposal.id;
-        document.getElementById("edit-prop-service").value = proposal.service || "";
-        document.getElementById("edit-prop-title").value = proposal.title || "";
-        document.getElementById("edit-prop-value").value = proposal.value || 0;
-        
-        if (proposal.validUntil) {
-            document.getElementById("edit-prop-valid").value = new Date(proposal.validUntil).toISOString().split('T')[0];
-        } else {
-            document.getElementById("edit-prop-valid").value = "";
-        }
-        
-        document.getElementById("edit-prop-notes").value = proposal.notes || "";
-
-        document.getElementById("edit-proposal-modal").classList.add("open");
-        document.getElementById("modal-overlay").style.display = "block";
+    openEditProposalModal(id = null) {
+        const targetId = id || activeProposalId;
+        if (!targetId) return;
+        this.closeDetailModal();
+        this.openBudgetScreen(targetId);
     },
 
     closeEditProposalModal() {

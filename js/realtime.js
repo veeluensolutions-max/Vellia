@@ -261,6 +261,17 @@ function processIncomingTask(type, record, oldRecord) {
     window.dispatchEvent(new CustomEvent("vellia:tasksChanged", {
         detail: { owner: ownerEmail, type, task }
     }));
+
+    // Sincronização em tempo real do Monitor de Atividades Extras (Visão ADM e Vendedor)
+    if (task && task.text && task.text.includes("[ATIVIDADE_EXTRA]")) {
+        window.dispatchEvent(new CustomEvent("vellia:liveTasksChanged", {
+            detail: { owner: ownerEmail, type, task }
+        }));
+        if (window.Dashboard && typeof window.Dashboard.handleIncomingRealtimeTask === "function") {
+            window.Dashboard.handleIncomingRealtimeTask(task, type);
+        }
+    }
+
     window.dispatchEvent(new Event("storage"));
 }
 

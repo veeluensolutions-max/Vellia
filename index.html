@@ -505,6 +505,11 @@
                             </div>
                         </div>
 
+                        <!-- ⏱️ Painel de Atividades & Tarefas da Equipe em Tempo Real (Visão Gestor / ADM - No Topo) -->
+                        <div id="live-tasks-monitor-panel" class="vellia-card" style="margin-bottom: 24px; position: relative; overflow: hidden;">
+                            <!-- Preenchido dinamicamente via Dashboard.renderLiveTasksMonitor() -->
+                        </div>
+
                         <!-- Alerta de Intervenção da Diretoria (Fase 6) -->
                         <div id="dashboard-intervention-alert" class="vellia-card" style="display: none; background: rgba(220, 38, 38, 0.06); border-left: 4px solid var(--danger); margin-bottom: 24px; padding: 16px 20px; align-items: center; justify-content: space-between;">
                             <div>
@@ -721,11 +726,6 @@
                         <!-- 🎯 Painel de Metas & Comissões (Posicionado abaixo no Dashboard) -->
                         <div id="dashboard-goals-commissions-panel" class="vellia-card" style="margin-top: 24px; margin-bottom: 24px;">
                             <!-- Preenchido via Dashboard.renderGoalsCommissionPanel() -->
-                        </div>
-
-                        <!-- ⏱️ Painel de Atividades & Tarefas da Equipe em Tempo Real (Visão Gestor / ADM) -->
-                        <div id="live-tasks-monitor-panel" class="vellia-card" style="margin-top: 24px; position: relative; overflow: hidden;">
-                            <!-- Preenchido dinamicamente via Dashboard.renderLiveTasksMonitor() -->
                         </div>
 
                     </div>

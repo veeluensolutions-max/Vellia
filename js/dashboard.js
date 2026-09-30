@@ -58,8 +58,34 @@ export const Dashboard = {
             }, 1000);
         }
 
+        // Sincronização em tempo real contínua das atividades extras (Cloud Supabase)
+        if (!this._liveSyncInterval) {
+            this._liveSyncInterval = setInterval(() => {
+                this.syncLiveActivitiesFromCloud();
+            }, 3500);
+        }
+        this.syncLiveActivitiesFromCloud();
+
+        // BroadcastChannel para sincronização instantânea entre abas no mesmo computador (< 10ms)
+        if (typeof BroadcastChannel !== "undefined" && !this._liveBus) {
+            try {
+                this._liveBus = new BroadcastChannel("vellia_live_activities_bus");
+                this._liveBus.onmessage = (e) => {
+                    if (e.data && e.data.type === "LIVE_ACTIVITIES_CHANGED") {
+                        this.renderLiveTasksMonitor();
+                    }
+                };
+            } catch (err) {}
+        }
+
         window.addEventListener("vellia:liveTasksChanged", () => {
             this.renderLiveTasksMonitor();
+        });
+
+        window.addEventListener("storage", (e) => {
+            if (e.key === "vellia_live_activities" || (e.key && e.key.startsWith("seller_tasks_"))) {
+                this.renderLiveTasksMonitor();
+            }
         });
 
         // Atualização automática em tempo real do ranking e dos KPIs
@@ -1770,9 +1796,129 @@ export const Dashboard = {
         }
     },
 
-    saveLiveActivities(list) {
+    saveLiveActivities(list, broadcast = true) {
         localStorage.setItem("vellia_live_activities", JSON.stringify(list));
-        window.dispatchEvent(new CustomEvent("vellia:liveTasksChanged"));
+        if (broadcast) {
+            window.dispatchEvent(new CustomEvent("vellia:liveTasksChanged"));
+            if (this._liveBus) {
+                try {
+                    this._liveBus.postMessage({ type: "LIVE_ACTIVITIES_CHANGED", timestamp: Date.now() });
+                } catch (e) {}
+            }
+        }
+    },
+
+    parseTaskToActivity(task) {
+        if (!task || !task.text || !task.text.includes("[ATIVIDADE_EXTRA]")) return null;
+        try {
+            const raw = task.text.replace("[ATIVIDADE_EXTRA]", "").trim();
+            // Formato estruturado com pipes: "|atividade|dur|startedAt|status|actualMinutes"
+            if (raw.startsWith("|")) {
+                const parts = raw.split("|").map(p => p.trim());
+                return {
+                    id: task.id,
+                    sellerEmail: task.owner,
+                    sellerName: task.assignedBy || task.owner,
+                    workspace: task.workspace || "Veeluen Solutions",
+                    activity: parts[1] || "Atividade Extra",
+                    durationMinutes: parseInt(parts[2]) || 30,
+                    startedAt: parts[3] || new Date().toISOString(),
+                    expectedEndAt: new Date(new Date(parts[3] || Date.now()).getTime() + (parseInt(parts[2]) || 30) * 60000).toISOString(),
+                    status: parts[4] || (task.done ? "completed" : "in_progress"),
+                    completedAt: task.done ? new Date().toISOString() : null,
+                    actualMinutes: parts[5] ? parseInt(parts[5]) : null,
+                    date: task.date || new Date().toLocaleDateString("pt-BR")
+                };
+            }
+            // Formato amigável fallback: "Atividade (30 min)"
+            const durMatch = raw.match(/\((\d+)\s*min\)/i);
+            const dur = durMatch ? parseInt(durMatch[1]) : 30;
+            const cleanText = raw.replace(/\(\d+\s*min\)/i, "").replace("Concluída em", "").trim();
+            return {
+                id: task.id,
+                sellerEmail: task.owner,
+                sellerName: task.assignedBy || task.owner,
+                workspace: task.workspace || "Veeluen Solutions",
+                activity: cleanText || "Atividade Extra",
+                durationMinutes: dur,
+                startedAt: new Date().toISOString(),
+                expectedEndAt: new Date(Date.now() + dur * 60000).toISOString(),
+                status: task.done ? "completed" : "in_progress",
+                completedAt: task.done ? new Date().toISOString() : null,
+                actualMinutes: task.done ? dur : null,
+                date: task.date || new Date().toLocaleDateString("pt-BR")
+            };
+        } catch (e) {
+            return null;
+        }
+    },
+
+    async syncLiveActivitiesFromCloud() {
+        try {
+            const SUPABASE_URL = "https://ogrbsonpkiamoytxjshg.supabase.co";
+            const SUPABASE_KEY = "sb_publishable_Wi3eKJi5uyEzqihEDF6Eaw_-i0zcHe7";
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/comercial_tasks?text=like.*%5BATIVIDADE_EXTRA%5D*&order=date.desc&limit=50`, {
+                headers: {
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": `Bearer ${SUPABASE_KEY}`
+                }
+            });
+            if (!res.ok) return;
+            const remoteTasks = await res.json();
+            if (!Array.isArray(remoteTasks)) return;
+
+            let localList = this.getLiveActivities();
+            let changed = false;
+
+            remoteTasks.forEach(rt => {
+                const parsed = this.parseTaskToActivity(rt);
+                if (!parsed) return;
+                const idx = localList.findIndex(a => a.id === parsed.id);
+                if (idx === -1) {
+                    localList.unshift(parsed);
+                    changed = true;
+                } else {
+                    const curr = localList[idx];
+                    if (curr.status !== parsed.status || curr.actualMinutes !== parsed.actualMinutes) {
+                        localList[idx] = { ...curr, ...parsed };
+                        changed = true;
+                    }
+                }
+            });
+
+            if (changed) {
+                this.saveLiveActivities(localList, false);
+                this.renderLiveTasksMonitor();
+            }
+        } catch (e) {
+            // Silencioso em caso de offline
+        }
+    },
+
+    handleIncomingRealtimeTask(task, type) {
+        if (!task || !task.text || !task.text.includes("[ATIVIDADE_EXTRA]")) return;
+        const parsed = this.parseTaskToActivity(task);
+        if (!parsed) return;
+
+        let localList = this.getLiveActivities();
+        const idx = localList.findIndex(a => a.id === parsed.id);
+
+        if (type === "DELETE" || type === "DELETE_ROW") {
+            if (idx !== -1) {
+                localList.splice(idx, 1);
+                this.saveLiveActivities(localList);
+                this.renderLiveTasksMonitor();
+            }
+            return;
+        }
+
+        if (idx === -1) {
+            localList.unshift(parsed);
+        } else {
+            localList[idx] = { ...localList[idx], ...parsed };
+        }
+        this.saveLiveActivities(localList);
+        this.renderLiveTasksMonitor();
     },
 
     startLiveActivity(sellerEmail, sellerName, activityText, durationMinutes) {
@@ -1815,21 +1961,36 @@ export const Dashboard = {
         activities.unshift(newAct);
         this.saveLiveActivities(activities);
 
-        // Sincronizar também no Store/Supabase em comercial_tasks para visibilidade entre computadores
+        // Sincronizar também no Store/Supabase em comercial_tasks para visibilidade em tempo real entre todas as máquinas
         try {
-            const currentTasks = Store.getTasks(sellerEmail) || [];
-            currentTasks.unshift({
+            const SUPABASE_URL = "https://ogrbsonpkiamoytxjshg.supabase.co";
+            const SUPABASE_KEY = "sb_publishable_Wi3eKJi5uyEzqihEDF6Eaw_-i0zcHe7";
+            const taskPayload = {
                 id: newAct.id,
+                workspace: workspace,
                 owner: sellerEmail,
-                text: `[ATIVIDADE_EXTRA] ${newAct.activity} (${dur} min)`,
+                text: `[ATIVIDADE_EXTRA]|${newAct.activity}|${dur}|${newAct.startedAt}|in_progress`,
                 done: false,
                 date: newAct.date,
                 priority: "high",
-                assignedBy: Auth.getCurrentUser()?.email || sellerEmail,
-                workspace
-            });
-            Store.saveTasks(sellerEmail, currentTasks);
-            Store.addLog(sellerEmail, "LIVE_TASK_STARTED", `Iniciou atividade extra: "${newAct.activity}" (Duração prevista: ${dur}min)`);
+                assignedBy: sellerName || sellerEmail
+            };
+
+            fetch(`${SUPABASE_URL}/rest/v1/comercial_tasks`, {
+                method: "POST",
+                headers: {
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": `Bearer ${SUPABASE_KEY}`,
+                    "Content-Type": "application/json",
+                    "Prefer": "resolution=merge-duplicates"
+                },
+                body: JSON.stringify(taskPayload)
+            }).catch(e => console.warn("Live task cloud sync error:", e));
+
+            const currentTasks = Store.getTasks(sellerEmail) || [];
+            currentTasks.unshift(taskPayload);
+            localStorage.setItem(`seller_tasks_${sellerEmail}`, JSON.stringify(currentTasks));
+            Store.addLog(sellerEmail, "LIVE_TASK_STARTED", `Iniciou atividade extra: "${newAct.activity}" (${dur} min)`);
         } catch (e) {}
 
         Toast.show(`Atividade extra iniciada com sucesso! (${dur} min)`, "success");
@@ -1849,15 +2010,33 @@ export const Dashboard = {
         this.saveLiveActivities(activities);
 
         try {
+            const SUPABASE_URL = "https://ogrbsonpkiamoytxjshg.supabase.co";
+            const SUPABASE_KEY = "sb_publishable_Wi3eKJi5uyEzqihEDF6Eaw_-i0zcHe7";
+            const taskPayload = {
+                text: `[ATIVIDADE_EXTRA]|${act.activity}|${act.durationMinutes}|${act.startedAt}|completed|${act.actualMinutes}`,
+                done: true,
+                priority: "completed"
+            };
+
+            fetch(`${SUPABASE_URL}/rest/v1/comercial_tasks?id=eq.${activityId}`, {
+                method: "PATCH",
+                headers: {
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": `Bearer ${SUPABASE_KEY}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(taskPayload)
+            }).catch(e => console.warn("Live task finish cloud sync error:", e));
+
             const currentTasks = Store.getTasks(act.sellerEmail) || [];
             const t = currentTasks.find(x => x.id === activityId);
             if (t) {
                 t.done = true;
                 t.priority = "completed";
-                t.text = `[ATIVIDADE_EXTRA] ${act.activity} (Concluída em ${act.actualMinutes} min)`;
-                Store.saveTasks(act.sellerEmail, currentTasks);
+                t.text = `[ATIVIDADE_EXTRA]|${act.activity}|${act.durationMinutes}|${act.startedAt}|completed|${act.actualMinutes}`;
+                localStorage.setItem(`seller_tasks_${act.sellerEmail}`, JSON.stringify(currentTasks));
             }
-            Store.addLog(act.sellerEmail, "LIVE_TASK_FINISHED", `Concluiu atividade extra: "${act.activity}" (Tempo real: ${act.actualMinutes}min)`);
+            Store.addLog(act.sellerEmail, "LIVE_TASK_FINISHED", `Concluiu atividade extra: "${act.activity}" (${act.actualMinutes} min)`);
         } catch (e) {}
 
         Toast.show(`Atividade concluída com sucesso! Tempo dedicado: ${act.actualMinutes} min.`, "success");
@@ -1872,6 +2051,20 @@ export const Dashboard = {
             act.status = "cancelled";
             act.completedAt = new Date().toISOString();
             this.saveLiveActivities(activities);
+
+            try {
+                const SUPABASE_URL = "https://ogrbsonpkiamoytxjshg.supabase.co";
+                const SUPABASE_KEY = "sb_publishable_Wi3eKJi5uyEzqihEDF6Eaw_-i0zcHe7";
+                fetch(`${SUPABASE_URL}/rest/v1/comercial_tasks?id=eq.${activityId}`, {
+                    method: "PATCH",
+                    headers: {
+                        "apikey": SUPABASE_KEY,
+                        "Authorization": `Bearer ${SUPABASE_KEY}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ priority: "cancelled", done: true })
+                }).catch(e => console.warn("Live task cancel cloud sync error:", e));
+            } catch (e) {}
         }
         Toast.show("Atividade cancelada.", "info");
         this.renderLiveTasksMonitor();
@@ -2262,7 +2455,16 @@ export const Dashboard = {
             });
 
             const btnRefresh = document.getElementById("btn-refresh-live-tasks");
-            if (btnRefresh) btnRefresh.onclick = () => this.renderLiveTasksMonitor();
+            if (btnRefresh) {
+                btnRefresh.onclick = async () => {
+                    const originalHtml = btnRefresh.innerHTML;
+                    btnRefresh.disabled = true;
+                    btnRefresh.innerHTML = `<span class="live-pulse-indicator"></span> Sincronizando...`;
+                    await this.syncLiveActivitiesFromCloud();
+                    this.renderLiveTasksMonitor();
+                    Toast.show("Atividades sincronizadas em tempo real!", "success");
+                };
+            }
 
         } else {
             // ================================================================

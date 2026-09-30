@@ -412,9 +412,380 @@
     transform: scale(0.99);
 }
 
+.gc-btn-secondary {
+    background-color: #f1f5f9;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 10px 18px;
+    font-size: 13.5px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.gc-btn-secondary:hover {
+    background-color: #e2e8f0;
+    color: #0f172a;
+}
+
+.gc-btn-ai {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(99, 102, 241, 0.25);
+    transition: all 0.15s;
+}
+
+.gc-btn-ai:hover {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(99, 102, 241, 0.35);
+}
+
+.gc-btn-back {
+    background: transparent;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 12.5px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.gc-btn-back:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+    border-color: #94a3b8;
+}
+
+/* Badges GestãoClick */
+.gc-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11.5px;
+    font-weight: 600;
+}
+
+.gc-badge-success {
+    background-color: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+}
+
+.gc-badge-warning {
+    background-color: #fef3c7;
+    color: #b45309;
+    border: 1px solid #fde68a;
+}
+
+.gc-badge-danger {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+.gc-badge-info {
+    background-color: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+}
+
+.gc-badge-neutral {
+    background-color: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+/* Checklist de Inspeção Técnica GestãoClick */
+.gc-checklist-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    margin-top: 8px;
+}
+
+.gc-checklist-table th {
+    background: #f8fafc;
+    color: #475569;
+    font-weight: 600;
+    padding: 8px 12px;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: left;
+}
+
+.gc-checklist-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+
+.gc-btn-group-toggle {
+    display: inline-flex;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.gc-toggle-btn {
+    border: none;
+    background: #ffffff;
+    color: #64748b;
+    padding: 4px 10px;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    border-right: 1px solid #e2e8f0;
+    transition: all 0.15s;
+}
+
+.gc-toggle-btn:last-child {
+    border-right: none;
+}
+
+.gc-toggle-btn.active-conforme {
+    background-color: #10b981;
+    color: #ffffff;
+}
+
+.gc-toggle-btn.active-nao-conforme {
+    background-color: #ef4444;
+    color: #ffffff;
+}
+
+.gc-toggle-btn.active-nao-aplica {
+    background-color: #64748b;
+    color: #ffffff;
+}
+
+/* Editor de Minuta de Contrato IA */
+.gc-draft-editor-wrapper {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.gc-draft-toolbar {
+    background: #f8fafc;
+    padding: 8px 12px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.gc-draft-textarea {
+    width: 100%;
+    min-height: 280px;
+    padding: 14px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: #1e293b;
+    background: #ffffff;
+    border: none;
+    outline: none;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+/* Scanner de Laudos e Fotos */
+.gc-scanner-box {
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 16px;
+    transition: all 0.2s;
+}
+
+.gc-scanner-box:hover {
+    border-color: #3b82f6;
+    background: #f0f7ff;
+}
+
 /* Responsividade */
 @media (max-width: 900px) {
     .gc-grid-3, .gc-grid-4, .gc-grid-2, .gc-total-grid {
         grid-template-columns: 1fr;
     }
 }
+
+/* Suporte Nativo ao Tema Escuro (data-theme="dark") */
+[data-theme="dark"] .gc-budget-container {
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .gc-header {
+    border-bottom-color: #334155;
+}
+
+[data-theme="dark"] .gc-header-title {
+    color: #f8fafc;
+}
+
+[data-theme="dark"] .gc-breadcrumbs {
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .gc-card {
+    background-color: #1e293b;
+    border-color: #334155;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .gc-card-header {
+    background-color: #0f172a;
+    border-bottom-color: #334155;
+}
+
+[data-theme="dark"] .gc-card-title {
+    color: #f1f5f9;
+}
+
+[data-theme="dark"] .gc-card-body {
+    background-color: #1e293b;
+}
+
+[data-theme="dark"] .gc-form-label {
+    color: #cbd5e1;
+}
+
+[data-theme="dark"] .gc-input,
+[data-theme="dark"] .gc-select,
+[data-theme="dark"] .gc-textarea {
+    background-color: #0f172a;
+    border-color: #334155;
+    color: #f8fafc;
+}
+
+[data-theme="dark"] .gc-input:focus,
+[data-theme="dark"] .gc-select:focus,
+[data-theme="dark"] .gc-textarea:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+}
+
+[data-theme="dark"] .gc-table th {
+    background-color: #0f172a;
+    color: #94a3b8;
+    border-bottom-color: #334155;
+}
+
+[data-theme="dark"] .gc-table td {
+    border-bottom-color: #334155;
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .gc-checklist-table th {
+    background-color: #0f172a;
+    color: #94a3b8;
+    border-bottom-color: #334155;
+}
+
+[data-theme="dark"] .gc-checklist-table td {
+    border-bottom-color: #334155;
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .gc-toggle-btn {
+    background-color: #0f172a;
+    color: #94a3b8;
+    border-color: #334155;
+}
+
+[data-theme="dark"] .gc-draft-editor-wrapper {
+    background-color: #0f172a;
+    border-color: #334155;
+}
+
+[data-theme="dark"] .gc-draft-toolbar {
+    background-color: #1e293b;
+    border-bottom-color: #334155;
+}
+
+[data-theme="dark"] .gc-draft-textarea {
+    background-color: #0f172a;
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .gc-scanner-box {
+    background-color: #0f172a;
+    border-color: #334155;
+}
+
+[data-theme="dark"] .gc-scanner-box:hover {
+    border-color: #6366f1;
+    background-color: rgba(99, 102, 241, 0.08);
+}
+
+[data-theme="dark"] .gc-btn-secondary {
+    background-color: #334155;
+    color: #f1f5f9;
+    border-color: #475569;
+}
+
+[data-theme="dark"] .gc-btn-secondary:hover {
+    background-color: #475569;
+    color: #ffffff;
+}
+
+[data-theme="dark"] .gc-btn-back {
+    border-color: #475569;
+    color: #cbd5e1;
+}
+
+[data-theme="dark"] .gc-btn-back:hover {
+    background-color: #334155;
+    color: #ffffff;
+}
+
+[data-theme="dark"] .gc-actions-bar {
+    background-color: #1e293b;
+    border-top-color: #334155;
+    box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .gc-total-card {
+    background-color: #0f172a;
+    border-color: #334155;
+}
+
+[data-theme="dark"] .gc-total-label {
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .gc-total-sub {
+    color: #64748b;
+}
+
+[data-theme="dark"] .gc-badge-neutral {
+    background-color: #334155;
+    color: #e2e8f0;
+    border-color: #475569;
+}
+
+

@@ -1,6 +1,8 @@
 import { Store } from "./store.js";
 import { Auth } from "./auth.js";
 
+let currentEditingContractId = null;
+
 export const Contracts = {
     _eventsBound: false,
 
@@ -9,59 +11,641 @@ export const Contracts = {
             this.bindEvents();
             this._eventsBound = true;
         }
+        this.populateClientsDatalist();
         this.checkRenewals();
         this.renderTable();
     },
 
     bindEvents() {
+        // Botão Novo Contrato (Abre tela completa no padrão GestãoClick)
         const btnNewContract = document.getElementById("btn-new-contract");
+        if (btnNewContract) btnNewContract.addEventListener("click", () => this.openContractScreen());
+
+        // Controles da tela GestãoClick de Contrato
+        const btnBack = document.getElementById("gc-contract-btn-back");
+        if (btnBack) btnBack.addEventListener("click", () => this.closeContractScreen());
+
+        const btnCancel = document.getElementById("gc-contract-btn-cancel");
+        if (btnCancel) btnCancel.addEventListener("click", () => this.closeContractScreen());
+
+        const btnSubmit = document.getElementById("gc-contract-btn-submit");
+        if (btnSubmit) btnSubmit.addEventListener("click", () => this.saveContractFromScreen(false));
+
+        const btnSubmitPdf = document.getElementById("gc-contract-btn-submit-pdf");
+        if (btnSubmitPdf) btnSubmitPdf.addEventListener("click", () => this.saveContractFromScreen(true));
+
+        const btnAddService = document.getElementById("gc-contract-btn-add-service");
+        if (btnAddService) btnAddService.addEventListener("click", () => this.addServiceRow());
+
+        const btnEditNumber = document.getElementById("gc-contract-btn-edit-number");
+        if (btnEditNumber) {
+            btnEditNumber.addEventListener("click", () => {
+                const numInput = document.getElementById("gc-contract-number");
+                if (numInput) {
+                    numInput.readOnly = false;
+                    numInput.classList.remove("gc-input-readonly");
+                    numInput.focus();
+                }
+            });
+        }
+
+        const btnClearSeller = document.getElementById("gc-contract-btn-clear-seller");
+        if (btnClearSeller) {
+            btnClearSeller.addEventListener("click", () => {
+                const sellerInput = document.getElementById("gc-contract-seller");
+                if (sellerInput) sellerInput.value = "";
+            });
+        }
+
+        const startDateInput = document.getElementById("gc-contract-start-date");
+        if (startDateInput) {
+            startDateInput.addEventListener("change", (e) => {
+                const endDateInput = document.getElementById("gc-contract-end-date");
+                if (endDateInput && e.target.value) {
+                    const d = new Date(e.target.value + "T12:00:00");
+                    d.setFullYear(d.getFullYear() + 1);
+                    endDateInput.value = d.toISOString().split("T")[0];
+                    this.recalculateTotals();
+                }
+            });
+        }
+
+        const endDateInput = document.getElementById("gc-contract-end-date");
+        if (endDateInput) {
+            endDateInput.addEventListener("change", () => this.recalculateTotals());
+        }
+
+        // Minuta IA na tela GestãoClick
+        const btnGenerateAI = document.getElementById("gc-contract-btn-generate-ai");
+        if (btnGenerateAI) btnGenerateAI.addEventListener("click", () => this.generateDraftFromScreen());
+
+        const btnCopyDraft = document.getElementById("gc-contract-btn-copy-draft");
+        if (btnCopyDraft) {
+            btnCopyDraft.addEventListener("click", () => {
+                const editor = document.getElementById("gc-contract-draft-editor");
+                if (editor && editor.value) {
+                    navigator.clipboard.writeText(editor.value);
+                    alert("📋 Minuta do contrato copiada para a área de transferência!");
+                }
+            });
+        }
+
+        const btnExportPDF = document.getElementById("gc-contract-btn-export-pdf");
+        if (btnExportPDF) {
+            btnExportPDF.addEventListener("click", () => {
+                const editor = document.getElementById("gc-contract-draft-editor");
+                if (editor && editor.value) {
+                    this.exportContractDraftPDF(editor.value);
+                } else {
+                    alert("Gere ou preencha a minuta antes de exportar.");
+                }
+            });
+        }
+
+        const btnSelectFile = document.getElementById("gc-contract-btn-select-file");
+        const fileInput = document.getElementById("gc-contract-files");
+        if (btnSelectFile && fileInput) {
+            btnSelectFile.addEventListener("click", () => fileInput.click());
+            fileInput.addEventListener("change", (e) => {
+                const countEl = document.getElementById("gc-contract-files-count");
+                if (countEl && e.target.files) {
+                    countEl.textContent = `${e.target.files.length} arquivo(s) selecionado(s)`;
+                }
+            });
+        }
+
+        // Filtros da tabela
+        const searchInput = document.getElementById("contracts-search");
+        const filterStatus = document.getElementById("contracts-filter-status");
+        if (searchInput) searchInput.addEventListener("input", () => this.renderTable());
+        if (filterStatus) filterStatus.addEventListener("change", () => this.renderTable());
+
+        // Modais legados (mantidos para compatibilidade)
         const btnCloseModal = document.getElementById("btn-close-contract-modal");
         const btnCancelContract = document.getElementById("btn-cancel-contract");
         const contractForm = document.getElementById("contract-form");
-        const searchInput = document.getElementById("contracts-search");
-        const filterStatus = document.getElementById("contracts-filter-status");
-
-        if (btnNewContract) btnNewContract.addEventListener("click", () => this.openModal());
         if (btnCloseModal) btnCloseModal.addEventListener("click", () => this.closeModal());
         if (btnCancelContract) btnCancelContract.addEventListener("click", () => this.closeModal());
-        
         if (contractForm) {
             contractForm.addEventListener("submit", (e) => {
                 e.preventDefault();
                 this.saveContract();
             });
         }
+    },
 
-        if (searchInput) searchInput.addEventListener("input", () => this.renderTable());
-        if (filterStatus) filterStatus.addEventListener("change", () => this.renderTable());
+    populateClientsDatalist() {
+        const datalist = document.getElementById("gc-contract-clients-datalist");
+        if (!datalist) return;
+        const leads = Store.getLeads ? Store.getLeads() : [];
+        const contracts = Store.getContracts ? Store.getContracts() : [];
+        const names = new Set();
+        leads.forEach(l => { if (l.company) names.add(l.company.trim()); });
+        contracts.forEach(c => { 
+            const lead = leads.find(l => l.id === c.leadId);
+            if (lead && lead.company) names.add(lead.company.trim());
+        });
+        datalist.innerHTML = Array.from(names).map(name => `<option value="${name}"></option>`).join("");
+    },
 
-        // Ouvintes do Modal de Minutas IA
-        const btnCopyDraft = document.getElementById("btn-copy-draft-text");
-        if (btnCopyDraft) {
-            btnCopyDraft.addEventListener("click", () => {
-                const editor = document.getElementById("contract-draft-text-editor");
-                if (editor && editor.value) {
-                    navigator.clipboard.writeText(editor.value);
-                    alert("📋 Minuta de contrato copiada para a área de transferência!");
-                }
+    openContractScreen(contractId = null, leadData = null) {
+        currentEditingContractId = contractId;
+        this.populateClientsDatalist();
+
+        const titleEl = document.getElementById("gc-contract-title-action");
+        const breadcrumbEl = document.getElementById("gc-contract-breadcrumb-action");
+        const submitBtn = document.getElementById("gc-contract-btn-submit");
+
+        const setVal = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.value = val !== undefined && val !== null ? val : "";
+        };
+
+        const todayStr = new Date().toISOString().split("T")[0];
+        const nextYearDate = new Date();
+        nextYearDate.setFullYear(nextYearDate.getFullYear() + 1);
+        const nextYearStr = nextYearDate.toISOString().split("T")[0];
+
+        const currentUser = Auth.getCurrentUser();
+
+        if (contractId) {
+            const contract = Store.getContractById(contractId);
+            if (!contract) return;
+
+            if (titleEl) titleEl.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <span>Editar contrato</span>
+            `;
+            if (breadcrumbEl) breadcrumbEl.textContent = "Editar";
+            if (submitBtn) {
+                submitBtn.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Salvar alterações</span>
+                `;
+            }
+
+            const leads = Store.getAllLeadsRaw ? Store.getAllLeadsRaw() : (JSON.parse(localStorage.getItem('comercial_leads')) || []);
+            const lead = leads.find(l => l.id === contract.leadId);
+
+            setVal("gc-contract-id", contract.id);
+            setVal("gc-contract-number", contract.number);
+            setVal("gc-contract-client", lead ? lead.company : "");
+            setVal("gc-contract-seller", contract.owner || contract.createdBy || currentUser?.name || "San Charles");
+            setVal("gc-contract-status", contract.status || "Ativo");
+            setVal("gc-contract-start-date", contract.startDate || todayStr);
+            setVal("gc-contract-end-date", contract.endDate || nextYearStr);
+            setVal("gc-contract-periodicity", contract.periodicity || "Mensal");
+            setVal("gc-contract-due-day", contract.dueDay || "10");
+            setVal("gc-contract-payment-method", contract.paymentMethod || "Boleto Bancário");
+            setVal("gc-contract-warning-days", contract.warningDays || 30);
+            setVal("gc-contract-object", contract.notes || contract.object || "Prestação de Serviços de Engenharia Ambiental e Monitoramento");
+            setVal("gc-contract-notes", contract.clientNotes || contract.notes || "");
+            setVal("gc-contract-internal-notes", contract.internalNotes || "");
+
+            const checkAutoRenew = document.getElementById("gc-contract-auto-renew");
+            if (checkAutoRenew) checkAutoRenew.checked = contract.autoRenew !== false;
+
+            // Carregar serviços vinculados
+            const tbody = document.getElementById("gc-contract-services-tbody");
+            if (tbody) tbody.innerHTML = "";
+            const services = Store.getServicesForContract ? Store.getServicesForContract(contract.id) : [];
+            if (services && services.length > 0) {
+                services.forEach(s => this.addServiceRow(s));
+            } else {
+                this.addServiceRow({
+                    service: contract.service || "Licenciamento e Consultoria Ambiental",
+                    details: contract.notes || "Monitoramento Periódico",
+                    qty: 1,
+                    price: contract.recurringValue || (contract.totalValue ? (contract.totalValue / 12) : 0),
+                    discount: 0
+                });
+            }
+
+            // Minuta
+            if (contract.draftText) {
+                setVal("gc-contract-draft-editor", contract.draftText);
+            }
+
+        } else {
+            // Novo Contrato
+            if (titleEl) titleEl.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                <span>Adicionar contrato</span>
+            `;
+            if (breadcrumbEl) breadcrumbEl.textContent = "Adicionar";
+            if (submitBtn) {
+                submitBtn.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Salvar contrato</span>
+                `;
+            }
+
+            const totalExisting = (Store.getContracts ? Store.getContracts().length : 0) + 1;
+            const nextNumber = `CT-${new Date().getFullYear()}-${String(totalExisting).padStart(3, '0')}`;
+
+            setVal("gc-contract-id", "");
+            setVal("gc-contract-number", nextNumber);
+            setVal("gc-contract-client", leadData?.company || "");
+            setVal("gc-contract-seller", currentUser?.name || "San Charles");
+            setVal("gc-contract-status", "Em formalização");
+            setVal("gc-contract-start-date", todayStr);
+            setVal("gc-contract-end-date", nextYearStr);
+            setVal("gc-contract-periodicity", "Mensal");
+            setVal("gc-contract-due-day", "10");
+            setVal("gc-contract-payment-method", "Boleto Bancário");
+            setVal("gc-contract-warning-days", "30");
+            setVal("gc-contract-object", "Prestação de Serviços Contínuos de Consultoria Ambiental, Emissões Atmosféricas e Laudos Técnicos.");
+            setVal("gc-contract-notes", "Condições gerais de prestação dos serviços e acompanhamento técnico.");
+            setVal("gc-contract-internal-notes", "");
+
+            const checkAutoRenew = document.getElementById("gc-contract-auto-renew");
+            if (checkAutoRenew) checkAutoRenew.checked = true;
+
+            const tbody = document.getElementById("gc-contract-services-tbody");
+            if (tbody) tbody.innerHTML = "";
+            this.addServiceRow({
+                service: "Licenciamento e Consultoria Ambiental",
+                details: "Acompanhamento mensal de condicionantes ambientais",
+                qty: 1,
+                price: 1500,
+                discount: 0
+            });
+
+            setVal("gc-contract-draft-editor", "");
+        }
+
+        // Alternar visualização
+        const listContainer = document.getElementById("contracts-list-container");
+        const contractView = document.getElementById("gestaoclick-contract-view");
+        if (listContainer) listContainer.style.display = "none";
+        if (contractView) contractView.style.display = "block";
+
+        this.recalculateTotals();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+
+    closeContractScreen() {
+        const listContainer = document.getElementById("contracts-list-container");
+        const contractView = document.getElementById("gestaoclick-contract-view");
+        if (contractView) contractView.style.display = "none";
+        if (listContainer) listContainer.style.display = "block";
+        this.renderTable();
+    },
+
+    addServiceRow(data = null) {
+        const tbody = document.getElementById("gc-contract-services-tbody");
+        if (!tbody) return;
+
+        const defaultService = data?.service || "Licenciamento e Consultoria Ambiental";
+        const defaultDetails = data?.details || "";
+        const defaultQty = data?.qty || 1;
+        const defaultPrice = parseFloat(data?.price || 0);
+        const defaultDiscount = parseFloat(data?.discount || 0);
+        const subtotal = Math.max(0, (defaultPrice * defaultQty) - defaultDiscount);
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>
+                <select class="gc-select gc-service-select" style="font-size: 12.5px;">
+                    <option value="Licenciamento e Consultoria Ambiental">Licenciamento & Consultoria Ambiental</option>
+                    <option value="Amostragem Isocinética de Chaminé">Amostragem Isocinética de Chaminé</option>
+                    <option value="Inspeção NR-13 (Caldeiras e Vasos)">Inspeção NR-13 (Caldeiras e Vasos)</option>
+                    <option value="Laudo NR-12 (Segurança de Máquinas)">Laudo NR-12 (Segurança de Máquinas)</option>
+                    <option value="PGR / PCMSO / Meio Ambiente">PGR / PCMSO / Meio Ambiente</option>
+                    <option value="Laudo Elétrico NR-10 e SPDA">Laudo Elétrico NR-10 e SPDA</option>
+                    <option value="Medição de Ruído e Poluentes">Medição de Ruído e Poluentes</option>
+                    <option value="Outros Serviços Técnicos">Outros Serviços Técnicos</option>
+                </select>
+            </td>
+            <td>
+                <input type="text" class="gc-input gc-service-details" placeholder="Escopo do serviço..." value="${defaultDetails}">
+            </td>
+            <td>
+                <input type="number" class="gc-input gc-service-qty" min="1" value="${defaultQty}" style="text-align: center;">
+            </td>
+            <td>
+                <input type="number" step="0.01" class="gc-input gc-service-price" value="${defaultPrice.toFixed(2)}" style="text-align: right;">
+            </td>
+            <td>
+                <input type="number" step="0.01" class="gc-input gc-service-discount" value="${defaultDiscount.toFixed(2)}" style="text-align: right;">
+            </td>
+            <td>
+                <input type="text" class="gc-input gc-service-subtotal gc-input-readonly" value="R$ ${subtotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}" readonly style="text-align: right; font-weight: 600;">
+            </td>
+            <td style="text-align: center;">
+                <button type="button" class="gc-btn-delete-row" title="Remover item">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+            </td>
+        `;
+
+        const select = tr.querySelector(".gc-service-select");
+        if (select) select.value = defaultService;
+
+        const updateRowSubtotal = () => {
+            const qty = parseFloat(tr.querySelector(".gc-service-qty")?.value) || 0;
+            const price = parseFloat(tr.querySelector(".gc-service-price")?.value) || 0;
+            const discount = parseFloat(tr.querySelector(".gc-service-discount")?.value) || 0;
+            const sub = Math.max(0, (qty * price) - discount);
+            const subInput = tr.querySelector(".gc-service-subtotal");
+            if (subInput) subInput.value = `R$ ${sub.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            this.recalculateTotals();
+        };
+
+        tr.querySelector(".gc-service-qty")?.addEventListener("input", updateRowSubtotal);
+        tr.querySelector(".gc-service-price")?.addEventListener("input", updateRowSubtotal);
+        tr.querySelector(".gc-service-discount")?.addEventListener("input", updateRowSubtotal);
+
+        tr.querySelector(".gc-btn-delete-row")?.addEventListener("click", () => {
+            tr.remove();
+            this.recalculateTotals();
+        });
+
+        tbody.appendChild(tr);
+        this.recalculateTotals();
+    },
+
+    recalculateTotals() {
+        const rows = document.querySelectorAll("#gc-contract-services-tbody tr");
+        let totalMrr = 0;
+        let totalDiscount = 0;
+
+        rows.forEach(tr => {
+            const qty = parseFloat(tr.querySelector(".gc-service-qty")?.value) || 0;
+            const price = parseFloat(tr.querySelector(".gc-service-price")?.value) || 0;
+            const discount = parseFloat(tr.querySelector(".gc-service-discount")?.value) || 0;
+            const sub = Math.max(0, (qty * price) - discount);
+            totalMrr += sub;
+            totalDiscount += discount;
+        });
+
+        // Calcular meses de vigência
+        const startStr = document.getElementById("gc-contract-start-date")?.value;
+        const endStr = document.getElementById("gc-contract-end-date")?.value;
+        let months = 12;
+
+        if (startStr && endStr) {
+            const d1 = new Date(startStr);
+            const d2 = new Date(endStr);
+            const diffMonths = (d2.getFullYear() - d1.getFullYear()) * 12 + (d2.getMonth() - d1.getMonth());
+            if (diffMonths > 0) months = diffMonths;
+        }
+
+        const totalTcv = totalMrr * months;
+
+        const durationEl = document.getElementById("gc-contract-duration-months");
+        if (durationEl) durationEl.value = `${months} meses`;
+
+        const discountEl = document.getElementById("gc-contract-total-discount");
+        if (discountEl) discountEl.value = `R$ ${totalDiscount.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+
+        const mrrEl = document.getElementById("gc-contract-total-mrr");
+        if (mrrEl) mrrEl.value = `R$ ${totalMrr.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+
+        const tcvEl = document.getElementById("gc-contract-total-tcv");
+        if (tcvEl) tcvEl.value = `R$ ${totalTcv.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+    },
+
+    saveContractFromScreen(exportPdfAfter = false) {
+        const clientName = document.getElementById("gc-contract-client")?.value.trim();
+        if (!clientName) {
+            alert("Por favor, preencha o nome do Cliente / Contratante.");
+            document.getElementById("gc-contract-client")?.focus();
+            return;
+        }
+
+        const id = document.getElementById("gc-contract-id")?.value;
+        const number = document.getElementById("gc-contract-number")?.value;
+        const seller = document.getElementById("gc-contract-seller")?.value;
+        const status = document.getElementById("gc-contract-status")?.value || "Ativo";
+        const startDate = document.getElementById("gc-contract-start-date")?.value;
+        const endDate = document.getElementById("gc-contract-end-date")?.value;
+        const periodicity = document.getElementById("gc-contract-periodicity")?.value;
+        const dueDay = document.getElementById("gc-contract-due-day")?.value;
+        const paymentMethod = document.getElementById("gc-contract-payment-method")?.value;
+        const autoRenew = document.getElementById("gc-contract-auto-renew")?.checked;
+        const warningDays = parseInt(document.getElementById("gc-contract-warning-days")?.value) || 30;
+        const objectText = document.getElementById("gc-contract-object")?.value;
+        const notes = document.getElementById("gc-contract-notes")?.value;
+        const internalNotes = document.getElementById("gc-contract-internal-notes")?.value;
+        const draftText = document.getElementById("gc-contract-draft-editor")?.value;
+
+        // Serviços
+        const rows = document.querySelectorAll("#gc-contract-services-tbody tr");
+        const servicesList = [];
+        let totalMrr = 0;
+
+        rows.forEach(tr => {
+            const service = tr.querySelector(".gc-service-select")?.value;
+            const details = tr.querySelector(".gc-service-details")?.value;
+            const qty = parseFloat(tr.querySelector(".gc-service-qty")?.value) || 1;
+            const price = parseFloat(tr.querySelector(".gc-service-price")?.value) || 0;
+            const discount = parseFloat(tr.querySelector(".gc-service-discount")?.value) || 0;
+            const sub = Math.max(0, (qty * price) - discount);
+            totalMrr += sub;
+            servicesList.push({ service, details, qty, price, discount, subtotal: sub });
+        });
+
+        // Meses de vigência
+        let months = 12;
+        if (startDate && endDate) {
+            const d1 = new Date(startDate);
+            const d2 = new Date(endDate);
+            const diff = (d2.getFullYear() - d1.getFullYear()) * 12 + (d2.getMonth() - d1.getMonth());
+            if (diff > 0) months = diff;
+        }
+        const totalTcv = totalMrr * months;
+
+        // Obter ou criar lead
+        const leads = Store.getAllLeadsRaw ? Store.getAllLeadsRaw() : (JSON.parse(localStorage.getItem('comercial_leads')) || []);
+        let lead = leads.find(l => l.company && l.company.toLowerCase() === clientName.toLowerCase());
+        if (!lead) {
+            lead = Store.createLead({
+                company: clientName,
+                contact: "Representante Comercial",
+                source: "Contratos GestãoClick",
+                stage: "Cliente Ativo"
             });
         }
 
-        const btnExportPDF = document.getElementById("btn-export-draft-pdf");
-        if (btnExportPDF) {
-            btnExportPDF.addEventListener("click", () => {
-                const editor = document.getElementById("contract-draft-text-editor");
-                if (editor && editor.value) {
-                    this.exportContractDraftPDF(editor.value);
-                }
-            });
+        const user = Auth.getCurrentUser();
+        const activeCompany = localStorage.getItem("activeCompany") || "Veeluen Solutions";
+
+        const contractData = {
+            leadId: lead.id,
+            workspace: activeCompany,
+            number: number || `CT-${new Date().getFullYear()}-001`,
+            status: status,
+            totalValue: totalTcv,
+            recurringValue: totalMrr,
+            startDate: startDate,
+            endDate: endDate,
+            periodicity: periodicity,
+            dueDay: dueDay,
+            paymentMethod: paymentMethod,
+            autoRenew: autoRenew,
+            warningDays: warningDays,
+            notes: objectText,
+            clientNotes: notes,
+            internalNotes: internalNotes,
+            draftText: draftText,
+            servicesList: servicesList,
+            owner: seller || user?.email || "sistema@vellia.com"
+        };
+
+        let savedContractId = id;
+        if (id) {
+            Store.updateContract(id, contractData, user ? user.email : 'sistema@vellia.com');
+        } else {
+            contractData.createdBy = user ? user.email : 'sistema@vellia.com';
+            const created = Store.addContract(contractData);
+            savedContractId = created.id;
         }
 
-        const btnRegenerate = document.getElementById("btn-regenerate-draft-ai");
-        if (btnRegenerate) {
-            btnRegenerate.addEventListener("click", () => {
-                if (this.activeContractId) this.generateContractDraftAI(this.activeContractId);
+        // Salvar serviços associados para o contrato
+        if (savedContractId && Store.getContractServices) {
+            const allServices = Store.getContractServices().filter(s => s.contractId !== savedContractId);
+            servicesList.forEach(s => {
+                allServices.push({ ...s, contractId: savedContractId });
             });
+            localStorage.setItem("comercial_contract_services", JSON.stringify(allServices));
+        }
+
+        alert("✅ Contrato salvo com sucesso no padrão GestãoClick!");
+
+        if (exportPdfAfter && draftText) {
+            this.exportContractDraftPDF(draftText, `Contrato_${number}.pdf`);
+        }
+
+        this.closeContractScreen();
+    },
+
+    async generateDraftFromScreen() {
+        const clientName = document.getElementById("gc-contract-client")?.value || "Empresa Contratante";
+        const number = document.getElementById("gc-contract-number")?.value || "CT-2026-001";
+        const mrr = document.getElementById("gc-contract-total-mrr")?.value || "R$ 0,00";
+        const tcv = document.getElementById("gc-contract-total-tcv")?.value || "R$ 0,00";
+        const startDate = document.getElementById("gc-contract-start-date")?.value || "Data da assinatura";
+        const endDate = document.getElementById("gc-contract-end-date")?.value || "12 meses";
+        const objectText = document.getElementById("gc-contract-object")?.value || "Prestação de serviços contínuos de engenharia e consultoria técnica";
+        const templateModel = document.getElementById("gc-contract-template-model")?.value || "ambiental";
+
+        const editor = document.getElementById("gc-contract-draft-editor");
+        const statusBadge = document.getElementById("gc-draft-status-badge");
+
+        if (statusBadge) {
+            statusBadge.className = "gc-badge gc-badge-warning";
+            statusBadge.textContent = "Gerando minuta por IA...";
+        }
+        if (editor) {
+            editor.value = "🤖 Redigindo minuta contratual jurídica com base nas regras empresariais... Aguarde...";
+        }
+
+        const prompt = `
+Você é um Advogado Especialista em Direito Empresarial, Contratos B2B e Engenharia.
+Crie um Instrumento Particular de Contrato de Prestação de Serviços Contínuos e Técnicos completo, formal e juridicamente válido.
+
+DADOS DO CONTRATO:
+- CONTRATADA: VEELUEN SOLUTIONS LTDA / VELLIA (Engenharia, Meio Ambiente e Consultoria)
+- CONTRATANTE: "${clientName}"
+- NÚMERO DO CONTRATO: "${number}"
+- VALOR RECORRENTE MENSAL (MRR): "${mrr}"
+- VALOR TOTAL ESTIMADO DO CONTRATO: "${tcv}"
+- VIGÊNCIA: De ${startDate} até ${endDate}
+- OBJETO DO CONTRATO: "${objectText}"
+- MODELO ESPECÍFICO: "${templateModel === 'ambiental' ? 'Engenharia Ambiental e Monitoramento' : (templateModel === 'laudos' ? 'Inspeção Técnica de Caldeiras e Máquinas NR-13/NR-12' : 'Consultoria Técnica Contínua')}"
+
+CLÁUSULAS OBRIGATÓRIAS:
+1. INSTRUMENTO PARTICULAR DE PRESTAÇÃO DE SERVIÇOS
+2. CLÁUSULA PRIMEIRA - DO OBJETO E ESCOPO DOS SERVIÇOS
+3. CLÁUSULA SEGUNDA - DA VIGÊNCIA E PRORROGAÇÃO
+4. CLÁUSULA TERCEIRA - DO PREÇO E CONDIÇÕES DE PAGAMENTO
+5. CLÁUSULA QUARTA - DAS OBRIGAÇÕES DA CONTRATADA
+6. CLÁUSULA QUINTA - DAS OBRIGAÇÕES DA CONTRATANTE
+7. CLÁUSULA SEXTA - DA CONFIDENCIALIDADE E PROTEÇÃO DE DADOS (LGPD)
+8. CLÁUSULA SÉTIMA - DA RESCISÃO E MULTA PENAL
+9. CLÁUSULA OITAVA - DO FORO DE ELEIÇÃO
+10. FECHAMENTO COM CAMPOS PARA ASSINATURA DAS PARTES E 2 TESTEMUNHAS.
+
+Retorne APENAS o texto completo e formal em Português do Brasil, pronto para emissão e assinatura.
+`;
+
+        try {
+            const userApiKey = localStorage.getItem("vellia_gemini_api_key") || localStorage.getItem("gemini_api_key");
+            let res;
+
+            if (userApiKey && userApiKey.trim()) {
+                const directUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userApiKey.trim()}`;
+                res = await fetch(directUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+            } else {
+                res = await fetch("/api/gemini-proxy", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        model: "gemini-2.5-flash",
+                        contents: [{ parts: [{ text: prompt }] }]
+                    })
+                });
+            }
+
+            if (res.ok) {
+                const data = await res.json();
+                const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (aiText && editor) {
+                    editor.value = aiText.trim();
+                    if (statusBadge) {
+                        statusBadge.className = "gc-badge gc-badge-success";
+                        statusBadge.textContent = "✨ Minuta gerada por IA (Gemini)";
+                    }
+                    return;
+                }
+            }
+        } catch (e) {
+            console.warn("Falha na chamada IA de minuta:", e);
+        }
+
+        // Fallback estruturado
+        if (editor) {
+            editor.value = `INSTRUMENTO PARTICULAR DE PRESTAÇÃO DE SERVIÇOS TÉCNICOS Nº ${number}
+
+CONTRATADA: VEELUEN SOLUTIONS LTDA, empresa especializada em engenharia, consultoria e meio ambiente.
+CONTRATANTE: ${clientName}
+
+CLÁUSULA PRIMEIRA - DO OBJETO:
+O presente contrato tem por objeto a prestação de serviços técnicos continuados de ${objectText}.
+
+CLÁUSULA SEGUNDA - DA VIGÊNCIA:
+O presente contrato terá vigência de ${startDate} a ${endDate}, prorrogável automaticamente por mútuo acordo entre as partes.
+
+CLÁUSULA TERCEIRA - DO PREÇO E CONDIÇÕES DE PAGAMENTO:
+Pelos serviços contratados, a CONTRATANTE pagará à CONTRATADA o valor mensal de ${mrr}, com vencimento fixado no dia acordado via faturamento bancário.
+
+CLÁUSULA QUARTA - DAS RESPONSABILIDADES:
+A CONTRATADA obriga-se a disponibilizar corpo técnico devidamente qualificado e habilitado junto ao respectivo Conselho de Classe (CREA/CRQ).
+
+CLÁUSULA QUINTA - DO FORO:
+Para dirimir quaisquer controvérsias oriundas do presente instrumento, as partes elegem o Foro da Comarca de Recife/PE.
+
+E por estarem justas e acordadas, firmam o presente instrumento em 2 (duas) vias de igual teor.
+
+____________________________________
+VEELUEN SOLUTIONS LTDA (Contratada)
+
+____________________________________
+${clientName} (Contratante)
+
+Testemunhas:
+1. _______________________________ CPF:
+2. _______________________________ CPF:`;
+        }
+
+        if (statusBadge) {
+            statusBadge.className = "gc-badge gc-badge-info";
+            statusBadge.textContent = "Minuta padrão pronta";
         }
     },
 
@@ -236,7 +820,7 @@ export const Contracts = {
 
         this.renderTable();
         alert(`O contrato ${newC.number} foi criado e está "Em formalização".`);
-        this.openModal(newC.id);
+        this.openContractScreen(newC.id);
     },
 
     renderTable() {
@@ -307,7 +891,7 @@ export const Contracts = {
             }
 
             let actionButtons = `
-                <button class="btn-icon" onclick="window.Contracts.openModal('${c.id}')" title="Editar Contrato">
+                <button class="btn-icon" onclick="window.Contracts.openContractScreen('${c.id}')" title="Editar Contrato (GestãoClick)">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
                 <button class="btn-icon" style="color: #7C3AED;" onclick="window.Contracts.generateContractDraftAI('${c.id}')" title="Gerar Minuta de Contrato IA">

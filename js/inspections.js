@@ -192,7 +192,15 @@ export const Inspections = {
                     <td style="padding: 16px 20px;">${remainingText}</td>
                     <td style="padding: 16px 20px; text-align: center;">${statusBadge}</td>
                     <td style="padding: 16px 20px; text-align: center;">
-                        <div style="display:flex; gap:6px; justify-content:center; align-items:center;">
+                        <div style="display:flex; gap:6px; justify-content:center; align-items:center; flex-wrap:wrap;">
+                            <button 
+                                class="btn btn-outline btn-sm"
+                                style="padding: 8px 12px; border-radius: 8px; font-size: 11.5px; border-color: #64748b; color: #334155; background: #f8fafc; font-weight: 700; cursor: pointer;"
+                                onclick="window.Inspections.openInspectionScreen('${item.leadId}', '${item.id}')"
+                                title="Editar Inspeção Técnica (GestãoClick)"
+                            >
+                                ✏️ Detalhes
+                            </button>
                             <button 
                                 class="btn btn-sm"
                                 style="${buttonStyle} padding: 8px 12px; border-radius: 8px; font-size: 11.5px; transition: all 0.2s;"
@@ -350,15 +358,106 @@ export const Inspections = {
         const btnWebcamCapture = document.getElementById("btn-insp-webcam-capture");
         const btnWebcamClose = document.getElementById("btn-insp-webcam-close");
 
-        // Handler de abertura
+        // Handlers de abertura (tela GestãoClick)
         if (btnOpen) {
-            btnOpen.onclick = () => this.openChecklistModal();
+            btnOpen.onclick = () => this.openInspectionScreen();
         }
         if (btnOpenScan) {
-            btnOpenScan.onclick = () => this.openChecklistModal(null, "file");
+            btnOpenScan.onclick = () => this.openInspectionScreen(null, null, "file");
         }
 
-        // Handlers de fechamento
+        // Controles da tela GestãoClick de Inspeção
+        const btnGcBack = document.getElementById("gc-insp-btn-back");
+        if (btnGcBack) btnGcBack.onclick = () => this.closeInspectionScreen();
+
+        const btnGcCancel = document.getElementById("gc-insp-btn-cancel");
+        if (btnGcCancel) btnGcCancel.onclick = () => this.closeInspectionScreen();
+
+        const btnGcSubmit = document.getElementById("gc-insp-btn-submit");
+        if (btnGcSubmit) btnGcSubmit.onclick = () => this.saveInspectionFromScreen(false);
+
+        const btnGcSubmitPdf = document.getElementById("gc-insp-btn-submit-pdf");
+        if (btnGcSubmitPdf) btnGcSubmitPdf.onclick = () => this.saveInspectionFromScreen(true);
+
+        const btnGcAddService = document.getElementById("gc-insp-btn-add-service");
+        if (btnGcAddService) btnGcAddService.onclick = () => this.addServiceRow();
+
+        const btnGcEditNumber = document.getElementById("gc-insp-btn-edit-number");
+        if (btnGcEditNumber) {
+            btnGcEditNumber.onclick = () => {
+                const numInput = document.getElementById("gc-insp-number");
+                if (numInput) {
+                    numInput.readOnly = false;
+                    numInput.classList.remove("gc-input-readonly");
+                    numInput.focus();
+                }
+            };
+        }
+
+        const btnGcClearInspector = document.getElementById("gc-insp-btn-clear-inspector");
+        if (btnGcClearInspector) {
+            btnGcClearInspector.onclick = () => {
+                const input = document.getElementById("gc-insp-inspector");
+                if (input) input.value = "";
+            };
+        }
+
+        const gcExecDate = document.getElementById("gc-insp-exec-date");
+        if (gcExecDate) {
+            gcExecDate.onchange = (e) => {
+                const expiryInput = document.getElementById("gc-insp-expiry-date");
+                if (expiryInput && e.target.value) {
+                    const d = new Date(e.target.value + "T12:00:00");
+                    d.setFullYear(d.getFullYear() + 1);
+                    expiryInput.value = d.toISOString().split("T")[0];
+                    this.updateDaysSummary();
+                }
+            };
+        }
+
+        const gcExpiryDate = document.getElementById("gc-insp-expiry-date");
+        if (gcExpiryDate) {
+            gcExpiryDate.onchange = () => this.updateDaysSummary();
+        }
+
+        const btnGcUploadPdf = document.getElementById("gc-insp-btn-upload-pdf");
+        if (btnGcUploadPdf && fileInput) {
+            btnGcUploadPdf.onclick = () => fileInput.click();
+        }
+
+        const btnGcCamera = document.getElementById("gc-insp-btn-camera");
+        if (btnGcCamera && cameraInput) {
+            btnGcCamera.onclick = () => cameraInput.click();
+        }
+
+        const btnGcWebcam = document.getElementById("gc-insp-btn-webcam");
+        if (btnGcWebcam) {
+            btnGcWebcam.onclick = () => this.startGcWebcam();
+        }
+
+        const btnGcCaptureWebcam = document.getElementById("gc-insp-btn-capture-webcam");
+        if (btnGcCaptureWebcam) {
+            btnGcCaptureWebcam.onclick = () => this.captureGcWebcam();
+        }
+
+        const btnGcCloseWebcam = document.getElementById("gc-insp-btn-close-webcam");
+        if (btnGcCloseWebcam) {
+            btnGcCloseWebcam.onclick = () => this.closeGcWebcam();
+        }
+
+        const btnGcSelectPhotos = document.getElementById("gc-insp-btn-select-photos");
+        const photosInput = document.getElementById("gc-insp-photos-input");
+        if (btnGcSelectPhotos && photosInput) {
+            btnGcSelectPhotos.onclick = () => photosInput.click();
+            photosInput.onchange = (e) => {
+                const countEl = document.getElementById("gc-insp-photos-count");
+                if (countEl && e.target.files) {
+                    countEl.textContent = `${e.target.files.length} foto(s) anexada(s)`;
+                }
+            };
+        }
+
+        // Handlers de fechamento do modal antigo
         if (btnCloseX) btnCloseX.onclick = () => this.closeChecklistModal();
         if (btnCancel) btnCancel.onclick = () => this.closeChecklistModal();
         if (overlay) overlay.onclick = () => this.closeChecklistModal();
@@ -717,6 +816,538 @@ export const Inspections = {
         return score;
     },
 
+    // ==========================================================================
+    // TELA DE INSPEÇÕES & LAUDOS TÉCNICOS ESTILO GESTÃOCLICK
+    // ==========================================================================
+    populateClientsDatalist() {
+        const datalist = document.getElementById("gc-insp-clients-datalist");
+        if (!datalist) return;
+        const leads = Store.getLeads ? Store.getLeads() : [];
+        const names = new Set();
+        leads.forEach(l => { if (l.company) names.add(l.company.trim()); });
+        datalist.innerHTML = Array.from(names).map(name => `<option value="${name}"></option>`).join("");
+    },
+
+    openInspectionScreen(leadId = null, interactionId = null, autoAction = null) {
+        this.populateClientsDatalist();
+
+        const titleEl = document.getElementById("gc-insp-title-action");
+        const breadcrumbEl = document.getElementById("gc-insp-breadcrumb-action");
+        const submitBtn = document.getElementById("gc-insp-btn-submit");
+
+        const setVal = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.value = val !== undefined && val !== null ? val : "";
+        };
+
+        const todayStr = new Date().toISOString().split("T")[0];
+        const nextYear = new Date();
+        nextYear.setFullYear(nextYear.getFullYear() + 1);
+        const nextYearStr = nextYear.toISOString().split("T")[0];
+
+        const currentUser = Auth.getCurrentUser();
+        const inspectorDefault = currentUser?.name ? `Eng. ${currentUser.name}` : "Eng. San Charles (CREA 12345/PE)";
+
+        if (leadId && interactionId) {
+            const lead = Store.getLeadById(leadId);
+            const item = lead?.interactions?.find(i => i.id === interactionId);
+            if (lead && item) {
+                if (titleEl) titleEl.innerHTML = `
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    <span>Editar inspeção técnica & laudo</span>
+                `;
+                if (breadcrumbEl) breadcrumbEl.textContent = "Editar";
+                if (submitBtn) submitBtn.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Salvar alterações</span>
+                `;
+
+                setVal("gc-insp-lead-id", lead.id);
+                setVal("gc-insp-interaction-id", item.id);
+                setVal("gc-insp-number", item.meta?.inspectionNumber || `INSP-2026-${item.id.slice(-3)}`);
+                setVal("gc-insp-client", lead.company || "");
+                setVal("gc-insp-inspector", item.meta?.inspector || inspectorDefault);
+                setVal("gc-insp-service-select", item.meta?.serviceName || "Amostragem Isocinética de Chaminé");
+                setVal("gc-insp-exec-date", item.meta?.executionDate || item.timestamp?.split("T")[0] || todayStr);
+                setVal("gc-insp-expiry-date", item.meta?.expiryDate || nextYearStr);
+                setVal("gc-insp-status", item.meta?.status || "valida");
+                setVal("gc-insp-location", item.meta?.location || lead.address || "Planta Central");
+                setVal("gc-insp-contact", item.meta?.contact || lead.contact || "");
+                setVal("gc-insp-equipment-tag", item.meta?.equipmentTag || "Chaminé Caldeira 01 / Duto Principal");
+                setVal("gc-insp-technical-opinion", item.meta?.notes || item.description || "");
+                setVal("gc-insp-notes", item.meta?.clientNotes || item.meta?.notes || "");
+                setVal("gc-insp-internal-notes", item.meta?.internalNotes || "");
+
+                this.renderChecklistTable(item.meta?.checklist);
+
+                // Carregar serviços vinculados
+                const tbody = document.getElementById("gc-insp-services-tbody");
+                if (tbody) tbody.innerHTML = "";
+                if (Array.isArray(item.meta?.servicesList) && item.meta.servicesList.length > 0) {
+                    item.meta.servicesList.forEach(s => this.addServiceRow(s));
+                } else {
+                    this.addServiceRow({
+                        service: item.meta?.serviceName || "Amostragem Isocinética de Chaminé",
+                        details: "Coleta e determinação de material particulado e gases",
+                        qty: 1,
+                        price: item.meta?.serviceValue || 4500
+                    });
+                }
+            }
+        } else {
+            // Nova Inspeção
+            if (titleEl) titleEl.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                <span>Nova inspeção & laudo técnico</span>
+            `;
+            if (breadcrumbEl) breadcrumbEl.textContent = "Adicionar";
+            if (submitBtn) submitBtn.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Salvar inspeção</span>
+            `;
+
+            const totalExisting = this.getInspections().length + 1;
+            const nextNumber = `INSP-2026-${String(totalExisting).padStart(3, '0')}`;
+
+            let clientDefault = "";
+            let contactDefault = "";
+            let locationDefault = "";
+            if (leadId) {
+                const lead = Store.getLeadById(leadId);
+                if (lead) {
+                    clientDefault = lead.company || "";
+                    contactDefault = lead.contact || "";
+                    locationDefault = lead.address || "";
+                }
+            }
+
+            setVal("gc-insp-lead-id", leadId || "");
+            setVal("gc-insp-interaction-id", "");
+            setVal("gc-insp-number", nextNumber);
+            setVal("gc-insp-client", clientDefault);
+            setVal("gc-insp-inspector", inspectorDefault);
+            setVal("gc-insp-service-select", "Amostragem Isocinética de Chaminé");
+            setVal("gc-insp-exec-date", todayStr);
+            setVal("gc-insp-expiry-date", nextYearStr);
+            setVal("gc-insp-status", "valida");
+            setVal("gc-insp-location", locationDefault || "Planta Industrial / Unidade Operacional");
+            setVal("gc-insp-contact", contactDefault);
+            setVal("gc-insp-equipment-tag", "Chaminé Caldeira 01 / Duto Principal");
+            setVal("gc-insp-technical-opinion", "A fonte poluidora operou em regime contínuo estável. Os parâmetros atenderam aos padrões de emissão regulamentados.");
+            setVal("gc-insp-notes", "Laudo técnico com validade legal de 12 meses contados a partir da data de realização.");
+            setVal("gc-insp-internal-notes", "");
+
+            this.renderChecklistTable();
+
+            const tbody = document.getElementById("gc-insp-services-tbody");
+            if (tbody) tbody.innerHTML = "";
+            this.addServiceRow({
+                service: "Amostragem Isocinética de Chaminé",
+                details: "Coleta e determinação de material particulado e gases em duto",
+                qty: 1,
+                price: 4500
+            });
+        }
+
+        // Alternar visualização
+        const listContainer = document.getElementById("inspections-list-container");
+        const inspView = document.getElementById("gestaoclick-inspection-view");
+        if (listContainer) listContainer.style.display = "none";
+        if (inspView) inspView.style.display = "block";
+
+        this.recalculateChecklistScore();
+        this.recalculateServicesTotal();
+        this.updateDaysSummary();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+
+        if (autoAction === "file") {
+            setTimeout(() => {
+                document.getElementById("insp-file-input")?.click();
+            }, 150);
+        }
+    },
+
+    closeInspectionScreen() {
+        const listContainer = document.getElementById("inspections-list-container");
+        const inspView = document.getElementById("gestaoclick-inspection-view");
+        if (inspView) inspView.style.display = "none";
+        if (listContainer) listContainer.style.display = "block";
+        this.render();
+    },
+
+    renderChecklistTable(savedItems = null) {
+        const tbody = document.getElementById("gc-insp-checklist-tbody");
+        if (!tbody) return;
+
+        const defaultItems = [
+            { name: "Acesso Seguro e Plataforma de Amostragem", norm: "NR-12 / NBR 10701", status: "Conforme" },
+            { name: "Bocais de Coleta e Diâmetro Mínimo (4 pol)", norm: "NBR 12019 / EPA M1", status: "Conforme" },
+            { name: "Estanqueidade de Dutos e Vedação de Juntas", norm: "Procedimento Técnico Padrão", status: "Conforme" },
+            { name: "Regime de Queima e Carga Operacional Contínua", norm: "Operação Nominal", status: "Conforme" },
+            { name: "Calibração dos Sensores e Pitot Tipo S", norm: "Certificado RBC Vigente", status: "Conforme" },
+            { name: "Aterramento Elétrico e Linha de Vida (NR-35)", norm: "NR-10 / NR-35", status: "Conforme" },
+            { name: "Gestão dos Resíduos da Coleta Isocinética", norm: "CONAMA / CPRH", status: "Conforme" },
+            { name: "Prontuário Técnico e Emissão da ART", norm: "CREA / CONFEA", status: "Conforme" }
+        ];
+
+        const items = Array.isArray(savedItems) && savedItems.length > 0 ? savedItems : defaultItems;
+
+        tbody.innerHTML = items.map((it, idx) => {
+            const currentStatus = it.status || "Conforme";
+            return `
+                <tr data-index="${idx}" data-name="${it.name}">
+                    <td style="font-weight: 600; color: #1e293b;">${it.name}</td>
+                    <td style="color: #64748b; font-size: 11.5px;">${it.norm || 'Norma Vigente'}</td>
+                    <td style="text-align: center;">
+                        <div class="gc-btn-group-toggle">
+                            <button type="button" class="gc-toggle-btn ${currentStatus === 'Conforme' ? 'active-conforme' : ''}" data-val="Conforme" title="Conforme">✓ Conforme</button>
+                            <button type="button" class="gc-toggle-btn ${currentStatus === 'Não Conforme' ? 'active-nao-conforme' : ''}" data-val="Não Conforme" title="Não Conforme">✗ Não Conf.</button>
+                            <button type="button" class="gc-toggle-btn ${currentStatus === 'Não Aplica' ? 'active-nao-aplica' : ''}" data-val="Não Aplica" title="Não se Aplica">N/A</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join("");
+
+        tbody.querySelectorAll(".gc-toggle-btn").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                const group = e.target.closest(".gc-btn-group-toggle");
+                group.querySelectorAll(".gc-toggle-btn").forEach(b => {
+                    b.classList.remove("active-conforme", "active-nao-conforme", "active-nao-aplica");
+                });
+                const val = e.target.getAttribute("data-val");
+                if (val === "Conforme") e.target.classList.add("active-conforme");
+                else if (val === "Não Conforme") e.target.classList.add("active-nao-conforme");
+                else e.target.classList.add("active-nao-aplica");
+
+                this.recalculateChecklistScore();
+            });
+        });
+
+        this.recalculateChecklistScore();
+    },
+
+    recalculateChecklistScore() {
+        const rows = document.querySelectorAll("#gc-insp-checklist-tbody tr");
+        let total = 0;
+        let conformes = 0;
+
+        rows.forEach(tr => {
+            const activeBtn = tr.querySelector(".gc-toggle-btn.active-conforme, .gc-toggle-btn.active-nao-conforme, .gc-toggle-btn.active-nao-aplica");
+            const val = activeBtn ? activeBtn.getAttribute("data-val") : "Conforme";
+            if (val !== "Não Aplica") {
+                total++;
+                if (val === "Conforme") conformes++;
+            }
+        });
+
+        const score = total > 0 ? Math.round((conformes / total) * 100) : 100;
+
+        const badge = document.getElementById("gc-insp-score-badge");
+        const summaryScore = document.getElementById("gc-insp-summary-score");
+
+        let badgeClass = "gc-badge gc-badge-success";
+        let text = `${score}% de conformidade (Regular)`;
+
+        if (score < 60) {
+            badgeClass = "gc-badge gc-badge-danger";
+            text = `${score}% de conformidade (Crítico / Irregular)`;
+        } else if (score < 85) {
+            badgeClass = "gc-badge gc-badge-warning";
+            text = `${score}% de conformidade (Atenção / Ressalvas)`;
+        }
+
+        if (badge) {
+            badge.className = badgeClass;
+            badge.textContent = text;
+        }
+        if (summaryScore) {
+            summaryScore.value = text;
+        }
+
+        return score;
+    },
+
+    updateDaysSummary() {
+        const expiryInput = document.getElementById("gc-insp-expiry-date")?.value;
+        const summaryDays = document.getElementById("gc-insp-summary-days");
+        if (!summaryDays || !expiryInput) return;
+
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        const exp = new Date(expiryInput + "T12:00:00");
+        exp.setHours(0,0,0,0);
+
+        const diffTime = exp.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 3600 * 24));
+
+        if (diffDays < 0) {
+            summaryDays.value = `Vencido há ${Math.abs(diffDays)} dias`;
+            summaryDays.style.color = "#dc2626";
+        } else {
+            summaryDays.value = `Vence em ${diffDays} dias (${(diffDays / 30).toFixed(1)} meses)`;
+            summaryDays.style.color = diffDays <= 90 ? "#d97706" : "#16a34a";
+        }
+    },
+
+    addServiceRow(data = null) {
+        const tbody = document.getElementById("gc-insp-services-tbody");
+        if (!tbody) return;
+
+        const serviceName = data?.service || "Amostragem Isocinética de Chaminé";
+        const details = data?.details || "";
+        const qty = parseFloat(data?.qty || 1);
+        const price = parseFloat(data?.price || 4500);
+        const sub = qty * price;
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>
+                <select class="gc-select gc-insp-service-name" style="font-size: 12.5px;">
+                    <option value="Amostragem Isocinética de Chaminé">Amostragem Isocinética de Chaminé</option>
+                    <option value="Inspeção NR-13 (Caldeiras e Vasos)">Inspeção NR-13 (Caldeiras e Vasos)</option>
+                    <option value="Laudo NR-12 (Segurança de Máquinas)">Laudo NR-12 (Segurança de Máquinas)</option>
+                    <option value="Licenciamento e Monitoramento Ambiental">Licenciamento e Monitoramento Ambiental</option>
+                    <option value="Laudo Elétrico NR-10 e SPDA">Laudo Elétrico NR-10 e SPDA</option>
+                    <option value="Medição de Ruído e Poluentes">Medição de Ruído e Poluentes</option>
+                    <option value="Emissão de ART e Parecer Técnico">Emissão de ART e Parecer Técnico</option>
+                </select>
+            </td>
+            <td>
+                <input type="text" class="gc-input gc-insp-item-details" placeholder="Metodologia e escopo..." value="${details}">
+            </td>
+            <td>
+                <input type="number" class="gc-input gc-insp-item-qty" min="1" value="${qty}" style="text-align: center;">
+            </td>
+            <td>
+                <input type="number" step="0.01" class="gc-input gc-insp-item-price" value="${price.toFixed(2)}" style="text-align: right;">
+            </td>
+            <td>
+                <input type="text" class="gc-input gc-insp-item-subtotal gc-input-readonly" value="R$ ${sub.toLocaleString('pt-BR', {minimumFractionDigits: 2})}" readonly style="text-align: right; font-weight: 600;">
+            </td>
+            <td style="text-align: center;">
+                <button type="button" class="gc-btn-delete-row" title="Remover item">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+            </td>
+        `;
+
+        const sel = tr.querySelector(".gc-insp-service-name");
+        if (sel) sel.value = serviceName;
+
+        const updateSub = () => {
+            const q = parseFloat(tr.querySelector(".gc-insp-item-qty")?.value) || 0;
+            const p = parseFloat(tr.querySelector(".gc-insp-item-price")?.value) || 0;
+            const s = q * p;
+            const subInput = tr.querySelector(".gc-insp-item-subtotal");
+            if (subInput) subInput.value = `R$ ${s.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            this.recalculateServicesTotal();
+        };
+
+        tr.querySelector(".gc-insp-item-qty")?.addEventListener("input", updateSub);
+        tr.querySelector(".gc-insp-item-price")?.addEventListener("input", updateSub);
+        tr.querySelector(".gc-btn-delete-row")?.addEventListener("click", () => {
+            tr.remove();
+            this.recalculateServicesTotal();
+        });
+
+        tbody.appendChild(tr);
+        this.recalculateServicesTotal();
+    },
+
+    recalculateServicesTotal() {
+        const rows = document.querySelectorAll("#gc-insp-services-tbody tr");
+        let total = 0;
+
+        rows.forEach(tr => {
+            const q = parseFloat(tr.querySelector(".gc-insp-item-qty")?.value) || 0;
+            const p = parseFloat(tr.querySelector(".gc-insp-item-price")?.value) || 0;
+            total += (q * p);
+        });
+
+        const totalEl = document.getElementById("gc-insp-summary-total");
+        if (totalEl) totalEl.value = `R$ ${total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+    },
+
+    async saveInspectionFromScreen(exportPdfAfter = false) {
+        const clientName = document.getElementById("gc-insp-client")?.value.trim();
+        if (!clientName) {
+            alert("Por favor, preencha o nome da Empresa / Cliente.");
+            document.getElementById("gc-insp-client")?.focus();
+            return;
+        }
+
+        let leadId = document.getElementById("gc-insp-lead-id")?.value;
+        const interactionId = document.getElementById("gc-insp-interaction-id")?.value;
+        const number = document.getElementById("gc-insp-number")?.value;
+        const inspector = document.getElementById("gc-insp-inspector")?.value;
+        const service = document.getElementById("gc-insp-service-select")?.value;
+        const execDate = document.getElementById("gc-insp-exec-date")?.value || new Date().toISOString().split("T")[0];
+        const expiryDate = document.getElementById("gc-insp-expiry-date")?.value;
+        const status = document.getElementById("gc-insp-status")?.value;
+        const location = document.getElementById("gc-insp-location")?.value;
+        const contact = document.getElementById("gc-insp-contact")?.value;
+        const equipmentTag = document.getElementById("gc-insp-equipment-tag")?.value;
+        const opinion = document.getElementById("gc-insp-technical-opinion")?.value;
+        const clientNotes = document.getElementById("gc-insp-notes")?.value;
+        const internalNotes = document.getElementById("gc-insp-internal-notes")?.value;
+
+        const score = this.recalculateChecklistScore();
+
+        // Checklist Payload
+        const checklistPayload = [];
+        document.querySelectorAll("#gc-insp-checklist-tbody tr").forEach(tr => {
+            const name = tr.getAttribute("data-name");
+            const activeBtn = tr.querySelector(".gc-toggle-btn.active-conforme, .gc-toggle-btn.active-nao-conforme, .gc-toggle-btn.active-nao-aplica");
+            const val = activeBtn ? activeBtn.getAttribute("data-val") : "Conforme";
+            checklistPayload.push({ name, status: val });
+        });
+
+        // Serviços vinculados
+        const servicesList = [];
+        let totalVal = 0;
+        document.querySelectorAll("#gc-insp-services-tbody tr").forEach(tr => {
+            const sName = tr.querySelector(".gc-insp-service-name")?.value;
+            const det = tr.querySelector(".gc-insp-item-details")?.value;
+            const q = parseFloat(tr.querySelector(".gc-insp-item-qty")?.value) || 1;
+            const p = parseFloat(tr.querySelector(".gc-insp-item-price")?.value) || 0;
+            totalVal += (q * p);
+            servicesList.push({ service: sName, details: det, qty: q, price: p, subtotal: q * p });
+        });
+
+        // Obter ou criar lead
+        const leads = Store.getAllLeadsRaw ? Store.getAllLeadsRaw() : (JSON.parse(localStorage.getItem('comercial_leads')) || []);
+        let lead = null;
+        if (leadId) {
+            lead = leads.find(l => l.id === leadId);
+        }
+        if (!lead) {
+            lead = leads.find(l => l.company && l.company.toLowerCase() === clientName.toLowerCase());
+        }
+        if (!lead) {
+            lead = Store.createLead({
+                company: clientName,
+                contact: contact || "Responsável Técnico",
+                address: location || "",
+                source: "Inspeção GestãoClick",
+                stage: "Cliente Ativo"
+            });
+            leadId = lead.id;
+        }
+
+        const newOrUpdatedInteraction = {
+            id: interactionId || ("int_" + Date.now().toString(36)),
+            type: "Inspeção",
+            timestamp: new Date().toISOString(),
+            description: `Vistoria de ${service} (${number}) realizada com ${score}% de conformidade. Parecer: ${opinion.substring(0, 100)}...`,
+            meta: {
+                inspectionNumber: number,
+                inspector: inspector,
+                serviceName: service,
+                serviceValue: totalVal,
+                servicesList: servicesList,
+                score: score,
+                executionDate: execDate,
+                expiryDate: expiryDate,
+                status: status,
+                location: location,
+                contact: contact,
+                equipmentTag: equipmentTag,
+                notes: opinion,
+                clientNotes: clientNotes,
+                internalNotes: internalNotes,
+                checklist: checklistPayload
+            }
+        };
+
+        if (!lead.interactions) lead.interactions = [];
+        if (interactionId) {
+            const idx = lead.interactions.findIndex(i => i.id === interactionId);
+            if (idx >= 0) lead.interactions[idx] = newOrUpdatedInteraction;
+            else lead.interactions.push(newOrUpdatedInteraction);
+        } else {
+            lead.interactions.push(newOrUpdatedInteraction);
+        }
+
+        try {
+            const localLeads = JSON.parse(localStorage.getItem("comercial_leads")) || [];
+            const updatedLocal = localLeads.map(l => l.id === lead.id ? lead : l);
+            localStorage.setItem("comercial_leads", JSON.stringify(updatedLocal));
+
+            // Sincronizar Supabase
+            await fetch(`${SUPABASE_URL}/rest/v1/comercial_leads?id=eq.${lead.id}`, {
+                method: "PATCH",
+                headers: {
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": `Bearer ${SUPABASE_KEY}`,
+                    "Content-Type": "application/json",
+                    "Prefer": "return=minimal"
+                },
+                body: JSON.stringify({ interactions: lead.interactions })
+            });
+        } catch (e) {
+            console.warn("Falha ao salvar no Supabase, mantido em cache local:", e);
+        }
+
+        alert("✅ Inspeção técnica e laudo salvos com sucesso no padrão GestãoClick!");
+
+        if (exportPdfAfter) {
+            window.generateInspectionPDF(lead.id, newOrUpdatedInteraction.id);
+        }
+
+        this.closeInspectionScreen();
+    },
+
+    startGcWebcam() {
+        const container = document.getElementById("gc-insp-webcam-container");
+        const video = document.getElementById("gc-insp-webcam-video");
+        if (!container || !video) return;
+
+        container.style.display = "block";
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({
+                video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } }
+            })
+            .then(stream => {
+                this._gcWebcamStream = stream;
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                console.error("Erro na webcam GestãoClick:", err);
+                alert("Não foi possível acessar a câmera do dispositivo.");
+                container.style.display = "none";
+            });
+        }
+    },
+
+    captureGcWebcam() {
+        const video = document.getElementById("gc-insp-webcam-video");
+        if (!video) return;
+
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth || 1280;
+        canvas.height = video.videoHeight || 720;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        canvas.toBlob((blob) => {
+            if (blob) {
+                const file = new File([blob], `captura_laudo_${Date.now()}.jpg`, { type: "image/jpeg" });
+                this.closeGcWebcam();
+                this.handleDocumentInput(file);
+            }
+        }, "image/jpeg", 0.9);
+    },
+
+    closeGcWebcam() {
+        const container = document.getElementById("gc-insp-webcam-container");
+        if (container) container.style.display = "none";
+        if (this._gcWebcamStream) {
+            this._gcWebcamStream.getTracks().forEach(t => t.stop());
+            this._gcWebcamStream = null;
+        }
+    },
+
     // ─── MÓDULO INTELIGENTE: LEITURA DE PDF & CÂMERA ──────────────────────────
     async handleDocumentInput(file) {
         if (!file) return;
@@ -1030,7 +1661,33 @@ Extraia e retorne EXCLUSIVAMENTE um objeto JSON (sem formatação markdown) com:
             itemSelects.forEach(sel => sel.value = "Conforme");
         }
 
+        // Sincronizar com os campos da nova tela GestãoClick
+        const gcClient = document.getElementById("gc-insp-client");
+        const gcService = document.getElementById("gc-insp-service-select");
+        const gcExecDate = document.getElementById("gc-insp-exec-date");
+        const gcExpiryDate = document.getElementById("gc-insp-expiry-date");
+        const gcNotes = document.getElementById("gc-insp-notes");
+        const gcEqTag = document.getElementById("gc-insp-equipment-tag");
+
+        if (data.company && gcClient) gcClient.value = data.company;
+        if (data.serviceName && gcService) {
+            for (let i = 0; i < gcService.options.length; i++) {
+                if (gcService.options[i].text.toLowerCase().includes(data.serviceName.toLowerCase()) || data.serviceName.toLowerCase().includes(gcService.options[i].text.toLowerCase())) {
+                    gcService.selectedIndex = i;
+                    break;
+                }
+            }
+        }
+        if (data.executionDate && gcExecDate) gcExecDate.value = data.executionDate;
+        if (data.expiryDate && gcExpiryDate) gcExpiryDate.value = data.expiryDate;
+        if (data.notes && gcNotes) gcNotes.value = data.notes;
+        if (gcEqTag && !gcEqTag.value) gcEqTag.value = "Ponto Amostral / Duto da Chaminé Principal";
+
+        const gcSuccessBox = document.getElementById("gc-insp-scanner-success");
+        if (gcSuccessBox) gcSuccessBox.style.display = "block";
+
         this.calculateScore();
+        this.updateDaysSummary();
     },
 
     startWebcam() {

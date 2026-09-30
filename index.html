@@ -1995,82 +1995,378 @@
                      VIEW: GESTÃO DE CONTRATOS (FASE 2)
                      ========================================================== -->
                 <div id="view-contracts" class="spa-view" style="display: none;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
-                        <div>
-                            <h2 style="font-size: 20px; font-weight: 700; color: var(--text-primary); margin: 0; letter-spacing: -0.02em;">Gestão de Contratos</h2>
-                            <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px;">Acompanhe contratos ativos, renovações e faturamentos recorrentes.</p>
-                        </div>
-                        <button class="btn btn-primary" id="btn-new-contract" style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; padding: 8px 16px;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                            <span>Novo Contrato</span>
-                        </button>
-                    </div>
-                    
-                    <!-- KPI Cards de Contratos -->
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
-                        <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
-                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
-                                <span class="stat-label">Contratos Ativos</span>
-                                <span class="stat-value" id="contract-stat-active">0</span>
+                    <!-- CONTAINER 1: LISTAGEM DE CONTRATOS -->
+                    <div id="contracts-list-container">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+                            <div>
+                                <h2 style="font-size: 20px; font-weight: 700; color: var(--text-primary); margin: 0; letter-spacing: -0.02em;">Gestão de Contratos</h2>
+                                <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px;">Acompanhe contratos ativos, renovações e faturamentos recorrentes.</p>
                             </div>
-                            <div class="stat-icon-box" style="background: rgba(98, 87, 245, 0.08); color: var(--primary);">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                            </div>
-                        </div>
-                        <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
-                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
-                                <span class="stat-label">Receita Recorrente (MRR)</span>
-                                <span class="stat-value" id="contract-stat-mrr" style="color: var(--primary);">R$ 0,00</span>
-                            </div>
-                            <div class="stat-icon-box success" style="background: #ECFDF5; color: #16A36A;">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-                            </div>
-                        </div>
-                        <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
-                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
-                                <span class="stat-label">Valor Total Contratado (TCV)</span>
-                                <span class="stat-value" id="contract-stat-tcv">R$ 0,00</span>
-                            </div>
-                            <div class="stat-icon-box" style="background: #F1F5F9; color: #475569;">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="vellia-card" style="padding: 0; overflow: hidden; margin-bottom: 24px;">
-                        <div style="display: flex; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--border-color); flex-wrap: wrap; background: #FFFFFF; align-items: center;">
-                            <div class="search-box" style="flex: 1; min-width: 250px; position: relative;">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 12px; top: 11px; color: #94A3B8;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                                <input type="text" id="contracts-search" class="form-control" style="padding-left: 38px; height: 38px; font-size: 13px;" placeholder="Buscar por cliente, CNPJ ou número...">
-                            </div>
-                            <select id="contracts-filter-status" class="form-control" style="width: auto; height: 38px; font-size: 13px;">
-                                <option value="all">Todos os Status</option>
-                                <option value="Ativo">Ativos</option>
-                                <option value="Em formalização">Em formalização</option>
-                                <option value="Vencendo">Próximos do Vencimento</option>
-                                <option value="Encerrado">Encerrados</option>
-                            </select>
+                            <button class="btn btn-primary" id="btn-new-contract" style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; padding: 8px 16px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                <span>Novo Contrato</span>
+                            </button>
                         </div>
                         
-                        <div class="table-responsive" style="margin: 0;">
-                            <table class="custom-table" style="width: 100%; border: none;">
-                                <thead>
-                                    <tr>
-                                        <th>Número</th>
-                                        <th>Cliente / Oportunidade</th>
-                                        <th>Valor Total</th>
-                                        <th>Recorrente (MRR)</th>
-                                        <th>Vigência</th>
-                                        <th>Status</th>
-                                        <th style="text-align: right;">Ações</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="contracts-table-body">
-                                    <!-- Renderizado via JS -->
-                                </tbody>
-                            </table>
+                        <!-- KPI Cards de Contratos -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                            <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+                                <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
+                                    <span class="stat-label">Contratos Ativos</span>
+                                    <span class="stat-value" id="contract-stat-active">0</span>
+                                </div>
+                                <div class="stat-icon-box" style="background: rgba(98, 87, 245, 0.08); color: var(--primary);">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                                </div>
+                            </div>
+                            <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+                                <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
+                                    <span class="stat-label">Receita Recorrente (MRR)</span>
+                                    <span class="stat-value" id="contract-stat-mrr" style="color: var(--primary);">R$ 0,00</span>
+                                </div>
+                                <div class="stat-icon-box success" style="background: #ECFDF5; color: #16A36A;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                                </div>
+                            </div>
+                            <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+                                <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
+                                    <span class="stat-label">Valor Total Contratado (TCV)</span>
+                                    <span class="stat-value" id="contract-stat-tcv">R$ 0,00</span>
+                                </div>
+                                <div class="stat-icon-box" style="background: #F1F5F9; color: #475569;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="vellia-card" style="padding: 0; overflow: hidden; margin-bottom: 24px;">
+                            <div style="display: flex; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--border-color); flex-wrap: wrap; background: #FFFFFF; align-items: center;">
+                                <div class="search-box" style="flex: 1; min-width: 250px; position: relative;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 12px; top: 11px; color: #94A3B8;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                    <input type="text" id="contracts-search" class="form-control" style="padding-left: 38px; height: 38px; font-size: 13px;" placeholder="Buscar por cliente, CNPJ ou número...">
+                                </div>
+                                <select id="contracts-filter-status" class="form-control" style="width: auto; height: 38px; font-size: 13px;">
+                                    <option value="all">Todos os Status</option>
+                                    <option value="Ativo">Ativos</option>
+                                    <option value="Em formalização">Em formalização</option>
+                                    <option value="Vencendo">Próximos do Vencimento</option>
+                                    <option value="Encerrado">Encerrados</option>
+                                </select>
+                            </div>
+                            
+                            <div class="table-responsive" style="margin: 0;">
+                                <table class="custom-table" style="width: 100%; border: none;">
+                                    <thead>
+                                        <tr>
+                                            <th>Número</th>
+                                            <th>Cliente / Oportunidade</th>
+                                            <th>Valor Total</th>
+                                            <th>Recorrente (MRR)</th>
+                                            <th>Vigência</th>
+                                            <th>Status</th>
+                                            <th style="text-align: right;">Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="contracts-table-body">
+                                        <!-- Renderizado via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
+                    <!-- FIM DO CONTAINER 1: LISTAGEM -->
+
+                    <!-- ==========================================================
+                         CONTAINER 2: TELA DE CONTRATO ESTILO GESTÃOCLICK (IDÊNTICA)
+                         ========================================================== -->
+                    <div id="gestaoclick-contract-view" class="gc-budget-container" style="display: none;">
+                        <!-- Top Header & Breadcrumbs -->
+                        <div class="gc-top-header">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <button type="button" class="gc-btn-back" id="gc-contract-btn-back" title="Voltar à lista de contratos">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                                    <span>Voltar</span>
+                                </button>
+                                <h2 class="gc-main-title" id="gc-contract-title-action">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                                    <span>Adicionar contrato</span>
+                                </h2>
+                            </div>
+                            <div class="gc-breadcrumb">
+                                <span>🏠 Início</span>
+                                <span>&gt;</span>
+                                <span>Contratos de serviços</span>
+                                <span>&gt;</span>
+                                <span class="gc-breadcrumb-current" id="gc-contract-breadcrumb-action">Adicionar</span>
+                            </div>
+                        </div>
+
+                        <!-- CARD 1: DADOS GERAIS DO CONTRATO -->
+                        <div class="gc-card">
+                            <div class="gc-card-header">
+                                <h4 class="gc-card-title">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                                    Dados gerais do contrato
+                                </h4>
+                            </div>
+                            <div class="gc-card-body">
+                                <input type="hidden" id="gc-contract-id">
+
+                                <!-- Linha 1: Número, Cliente, Responsável -->
+                                <div class="gc-grid gc-grid-3" style="margin-bottom: 14px;">
+                                    <div class="gc-form-group">
+                                        <label class="gc-label" for="gc-contract-number">Número</label>
+                                        <div class="gc-input-group">
+                                            <input type="text" id="gc-contract-number" class="gc-input gc-input-readonly" value="CT-2026-001" readonly>
+                                            <button type="button" class="gc-input-append-btn" id="gc-contract-btn-edit-number" title="Alterar número">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="gc-form-group">
+                                        <label class="gc-label" for="gc-contract-client">Cliente / Contratante <span class="gc-required">*</span></label>
+                                        <input type="text" id="gc-contract-client" class="gc-input" list="gc-contract-clients-datalist" placeholder="Digite para buscar cliente..." autocomplete="off" required>
+                                        <datalist id="gc-contract-clients-datalist"></datalist>
+                                    </div>
+                                    <div class="gc-form-group">
+                                        <label class="gc-label" for="gc-contract-seller">Responsável Comercial</label>
+                                        <div class="gc-input-group">
+                                            <input type="text" id="gc-contract-seller" class="gc-input" placeholder="Vendedor responsável">
+                                            <button type="button" class="gc-input-append-btn" id="gc-contract-btn-clear-seller" title="Limpar responsável">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Linha 2: Situação, Data Início, Data Término, Periodicidade -->
+                                <div class="gc-grid gc-grid-4" style="margin-bottom: 14px;">
+                                    <div class="gc-form-group">
+                                        <label class="gc-label" for="gc-contract-status">Situação / Status <span class="gc-required">*</span></label>
+                                        <select id="gc-contract-status" class="gc-select" required>
+                                            <option value="Em formalização" selected>Em formalização</option>
+                                            <option value="Aguardando assinatura">Aguardando assinatura</option>
+                                            <option value="Ativo">Ativo</option>
+                                            <option value="Vencendo">Vencendo</option>
+                                            <option value="Suspenso">Suspenso</option>
+                                            <option value="Encerrado">Encerrado</option>
+                                        </select>
+                                    </div>
+                                    <div class="gc-form-group">
+                                        <label class="gc-label" for="gc-contract-start-date">Início da vigência <span class="gc-required">*</span></label>
+                                        <input type="date" id="gc-contract-start-date" class="gc-input" required>
+                                    </div>
+                                    <div class="gc-form-group">
+                                        <label class="gc-label" for="gc-contract-end-date">Término da vigência</label>
+                                        <input type="date" id="gc-contract-end-date" class="gc-input">
+                                    </div>
+                                    <div class="gc-form-group">
+                                        <label class="gc-label" for="gc-contract-periodicity">Periodicidade de cobrança</label>
+                                        <select id="gc-contract-periodicity" class="gc-select">
+                                            <option value="Mensal" selected>Mensal</option>
+                                            <option value="Bimestral">Bimestral</option>
+                                            <option value="Trimestral">Trimestral</option>
+                                            <option value="Semestral">Semestral</option>
+                                            <option value="Anual">Anual</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Linha 3: Dia do Vencimento, Forma de Pagamento, Renovação Automática, Aviso -->
+                                <div class="gc-grid gc-grid-4" style="margin-bottom: 14px;">
+                                    <div class="gc-form-group">
+                                        <label class="gc-label" for="gc-contract-due-day">Dia do vencimento</label>
+                                        <select id="gc-contract-due-day" class="gc-select">
+                                            <option value="05">Dia 05</option>
+                                            <option value="10" selected>Dia 10</option>
+                                            <option value="15">Dia 15</option>
+                                            <option value="20">Dia 20</option>
+                                            <option value="25">Dia 25</option>
+                                            <option value="30">Dia 30</option>
+                                        </select>
+                                    </div>
+                                    <div class="gc-form-group">
+                                        <label class="gc-label" for="gc-contract-payment-method">Forma de recebimento</label>
+                                        <select id="gc-contract-payment-method" class="gc-select">
+                                            <option value="Boleto Bancário" selected>Boleto Bancário</option>
+                                            <option value="PIX">PIX</option>
+                                            <option value="Transferência Bancária">Transferência Bancária</option>
+                                            <option value="Cartão de Crédito">Cartão de Crédito</option>
+                                        </select>
+                                    </div>
+                                    <div class="gc-form-group" style="justify-content: flex-end; padding-bottom: 8px;">
+                                        <label class="gc-checkbox-label">
+                                            <input type="checkbox" id="gc-contract-auto-renew" checked>
+                                            <span>Renovação automática</span>
+                                        </label>
+                                    </div>
+                                    <div class="gc-form-group">
+                                        <label class="gc-label" for="gc-contract-warning-days">Aviso de vencimento</label>
+                                        <input type="number" id="gc-contract-warning-days" class="gc-input" value="30" placeholder="Dias antes (ex: 30)">
+                                    </div>
+                                </div>
+
+                                <!-- Linha 4: Objeto do Contrato / Escopo Sintético -->
+                                <div class="gc-form-group">
+                                    <label class="gc-label" for="gc-contract-object">Objeto / Escopo do contrato</label>
+                                    <textarea id="gc-contract-object" class="gc-textarea" style="min-height: 70px;" placeholder="Ex.: Prestação de serviços contínuos de consultoria técnica em engenharia ambiental, monitoramento de emissões atmosféricas e laudos periódicos..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CARD 2: SERVIÇOS E ITENS CONTRATADOS -->
+                        <div class="gc-card">
+                            <div class="gc-card-header">
+                                <h4 class="gc-card-title">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                                    Serviços e mensalidades contratadas
+                                </h4>
+                            </div>
+                            <div class="gc-card-body">
+                                <div class="gc-table-wrapper">
+                                    <table class="gc-table">
+                                        <thead>
+                                            <tr>
+                                                <th class="gc-col-item">Serviço / Objeto <span class="gc-required">*</span></th>
+                                                <th class="gc-col-details">Detalhes / Escopo</th>
+                                                <th class="gc-col-qty">Quant.<span class="gc-required">*</span></th>
+                                                <th class="gc-col-price">Valor Unit. (R$) <span class="gc-required">*</span></th>
+                                                <th class="gc-col-discount">Desconto (R$)</th>
+                                                <th class="gc-col-subtotal">Subtotal Recorrente</th>
+                                                <th class="gc-col-action">Ação</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="gc-contract-services-tbody">
+                                            <!-- Preenchido via JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <button type="button" class="gc-btn-add-item" id="gc-contract-btn-add-service">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                    Adicionar serviço ao contrato
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- CARD 3: GERADOR INTELIGENTE DE MINUTA JURÍDICA (IA) -->
+                        <div class="gc-card">
+                            <div class="gc-card-header" style="justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                                <h4 class="gc-card-title">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+                                    Cláusulas contratuais & Minuta jurídica
+                                </h4>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <select id="gc-contract-template-model" class="gc-select" style="height: 32px; font-size: 12px; width: auto;">
+                                        <option value="ambiental">Modelo Engenharia & Meio Ambiente</option>
+                                        <option value="laudos">Modelo Inspeção & Laudos NR-13 / NR-12</option>
+                                        <option value="consultoria">Modelo Consultoria Contínua</option>
+                                    </select>
+                                    <button type="button" class="gc-btn-ai" id="gc-contract-btn-generate-ai">
+                                        ✨ Gerar Minuta Completa com IA
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="gc-card-body">
+                                <div class="gc-draft-editor-wrapper">
+                                    <div class="gc-draft-toolbar">
+                                        <div style="font-size: 12px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 6px;">
+                                            <span>📜 Instrumento Contratual Particular</span>
+                                            <span class="gc-badge gc-badge-info" id="gc-draft-status-badge">Pronto para edição</span>
+                                        </div>
+                                        <div style="display: flex; gap: 8px;">
+                                            <button type="button" class="gc-btn-secondary" id="gc-contract-btn-copy-draft" style="padding: 5px 10px; font-size: 12px;">
+                                                📋 Copiar Texto
+                                            </button>
+                                            <button type="button" class="gc-btn-secondary" id="gc-contract-btn-export-pdf" style="padding: 5px 10px; font-size: 12px; border-color: #6366f1; color: #6366f1;">
+                                                📄 Exportar Minuta em PDF
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <textarea id="gc-contract-draft-editor" class="gc-draft-textarea" placeholder="Clique em '✨ Gerar Minuta Completa com IA' para redigir automaticamente o contrato com cláusulas jurídicas empresariais completas..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CARD 4: OBSERVAÇÕES E ANEXOS -->
+                        <div class="gc-card">
+                            <div class="gc-card-header">
+                                <h4 class="gc-card-title">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                    Observações e anexos
+                                </h4>
+                            </div>
+                            <div class="gc-card-body">
+                                <div class="gc-grid gc-grid-2" style="margin-bottom: 14px;">
+                                    <div class="gc-form-group">
+                                        <label class="gc-label" for="gc-contract-notes">Observações do contrato (visíveis ao cliente)</label>
+                                        <textarea id="gc-contract-notes" class="gc-textarea" placeholder="Condições específicas de faturamento, prazos de envio de relatórios..."></textarea>
+                                    </div>
+                                    <div class="gc-form-group">
+                                        <label class="gc-label" for="gc-contract-internal-notes">Observações internas (confidenciais)</label>
+                                        <textarea id="gc-contract-internal-notes" class="gc-textarea" placeholder="Anotações internas sobre negociação, comissões ou particularidades da conta..."></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="gc-form-group">
+                                    <label class="gc-label">Anexos / Documento Assinado</label>
+                                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                        <button type="button" class="gc-btn-secondary" id="gc-contract-btn-select-file" style="padding: 6px 12px; font-size: 12px;">
+                                            📎 Selecionar arquivos (PDF / Imagem)
+                                        </button>
+                                        <input type="file" id="gc-contract-files" multiple accept=".pdf,.doc,.docx,image/*" style="display: none;">
+                                        <span id="gc-contract-files-count" style="font-size: 12px; color: #64748b;">Nenhum arquivo anexado</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CARD 5: TOTAIS E RESUMO FINANCEIRO -->
+                        <div class="gc-card">
+                            <div class="gc-card-header">
+                                <h4 class="gc-card-title">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                                    Resumo financeiro do contrato
+                                </h4>
+                            </div>
+                            <div class="gc-card-body">
+                                <div class="gc-total-grid" style="grid-template-columns: repeat(4, 1fr);">
+                                    <div class="gc-form-group">
+                                        <label class="gc-label">Meses de vigência</label>
+                                        <input type="text" id="gc-contract-duration-months" class="gc-input gc-input-readonly" value="12 meses" readonly>
+                                    </div>
+                                    <div class="gc-form-group">
+                                        <label class="gc-label">Desconto total recorrente</label>
+                                        <input type="text" id="gc-contract-total-discount" class="gc-input gc-input-readonly" value="R$ 0,00" readonly>
+                                    </div>
+                                    <div class="gc-form-group">
+                                        <label class="gc-label">Recorrente mensal (MRR)</label>
+                                        <input type="text" id="gc-contract-total-mrr" class="gc-input gc-total-highlight" value="R$ 0,00" readonly style="color: #4f46e5 !important; font-size: 15px !important;">
+                                    </div>
+                                    <div class="gc-form-group">
+                                        <label class="gc-label">Valor total contratado (TCV)</label>
+                                        <input type="text" id="gc-contract-total-tcv" class="gc-input gc-total-highlight" value="R$ 0,00" readonly style="color: #10b981 !important; font-size: 16px !important;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- RODAPÉ DE AÇÕES GESTÃOCLICK -->
+                        <div class="gc-actions-bar">
+                            <button type="button" class="gc-btn-submit" id="gc-contract-btn-submit">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                <span>Salvar contrato</span>
+                            </button>
+                            <button type="button" class="gc-btn-secondary" id="gc-contract-btn-submit-pdf">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                <span>Salvar e gerar minuta PDF</span>
+                            </button>
+                            <button type="button" class="gc-btn-cancel" id="gc-contract-btn-cancel">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                <span>Cancelar</span>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- FIM DO CONTAINER 2: TELA GESTÃOCLICK -->
                 </div>
 
                 <!-- Modal Cadastro de Contrato -->
@@ -3492,161 +3788,480 @@ Condições de pagamento:
                      VIEW: INSPEÇÕES & RENOVAÇÃO
                      ========================================================== -->
                 <div id="view-inspections" class="spa-view" style="display: none;">
-                    <!-- Header e Filtros -->
-                    <div class="vellia-card" style="margin-bottom: 24px; padding: 20px 24px;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 18px;">
-                            <div>
-                                <h3 style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0; letter-spacing: -0.01em;">Central de Inspeções & Renovações</h3>
-                                <p style="font-size: 13px; color: var(--text-muted); margin: 4px 0 0 0;">Monitore laudos técnicos e notifique clientes automaticamente antes do vencimento anual.</p>
+                    <!-- CONTAINER 1: LISTAGEM DE INSPEÇÕES -->
+                    <div id="inspections-list-container">
+                        <!-- Header e Filtros -->
+                        <div class="vellia-card" style="margin-bottom: 24px; padding: 20px 24px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 18px;">
+                                <div>
+                                    <h3 style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0; letter-spacing: -0.01em;">Central de Inspeções & Renovações</h3>
+                                    <p style="font-size: 13px; color: var(--text-muted); margin: 4px 0 0 0;">Monitore laudos técnicos e notifique clientes automaticamente antes do vencimento anual.</p>
+                                </div>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <button class="btn btn-primary" id="btn-open-checklist-modal" style="font-size: 13px; font-weight: 600; padding: 8px 16px; gap: 6px; display: inline-flex; align-items: center;">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                                        <span>Nova Inspeção Técnica</span>
+                                    </button>
+                                    <button class="btn btn-outline" id="btn-open-checklist-scanner-top" style="font-size: 13px; font-weight: 600; padding: 8px 16px; gap: 6px; display: inline-flex; align-items: center; border-color: #6366f1; color: #6366f1; background: rgba(99, 102, 241, 0.05);" title="Carregar PDF ou fotografar laudo com a câmera">
+                                        📷 Ler PDF / Câmera
+                                    </button>
+                                    <button class="btn btn-outline" style="font-size: 13px; font-weight: 600; padding: 8px 16px; gap: 6px; display: inline-flex; align-items: center;" onclick="window.exportInspectionsSummaryPDF()">
+                                        📄 Relatório PDF
+                                    </button>
+                                </div>
                             </div>
-                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                <button class="btn btn-primary" id="btn-open-checklist-modal" style="font-size: 13px; font-weight: 600; padding: 8px 16px; gap: 6px; display: inline-flex; align-items: center;" onclick="window.openChecklistModal ? window.openChecklistModal() : null">
-                                    📋 Nova Inspeção / Checklist
-                                </button>
-                                <button class="btn btn-outline" id="btn-open-checklist-scanner-top" style="font-size: 13px; font-weight: 600; padding: 8px 16px; gap: 6px; display: inline-flex; align-items: center; border-color: #6366f1; color: #6366f1; background: rgba(99, 102, 241, 0.05);" onclick="window.openChecklistModal ? window.openChecklistModal(null, 'file') : null" title="Carregar PDF ou fotografar laudo com a câmera">
-                                    📷 Ler PDF / Câmera
-                                </button>
-                                <button class="btn btn-outline" style="font-size: 13px; font-weight: 600; padding: 8px 16px; gap: 6px; display: inline-flex; align-items: center;" onclick="window.exportInspectionsSummaryPDF()">
-                                    📄 Relatório PDF
-                                </button>
+                            
+                            <!-- Barra de Filtros -->
+                            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; background: #F8FAFC; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border-color);">
+                                <div style="flex: 1; min-width: 220px; display: flex; align-items: center; gap: 8px; background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 8px; padding: 0 12px;">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #94A3B8;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                    <input type="text" id="filter-inspection-search" class="form-control" placeholder="Buscar por cliente, laudo ou serviço..." style="border: none; background: transparent; height: 36px; padding: 0; font-size: 13px;">
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">Status:</span>
+                                    <select id="filter-inspection-status" class="form-control" style="height: 36px; padding: 6px 12px; min-width: 175px; font-size: 12.5px;">
+                                        <option value="all">Todos os Status</option>
+                                        <option value="alerta">Crítico (Vence em &lt; 3 meses)</option>
+                                        <option value="valida">Válida (Mais de 3 meses)</option>
+                                        <option value="vencida">Vencida (Laudo Expirado)</option>
+                                    </select>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">Ano:</span>
+                                    <select id="filter-inspection-year" class="form-control" style="height: 36px; padding: 6px 12px; min-width: 100px; font-size: 12.5px;">
+                                        <option value="all">Todos</option>
+                                        <option value="2026">2026</option>
+                                        <option value="2025">2025</option>
+                                        <option value="2024">2024</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
-                        
-                        <!-- Barra de Filtros -->
-                        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; background: #F8FAFC; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border-color);">
-                            <div style="flex: 1; min-width: 220px; display: flex; align-items: center; gap: 8px; background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 8px; padding: 0 12px;">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #94A3B8;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                                <input type="text" id="filter-inspection-search" class="form-control" placeholder="Buscar por cliente, laudo ou serviço..." style="border: none; background: transparent; height: 36px; padding: 0; font-size: 13px;">
+
+                        <!-- Grid de KPIs rápidos -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                            <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+                                <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
+                                    <span class="stat-label">Total de Inspeções</span>
+                                    <span class="stat-value" id="kpi-inspections-total">0</span>
+                                </div>
+                                <div class="stat-icon-box" style="background: rgba(98, 87, 245, 0.08); color: var(--primary);">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                                </div>
                             </div>
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">Status:</span>
-                                <select id="filter-inspection-status" class="form-control" style="height: 36px; padding: 6px 12px; min-width: 175px; font-size: 12.5px;">
-                                    <option value="all">Todos os Status</option>
-                                    <option value="alerta">Crítico (Vence em &lt; 3 meses)</option>
-                                    <option value="valida">Válida (Mais de 3 meses)</option>
-                                    <option value="vencida">Vencida (Laudo Expirado)</option>
-                                </select>
+                            <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+                                <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
+                                    <span class="stat-label">Laudos Vencidos</span>
+                                    <span class="stat-value" id="kpi-inspections-expired" style="color: #DC2626;">0</span>
+                                </div>
+                                <div class="stat-icon-box" style="background: #FEF2F2; color: #DC2626;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                </div>
                             </div>
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">Ano:</span>
-                                <select id="filter-inspection-year" class="form-control" style="height: 36px; padding: 6px 12px; min-width: 100px; font-size: 12.5px;">
-                                    <option value="all">Todos</option>
-                                    <option value="2026">2026</option>
-                                    <option value="2025">2025</option>
-                                    <option value="2024">2024</option>
-                                </select>
+                            <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+                                <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
+                                    <span class="stat-label">Críticos (&lt; 3 meses)</span>
+                                    <span class="stat-value" id="kpi-inspections-critical" style="color: #D97706;">0</span>
+                                </div>
+                                <div class="stat-icon-box warning" style="background: #FFFBEB; color: #D97706;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                </div>
+                            </div>
+                            <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+                                <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
+                                    <span class="stat-label">Laudos Regulares</span>
+                                    <span class="stat-value" id="kpi-inspections-valid" style="color: #059669;">0</span>
+                                </div>
+                                <div class="stat-icon-box success" style="background: #ECFDF5; color: #16A36A;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tabela de Inspeções -->
+                        <div class="vellia-card" style="padding: 0; overflow: hidden; margin-bottom: 24px;">
+                            <div class="table-responsive" style="margin: 0;">
+                                <table class="custom-table" style="width: 100%; border: none;">
+                                    <thead>
+                                        <tr>
+                                            <th>Cliente / Empresa</th>
+                                            <th>Serviço Executado</th>
+                                            <th>Data Execução</th>
+                                            <th>Vencimento</th>
+                                            <th>Prazo Restante</th>
+                                            <th style="text-align: center;">Status</th>
+                                            <th style="text-align: center;">Ações de Revenda</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="inspections-table-body">
+                                        <!-- Inserido dinamicamente via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Painel de Análise Anual & Índice de Renovação -->
+                        <div class="card" style="padding: 24px; margin-top: 24px; border-left: 4px solid #10b981; background: linear-gradient(135deg, rgba(16,185,129,0.03) 0%, transparent 100%);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                                <div>
+                                    <h4 style="font-weight: 800; font-size: 15px; color: var(--text-primary); margin: 0 0 3px 0; display: flex; align-items: center; gap: 8px;">
+                                        📊 Comparativo Anual de Vistorias & Taxa de Revenda
+                                    </h4>
+                                    <span style="font-size: 11.5px; color: var(--text-muted);">Métricas de retenção de laudos, histórico por ano e recorrência de contratos</span>
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                                <!-- Gráfico comparativo de vistorias por ano -->
+                                <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 18px;">
+                                    <h5 style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin: 0 0 14px 0;">📈 Vistorias Realizadas por Ano</h5>
+                                    <div style="position: relative; height: 220px; width: 100%;">
+                                        <canvas id="chart-inspections-yearly"></canvas>
+                                    </div>
+                                </div>
+
+                                <!-- Resumo de Taxa de Renovação & Clientes Recorrentes -->
+                                <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
+                                    <div>
+                                        <h5 style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin: 0 0 14px 0;">🔄 Desempenho de Renovação</h5>
+                                        
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                                            <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px;">
+                                                <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Taxa de Renovação</span>
+                                                <div style="font-size: 24px; font-weight: 800; color: #10b981; margin-top: 2px;" id="inspection-renewal-rate">0%</div>
+                                            </div>
+                                            <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px;">
+                                                <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Receita de Renovações</span>
+                                                <div style="font-size: 20px; font-weight: 800; color: #8b5cf6; margin-top: 2px;" id="inspection-renewal-revenue">R$ 0</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h6 style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin: 0 0 8px 0;">🏆 Principais Clientes Recorrentes</h6>
+                                        <div id="inspections-top-clients" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px;">
+                                            <!-- Preenchido via JS -->
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
+                    <!-- FIM DO CONTAINER 1: LISTAGEM -->
 
-                    <!-- Grid de KPIs rápidos -->
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
-                        <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
-                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
-                                <span class="stat-label">Total de Inspeções</span>
-                                <span class="stat-value" id="kpi-inspections-total">0</span>
+                    <!-- ==========================================================
+                         CONTAINER 2: TELA DE INSPEÇÃO & LAUDO ESTILO GESTÃOCLICK (IDÊNTICA)
+                         ========================================================== -->
+                    <div id="gestaoclick-inspection-view" class="gc-budget-container" style="display: none;">
+                        <!-- Top Header & Breadcrumbs -->
+                        <div class="gc-top-header">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <button type="button" class="gc-btn-back" id="gc-insp-btn-back" title="Voltar à central de inspeções">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                                    <span>Voltar</span>
+                                </button>
+                                <h2 class="gc-main-title" id="gc-insp-title-action">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                                    <span>Nova inspeção & laudo técnico</span>
+                                </h2>
                             </div>
-                            <div class="stat-icon-box" style="background: rgba(98, 87, 245, 0.08); color: var(--primary);">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                            </div>
-                        </div>
-                        <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
-                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
-                                <span class="stat-label">Laudos Vencidos</span>
-                                <span class="stat-value" id="kpi-inspections-expired" style="color: #DC2626;">0</span>
-                            </div>
-                            <div class="stat-icon-box" style="background: #FEF2F2; color: #DC2626;">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                            </div>
-                        </div>
-                        <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
-                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
-                                <span class="stat-label">Críticos (&lt; 3 meses)</span>
-                                <span class="stat-value" id="kpi-inspections-critical" style="color: #D97706;">0</span>
-                            </div>
-                            <div class="stat-icon-box warning" style="background: #FFFBEB; color: #D97706;">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            <div class="gc-breadcrumb">
+                                <span>🏠 Início</span>
+                                <span>&gt;</span>
+                                <span>Inspeções e vistorias</span>
+                                <span>&gt;</span>
+                                <span class="gc-breadcrumb-current" id="gc-insp-breadcrumb-action">Adicionar</span>
                             </div>
                         </div>
-                        <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
-                            <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
-                                <span class="stat-label">Laudos Regulares</span>
-                                <span class="stat-value" id="kpi-inspections-valid" style="color: #059669;">0</span>
-                            </div>
-                            <div class="stat-icon-box success" style="background: #ECFDF5; color: #16A36A;">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                            </div>
-                        </div>
-                    </div>
 
-                    <!-- Tabela de Inspeções -->
-                    <div class="vellia-card" style="padding: 0; overflow: hidden; margin-bottom: 24px;">
-                        <div class="table-responsive" style="margin: 0;">
-                            <table class="custom-table" style="width: 100%; border: none;">
-                                <thead>
-                                    <tr>
-                                        <th>Cliente / Empresa</th>
-                                        <th>Serviço Executado</th>
-                                        <th>Data Execução</th>
-                                        <th>Vencimento</th>
-                                        <th>Prazo Restante</th>
-                                        <th style="text-align: center;">Status</th>
-                                        <th style="text-align: center;">Ações de Revenda</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="inspections-table-body">
-                                    <!-- Inserido dinamicamente via JS -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Painel de Análise Anual & Índice de Renovação -->
-                    <div class="card" style="padding: 24px; margin-top: 24px; border-left: 4px solid #10b981; background: linear-gradient(135deg, rgba(16,185,129,0.03) 0%, transparent 100%);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
-                            <div>
-                                <h4 style="font-weight: 800; font-size: 15px; color: var(--text-primary); margin: 0 0 3px 0; display: flex; align-items: center; gap: 8px;">
-                                    📊 Comparativo Anual de Vistorias & Taxa de Revenda
+                        <!-- CARD 1: DADOS GERAIS DA INSPEÇÃO TÉCNICA -->
+                        <div class="gc-card">
+                            <div class="gc-card-header">
+                                <h4 class="gc-card-title">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                                    Dados gerais da vistoria técnica
                                 </h4>
-                                <span style="font-size: 11.5px; color: var(--text-muted);">Métricas de retenção de laudos, histórico por ano e recorrência de contratos</span>
+                            </div>
+                            <div class="gc-card-body">
+                                <input type="hidden" id="gc-insp-lead-id">
+                                <input type="hidden" id="gc-insp-interaction-id">
+
+                                <!-- Linha 1: Número, Cliente, Inspetor Técnico -->
+                                <div class="gc-grid gc-grid-3" style="margin-bottom: 14px;">
+                                    <div class="gc-form-group">
+                                        <label class="gc-label" for="gc-insp-number">Nº do laudo / inspeção</label>
+                                        <div class="gc-input-group">
+                                            <input type="text" id="gc-insp-number" class="gc-input gc-input-readonly" value="INSP-2026-001" readonly>
+                                            <button type="button" class="gc-input-append-btn" id="gc-insp-btn-edit-number" title="Alterar número">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="gc-form-group">
+                                        <label class="gc-label" for="gc-insp-client">Cliente / Empresa inspecionada <span class="gc-required">*</span></label>
+                                        <input type="text" id="gc-insp-client" class="gc-input" list="gc-insp-clients-datalist" placeholder="Digite para buscar empresa..." autocomplete="off" required>
+                                        <datalist id="gc-insp-clients-datalist"></datalist>
+                                    </div>
+                                    <div class="gc-form-group">
+                                        <label class="gc-label" for="gc-insp-inspector">Responsável técnico / Engenheiro</label>
+                                        <div class="gc-input-group">
+                                            <input type="text" id="gc-insp-inspector" class="gc-input" placeholder="Eng. San Charles (CREA 12345/PE)">
+                                            <button type="button" class="gc-input-append-btn" id="gc-insp-btn-clear-inspector" title="Limpar inspetor">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Linha 2: Tipo de Inspeção, Data Execução, Data Validade, Status -->
+                                <div class="gc-grid gc-grid-4" style="margin-bottom: 14px;">
+                                    <div class="gc-form-group">
+                                        <label class="gc-label" for="gc-insp-service-select">Tipo de vistoria / serviço <span class="gc-required">*</span></label>
+                                        <select id="gc-insp-service-select" class="gc-select" required>
+                                            <option value="Amostragem Isocinética de Chaminé" selected>Amostragem Isocinética (Chaminé)</option>
+                                            <option value="Inspeção NR-13 (Caldeiras e Vasos)">Inspeção NR-13 (Caldeiras e Vasos)</option>
+                                            <option value="Laudo NR-12 (Segurança de Máquinas)">Laudo NR-12 (Segurança de Máquinas)</option>
+                                            <option value="Licenciamento e Monitoramento Ambiental">Licenciamento & Monitoramento Ambiental</option>
+                                            <option value="Laudo Elétrico NR-10 e SPDA">Laudo Elétrico NR-10 e SPDA</option>
+                                            <option value="Medição de Ruído e Poluentes">Medição de Ruído e Poluentes</option>
+                                            <option value="Vistoria Técnica Geral">Vistoria Técnica Geral</option>
+                                        </select>
+                                    </div>
+                                    <div class="gc-form-group">
+                                        <label class="gc-label" for="gc-insp-exec-date">Data da realização <span class="gc-required">*</span></label>
+                                        <input type="date" id="gc-insp-exec-date" class="gc-input" required>
+                                    </div>
+                                    <div class="gc-form-group">
+                                        <label class="gc-label" for="gc-insp-expiry-date">Validade do laudo (1 ano) <span class="gc-required">*</span></label>
+                                        <input type="date" id="gc-insp-expiry-date" class="gc-input" required>
+                                    </div>
+                                    <div class="gc-form-group">
+                                        <label class="gc-label" for="gc-insp-status">Situação do laudo</label>
+                                        <select id="gc-insp-status" class="gc-select">
+                                            <option value="valida" selected>🟢 Válido (Regular)</option>
+                                            <option value="alerta">🟠 Crítico (&lt; 3 meses para vencer)</option>
+                                            <option value="vencida">🔴 Vencido (Laudo expirado)</option>
+                                            <option value="elaboracao">⚪ Em elaboração</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Linha 3: Local / Planta Industrial, Contato Acompanhante -->
+                                <div class="gc-grid gc-grid-2">
+                                    <div class="gc-form-group">
+                                        <label class="gc-label" for="gc-insp-location">Local / Unidade Fabril Inspecionada</label>
+                                        <input type="text" id="gc-insp-location" class="gc-input" placeholder="Ex.: Fábrica Central - Galpão 02, Rodovia BR-101 Km 45">
+                                    </div>
+                                    <div class="gc-form-group">
+                                        <label class="gc-label" for="gc-insp-contact">Contato / Acompanhante na Planta</label>
+                                        <input type="text" id="gc-insp-contact" class="gc-input" placeholder="Ex.: Gerente de Manutenção / (81) 98888-0000">
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                            <!-- Gráfico comparativo de vistorias por ano -->
-                            <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 18px;">
-                                <h5 style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin: 0 0 14px 0;">📈 Vistorias Realizadas por Ano</h5>
-                                <div style="position: relative; height: 220px; width: 100%;">
-                                    <canvas id="chart-inspections-yearly"></canvas>
+                        <!-- CARD 2: SCANNER INTELIGENTE (UPLOAD PDF / FOTO / CÂMERA) -->
+                        <div class="gc-card">
+                            <div class="gc-card-header" style="justify-content: space-between;">
+                                <h4 class="gc-card-title">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                                    Importação rápida do laudo anterior (IA Scanner)
+                                </h4>
+                                <span class="gc-badge gc-badge-info">OCR Inteligente</span>
+                            </div>
+                            <div class="gc-card-body">
+                                <div class="gc-scanner-box">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                                        <div>
+                                            <span style="font-size: 13px; font-weight: 700; color: #1e293b; display: block;">Preenchimento automático por PDF ou imagem</span>
+                                            <span style="font-size: 12px; color: #64748b;">Faça o upload do laudo anterior para preencher empresa, datas e pontos técnicos em segundos.</span>
+                                        </div>
+                                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                            <button type="button" class="gc-btn-secondary" id="gc-insp-btn-upload-pdf" style="font-size: 12px; border-color: #6366f1; color: #6366f1;">
+                                                📄 Upload de Laudo (PDF)
+                                            </button>
+                                            <button type="button" class="gc-btn-secondary" id="gc-insp-btn-camera" style="font-size: 12px; border-color: #10b981; color: #10b981;">
+                                                📷 Câmera do Celular
+                                            </button>
+                                            <button type="button" class="gc-btn-secondary" id="gc-insp-btn-webcam" style="font-size: 12px;">
+                                                🎥 Webcam
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Status do Scanner -->
+                                    <div id="gc-insp-scanner-loading" style="display: none; align-items: center; gap: 10px; margin-top: 12px; padding: 10px; background: rgba(99, 102, 241, 0.08); border-radius: 4px;">
+                                        <div style="width: 16px; height: 16px; border: 2px solid #6366f1; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+                                        <span style="font-size: 12px; font-weight: 600; color: #4338ca;">Extraindo parâmetros técnicos e dados do laudo...</span>
+                                    </div>
+                                    <div id="gc-insp-scanner-success" style="display: none; margin-top: 12px; padding: 10px; background: #dcfce7; border: 1px solid #bbf7d0; border-radius: 4px; font-size: 12px; color: #15803d; font-weight: 600;">
+                                        ✨ Laudo lido e dados técnicos preenchidos automaticamente com sucesso!
+                                    </div>
+
+                                    <!-- Webcam Container -->
+                                    <div id="gc-insp-webcam-container" style="display: none; margin-top: 12px; background: #0f172a; padding: 12px; border-radius: 6px; text-align: center;">
+                                        <video id="gc-insp-webcam-video" autoplay playsinline style="max-width: 100%; max-height: 200px; border-radius: 4px;"></video>
+                                        <div style="margin-top: 8px; display: flex; gap: 8px; justify-content: center;">
+                                            <button type="button" class="gc-btn-submit" id="gc-insp-btn-capture-webcam" style="padding: 6px 14px; font-size: 12px;">📸 Capturar foto</button>
+                                            <button type="button" class="gc-btn-cancel" id="gc-insp-btn-close-webcam" style="padding: 6px 14px; font-size: 12px;">Fechar</button>
+                                        </div>
+                                    </div>
+
+                                    <input type="file" id="gc-insp-file-input" accept=".pdf,image/*" style="display: none;">
+                                    <input type="file" id="gc-insp-camera-input" accept="image/*" capture="environment" style="display: none;">
                                 </div>
                             </div>
+                        </div>
 
-                            <!-- Resumo de Taxa de Renovação & Clientes Recorrentes -->
-                            <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
-                                <div>
-                                    <h5 style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin: 0 0 14px 0;">🔄 Desempenho de Renovação</h5>
-                                    
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-                                        <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px;">
-                                            <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Taxa de Renovação</span>
-                                            <div style="font-size: 24px; font-weight: 800; color: #10b981; margin-top: 2px;" id="inspection-renewal-rate">0%</div>
-                                        </div>
-                                        <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px;">
-                                            <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Receita de Renovações</span>
-                                            <div style="font-size: 20px; font-weight: 800; color: #8b5cf6; margin-top: 2px;" id="inspection-renewal-revenue">R$ 0</div>
-                                        </div>
+                        <!-- CARD 3: PARÂMETROS TÉCNICOS & CHECKLIST DE CONFORMIDADE -->
+                        <div class="gc-card">
+                            <div class="gc-card-header" style="justify-content: space-between;">
+                                <h4 class="gc-card-title">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                                    Checklist técnico de conformidade
+                                </h4>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-size: 12px; color: #64748b; font-weight: 600;">Score técnico:</span>
+                                    <span class="gc-badge gc-badge-success" id="gc-insp-score-badge" style="font-size: 12px;">100% de conformidade</span>
+                                </div>
+                            </div>
+                            <div class="gc-card-body">
+                                <div class="gc-form-group" style="margin-bottom: 14px;">
+                                    <label class="gc-label" for="gc-insp-equipment-tag">Identificação do equipamento / Ponto de amostragem <span class="gc-required">*</span></label>
+                                    <input type="text" id="gc-insp-equipment-tag" class="gc-input" placeholder="Ex.: Chaminé da Caldeira Aquatubular 01 / Tag CH-01" required>
+                                </div>
+
+                                <div class="gc-table-wrapper">
+                                    <table class="gc-checklist-table">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 45%;">Item / Parâmetro Inspecionado</th>
+                                                <th style="width: 25%;">Norma de Referência</th>
+                                                <th style="width: 30%; text-align: center;">Avaliação Técnica</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="gc-insp-checklist-tbody">
+                                            <!-- Itens inseridos dinamicamente ou default -->
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="gc-form-group" style="margin-top: 16px;">
+                                    <label class="gc-label" for="gc-insp-technical-opinion">Parecer conclusivo & Recomendações de engenharia</label>
+                                    <textarea id="gc-insp-technical-opinion" class="gc-textarea" style="min-height: 80px;" placeholder="Descreva os resultados encontrados, se a fonte operou dentro dos padrões da CPRH/CONAMA e prazos para readequação caso necessário..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CARD 4: SERVIÇOS TÉCNICOS VINCULADOS & ORÇAMENTO -->
+                        <div class="gc-card">
+                            <div class="gc-card-header">
+                                <h4 class="gc-card-title">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                                    Serviços técnicos e proposta de renovação
+                                </h4>
+                            </div>
+                            <div class="gc-card-body">
+                                <div class="gc-table-wrapper">
+                                    <table class="gc-table">
+                                        <thead>
+                                            <tr>
+                                                <th class="gc-col-item">Serviço Técnico <span class="gc-required">*</span></th>
+                                                <th class="gc-col-details">Detalhes / Metodologia</th>
+                                                <th class="gc-col-qty">Quant.<span class="gc-required">*</span></th>
+                                                <th class="gc-col-price">Valor Unit. (R$) <span class="gc-required">*</span></th>
+                                                <th class="gc-col-subtotal">Subtotal</th>
+                                                <th class="gc-col-action">Ação</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="gc-insp-services-tbody">
+                                            <!-- Linhas de serviços da inspeção inseridas dinamicamente -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <button type="button" class="gc-btn-add-item" id="gc-insp-btn-add-service">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                    Adicionar serviço à inspeção
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- CARD 5: OBSERVAÇÕES E FOTOS DA VISTORIA -->
+                        <div class="gc-card">
+                            <div class="gc-card-header">
+                                <h4 class="gc-card-title">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                    Observações técnicas e fotos da vistoria
+                                </h4>
+                            </div>
+                            <div class="gc-card-body">
+                                <div class="gc-grid gc-grid-2" style="margin-bottom: 14px;">
+                                    <div class="gc-form-group">
+                                        <label class="gc-label" for="gc-insp-notes">Observações do laudo (no documento final)</label>
+                                        <textarea id="gc-insp-notes" class="gc-textarea" placeholder="Informações que constarão no laudo técnico emitido para o cliente..."></textarea>
+                                    </div>
+                                    <div class="gc-form-group">
+                                        <label class="gc-label" for="gc-insp-internal-notes">Observações internas da equipe técnica</label>
+                                        <textarea id="gc-insp-internal-notes" class="gc-textarea" placeholder="Anotações internas sobre condições de acesso, necessidade de andaime, histórico..."></textarea>
                                     </div>
                                 </div>
 
-                                <div>
-                                    <h6 style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin: 0 0 8px 0;">🏆 Principais Clientes Recorrentes</h6>
-                                    <div id="inspections-top-clients" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px;">
-                                        <!-- Preenchido via JS -->
+                                <div class="gc-form-group">
+                                    <label class="gc-label">Fotos da Vistoria & Evidências</label>
+                                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                        <button type="button" class="gc-btn-secondary" id="gc-insp-btn-select-photos" style="padding: 6px 12px; font-size: 12px;">
+                                            📷 Anexar fotos da inspeção (JPG / PNG)
+                                        </button>
+                                        <input type="file" id="gc-insp-photos-input" multiple accept="image/*,.pdf" style="display: none;">
+                                        <span id="gc-insp-photos-count" style="font-size: 12px; color: #64748b;">Nenhuma foto anexada</span>
                                     </div>
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- CARD 6: RESUMO E TOTAIS -->
+                        <div class="gc-card">
+                            <div class="gc-card-header">
+                                <h4 class="gc-card-title">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                                    Resumo da inspeção & Valores
+                                </h4>
+                            </div>
+                            <div class="gc-card-body">
+                                <div class="gc-total-grid" style="grid-template-columns: repeat(3, 1fr);">
+                                    <div class="gc-form-group">
+                                        <label class="gc-label">Conformidade geral</label>
+                                        <input type="text" id="gc-insp-summary-score" class="gc-input gc-input-readonly" value="100% Conforme" readonly>
+                                    </div>
+                                    <div class="gc-form-group">
+                                        <label class="gc-label">Dias para renovação</label>
+                                        <input type="text" id="gc-insp-summary-days" class="gc-input gc-input-readonly" value="365 dias (1 ano)" readonly>
+                                    </div>
+                                    <div class="gc-form-group">
+                                        <label class="gc-label">Valor total do serviço</label>
+                                        <input type="text" id="gc-insp-summary-total" class="gc-input gc-total-highlight" value="R$ 0,00" readonly style="color: #10b981 !important; font-size: 16px !important;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- RODAPÉ DE AÇÕES GESTÃOCLICK -->
+                        <div class="gc-actions-bar">
+                            <button type="button" class="gc-btn-submit" id="gc-insp-btn-submit">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                <span>Salvar inspeção</span>
+                            </button>
+                            <button type="button" class="gc-btn-secondary" id="gc-insp-btn-submit-pdf">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                <span>Salvar e gerar laudo técnico PDF</span>
+                            </button>
+                            <button type="button" class="gc-btn-cancel" id="gc-insp-btn-cancel">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                <span>Cancelar</span>
+                            </button>
                         </div>
                     </div>
+                    <!-- FIM DO CONTAINER 2: TELA GESTÃOCLICK -->
                 </div>
 
 

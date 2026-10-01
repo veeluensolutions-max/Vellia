@@ -7044,6 +7044,463 @@ input:checked + .switch-slider::before {
 }
 
 
+/* ==========================================================================
+   MODAL REDESIGN — Qualificar Lead & Registrar Perda
+   ========================================================================== */
+
+.ql-modal-redesign {
+    border-radius: 18px !important;
+    overflow: hidden;
+    border: none !important;
+    box-shadow: 0 32px 80px rgba(0, 0, 0, 0.18), 0 8px 24px rgba(0, 0, 0, 0.1) !important;
+    padding: 0 !important;
+}
+
+/* Header */
+.ql-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 24px 28px 20px;
+    background: linear-gradient(135deg, #6257F5 0%, #8b5cf6 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.ql-modal-header::before {
+    content: '';
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.07);
+    pointer-events: none;
+}
+
+.ql-modal-header::after {
+    content: '';
+    position: absolute;
+    bottom: -50px;
+    right: 50px;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+    pointer-events: none;
+}
+
+.ql-modal-header-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.ql-modal-header-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.18);
+    border: 1.5px solid rgba(255,255,255,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+    backdrop-filter: blur(4px);
+}
+
+.ql-icon-danger {
+    background: rgba(255,255,255,0.15);
+}
+
+.ql-modal-header-text h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: white;
+    margin: 0 0 3px 0;
+    letter-spacing: -0.3px;
+}
+
+.ql-modal-header-text p {
+    font-size: 12.5px;
+    color: rgba(255,255,255,0.75);
+    margin: 0;
+}
+
+.ql-modal-header-text p strong {
+    color: rgba(255,255,255,0.95);
+    font-weight: 600;
+}
+
+/* Body */
+.ql-modal-body {
+    padding: 24px 28px;
+    background: var(--bg-surface);
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+/* Field Group */
+.ql-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.ql-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    letter-spacing: 0.1px;
+}
+
+.ql-label svg {
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+.ql-required {
+    color: #ef4444;
+    font-size: 12px;
+}
+
+/* Grid 2 colunas */
+.ql-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+/* Inputs */
+.ql-input {
+    width: 100%;
+    padding: 11px 14px;
+    background: var(--bg-app);
+    border: 1.5px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 13.5px;
+    color: var(--text-primary);
+    font-family: inherit;
+    transition: all 0.15s ease;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.ql-input:focus {
+    border-color: var(--primary);
+    background: var(--bg-surface);
+    box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+.ql-input-prefix-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.ql-input-prefix {
+    position: absolute;
+    left: 12px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.ql-input-prefixed {
+    padding-left: 38px;
+}
+
+/* Select */
+.ql-select-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.ql-select {
+    width: 100%;
+    padding: 11px 40px 11px 14px;
+    background: var(--bg-app);
+    border: 1.5px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 13.5px;
+    color: var(--text-primary);
+    font-family: inherit;
+    appearance: none;
+    -webkit-appearance: none;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.ql-select:focus {
+    border-color: var(--primary);
+    background: var(--bg-surface);
+    box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+.ql-select-arrow {
+    position: absolute;
+    right: 12px;
+    color: var(--text-muted);
+    pointer-events: none;
+    flex-shrink: 0;
+}
+
+/* Textarea */
+.ql-textarea {
+    width: 100%;
+    padding: 11px 14px;
+    background: var(--bg-app);
+    border: 1.5px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 13.5px;
+    color: var(--text-primary);
+    font-family: inherit;
+    resize: vertical;
+    min-height: 80px;
+    outline: none;
+    transition: all 0.15s ease;
+    box-sizing: border-box;
+    line-height: 1.5;
+}
+
+.ql-textarea:focus {
+    border-color: var(--primary);
+    background: var(--bg-surface);
+    box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+/* Slider de Probabilidade */
+.ql-prob-track {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.ql-prob-badge {
+    margin-left: auto;
+    background: linear-gradient(135deg, #6257F5, #8b5cf6);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    min-width: 36px;
+    text-align: center;
+}
+
+.ql-prob-slider {
+    --pct: 50%;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 99px;
+    background: linear-gradient(to right, #6257F5 var(--pct), var(--border-color) var(--pct));
+    outline: none;
+    cursor: pointer;
+    transition: background 0.1s ease;
+}
+
+.ql-prob-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: white;
+    border: 2.5px solid #6257F5;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(98, 87, 245, 0.35);
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.ql-prob-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 3px 14px rgba(98, 87, 245, 0.5);
+}
+
+.ql-prob-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: white;
+    border: 2.5px solid #6257F5;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(98, 87, 245, 0.35);
+}
+
+.ql-prob-markers {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10.5px;
+    color: var(--text-muted);
+    padding: 0 2px;
+}
+
+/* Quick tags de motivo de perda */
+.ql-quick-reasons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.ql-quick-tag {
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: var(--bg-app);
+    border: 1px solid var(--border-color);
+    font-size: 11.5px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+    font-weight: 500;
+}
+
+.ql-quick-tag:hover {
+    background: var(--primary-soft);
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateY(-1px);
+}
+
+/* Alerta de perda */
+.ql-loss-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: rgba(239, 68, 68, 0.07);
+    border: 1px solid rgba(239, 68, 68, 0.18);
+    font-size: 12.5px;
+    color: #b91c1c;
+    line-height: 1.5;
+    font-weight: 500;
+}
+
+.ql-loss-alert svg {
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: #dc2626;
+}
+
+/* Footer */
+.ql-modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 28px 24px;
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border-color-light);
+}
+
+.ql-btn-cancel {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 18px;
+    height: 40px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border-color);
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    font-size: 13.5px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.ql-btn-cancel:hover {
+    background: var(--bg-app);
+    border-color: #D0D5DD;
+    color: var(--text-primary);
+}
+
+.ql-btn-submit {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 22px;
+    height: 40px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, #6257F5 0%, #8b5cf6 100%);
+    color: white;
+    font-size: 13.5px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 14px rgba(98, 87, 245, 0.35);
+}
+
+.ql-btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(98, 87, 245, 0.5);
+}
+
+.ql-btn-submit:active {
+    transform: translateY(0);
+}
+
+.ql-btn-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35) !important;
+}
+
+.ql-btn-danger:hover {
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5) !important;
+}
+
+/* Dark mode overrides */
+[data-theme="dark"] .ql-input,
+[data-theme="dark"] .ql-select,
+[data-theme="dark"] .ql-textarea {
+    background: var(--bg-app);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .ql-input:focus,
+[data-theme="dark"] .ql-select:focus,
+[data-theme="dark"] .ql-textarea:focus {
+    background: var(--bg-surface);
+}
+
+[data-theme="dark"] .ql-quick-tag {
+    background: var(--bg-app);
+    border-color: var(--border-color);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .ql-prob-slider {
+    background: linear-gradient(to right, #6257F5 var(--pct), var(--border-color) var(--pct));
+}
+
+[data-theme="dark"] .ql-prob-slider::-webkit-slider-thumb {
+    background: var(--bg-surface);
+}
+
+[data-theme="dark"] .ql-loss-alert {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.22);
+}
+
+
+
 
 
 

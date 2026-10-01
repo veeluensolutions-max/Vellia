@@ -5225,72 +5225,139 @@ Condições de pagamento:
         </form>
     </div>
     <!-- Modal: Qualificar Lead -->
-    <div id="qualify-lead-modal" class="modal" style="max-width: 500px;">
-        <div class="modal-header">
-            <h3 style="font-weight: 700;">Qualificar Lead</h3>
+    <div id="qualify-lead-modal" class="modal ql-modal-redesign" style="max-width: 520px;">
+        <div class="ql-modal-header">
+            <div class="ql-modal-header-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </div>
+            <div class="ql-modal-header-text">
+                <h3>Qualificar Lead</h3>
+                <p>Preencha os dados estratégicos da oportunidade</p>
+            </div>
         </div>
         <form id="qualify-lead-form">
-            <div class="modal-body">
-                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
-                    Para transformar este contato em um <strong>Lead Qualificado</strong>, preencha os dados estratégicos abaixo:
-                </p>
-                <div class="form-group">
-                    <label for="qualify-service">Serviço Solicitado *</label>
-                    <select id="qualify-service" class="form-control" required>
-                        <option value="">Selecione o serviço...</option>
-                        <option value="Licenciamento Ambiental">Licenciamento Ambiental</option>
-                        <option value="Monitoramento Ambiental">Monitoramento Ambiental</option>
-                        <option value="ESG">ESG</option>
-                        <option value="NR-13">NR-13</option>
-                        <option value="Estudos Ambientais">Estudos Ambientais</option>
-                        <option value="Consultorias Técnicas">Consultorias Técnicas</option>
-                        <option value="Outros">Outros</option>
-                    </select>
-                </div>
-                <div class="grid-modal-2col" style="margin-bottom: 16px;">
-                    <div class="form-group">
-                        <label for="qualify-value">Valor Estimado (R$) *</label>
-                        <input type="number" id="qualify-value" class="form-control" placeholder="0.00" step="0.01" min="0" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="qualify-prob">Probabilidade (%) *</label>
-                        <input type="number" id="qualify-prob" class="form-control" placeholder="Ex: 50" min="0" max="100" required>
+            <div class="ql-modal-body">
+                <!-- Serviço -->
+                <div class="ql-field-group">
+                    <label class="ql-label" for="qualify-service">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        Serviço Solicitado <span class="ql-required">*</span>
+                    </label>
+                    <div class="ql-select-wrapper">
+                        <select id="qualify-service" class="ql-select" required>
+                            <option value="">Selecione o serviço...</option>
+                            <option value="Licenciamento Ambiental">🌿 Licenciamento Ambiental</option>
+                            <option value="Monitoramento Ambiental">📊 Monitoramento Ambiental</option>
+                            <option value="ESG">♻️ ESG</option>
+                            <option value="NR-13">⚙️ NR-13</option>
+                            <option value="Estudos Ambientais">🔬 Estudos Ambientais</option>
+                            <option value="Consultorias Técnicas">💼 Consultorias Técnicas</option>
+                            <option value="Outros">📋 Outros</option>
+                        </select>
+                        <svg class="ql-select-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label for="qualify-deadline">Prazo Esperado *</label>
-                    <input type="date" id="qualify-deadline" class="form-control" required>
+
+                <!-- Valor + Probabilidade -->
+                <div class="ql-grid-2">
+                    <div class="ql-field-group">
+                        <label class="ql-label" for="qualify-value">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                            Valor Estimado <span class="ql-required">*</span>
+                        </label>
+                        <div class="ql-input-prefix-wrapper">
+                            <span class="ql-input-prefix">R$</span>
+                            <input type="number" id="qualify-value" class="ql-input ql-input-prefixed" placeholder="0,00" step="0.01" min="0" required>
+                        </div>
+                    </div>
+                    <div class="ql-field-group">
+                        <label class="ql-label" for="qualify-deadline">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                            Prazo Esperado <span class="ql-required">*</span>
+                        </label>
+                        <input type="date" id="qualify-deadline" class="ql-input" required>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="qualify-notes">Observações</label>
-                    <textarea id="qualify-notes" class="form-control" placeholder="Detalhes da oportunidade..." style="min-height: 60px;"></textarea>
+
+                <!-- Probabilidade com Slider -->
+                <div class="ql-field-group">
+                    <label class="ql-label" for="qualify-prob">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                        Probabilidade de Fechamento <span class="ql-required">*</span>
+                        <span class="ql-prob-badge" id="qualify-prob-badge">50%</span>
+                    </label>
+                    <div class="ql-prob-track">
+                        <input type="range" id="qualify-prob" class="ql-prob-slider" min="0" max="100" value="50" step="5"
+                               oninput="document.getElementById('qualify-prob-badge').textContent=this.value+'%'; this.style.setProperty('--pct', this.value+'%');" required>
+                        <div class="ql-prob-markers">
+                            <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Observações -->
+                <div class="ql-field-group">
+                    <label class="ql-label" for="qualify-notes">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        Observações
+                    </label>
+                    <textarea id="qualify-notes" class="ql-textarea" placeholder="Detalhes da oportunidade, contexto, necessidades do cliente..."></textarea>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" id="btn-cancel-qualify" class="btn btn-outline">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Qualificar Lead</button>
+
+            <div class="ql-modal-footer">
+                <button type="button" id="btn-cancel-qualify" class="ql-btn-cancel">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    Cancelar
+                </button>
+                <button type="submit" class="ql-btn-submit">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    Qualificar Lead
+                </button>
             </div>
         </form>
     </div>
 
-    <!-- Modal de Justificativa / Motivo de Etapa -->
-    <div id="stage-reason-modal" class="modal" style="max-width: 450px;">
-        <div class="modal-header">
-            <h3 style="font-weight: 700;">Mudança de Estágio</h3>
+    <!-- Modal de Justificativa — Cliente Perdido -->
+    <div id="stage-reason-modal" class="modal ql-modal-redesign" style="max-width: 440px;">
+        <div class="ql-modal-header ql-modal-header-danger">
+            <div class="ql-modal-header-icon ql-icon-danger">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div class="ql-modal-header-text">
+                <h3>Registrar Perda</h3>
+                <p>Mover para: <strong id="stage-reason-target-name">Cliente Perdido</strong></p>
+            </div>
         </div>
         <form id="stage-reason-form" onsubmit="return false;">
-            <div class="modal-body">
-                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
-                    Por favor, insira o motivo ou justificativa para mudar este lead para a etapa <strong id="stage-reason-target-name">Cliente Perdido</strong>.
-                </p>
-                <div class="form-group">
-                    <label for="stage-reason-text">Justificativa / Motivo *</label>
-                    <textarea id="stage-reason-text" class="form-control" placeholder="Descreva sucintamente o motivo..." style="min-height: 80px; padding: 10px 12px; resize: vertical;" required></textarea>
+            <div class="ql-modal-body">
+                <div class="ql-loss-alert">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    Esta ação marcará o lead como perdido e registrará o motivo no histórico de auditoria.
+                </div>
+                <div class="ql-field-group" style="margin-top: 0;">
+                    <label class="ql-label" for="stage-reason-text">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        Motivo da Perda <span class="ql-required">*</span>
+                    </label>
+                    <textarea id="stage-reason-text" class="ql-textarea" placeholder="Ex: Preço acima do orçamento, contratou concorrente, projeto cancelado..." style="min-height: 100px;" required></textarea>
+                    <div class="ql-quick-reasons">
+                        <span class="ql-quick-tag" onclick="document.getElementById('stage-reason-text').value='Preço acima do orçamento do cliente.'">💰 Preço alto</span>
+                        <span class="ql-quick-tag" onclick="document.getElementById('stage-reason-text').value='Cliente optou por concorrente.'">🏁 Concorrente</span>
+                        <span class="ql-quick-tag" onclick="document.getElementById('stage-reason-text').value='Projeto ou contratação cancelado pelo cliente.'">❌ Cancelado</span>
+                        <span class="ql-quick-tag" onclick="document.getElementById('stage-reason-text').value='Sem resposta após múltiplas tentativas de contato.'">🔇 Sem resposta</span>
+                    </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" id="btn-cancel-stage-reason" class="btn btn-outline">Voltar</button>
-                <button type="submit" class="btn btn-primary">Confirmar Alteração</button>
+            <div class="ql-modal-footer">
+                <button type="button" id="btn-cancel-stage-reason" class="ql-btn-cancel">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                    Voltar
+                </button>
+                <button type="submit" class="ql-btn-submit ql-btn-danger">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                    Confirmar Perda
+                </button>
             </div>
         </form>
     </div>

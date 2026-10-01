@@ -6300,4 +6300,366 @@ input:checked + .switch-slider::before {
     border-color: rgba(148, 163, 184, 0.3) !important;
 }
 
+/* ==========================================================
+   EQUIPE COMERCIAL & LEADERBOARD - DESIGN PREMIUM 2026
+   ========================================================== */
+
+.team-header-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 24px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.95));
+    border: 1px solid var(--border-color);
+    border-radius: 18px;
+    padding: 20px 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.team-header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.team-header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(99, 102, 241, 0.08);
+    color: #4f46e5;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 99px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    width: fit-content;
+}
+
+.team-header-badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #4f46e5;
+    animation: pulse 2s infinite;
+}
+
+.team-header-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 2px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    letter-spacing: -0.02em;
+}
+
+.team-header-icon-box {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.team-header-subtitle {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 2px 0 0;
+    font-weight: 500;
+}
+
+.team-header-right {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.team-period-select-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.team-select-icon {
+    position: absolute;
+    left: 12px;
+    color: var(--text-secondary);
+    pointer-events: none;
+}
+
+.team-period-select {
+    height: 40px;
+    padding: 0 14px 0 36px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.team-period-select:hover {
+    border-color: #6366f1;
+}
+
+.team-period-select:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.team-btn-goals {
+    height: 40px;
+    padding: 0 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+    color: #ffffff;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.team-btn-goals:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.35);
+    background: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%);
+}
+
+/* Barra de Sub-abas Segmented Control */
+.team-nav-segmented {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(241, 245, 249, 0.85);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 14px;
+    padding: 5px;
+    gap: 6px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.subtab-btn {
+    border: none;
+    background: transparent;
+    padding: 9px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.subtab-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.65);
+    transform: translateY(-1px);
+}
+
+.subtab-btn.active,
+.subtab-btn.btn-primary {
+    background: #FFFFFF !important;
+    color: #4f46e5 !important;
+    font-weight: 700 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+    border: 1px solid rgba(99, 102, 241, 0.15) !important;
+    transform: translateY(0) !important;
+}
+
+.subtab-icon {
+    font-size: 15px;
+}
+
+/* ==========================================================
+   PODIUM & LEADERBOARD VENDEDORES - DESIGN PREMIUM 2026
+   ========================================================== */
+
+.team-podium-card {
+    background: var(--bg-surface);
+    border-radius: 18px;
+    padding: 22px 18px;
+    text-align: center;
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.team-podium-card:hover {
+    transform: translateY(-4px);
+}
+
+/* 1º Lugar - Ouro Champagne & Sol */
+.team-podium-gold {
+    background: linear-gradient(180deg, rgba(254, 249, 195, 0.5) 0%, rgba(255, 255, 255, 0.95) 100%);
+    border: 2px solid #facc15;
+    box-shadow: 0 12px 30px rgba(234, 179, 8, 0.15), 0 2px 8px rgba(234, 179, 8, 0.08);
+}
+
+.team-podium-gold:hover {
+    box-shadow: 0 16px 36px rgba(234, 179, 8, 0.22), 0 4px 12px rgba(234, 179, 8, 0.12);
+}
+
+/* 2º Lugar - Platina & Prata */
+.team-podium-silver {
+    background: linear-gradient(180deg, rgba(241, 245, 249, 0.7) 0%, rgba(255, 255, 255, 0.95) 100%);
+    border: 1.5px solid #cbd5e1;
+    box-shadow: 0 6px 20px rgba(100, 116, 139, 0.08);
+}
+
+.team-podium-silver:hover {
+    box-shadow: 0 10px 26px rgba(100, 116, 139, 0.14);
+}
+
+/* 3º Lugar - Bronze Cobre Refinado */
+.team-podium-bronze {
+    background: linear-gradient(180deg, rgba(255, 237, 213, 0.5) 0%, rgba(255, 255, 255, 0.95) 100%);
+    border: 1.5px solid #fed7aa;
+    box-shadow: 0 6px 20px rgba(249, 115, 22, 0.08);
+}
+
+.team-podium-bronze:hover {
+    box-shadow: 0 10px 26px rgba(249, 115, 22, 0.14);
+}
+
+/* Badges do Pódio */
+.team-podium-pill {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 12px;
+    border-radius: 99px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.team-podium-pill-gold {
+    background: linear-gradient(135deg, #eab308, #ca8a04);
+    color: #ffffff;
+    border: 1px solid #fef08a;
+    padding: 4px 16px;
+    font-size: 12px;
+}
+
+.team-podium-pill-silver {
+    background: linear-gradient(135deg, #94a3b8, #64748b);
+    color: #ffffff;
+    border: 1px solid #e2e8f0;
+}
+
+.team-podium-pill-bronze {
+    background: linear-gradient(135deg, #f97316, #c2410c);
+    color: #ffffff;
+    border: 1px solid #ffedd5;
+}
+
+/* Avatares do Pódio */
+.team-podium-avatar {
+    border-radius: 50%;
+    color: #ffffff;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 10px auto 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.team-podium-avatar-gold {
+    width: 60px;
+    height: 60px;
+    font-size: 22px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border: 3px solid #fef08a;
+}
+
+.team-podium-avatar-silver {
+    width: 50px;
+    height: 50px;
+    font-size: 18px;
+    background: linear-gradient(135deg, #94a3b8, #64748b);
+    border: 2px solid #e2e8f0;
+}
+
+.team-podium-avatar-bronze {
+    width: 50px;
+    height: 50px;
+    font-size: 18px;
+    background: linear-gradient(135deg, #fb923c, #ea580c);
+    border: 2px solid #fed7aa;
+}
+
+/* Valores e Estatísticas */
+.team-podium-name {
+    font-weight: 800;
+    font-size: 15px;
+    color: var(--text-primary);
+    margin-top: 4px;
+}
+
+.team-podium-revenue {
+    font-weight: 900;
+    margin-top: 4px;
+    letter-spacing: -0.02em;
+}
+
+.team-podium-revenue-gold {
+    font-size: 24px;
+    color: #b45309;
+}
+
+.team-podium-revenue-regular {
+    font-size: 19px;
+    color: var(--text-primary);
+}
+
+.team-podium-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    padding: 4px 10px;
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 8px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+
+
 

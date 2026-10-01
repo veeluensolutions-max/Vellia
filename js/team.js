@@ -53,11 +53,9 @@ export const Team = {
                 
                 // Toggle active class on buttons
                 tabBtns.forEach(b => {
-                    b.classList.remove("btn-primary");
-                    b.classList.add("btn-outline");
+                    b.classList.remove("active", "btn-primary");
                 });
-                btn.classList.add("btn-primary");
-                btn.classList.remove("btn-outline");
+                btn.classList.add("active");
 
                 // Toggle sub-tab content panels
                 document.querySelectorAll(".subtab-content-pane").forEach(pane => {

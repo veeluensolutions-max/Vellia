@@ -126,50 +126,62 @@ export const Leaderboard = {
                 </div>
 
                 <!-- Pódio de Vendas (Podium Visual) -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; align-items: flex-end;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 28px; align-items: flex-end;">
                     
                     <!-- 2º Lugar (Prata) -->
                     ${top2 ? `
-                        <div style="background: rgba(241, 245, 249, 0.8); border: 1px solid rgba(203, 213, 225, 0.8); padding: 18px; border-radius: 16px; text-align: center; position: relative;">
-                            <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #94a3b8; color: #fff; font-size: 11px; font-weight: 800; padding: 2px 10px; border-radius: 99px;">
+                        <div class="team-podium-card team-podium-silver">
+                            <div class="team-podium-pill team-podium-pill-silver">
                                 🥈 2º LUGAR
                             </div>
-                            <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #cbd5e1, #94a3b8); color: #fff; font-weight: 800; font-size: 16px; display: flex; align-items: center; justify-content: center; margin: 10px auto 8px;">
+                            <div class="team-podium-avatar team-podium-avatar-silver">
                                 ${top2.avatar}
                             </div>
-                            <div style="font-weight: 800; font-size: 14px; color: var(--text-primary);">${top2.name}</div>
-                            <div style="font-size: 18px; font-weight: 800; color: var(--text-primary); margin-top: 4px;">${fmt(top2.totalRevenue)}</div>
-                            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${top2.wonCount} Vendas • ${top2.conversionRate}% Conversão</div>
+                            <div class="team-podium-name">${top2.name}</div>
+                            <div class="team-podium-revenue team-podium-revenue-regular">${fmt(top2.totalRevenue)}</div>
+                            <div class="team-podium-meta">
+                                <span>🎯 ${top2.wonCount} Vendas</span>
+                                <span>•</span>
+                                <span>📈 ${top2.conversionRate}% Conv.</span>
+                            </div>
                         </div>
                     ` : ''}
 
                     <!-- 1º Lugar (Ouro - Destaque Principal) -->
                     ${top1 ? `
-                        <div style="background: linear-gradient(135deg, rgba(254, 240, 138, 0.4), rgba(253, 224, 71, 0.2)); border: 2px solid #facc15; padding: 22px 18px; border-radius: 16px; text-align: center; position: relative; box-shadow: 0 10px 30px rgba(250, 204, 21, 0.2);">
-                            <div style="position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: #eab308; color: #fff; font-size: 12px; font-weight: 800; padding: 4px 14px; border-radius: 99px; display: flex; align-items: center; gap: 4px;">
+                        <div class="team-podium-card team-podium-gold">
+                            <div class="team-podium-pill team-podium-pill-gold">
                                 👑 1º LUGAR (TOP CLOSER)
                             </div>
-                            <div style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #eab308, #ca8a04); color: #fff; font-weight: 800; font-size: 20px; display: flex; align-items: center; justify-content: center; margin: 12px auto 8px; border: 3px solid #fef08a;">
+                            <div class="team-podium-avatar team-podium-avatar-gold">
                                 ${top1.avatar}
                             </div>
-                            <div style="font-weight: 800; font-size: 16px; color: var(--text-primary);">${top1.name}</div>
-                            <div style="font-size: 22px; font-weight: 900; color: #ca8a04; margin-top: 4px;">${fmt(top1.totalRevenue)}</div>
-                            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px; font-weight: 600;">${top1.wonCount} Vendas Fechadas • ${top1.conversionRate}% Taxa de Conversão</div>
+                            <div class="team-podium-name" style="font-size: 16px;">${top1.name}</div>
+                            <div class="team-podium-revenue team-podium-revenue-gold">${fmt(top1.totalRevenue)}</div>
+                            <div class="team-podium-meta" style="background: rgba(234, 179, 8, 0.12); color: #854d0e;">
+                                <span>🔥 ${top1.wonCount} Fechamentos</span>
+                                <span>•</span>
+                                <span>⭐ ${top1.conversionRate}% Conversão</span>
+                            </div>
                         </div>
                     ` : ''}
 
                     <!-- 3º Lugar (Bronze) -->
                     ${top3 ? `
-                        <div style="background: rgba(254, 215, 170, 0.3); border: 1px solid rgba(251, 146, 60, 0.4); padding: 18px; border-radius: 16px; text-align: center; position: relative;">
-                            <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #f97316; color: #fff; font-size: 11px; font-weight: 800; padding: 2px 10px; border-radius: 99px;">
+                        <div class="team-podium-card team-podium-bronze">
+                            <div class="team-podium-pill team-podium-pill-bronze">
                                 🥉 3º LUGAR
                             </div>
-                            <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #fb923c, #ea580c); color: #fff; font-weight: 800; font-size: 16px; display: flex; align-items: center; justify-content: center; margin: 10px auto 8px;">
+                            <div class="team-podium-avatar team-podium-avatar-bronze">
                                 ${top3.avatar}
                             </div>
-                            <div style="font-weight: 800; font-size: 14px; color: var(--text-primary);">${top3.name}</div>
-                            <div style="font-size: 18px; font-weight: 800; color: var(--text-primary); margin-top: 4px;">${fmt(top3.totalRevenue)}</div>
-                            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${top3.wonCount} Vendas • ${top3.conversionRate}% Conversão</div>
+                            <div class="team-podium-name">${top3.name}</div>
+                            <div class="team-podium-revenue team-podium-revenue-regular">${fmt(top3.totalRevenue)}</div>
+                            <div class="team-podium-meta">
+                                <span>🎯 ${top3.wonCount} Vendas</span>
+                                <span>•</span>
+                                <span>📈 ${top3.conversionRate}% Conv.</span>
+                            </div>
                         </div>
                     ` : ''}
                 </div>

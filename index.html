@@ -3563,30 +3563,50 @@ Condições de pagamento:
                      VIEW: EQUIPE COMERCIAL E METAS (ETAPAS 12 e 13)
                      ========================================================== -->
                 <div id="view-team" class="spa-view" style="display: none;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 24px;">
-                        <div>
-                            <h2 style="font-size: 20px; font-weight: 800; color: var(--text-primary); margin: 0;">👥 Equipe Comercial</h2>
-                            <p id="team-period-label" style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Gerenciamento de Metas, Ranking e Produtividade</p>
+                    <!-- Header Moderno da Equipe Comercial -->
+                    <div class="team-header-container">
+                        <div class="team-header-left">
+                            <span class="team-header-badge">
+                                <span class="team-header-badge-dot"></span>
+                                Performance Comercial & Metas
+                            </span>
+                            <h2 class="team-header-title">
+                                <span class="team-header-icon-box">👥</span>
+                                Equipe Comercial
+                            </h2>
+                            <p id="team-period-label" class="team-header-subtitle">Acompanhamento de metas, ranking ao vivo e produtividade por vendedor</p>
                         </div>
-                        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                            <select id="team-period-filter" class="filter-control" style="height: 38px; min-width: 160px;">
-                                <option value="week">Semana Atual</option>
-                                <option value="month" selected>Mês Atual</option>
-                                <option value="quarter">Trimestre</option>
-                                <option value="year">Ano</option>
-                            </select>
-                            <button id="btn-edit-goals" class="btn btn-outline" style="gap: 8px;">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        <div class="team-header-right">
+                            <div class="team-period-select-wrapper">
+                                <svg class="team-select-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                <select id="team-period-filter" class="team-period-select">
+                                    <option value="week">Semana Atual</option>
+                                    <option value="month" selected>Mês Atual</option>
+                                    <option value="quarter">Trimestre</option>
+                                    <option value="year">Ano</option>
+                                </select>
+                            </div>
+                            <button id="btn-edit-goals" class="team-btn-goals">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                 Configurar Metas
                             </button>
                         </div>
                     </div>
-                    <!-- Sub-abas da Equipe Comercial -->
-                    <div class="subtabs-container modern-subtabs" style="margin-bottom: 24px; flex-wrap: wrap;">
-                        <button class="subtab-btn active" data-subtab="team-metas">👥 Membros & Metas</button>
-                        <button class="subtab-btn" data-subtab="team-metas-adv">🎯 Painel de Metas</button>
-                        <button class="subtab-btn" data-subtab="team-graficos">📊 Gráficos de Performance</button>
-                        <button class="subtab-btn" data-subtab="team-servicos">📦 Matriz de Serviços</button>
+
+                    <!-- Sub-abas Segmented Control Premium -->
+                    <div class="team-nav-segmented">
+                        <button class="subtab-btn active" data-subtab="team-metas">
+                            <span class="subtab-icon">👥</span> Membros & Metas
+                        </button>
+                        <button class="subtab-btn" data-subtab="team-metas-adv">
+                            <span class="subtab-icon">🎯</span> Painel de Metas
+                        </button>
+                        <button class="subtab-btn" data-subtab="team-graficos">
+                            <span class="subtab-icon">📊</span> Gráficos de Performance
+                        </button>
+                        <button class="subtab-btn" data-subtab="team-servicos">
+                            <span class="subtab-icon">📦</span> Matriz de Serviços
+                        </button>
                     </div>
 
                     <!-- Conteúdo: Sub-aba 1 (Membros e Metas) -->

@@ -2450,6 +2450,7 @@ a {
     gap: 6px;
     margin: auto 0;
     user-select: none;
+    pointer-events: none;
 }
 
 .kanban-empty-icon {

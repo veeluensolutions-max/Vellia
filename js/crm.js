@@ -1561,6 +1561,58 @@ export const CRM = {
         this.handleStageChangeRequest(newStage);
     },
 
+    executeDirectStageChange(leadId, newStage, reason = "") {
+        const lead = Store.getLeadById(leadId);
+        const currentUser = Auth.getCurrentUser();
+        if (!lead || !currentUser) return;
+
+        const oldStage = lead.stage;
+        const finalReason = reason || (oldStage === "Lead Gerado" && newStage === "Contato"
+            ? "Lead retornado para a etapa Contato no Kanban."
+            : `Transição de etapa para ${newStage}.`);
+
+        // Efetivar mudança no banco
+        Store.updateLeadStage(leadId, newStage, currentUser.email, finalReason);
+
+        // Registrar no log de auditoria operacional
+        Audit.logStageChange(currentUser.email, lead.company, oldStage, newStage, finalReason);
+
+        // Se for Cliente Fechado, registrar vitória comercial
+        if (newStage === "Cliente Fechado") {
+            Audit.logSaleWon(currentUser.email, lead.company, "Sob Consulta (Ver Propostas)");
+        }
+
+        // Atualizar dropdown do drawer se for o lead ativo
+        const updatedLead = Store.getLeadById(leadId);
+        const stageSelect = document.getElementById("drawer-change-stage");
+        if (stageSelect && activeLeadId === leadId) {
+            stageSelect.value = updatedLead.stage;
+        }
+
+        if (activeLeadId === leadId) {
+            this.renderTimeline(updatedLead);
+        }
+        this.renderLeadsTable();
+
+        // Notificar ouvintes (Kanban, dashboard, etc.)
+        window.dispatchEvent(new CustomEvent("vellia:stageChanged", { detail: { leadId, oldStage, newStage } }));
+
+        // Sugestão de Follow-up via WhatsApp
+        if (newStage !== "Cliente Perdido") {
+            this.showWhatsAppFollowupSuggestion(leadId, newStage);
+        }
+
+        // Toast de confirmação visual
+        if (window.Toast && typeof window.Toast.show === "function") {
+            window.Toast.show({
+                type: "success",
+                title: "Funil Atualizado",
+                message: `${lead.company || 'Lead'} agora está em "${newStage}".`,
+                duration: 2500
+            });
+        }
+    },
+
     handleStageChangeRequest(newStage) {
         if (!activeLeadId) return;
 
@@ -1573,17 +1625,27 @@ export const CRM = {
         // Armazenar temporariamente para confirmação
         pendingStageChange = newStage;
 
-        // Abrir modal correspondente
+        // Qualificação estruturada (estimativa de valor/probabilidade/serviço)
         if (newStage === "Lead Qualificado") {
             document.getElementById("qualify-lead-form").reset();
             document.getElementById("qualify-lead-modal").classList.add("open");
-        } else {
+            document.getElementById("modal-overlay").style.display = "block";
+            return;
+        }
+
+        // Cliente Perdido exige justificativa de perda/churn
+        if (newStage === "Cliente Perdido") {
             document.getElementById("stage-reason-target-name").textContent = newStage;
             document.getElementById("stage-reason-text").value = "";
             document.getElementById("stage-reason-modal").classList.add("open");
+            document.getElementById("modal-overlay").style.display = "block";
+            return;
         }
-        
-        document.getElementById("modal-overlay").style.display = "block";
+
+        // Demais etapas operacionais (Contato, Lead Gerado, Proposta Enviada, Negociação, Cliente Fechado)
+        // executam transição direta sem travar o usuário
+        this.executeDirectStageChange(activeLeadId, newStage);
+        pendingStageChange = null;
     },
 
     confirmQualifyLead() {
@@ -1857,9 +1919,9 @@ export const CRM = {
         const userEmail = currentUser ? currentUser.email : "sistema@vellia.com";
         const userRole = currentUser ? currentUser.role : "seller";
 
-        // Regra de negócio: Contatos adicionados por vendedores entram automaticamente como 'Lead Gerado' (Etapa 2)
-        if (userRole === "seller" && stage === "Contato") {
-            stage = "Lead Gerado";
+        // Preservar estágio selecionado (padrão Contato caso não especificado)
+        if (!stage) {
+            stage = "Contato";
         }
 
         // Salvar lead

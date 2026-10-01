@@ -17,6 +17,8 @@ export const Clients = {
     _activeClientDetailId: null,
 
     init() {
+        this.closeHistoryModal();
+        this.closeClientModal();
         this.renderStats();
         this.renderTable();
         this.populateSellerFilter();
@@ -376,6 +378,7 @@ export const Clients = {
         if (!modal) return;
 
         this.renderHistoryModalContent(clientId);
+        modal.classList.add("open");
         modal.style.display = "flex";
     },
 
@@ -539,7 +542,10 @@ export const Clients = {
 
     closeHistoryModal() {
         const modal = document.getElementById("modal-client-history");
-        if (modal) modal.style.display = "none";
+        if (modal) {
+            modal.classList.remove("open");
+            modal.style.display = "none";
+        }
         this._activeClientDetailId = null;
     },
 
@@ -632,12 +638,16 @@ export const Clients = {
             if (titleEl) titleEl.textContent = "Novo Cliente / Empresa";
         }
 
+        modal.classList.add("open");
         modal.style.display = "flex";
     },
 
     closeClientModal() {
         const modal = document.getElementById("modal-client-form");
-        if (modal) modal.style.display = "none";
+        if (modal) {
+            modal.classList.remove("open");
+            modal.style.display = "none";
+        }
     },
 
     /**

@@ -1849,144 +1849,6 @@
 
                 </div>
 
-                <!-- Modal: Visão 360º de Histórico de Orçamentos e Propostas do Cliente -->
-                <div id="modal-client-history" class="client-history-modal-overlay" style="display: none;">
-                    <div class="client-history-modal-content">
-                        <!-- Topo do Modal -->
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border-color); padding-bottom: 18px; margin-bottom: 20px;">
-                            <div>
-                                <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #4f46e5; letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 4px;">
-                                    <span>🏢</span> Visão 360º do Cliente
-                                </span>
-                                <h3 id="client-history-modal-title" style="font-size: 20px; font-weight: 800; color: var(--text-primary); margin: 4px 0 2px;">Razão Social do Cliente</h3>
-                                <div id="client-history-modal-doc" style="font-size: 13px; color: var(--text-muted);">CNPJ / Documento</div>
-                            </div>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <button id="btn-client-history-new-proposal" class="team-btn-goals" style="height: 36px; padding: 0 14px; font-size: 12px; background: linear-gradient(135deg, #059669 0%, #10b981 100%);">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                    + Novo Orçamento
-                                </button>
-                                <button type="button" class="btn btn-outline" onclick="window.Clients.closeHistoryModal()" style="height: 36px; width: 36px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 9px;">
-                                    ✕
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Metadados de Contato -->
-                        <div id="client-history-modal-meta" style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 12.5px; color: var(--text-secondary); background: var(--bg-body); padding: 12px 16px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border-color);">
-                            <!-- Preenchido dinamicamente -->
-                        </div>
-
-                        <!-- Estatísticas Comerciais Rápidas do Cliente -->
-                        <div id="client-history-stats-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px;">
-                            <!-- Preenchido dinamicamente -->
-                        </div>
-
-                        <!-- Seção: Histórico de Orçamentos e Propostas -->
-                        <div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                                <h4 style="font-size: 15px; font-weight: 800; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 8px;">
-                                    <span>📜</span> Histórico de Orçamentos & Propostas
-                                </h4>
-                                <span style="font-size: 11.5px; color: var(--text-muted);">Todas as propostas comerciais geradas para esta empresa</span>
-                            </div>
-
-                            <div id="client-history-proposals-list">
-                                <!-- Preenchido dinamicamente via renderHistoryModalContent() -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Modal: Adicionar / Editar Cliente -->
-                <div id="modal-client-form" class="client-history-modal-overlay" style="display: none;">
-                    <div class="client-history-modal-content" style="max-width: 680px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 16px; margin-bottom: 20px;">
-                            <h3 id="client-modal-title" style="font-size: 18px; font-weight: 800; color: var(--text-primary); margin: 0;">Novo Cliente / Empresa</h3>
-                            <button type="button" class="btn btn-outline" onclick="window.Clients.closeClientModal()" style="height: 32px; width: 32px; padding: 0; border-radius: 8px;">
-                                ✕
-                            </button>
-                        </div>
-
-                        <form id="client-form">
-                            <input type="hidden" id="client-form-id">
-
-                            <!-- Campo CNPJ com Botão de Consulta Automática na Receita Federal -->
-                            <div style="margin-bottom: 16px;">
-                                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">CNPJ ou CPF:</label>
-                                <div style="display: flex; gap: 8px;">
-                                    <input type="text" id="client-form-cnpj" class="filter-control" placeholder="00.000.000/0000-00" style="flex: 1; height: 38px;">
-                                    <button type="button" id="btn-client-cnpj-search" class="btn btn-outline" style="gap: 6px; font-size: 12px; white-space: nowrap; height: 38px;">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                                        Buscar Receita
-                                    </button>
-                                </div>
-                                <span style="font-size: 11px; color: var(--text-muted); margin-top: 4px; display: block;">Digite o CNPJ para auto-preencher os dados cadastrais diretamente da Receita Federal.</span>
-                            </div>
-
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
-                                <div>
-                                    <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Razão Social *:</label>
-                                    <input type="text" id="client-form-company" class="filter-control" required style="width: 100%; height: 38px;">
-                                </div>
-                                <div>
-                                    <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Nome Fantasia:</label>
-                                    <input type="text" id="client-form-trade" class="filter-control" style="width: 100%; height: 38px;">
-                                </div>
-                            </div>
-
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
-                                <div>
-                                    <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Contato Principal:</label>
-                                    <input type="text" id="client-form-contact" class="filter-control" placeholder="Ex: Roberto Gomes" style="width: 100%; height: 38px;">
-                                </div>
-                                <div>
-                                    <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Cargo:</label>
-                                    <input type="text" id="client-form-role" class="filter-control" placeholder="Ex: Diretor de Operações" style="width: 100%; height: 38px;">
-                                </div>
-                            </div>
-
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
-                                <div>
-                                    <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Telefone:</label>
-                                    <input type="text" id="client-form-phone" class="filter-control" placeholder="(00) 0000-0000" style="width: 100%; height: 38px;">
-                                </div>
-                                <div>
-                                    <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">WhatsApp:</label>
-                                    <input type="text" id="client-form-whatsapp" class="filter-control" placeholder="(00) 90000-0000" style="width: 100%; height: 38px;">
-                                </div>
-                            </div>
-
-                            <div style="margin-bottom: 14px;">
-                                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">E-mail Corporativo:</label>
-                                <input type="email" id="client-form-email" class="filter-control" placeholder="contato@empresa.com.br" style="width: 100%; height: 38px;">
-                            </div>
-
-                            <div style="display: grid; grid-template-columns: 2fr 1fr 2fr; gap: 14px; margin-bottom: 24px;">
-                                <div>
-                                    <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Cidade:</label>
-                                    <input type="text" id="client-form-city" class="filter-control" style="width: 100%; height: 38px;">
-                                </div>
-                                <div>
-                                    <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">UF:</label>
-                                    <input type="text" id="client-form-state" class="filter-control" placeholder="SP" maxlength="2" style="width: 100%; height: 38px;">
-                                </div>
-                                <div>
-                                    <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Segmento:</label>
-                                    <input type="text" id="client-form-segment" class="filter-control" placeholder="Ex: Indústria Química" style="width: 100%; height: 38px;">
-                                </div>
-                            </div>
-
-                            <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color); padding-top: 16px;">
-                                <button type="button" class="btn btn-outline" onclick="window.Clients.closeClientModal()">Cancelar</button>
-                                <button type="submit" class="team-btn-goals" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%);">
-                                    Salvar Cliente
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
                 <!-- ==========================================================
                      VIEWS RESERVADAS PARA ETAPAS FUTURAS (CRM, KANBAN, ETC.)
                      ========================================================== -->
@@ -6829,7 +6691,6 @@ Condições de pagamento:
             </button>
         </div>
     </div>
-    </div>
 
     <!-- ==========================================================
          MODAL DE INTERVENÇÃO DA DIRETORIA (FASE 6)
@@ -7087,6 +6948,147 @@ Condições de pagamento:
                     <span>Vellia Intelligence</span>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- ==========================================================
+         MODAIS GLOBAIS: CLIENTES & HISTÓRICO DE ORÇAMENTOS
+         ========================================================== -->
+    <!-- Modal: Visão 360º de Histórico de Orçamentos e Propostas do Cliente -->
+    <div id="modal-client-history" class="client-history-modal-overlay" style="display: none;">
+        <div class="client-history-modal-content">
+            <!-- Topo do Modal -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border-color); padding-bottom: 18px; margin-bottom: 20px;">
+                <div>
+                    <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #4f46e5; letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 4px;">
+                        <span>🏢</span> Visão 360º do Cliente
+                    </span>
+                    <h3 id="client-history-modal-title" style="font-size: 20px; font-weight: 800; color: var(--text-primary); margin: 4px 0 2px;">Razão Social do Cliente</h3>
+                    <div id="client-history-modal-doc" style="font-size: 13px; color: var(--text-muted);">CNPJ / Documento</div>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button id="btn-client-history-new-proposal" class="team-btn-goals" style="height: 36px; padding: 0 14px; font-size: 12px; background: linear-gradient(135deg, #059669 0%, #10b981 100%);">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        + Novo Orçamento
+                    </button>
+                    <button type="button" class="btn btn-outline" onclick="window.Clients.closeHistoryModal()" style="height: 36px; width: 36px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 9px;">
+                        ✕
+                    </button>
+                </div>
+            </div>
+
+            <!-- Metadados de Contato -->
+            <div id="client-history-modal-meta" style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 12.5px; color: var(--text-secondary); background: var(--bg-body); padding: 12px 16px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border-color);">
+                <!-- Preenchido dinamicamente -->
+            </div>
+
+            <!-- Estatísticas Comerciais Rápidas do Cliente -->
+            <div id="client-history-stats-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px;">
+                <!-- Preenchido dinamicamente -->
+            </div>
+
+            <!-- Seção: Histórico de Orçamentos e Propostas -->
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h4 style="font-size: 15px; font-weight: 800; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <span>📜</span> Histórico de Orçamentos & Propostas
+                    </h4>
+                    <span style="font-size: 11.5px; color: var(--text-muted);">Todas as propostas comerciais geradas para esta empresa</span>
+                </div>
+
+                <div id="client-history-proposals-list">
+                    <!-- Preenchido dinamicamente via renderHistoryModalContent() -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Adicionar / Editar Cliente -->
+    <div id="modal-client-form" class="client-history-modal-overlay" style="display: none;">
+        <div class="client-history-modal-content" style="max-width: 680px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 16px; margin-bottom: 20px;">
+                <h3 id="client-modal-title" style="font-size: 18px; font-weight: 800; color: var(--text-primary); margin: 0;">Novo Cliente / Empresa</h3>
+                <button type="button" class="btn btn-outline" onclick="window.Clients.closeClientModal()" style="height: 32px; width: 32px; padding: 0; border-radius: 8px;">
+                    ✕
+                </button>
+            </div>
+
+            <form id="client-form">
+                <input type="hidden" id="client-form-id">
+
+                <!-- Campo CNPJ com Botão de Consulta Automática na Receita Federal -->
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">CNPJ ou CPF:</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="client-form-cnpj" class="filter-control" placeholder="00.000.000/0000-00" style="flex: 1; height: 38px;">
+                        <button type="button" id="btn-client-cnpj-search" class="btn btn-outline" style="gap: 6px; font-size: 12px; white-space: nowrap; height: 38px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            Buscar Receita
+                        </button>
+                    </div>
+                    <span style="font-size: 11px; color: var(--text-muted); margin-top: 4px; display: block;">Digite o CNPJ para auto-preencher os dados cadastrais diretamente da Receita Federal.</span>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                    <div>
+                        <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Razão Social *:</label>
+                        <input type="text" id="client-form-company" class="filter-control" required style="width: 100%; height: 38px;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Nome Fantasia:</label>
+                        <input type="text" id="client-form-trade" class="filter-control" style="width: 100%; height: 38px;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                    <div>
+                        <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Contato Principal:</label>
+                        <input type="text" id="client-form-contact" class="filter-control" placeholder="Ex: Roberto Gomes" style="width: 100%; height: 38px;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Cargo:</label>
+                        <input type="text" id="client-form-role" class="filter-control" placeholder="Ex: Diretor de Operações" style="width: 100%; height: 38px;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                    <div>
+                        <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Telefone:</label>
+                        <input type="text" id="client-form-phone" class="filter-control" placeholder="(00) 0000-0000" style="width: 100%; height: 38px;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">WhatsApp:</label>
+                        <input type="text" id="client-form-whatsapp" class="filter-control" placeholder="(00) 90000-0000" style="width: 100%; height: 38px;">
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 14px;">
+                    <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">E-mail Corporativo:</label>
+                    <input type="email" id="client-form-email" class="filter-control" placeholder="contato@empresa.com.br" style="width: 100%; height: 38px;">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 2fr 1fr 2fr; gap: 14px; margin-bottom: 24px;">
+                    <div>
+                        <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Cidade:</label>
+                        <input type="text" id="client-form-city" class="filter-control" style="width: 100%; height: 38px;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">UF:</label>
+                        <input type="text" id="client-form-state" class="filter-control" placeholder="SP" maxlength="2" style="width: 100%; height: 38px;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Segmento:</label>
+                        <input type="text" id="client-form-segment" class="filter-control" placeholder="Ex: Indústria Química" style="width: 100%; height: 38px;">
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+                    <button type="button" class="btn btn-outline" onclick="window.Clients.closeClientModal()">Cancelar</button>
+                    <button type="submit" class="team-btn-goals" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%);">
+                        Salvar Cliente
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 

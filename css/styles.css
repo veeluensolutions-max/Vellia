@@ -5567,6 +5567,7 @@ input:checked + .switch-slider::before {
     box-shadow: 0 20px 48px rgba(0, 0, 0, 0.32);
     overflow: hidden;
     transform-origin: top right;
+}
 /* ==========================================================================
    MODERN HIGH-TECH DASHBOARD & KPI GLASSMORPHISM SUITE
    ========================================================================== */
@@ -6989,10 +6990,14 @@ input:checked + .switch-slider::before {
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     z-index: 9999;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     padding: 20px;
+}
+
+.client-history-modal-overlay.open {
+    display: flex !important;
 }
 
 .client-history-modal-content {

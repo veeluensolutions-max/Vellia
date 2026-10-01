@@ -1691,6 +1691,8 @@ window.CommandPalette = CommandPalette;
 window.Toast = Toast;
 window.VisionOCR = VisionOCR;
 window.Inspections = Inspections;
+window.Proposals = Proposals;
+window.Clients = Clients;
 
 // ==========================================================================
 // WORKSPACE / COMPANY SWITCHER

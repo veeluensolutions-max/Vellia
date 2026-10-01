@@ -7,6 +7,7 @@ import { CrossSelling } from "./cross-selling.js";
 import { CNPJService } from "./cnpj-service.js";
 import { QualificationAI } from "./qualification-ai.js";
 import { VisionOCR } from "./vision-ocr.js";
+import { Proposals } from "./proposals.js";
 
 let activeLeadId = null;
 let pendingStageChange = null;
@@ -160,7 +161,24 @@ export const CRM = {
         const btnQuickProp = document.getElementById("btn-drawer-quick-prop");
         if (btnQuickProp) {
             btnQuickProp.addEventListener("click", () => {
-                if (activeLeadId) window.Proposals?.openModal(activeLeadId);
+                if (!activeLeadId) return;
+                const lead = Store.getLeadById(activeLeadId);
+                if (!lead) return;
+
+                // 1. Fechar gaveta do lead
+                this.closeLeadDrawer();
+
+                // 2. Navegar para a tela de Propostas
+                window.location.hash = "#proposals";
+
+                // 3. Abrir o orçamento com todos os dados do lead carregados
+                setTimeout(() => {
+                    if (window.Proposals && typeof window.Proposals.openBudgetScreen === "function") {
+                        window.Proposals.openBudgetScreen(null, lead);
+                    } else if (typeof Proposals?.openBudgetScreen === "function") {
+                        Proposals.openBudgetScreen(null, lead);
+                    }
+                }, 120);
             });
         }
         const btnCrmScanner = document.getElementById("btn-crm-scanner");

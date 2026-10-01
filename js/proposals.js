@@ -5,6 +5,7 @@ import { Audit } from "./audit.js";
 let activeProposalId = null;
 let isSaving = false;
 let currentEditingBudgetId = null;
+let currentEditingLeadId = null;
 let currentBudgetAttachments = [];
 
 export const Proposals = {
@@ -708,30 +709,64 @@ export const Proposals = {
             if (typeof leadData === "string") {
                 leadData = Store.getLeadById(leadData);
             }
+            currentEditingLeadId = leadData?.id || null;
+
+            // Identificar vendedor do lead ou logado
+            let sellerName = currentUser?.name || "San Charles";
+            if (leadData?.owner) {
+                const ownerUser = Store.getUsers().find(u => u.email === leadData.owner);
+                if (ownerUser) sellerName = ownerUser.name;
+            }
+
+            // Detectar melhor canal com base na origem do lead
+            let defaultChannel = "Presencial";
+            if (leadData?.source) {
+                const s = leadData.source.toLowerCase();
+                if (s.includes("whatsapp")) defaultChannel = "WhatsApp";
+                else if (s.includes("telefone") || s.includes("ligação")) defaultChannel = "Telefone";
+                else if (s.includes("email") || s.includes("e-mail")) defaultChannel = "E-mail";
+                else if (s.includes("indicação") || s.includes("indicacao")) defaultChannel = "Indicação";
+                else if (s.includes("google") || s.includes("meta") || s.includes("site") || s.includes("web")) defaultChannel = "Site Institucional";
+            }
+
+            // Montar notas internas ricas com todos os dados do lead
+            let leadInternalNotes = "";
+            if (leadData) {
+                const details = [];
+                if (leadData.contact) details.push(`Contato: ${leadData.contact}${leadData.role ? ` (${leadData.role})` : ''}`);
+                if (leadData.whatsapp) details.push(`WhatsApp: ${leadData.whatsapp}`);
+                if (leadData.phone2) details.push(`Telefone 2: ${leadData.phone2}`);
+                if (leadData.email) details.push(`E-mail: ${leadData.email}`);
+                if (leadData.cnpj) details.push(`CNPJ: ${leadData.cnpj}`);
+                if (leadData.segment || leadData.source) details.push(`Origem / Segmento: ${leadData.segment || ''} (${leadData.source || ''})`);
+                if (leadData.city || leadData.state) details.push(`Localização: ${leadData.city || '-'} / ${leadData.state || '-'}`);
+                if (leadData.notes) details.push(`\nObservações do Lead:\n${leadData.notes}`);
+                leadInternalNotes = details.join("\n");
+            }
 
             const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ""; };
             setVal("gc-budget-number", nextNumber);
             setVal("gc-budget-client", leadData?.company || "");
-            setVal("gc-budget-seller", currentUser?.name || "San Charles");
+            setVal("gc-budget-seller", sellerName);
             setVal("gc-budget-date", todayStr);
             setVal("gc-budget-delivery-date", todayStr);
             setVal("gc-budget-attention", leadData?.contact || "");
             setVal("gc-budget-validity", "10 dias");
-            setVal("gc-budget-channel", "Presencial");
+            setVal("gc-budget-channel", defaultChannel);
             setVal("gc-budget-cost-center", "");
             setVal("gc-budget-intro", `A VEELUEN Solutions é uma empresa com mais de 12 anos no mercado que atua nas áreas de engenharia e meio ambiente.\n• Ampla atuação em indústrias e construção civil.\n• Está presente em Pernambuco com operação em regiões do Brasil.\n• Seus profissionais possuem 20 anos de mercado nacional, além de amplo conhecimento em diversos ramos da engenharia.`);
             setVal("gc-budget-tech-desc", "");
             setVal("gc-budget-freight", "0.00");
             setVal("gc-budget-carrier", "");
             setVal("gc-budget-notes", `Previsão de entrega:\nA combinar.\nCondições de pagamento:\n50% + 50%.`);
-            setVal("gc-budget-internal-notes", "");
+            setVal("gc-budget-internal-notes", leadInternalNotes);
 
             // Serviços
             const servicesTbody = document.getElementById("gc-services-tbody");
             if (servicesTbody) servicesTbody.innerHTML = "";
             this.addServiceRow({
                 service: suggestedService || (leadData?.service || "Licenciamento Ambiental"),
-                details: "",
+                details: leadData?.company ? `Atendimento especializado para ${leadData.company}` : "",
                 qty: 1,
                 price: 0
             });
@@ -743,8 +778,17 @@ export const Proposals = {
             // Entrega
             const checkDelivery = document.getElementById("gc-check-delivery-address");
             const containerDelivery = document.getElementById("gc-delivery-address-container");
-            if (checkDelivery) checkDelivery.checked = false;
-            if (containerDelivery) containerDelivery.style.display = "none";
+            const hasLocation = !!(leadData?.city || leadData?.state || leadData?.address);
+            if (checkDelivery) checkDelivery.checked = hasLocation;
+            if (containerDelivery) containerDelivery.style.display = hasLocation ? "block" : "none";
+            if (hasLocation) {
+                setVal("gc-delivery-cep", leadData?.cep || "");
+                setVal("gc-delivery-street", leadData?.address || "");
+                setVal("gc-delivery-number", leadData?.number || "");
+                setVal("gc-delivery-neighborhood", leadData?.neighborhood || "");
+                setVal("gc-delivery-city", leadData?.city || "");
+                setVal("gc-delivery-state", leadData?.state || "");
+            }
 
             // Pagamento
             const checkPayment = document.getElementById("gc-check-generate-payment");
@@ -1113,6 +1157,7 @@ export const Proposals = {
         } else {
             // Nova proposta
             const newProposal = {
+                leadId: currentEditingLeadId || null,
                 company,
                 contact,
                 title,
@@ -1145,11 +1190,21 @@ export const Proposals = {
             const created = Store.addProposal(newProposal);
             Audit.logStageChange(currentUser?.email, company, "Nova", "Enviada", `Orçamento #${budgetNumber} criado: ${title} - R$ ${finalValue}`);
 
-            // WhatsApp automático
+            // Sincronizar e Notificar Lead
             const leads = Store.getLeads();
-            const lead = leads.find(l => l.company.toLowerCase() === company.toLowerCase());
-            if (lead && typeof window.WhatsApp?.sendAutomatedMessage === "function") {
-                window.WhatsApp.sendAutomatedMessage(lead.id, "proposal", { proposalId: created.id });
+            const targetLead = currentEditingLeadId 
+                ? (Store.getLeadById(currentEditingLeadId) || leads.find(l => l.id === currentEditingLeadId))
+                : leads.find(l => l.company && company && l.company.toLowerCase() === company.toLowerCase());
+
+            if (targetLead) {
+                // Atualizar estágio do lead para "Proposta Enviada" caso esteja em fase inicial
+                const earlyStages = ["Sem Contato", "Contato Realizado", "Diagnóstico", "Lead Qualificado", "Novo"];
+                if (earlyStages.includes(targetLead.stage)) {
+                    Store.updateLeadStage(targetLead.id, "Proposta Enviada", currentUser?.email || "sistema@vellia.com", `Orçamento #${budgetNumber} gerado`);
+                }
+                if (typeof window.WhatsApp?.sendAutomatedMessage === "function") {
+                    window.WhatsApp.sendAutomatedMessage(targetLead.id, "proposal", { proposalId: created.id });
+                }
             }
 
             alert(`Orçamento #${budgetNumber} cadastrado com sucesso!`);
@@ -2001,3 +2056,5 @@ Responda ESTRITAMENTE em formato JSON com o seguinte schema:
         }
     }
 };
+
+window.Proposals = Proposals;

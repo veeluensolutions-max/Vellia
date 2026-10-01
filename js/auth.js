@@ -100,10 +100,10 @@ export const Auth = {
 
         const permissions = {
             admin: ["*"], // Administrador acessa tudo
-            manager: ["dashboard", "crm", "kanban", "proposals", "calculators", "isocinetica", "team", "goals", "services", "inspections", "calendar", "ai-agents"],
-            gerente: ["dashboard", "crm", "kanban", "proposals", "calculators", "isocinetica", "team", "goals", "services", "inspections", "calendar", "ai-agents"],
-            seller: ["dashboard", "crm", "kanban", "proposals", "calculators", "isocinetica", "goals", "inspections", "calendar", "ai-agents"],
-            vendedor: ["dashboard", "crm", "kanban", "proposals", "calculators", "isocinetica", "goals", "inspections", "calendar", "ai-agents"],
+            manager: ["dashboard", "clients", "crm", "kanban", "proposals", "calculators", "isocinetica", "team", "goals", "services", "inspections", "calendar", "ai-agents"],
+            gerente: ["dashboard", "clients", "crm", "kanban", "proposals", "calculators", "isocinetica", "team", "goals", "services", "inspections", "calendar", "ai-agents"],
+            seller: ["dashboard", "clients", "crm", "kanban", "proposals", "calculators", "isocinetica", "goals", "inspections", "calendar", "ai-agents"],
+            vendedor: ["dashboard", "clients", "crm", "kanban", "proposals", "calculators", "isocinetica", "goals", "inspections", "calendar", "ai-agents"],
             operacional: ["dashboard", "calendar"]
         };
 

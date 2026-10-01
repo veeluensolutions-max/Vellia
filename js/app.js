@@ -34,6 +34,7 @@ import { AudioEngine } from "./audio.js";
 import { Calculators } from "./calculators.js";
 import { QualificationAI } from "./qualification-ai.js";
 import { VisionOCR } from "./vision-ocr.js";
+import { Clients } from "./clients.js";
 
 // Elementos Globais DOM (Getters Dinâmicos para garantia de não-nulidade)
 const elements = {
@@ -414,6 +415,7 @@ function navigateTo(viewName) {
     // Mapa de Breadcrumbs Contextuais
     const breadcrumbRoutes = {
         "dashboard": { section: "Visão Geral", page: "Dashboard" },
+        "clients": { section: "Cadastros", page: "Clientes" },
         "crm": { section: "Contatos", page: "Leads & Oportunidades" },
         "kanban": { section: "Pipeline", page: "Funil de Vendas" },
         "proposals": { section: "Comercial", page: "Propostas & Vendas" },
@@ -454,6 +456,8 @@ function navigateTo(viewName) {
     } else if (viewName === "dashboard") {
         Dashboard.init();
         updateDashboardCounters();
+    } else if (viewName === "clients") {
+        Clients.init();
     } else if (viewName === "crm") {
         CRM.init();
     } else if (viewName === "kanban") {

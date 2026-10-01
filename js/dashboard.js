@@ -1409,7 +1409,13 @@ export const Dashboard = {
         if (!container) return;
 
         const users = Store.getUsers();
-        const sellers = users.filter(u => u.role === "seller" || u.role === "manager");
+        const sellers = users.filter(u => {
+            if (!u || u.status !== "active") return false;
+            if (u.role === "system" || u.id === "usr_meta_config" || (u.email && u.email.includes("config@"))) return false;
+            if (u.name && (u.name.trim().startsWith("{") || u.name.trim().startsWith("["))) return false;
+            const role = (u.role || "").toLowerCase();
+            return role === "seller" || role === "vendedor";
+        });
         const leads = Store.getLeads();
 
         const ranking = sellers.map(u => {
@@ -1662,7 +1668,13 @@ export const Dashboard = {
         if (!selectSeller || !viewSeller) return;
 
         // Popular selects com vendedores ativos
-        const sellers = Store.getUsers().filter(u => u.role === "seller" || u.role === "manager");
+        const sellers = Store.getUsers().filter(u => {
+            if (!u || u.status !== "active") return false;
+            if (u.role === "system" || u.id === "usr_meta_config" || (u.email && u.email.includes("config@"))) return false;
+            if (u.name && (u.name.trim().startsWith("{") || u.name.trim().startsWith("["))) return false;
+            const role = (u.role || "").toLowerCase();
+            return role === "seller" || role === "vendedor";
+        });
         
         // Evitar repopular infinitamente
         if (selectSeller.options.length <= 1) {

@@ -275,40 +275,29 @@ async function deleteSupabase(table, filter = "") {
 // Sincronização em background no início da aplicação
 async function syncFromSupabase() {
     try {
-        const remoteUsers = await supabaseFetch("comercial_users") || [];
-        const localUsers = JSON.parse(localStorage.getItem("comercial_users")) || DEFAULT_USERS;
-        
-        // 1. Criar um mapa combinando os usuários remotos e locais, dando prioridade para as informações do banco remoto,
-        // mas garantindo que novos cadastros locais ou usuários padrão do script existam.
-        const userMap = new Map();
-        
-        // Adiciona locais primeiro
-        localUsers.forEach(u => {
-            if (u && u.email) userMap.set(u.email.toLowerCase().trim(), u);
-        });
-        // Remotos mesclam preservando atributos locais (como companyAccess) e fixando Excelência Ambiental para Mika
-        remoteUsers.forEach(u => {
-            if (!u || !u.email) return;
-            const emailKey = u.email.toLowerCase().trim();
-            const existing = userMap.get(emailKey) || {};
-            const isMika = emailKey === 'mika@vellia.com' || (u.name && u.name.toLowerCase().includes('mika'));
-            const companyAccess = u.companyAccess || existing.companyAccess || (isMika ? 'Excelência Ambiental' : 'Ambas');
-            userMap.set(emailKey, { ...existing, ...u, companyAccess });
-        });
-        
-        const mergedUsers = Array.from(userMap.values());
-        localStorage.setItem("comercial_users", JSON.stringify(mergedUsers));
-        
-        // 2. Se houver usuários locais que não existem no Supabase, subir para garantir acesso em outros dispositivos
-        const missingOnRemote = mergedUsers.filter(mu => 
-            !remoteUsers.some(ru => ru.email.toLowerCase() === mu.email.toLowerCase())
-        );
-        
-        if (missingOnRemote.length > 0) {
-            // Upsert individual de cada usuário em falta
-            for (const user of missingOnRemote) {
-                await upsertSupabase("comercial_users", user);
+        const remoteUsers = await supabaseFetch("comercial_users");
+        if (Array.isArray(remoteUsers) && remoteUsers.length > 0) {
+            // Obter blacklist de usuários deletados para garantir que não ressuscitem
+            const deletedEmails = new Set((JSON.parse(localStorage.getItem("comercial_deleted_user_emails")) || []).map(e => e.toLowerCase().trim()));
+            const deletedIds = new Set(JSON.parse(localStorage.getItem("comercial_deleted_user_ids")) || []);
+
+            const validUsers = [];
+            for (const u of remoteUsers) {
+                if (!u || !u.email) continue;
+                const emailNorm = u.email.toLowerCase().trim();
+                // Se estiver marcado como deletado, garantir deleção no Supabase e não adicionar localmente
+                if (deletedEmails.has(emailNorm) || deletedIds.has(u.id)) {
+                    deleteSupabase("comercial_users", `?id=eq.${encodeURIComponent(u.id)}`);
+                    continue;
+                }
+                const isMika = emailNorm === 'mika@vellia.com' || (u.name && u.name.toLowerCase().includes('mika'));
+                const companyAccess = u.companyAccess || (isMika ? 'Excelência Ambiental' : 'Ambas');
+                validUsers.push({ ...u, companyAccess });
             }
+
+            // O Supabase é a fonte autoritativa: atualiza localStorage diretamente
+            localStorage.setItem("comercial_users", JSON.stringify(validUsers));
+            localStorage.setItem("comercial_users_initialized", "true");
         }
     } catch (e) { console.log("Users sync fallback:", e.message); }
 
@@ -436,17 +425,12 @@ function initStorage() {
         existingUsers = JSON.parse(localStorage.getItem("comercial_users")) || [];
     } catch(e) {}
     
-    // Forçar injeção dos DEFAULT_USERS se eles não existirem na store
-    let usersChanged = false;
-    DEFAULT_USERS.forEach(defUser => {
-        if (!existingUsers.some(u => u.email.toLowerCase() === defUser.email.toLowerCase())) {
-            existingUsers.push(defUser);
-            usersChanged = true;
-        }
-    });
+    const isInitialized = localStorage.getItem("comercial_users_initialized");
 
-    if (usersChanged || existingUsers.length === 0) {
-        localStorage.setItem("comercial_users", JSON.stringify(existingUsers.length > 0 ? existingUsers : DEFAULT_USERS));
+    // Injetar DEFAULT_USERS APENAS se for a primeira vez e o banco/storage estiverem vazios
+    if (!isInitialized && existingUsers.length === 0) {
+        localStorage.setItem("comercial_users", JSON.stringify(DEFAULT_USERS));
+        localStorage.setItem("comercial_users_initialized", "true");
     }
     if (!localStorage.getItem("comercial_logs")) {
         localStorage.setItem("comercial_logs", JSON.stringify(INITIAL_LOGS));
@@ -560,11 +544,51 @@ export const Store = {
         upsertSupabase("comercial_users", users);
     },
 
-    deleteUser(userId) {
-        const users = this.getUsers().filter(u => u.id !== userId);
-        localStorage.setItem("comercial_users", JSON.stringify(users));
-        // Deletar no Supabase pelo id
-        deleteSupabase("comercial_users", `?id=eq.${userId}`);
+    async deleteUser(userId) {
+        if (!userId) return false;
+        const users = this.getUsers();
+        const target = users.find(u => u && (u.id === userId || u.email === userId));
+
+        const targetId = target ? target.id : userId;
+        const targetEmail = target && target.email ? target.email.toLowerCase().trim() : null;
+
+        // 1. Guardar nos tombstones persistentes para nunca ser ressuscitado
+        try {
+            const deletedIds = JSON.parse(localStorage.getItem("comercial_deleted_user_ids") || "[]");
+            if (targetId && !deletedIds.includes(targetId)) {
+                deletedIds.push(targetId);
+                localStorage.setItem("comercial_deleted_user_ids", JSON.stringify(deletedIds));
+            }
+            if (targetEmail) {
+                const deletedEmails = JSON.parse(localStorage.getItem("comercial_deleted_user_emails") || "[]");
+                if (!deletedEmails.includes(targetEmail)) {
+                    deletedEmails.push(targetEmail);
+                    localStorage.setItem("comercial_deleted_user_emails", JSON.stringify(deletedEmails));
+                }
+            }
+        } catch (e) {}
+
+        // 2. Remover do localStorage imediatamente
+        const updatedUsers = users.filter(u => u && u.id !== targetId && (!targetEmail || u.email?.toLowerCase().trim() !== targetEmail));
+        localStorage.setItem("comercial_users", JSON.stringify(updatedUsers));
+
+        // 3. Deletar no Supabase imediatamente tanto por ID quanto por E-mail
+        try {
+            if (targetId) {
+                await deleteSupabase("comercial_users", `?id=eq.${encodeURIComponent(targetId)}`);
+            }
+            if (targetEmail) {
+                await deleteSupabase("comercial_users", `?email=eq.${encodeURIComponent(targetEmail)}`);
+            }
+        } catch (e) {
+            console.warn("Erro ao deletar usuário no Supabase:", e);
+        }
+
+        // 4. Disparar eventos para UI em tempo real
+        window.dispatchEvent(new CustomEvent("vellia:userDeleted", { detail: { id: targetId, email: targetEmail } }));
+        window.dispatchEvent(new Event("storage"));
+
+        return true;
     },
 
     getUserByEmail(email) {

@@ -1761,6 +1761,12 @@
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
                                 <span>🤖 Distribuição IA</span>
                             </button>
+                            <button id="btn-open-followup-hub" class="btn btn-outline" style="border-color: #f59e0b; color: #d97706; font-weight: 700; display: flex; align-items: center; gap: 6px;" title="Abrir Fila de Atendimento Prioritário">
+                                <span>⚡ Fila de Atendimento</span>
+                            </button>
+                            <button id="btn-sanitize-leads" class="btn btn-outline" style="border-color: #6366f1; color: #6366f1; font-weight: 600; display: flex; align-items: center; gap: 6px;" title="Higienizar Telefones e Enriquecer CNPJs">
+                                <span>✨ Higienizar Base</span>
+                            </button>
                             <button id="btn-crm-scanner" onclick="window.VisionOCR?.openModal()" class="btn btn-outline" style="border-color: #10b981; color: #10b981; font-weight: 700; display: flex; align-items: center; gap: 6px;" title="Escanear Documento, Laudo ou Cartão com Visão IA">
                                 <span>📷</span>
                                 <span>Scanner IA</span>
@@ -1777,6 +1783,10 @@
                         <button class="crm-pill-filter active" data-filter="all">
                             <span>🔍 Todos</span>
                             <span class="pill-badge" id="pill-count-all">0</span>
+                        </button>
+                        <button class="crm-pill-filter" data-filter="mika" id="pill-filter-mika" style="border-color: rgba(245, 158, 11, 0.4); color: #d97706; background: rgba(245, 158, 11, 0.08);">
+                            <span>🎯 Fila Mika</span>
+                            <span class="pill-badge pill-badge-hot" id="pill-count-mika" style="background: #f59e0b; color: white;">0</span>
                         </button>
                         <button class="crm-pill-filter" data-filter="hot">
                             <span>🔥 Quentes (IA ≥ 75)</span>
@@ -6258,6 +6268,66 @@ Condições de pagamento:
                 <button type="submit" class="btn btn-primary">Salvar Configurações</button>
             </div>
         </form>
+    </div>
+
+    <!-- ==========================================================
+         MODAL: FILA DE ATENDIMENTO & FOLLOW-UP COMERCIAL (MIKA)
+         ========================================================== -->
+    <div id="followup-modal-overlay" class="modal-overlay" style="display: none; z-index: 2000; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(6px);"></div>
+    <div id="followup-modal" class="custom-modal" style="display: none; z-index: 2001; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 92%; max-width: 860px; max-height: 90vh; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35); flex-direction: column; overflow: hidden;">
+        <!-- Modal Header -->
+        <div style="padding: 18px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface);">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">
+                    ⚡
+                </div>
+                <div>
+                    <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                        Fila de Atendimento & Follow-up
+                        <span style="font-size: 11px; font-weight: 700; background: rgba(245, 158, 11, 0.12); color: #d97706; padding: 2px 8px; border-radius: 99px; border: 1px solid rgba(245, 158, 11, 0.3);">Consultor: Mika</span>
+                    </h3>
+                    <p style="margin: 2px 0 0; font-size: 12.5px; color: var(--text-secondary);">Ações de contato em 1 clique com templates inteligentes e registro automático no CRM.</p>
+                </div>
+            </div>
+            <button type="button" id="btn-close-followup-modal" class="btn-icon-close" style="background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 20px; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 6px;">
+                ✕
+            </button>
+        </div>
+
+        <!-- Metric Badges Bar -->
+        <div style="padding: 12px 24px; background: var(--bg-hover); border-bottom: 1px solid var(--border-color); display: flex; gap: 10px; overflow-x: auto;">
+            <button type="button" class="followup-tab-btn active" data-category="urgent" style="border: none; background: var(--bg-card); cursor: pointer; padding: 7px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);">
+                <span>🚨 Urgentes (+3d)</span>
+                <span id="followup-urgent-count" class="pill-badge" style="background: #ef4444; color: white;">0</span>
+            </button>
+            <button type="button" class="followup-tab-btn" data-category="opportunities" style="border: none; background: none; cursor: pointer; padding: 7px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
+                <span>⚡ Oportunidades Ativas</span>
+                <span id="followup-opps-count" class="pill-badge" style="background: var(--primary); color: white;">0</span>
+            </button>
+            <button type="button" class="followup-tab-btn" data-category="new" style="border: none; background: none; cursor: pointer; padding: 7px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
+                <span>📞 Novos Leads</span>
+                <span id="followup-new-count" class="pill-badge" style="background: #10b981; color: white;">0</span>
+            </button>
+            <button type="button" class="followup-tab-btn" data-category="closed" style="border: none; background: none; cursor: pointer; padding: 7px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
+                <span>💎 Carteira (Pós-Venda)</span>
+                <span id="followup-closed-count" class="pill-badge" style="background: #059669; color: white;">0</span>
+            </button>
+        </div>
+
+        <!-- Modal Body / List -->
+        <div id="followup-leads-list" style="padding: 20px 24px; overflow-y: auto; max-height: calc(90vh - 190px); display: flex; flex-direction: column;">
+            <!-- Carregado dinamicamente via LeadFollowup.renderModalList -->
+        </div>
+
+        <!-- Modal Footer -->
+        <div style="padding: 14px 24px; border-top: 1px solid var(--border-color); background: var(--bg-surface); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+                <span>💡 Ao clicar em "Enviar WhatsApp", a interação é salva automaticamente no histórico do lead.</span>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button type="button" id="btn-cancel-followup-modal" class="btn btn-outline" style="font-size: 13px; height: 36px;">Fechar</button>
+            </div>
+        </div>
     </div>
 
     <!-- Modal: Assistente de Mensagens WhatsApp -->

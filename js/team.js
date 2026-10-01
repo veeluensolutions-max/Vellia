@@ -27,6 +27,9 @@ export const Team = {
         const searchInput = document.getElementById("team-search");
         if (searchInput) searchInput.addEventListener("input", () => this.renderAll());
 
+        const exportBtn = document.getElementById("btn-export-team-excel");
+        if (exportBtn) exportBtn.addEventListener("click", () => this.exportToCSV());
+
         // Atualização automática em tempo real ao realizar qualquer ação comercial
         const refreshTeamView = () => {
             const teamView = document.getElementById("view-team");
@@ -104,6 +107,17 @@ export const Team = {
         return { start, end, label: label.charAt(0).toUpperCase() + label.slice(1) };
     },
 
+    getSellers() {
+        const users = Store.getUsers();
+        return users.filter(u => {
+            if (!u || u.status !== "active") return false;
+            if (u.role === "system" || u.id === "usr_meta_config" || (u.email && u.email.includes("config@"))) return false;
+            if (u.name && (u.name.trim().startsWith("{") || u.name.trim().startsWith("["))) return false;
+            const role = (u.role || "").toLowerCase();
+            return role === "seller" || role === "vendedor";
+        });
+    },
+
     renderAll() {
         const period = document.getElementById("team-period-filter")?.value || "month";
         const { start, end, label } = this.getPeriodRange(period);
@@ -113,8 +127,7 @@ export const Team = {
 
         const leads = Store.getLeads();
         const proposals = Store.getProposals();
-        const users = Store.getUsers();
-        let sellers = users.filter(u => u.role === "seller" || u.role === "manager");
+        let sellers = this.getSellers();
 
         const search = document.getElementById("team-search")?.value.toLowerCase().trim() || "";
         if (search) {
@@ -188,6 +201,11 @@ export const Team = {
         if (!tbody) return;
         tbody.innerHTML = "";
 
+        if (stats.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 32px; color: var(--text-muted); font-size: 13px;">Nenhum vendedor ativo encontrado para este período.</td></tr>`;
+            return;
+        }
+
         const fmt = v => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
         stats.forEach((stat, index) => {
@@ -234,7 +252,7 @@ export const Team = {
                                 <span style="font-weight: 600;">${stat.name}</span>
                                 ${achievements}
                             </div>
-                            <div style="font-size: 11px; color: var(--text-muted);">${stat.role === "manager" ? "Gerente" : "Vendedor"}</div>
+                            <div style="font-size: 11px; color: var(--text-muted);">Vendedor</div>
                         </div>
                     </div>
                 </td>
@@ -330,7 +348,7 @@ export const Team = {
                         ${second.avatar}
                     </div>
                     <h4 style="font-size: 15px; font-weight: 700; margin: 0 0 4px 0; color: var(--text-primary);">${second.name}</h4>
-                    <span style="font-size: 11px; color: var(--text-muted);">${second.role === "manager" ? "Gerente" : "Vendedor"}</span>
+                    <span style="font-size: 11px; color: var(--text-muted);">Vendedor</span>
                     <span class="badge" style="background: rgba(99,102,241,0.12); color: #6366f1; border: 1px solid rgba(99,102,241,0.3); margin-top: 6px; font-size: 10px; font-weight: 700;">⭐ ${Math.round(second.score).toLocaleString('pt-BR')} pts</span>
                     <div style="margin-top: 8px; font-size: 17px; font-weight: 800; color: var(--success);">${fmt(second.revenue)}</div>
                     <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">🎯 ${second.leadsGenerated} leads • ${second.proposalsWon} ganhos (${second.conversion}%)</div>
@@ -347,7 +365,7 @@ export const Team = {
                         ${first.avatar}
                     </div>
                     <h4 style="font-size: 17px; font-weight: 800; margin: 0 0 4px 0; color: var(--text-primary);">${first.name}</h4>
-                    <span style="font-size: 11px; color: var(--text-muted);">${first.role === "manager" ? "Gerente" : "Vendedor"}</span>
+                    <span style="font-size: 11px; color: var(--text-muted);">Vendedor</span>
                     <span class="badge" style="background: rgba(251, 191, 36, 0.2); color: #92400e; border: 1px solid rgba(251, 191, 36, 0.4); margin-top: 6px; font-size: 11px; font-weight: 800;">⭐ ${Math.round(first.score).toLocaleString('pt-BR')} pts</span>
                     <div style="margin-top: 8px; font-size: 20px; font-weight: 900; color: var(--success);">${fmt(first.revenue)}</div>
                     <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">🎯 ${first.leadsGenerated} leads • ${first.proposalsWon} ganhos (${first.conversion}%)</div>
@@ -365,7 +383,7 @@ export const Team = {
                         ${third.avatar}
                     </div>
                     <h4 style="font-size: 15px; font-weight: 700; margin: 0 0 4px 0; color: var(--text-primary);">${third.name}</h4>
-                    <span style="font-size: 11px; color: var(--text-muted);">${third.role === "manager" ? "Gerente" : "Vendedor"}</span>
+                    <span style="font-size: 11px; color: var(--text-muted);">Vendedor</span>
                     <span class="badge" style="background: rgba(99,102,241,0.12); color: #6366f1; border: 1px solid rgba(99,102,241,0.3); margin-top: 6px; font-size: 10px; font-weight: 700;">⭐ ${Math.round(third.score).toLocaleString('pt-BR')} pts</span>
                     <div style="margin-top: 8px; font-size: 17px; font-weight: 800; color: var(--success);">${fmt(third.revenue)}</div>
                     <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">🎯 ${third.leadsGenerated} leads • ${third.proposalsWon} ganhos (${third.conversion}%)</div>
@@ -383,8 +401,7 @@ export const Team = {
 
 
     renderMetasAdv() {
-        const users = Store.getUsers();
-        const sellers = users.filter(u => u.role === "seller" || u.role === "manager");
+        const sellers = this.getSellers();
         const proposals = Store.getProposals();
 
         // 1. Obter metas configuradas no localstorage ou padrão
@@ -577,5 +594,75 @@ export const Team = {
 
             insightText.innerHTML = insight;
         }
+    },
+
+    exportToCSV() {
+        const period = document.getElementById("team-period-filter")?.value || "month";
+        const { start, end } = this.getPeriodRange(period);
+        const leads = Store.getLeads();
+        const proposals = Store.getProposals();
+        const sellers = this.getSellers();
+
+        const rows = [
+            ["Posicao", "Nome", "Email", "Contatos", "Leads Gerados", "Leads Qualificados", "Propostas Enviadas", "Fechamentos", "Receita (R$)", "Conversao (%)"]
+        ];
+
+        const stats = sellers.map(seller => {
+            let contacts = 0;
+            leads.forEach(lead => {
+                if (lead.interactions) {
+                    lead.interactions.forEach(int => {
+                        const d = new Date(int.timestamp);
+                        if (d >= new Date(start) && d <= new Date(end) && int.userEmail === seller.email) contacts++;
+                    });
+                }
+            });
+
+            const sellerLeads = leads.filter(l => {
+                const d = new Date(l.createdAt || (l.id && l.id.startsWith("lead_") ? Number(l.id.split("_")[1]) : null) || Date.now());
+                return d >= new Date(start) && d <= new Date(end) && (l.createdBy === seller.email || l.owner === seller.email);
+            });
+            const leadsGenerated = sellerLeads.length;
+            const leadsQualified = sellerLeads.filter(l => l.stage !== "Lead Novo" && l.stage !== "Contato").length;
+
+            const sellerProposals = proposals.filter(p => {
+                const d = new Date(p.sentAt);
+                return d >= new Date(start) && d <= new Date(end) && p.createdBy === seller.email;
+            });
+            const proposalsSent = sellerProposals.length;
+            const proposalsWon = sellerProposals.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)).length;
+            const revenue = sellerProposals.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)).reduce((s, p) => s + (p.value || 0), 0);
+            const conversion = proposalsSent > 0 ? Math.round((proposalsWon / proposalsSent) * 100) : 0;
+            const score = (leadsGenerated * 50) + (leadsQualified * 30) + (contacts * 10) + (proposalsSent * 100) + (proposalsWon * 500) + revenue;
+
+            return { name: seller.name, email: seller.email, contacts, leadsGenerated, leadsQualified, proposalsSent, proposalsWon, revenue, conversion, score };
+        });
+
+        stats.sort((a, b) => b.score - a.score || b.revenue - a.revenue);
+
+        stats.forEach((s, idx) => {
+            rows.push([
+                idx + 1,
+                `"${s.name}"`,
+                `"${s.email}"`,
+                s.contacts,
+                s.leadsGenerated,
+                s.leadsQualified,
+                s.proposalsSent,
+                s.proposalsWon,
+                s.revenue.toFixed(2),
+                `${s.conversion}%`
+            ]);
+        });
+
+        const csvContent = "\uFEFF" + rows.map(e => e.join(";")).join("\n");
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `equipe_vendedores_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 }

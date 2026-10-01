@@ -28,7 +28,17 @@ export const Leaderboard = {
      */
     getRankedSellers() {
         const activeCompany = localStorage.getItem("activeCompany") || "Veeluen Solutions";
-        const users = Store.getUsers().filter(u => u && u.status === "active");
+        const allUsers = Store.getUsers();
+        
+        // Apresentar apenas vendedores reais e ativos (exclui operacoes, admin, manager e contas de configuracao/sistema)
+        const users = allUsers.filter(u => {
+            if (!u || u.status !== "active") return false;
+            if (u.role === "system" || u.id === "usr_meta_config" || (u.email && u.email.includes("config@"))) return false;
+            if (u.name && (u.name.trim().startsWith("{") || u.name.trim().startsWith("["))) return false;
+            const role = (u.role || "").toLowerCase();
+            return role === "seller" || role === "vendedor";
+        });
+
         const proposals = Store.getProposals().filter(p => p.workspace === activeCompany);
         const leads = Store.getLeads().filter(l => l.workspace === activeCompany);
 
@@ -74,8 +84,13 @@ export const Leaderboard = {
             };
         });
 
-        // Ordenar por maior faturamento e depois por maior número de fechamentos
-        sellerStats.sort((a, b) => (b.totalRevenue - a.totalRevenue) || (b.wonCount - a.wonCount));
+        // Ordenar por maior faturamento, fechamentos, conversão e desempate por nome alfabético
+        sellerStats.sort((a, b) => 
+            (b.totalRevenue - a.totalRevenue) || 
+            (b.wonCount - a.wonCount) || 
+            (b.conversionRate - a.conversionRate) ||
+            a.name.localeCompare(b.name)
+        );
 
         // Atribuir medalha de top 1
         if (sellerStats.length > 0 && sellerStats[0].totalRevenue > 0) {
@@ -173,7 +188,13 @@ export const Leaderboard = {
                             </tr>
                         </thead>
                         <tbody>
-                            ${sellers.map((s, idx) => `
+                            ${sellers.length === 0 ? `
+                                <tr>
+                                    <td colspan="6" style="text-align: center; padding: 32px; color: var(--text-muted); font-size: 13px;">
+                                        Nenhum vendedor com perfil ativo encontrado.
+                                    </td>
+                                </tr>
+                            ` : sellers.map((s, idx) => `
                                 <tr>
                                     <td style="font-weight: 800; font-size: 14px; text-align: center; color: ${idx === 0 ? '#eab308' : idx === 1 ? '#94a3b8' : idx === 2 ? '#f97316' : 'var(--text-muted)'};">
                                         #${idx + 1}

@@ -292,6 +292,93 @@ function startHeartbeat() {
     }, 25000);
 }
 
+// ─── Processar alterações em tempo real na tabela comercial_users ───
+function processIncomingUserChange(type, record, oldRecord) {
+    const user = record || oldRecord;
+    if (!user) return;
+
+    let localUsers = [];
+    try {
+        localUsers = JSON.parse(localStorage.getItem("comercial_users")) || [];
+    } catch(e) {
+        localUsers = [];
+    }
+
+    const userId = user.id;
+    const userEmail = (user.email || "").toLowerCase().trim();
+
+    if (type === "DELETE" || type === "DELETE_ROW") {
+        console.log("🗑️ [Realtime] Usuário excluído recebido via WebSocket:", userEmail, userId);
+        // 1. Guardar nos tombstones persistentes
+        try {
+            const deletedIds = JSON.parse(localStorage.getItem("comercial_deleted_user_ids") || "[]");
+            if (userId && !deletedIds.includes(userId)) {
+                deletedIds.push(userId);
+                localStorage.setItem("comercial_deleted_user_ids", JSON.stringify(deletedIds));
+            }
+            if (userEmail) {
+                const deletedEmails = JSON.parse(localStorage.getItem("comercial_deleted_user_emails") || "[]");
+                if (!deletedEmails.includes(userEmail)) {
+                    deletedEmails.push(userEmail);
+                    localStorage.setItem("comercial_deleted_user_emails", JSON.stringify(deletedEmails));
+                }
+            }
+        } catch(e) {}
+
+        // 2. Remover do localStorage
+        const filtered = localUsers.filter(u => u && u.id !== userId && (!userEmail || (u.email || "").toLowerCase().trim() !== userEmail));
+        localStorage.setItem("comercial_users", JSON.stringify(filtered));
+
+        // 3. Atualizar módulos da UI em tempo real
+        window.dispatchEvent(new CustomEvent("vellia:userDeleted", { detail: { id: userId, email: userEmail } }));
+        window.dispatchEvent(new Event("storage"));
+
+        if (window.Users && typeof window.Users.renderUsers === "function") {
+            window.Users.renderUsers();
+        }
+        if (window.Leaderboard && typeof window.Leaderboard.render === "function") {
+            window.Leaderboard.render();
+        }
+        if (window.Team && typeof window.Team.renderAll === "function") {
+            window.Team.renderAll();
+        }
+        return;
+    }
+
+    if (type === "INSERT" || type === "UPDATE") {
+        // Verificar se não é um usuário deletado
+        const deletedEmails = new Set((JSON.parse(localStorage.getItem("comercial_deleted_user_emails")) || []).map(e => e.toLowerCase().trim()));
+        const deletedIds = new Set(JSON.parse(localStorage.getItem("comercial_deleted_user_ids")) || []);
+
+        if (deletedEmails.has(userEmail) || deletedIds.has(userId)) {
+            return;
+        }
+
+        const idx = localUsers.findIndex(u => u && (u.id === userId || (userEmail && (u.email || "").toLowerCase().trim() === userEmail)));
+        if (idx !== -1) {
+            localUsers[idx] = { ...localUsers[idx], ...user };
+        } else {
+            localUsers.push(user);
+        }
+
+        localStorage.setItem("comercial_users", JSON.stringify(localUsers));
+        console.log("🔄 [Realtime] Usuário sincronizado via WebSocket:", userEmail);
+
+        window.dispatchEvent(new CustomEvent("vellia:userUpdated", { detail: user }));
+        window.dispatchEvent(new Event("storage"));
+
+        if (window.Users && typeof window.Users.renderUsers === "function") {
+            window.Users.renderUsers();
+        }
+        if (window.Leaderboard && typeof window.Leaderboard.render === "function") {
+            window.Leaderboard.render();
+        }
+        if (window.Team && typeof window.Team.renderAll === "function") {
+            window.Team.renderAll();
+        }
+    }
+}
+
 // ─── Conectar ao canal Realtime ───────────────────────────────────────
 export function connectRealtime() {
     if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
@@ -352,6 +439,20 @@ export function connectRealtime() {
             ref: String(joinRef++),
             join_ref: String(joinRef)
         }));
+
+        // Entrar no canal da tabela comercial_users (Controle de Usuários em Tempo Real)
+        ws.send(JSON.stringify({
+            topic: "realtime:public:comercial_users",
+            event: "phx_join",
+            payload: {
+                config: {
+                    broadcast: { self: false },
+                    presence: { key: "" }
+                }
+            },
+            ref: String(joinRef++),
+            join_ref: String(joinRef)
+        }));
     };
 
     ws.onmessage = (event) => {
@@ -399,6 +500,14 @@ export function connectRealtime() {
                 processIncomingTask(type, record, oldRecord);
             }
 
+            // Evento na tabela comercial_users
+            if (msg.topic === "realtime:public:comercial_users") {
+                const type = msg.event; // "INSERT", "UPDATE", "DELETE"
+                const record = msg.payload?.record || msg.payload?.new_record || msg.payload?.data?.record;
+                const oldRecord = msg.payload?.old_record || msg.payload?.data?.old_record;
+                processIncomingUserChange(type, record, oldRecord);
+            }
+
             // Supabase Realtime v2: eventos aninhados em postgres_changes ou broadcast
             if (msg.event === "broadcast" || msg.event === "postgres_changes") {
                 const changes = msg.payload?.data || msg.payload;
@@ -421,6 +530,11 @@ export function connectRealtime() {
                         const record = changes.record || changes.new_record;
                         const oldRecord = changes.old_record;
                         processIncomingTask(type, record, oldRecord);
+                    } else if (changes.table === "comercial_users") {
+                        const type = changes.type;
+                        const record = changes.record || changes.new_record;
+                        const oldRecord = changes.old_record;
+                        processIncomingUserChange(type, record, oldRecord);
                     }
                 }
             }

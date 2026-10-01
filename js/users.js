@@ -60,7 +60,26 @@ export const Users = {
         this.setupModalEvents();
         this.renderUsers();
 
-        // 1. Puxar dados mais recentes de login/presença do Supabase com merge seguro
+        // Ouvir eventos em tempo real
+        window.addEventListener("vellia:userDeleted", () => this.renderUsers());
+        window.addEventListener("vellia:userUpdated", () => this.renderUsers());
+        window.addEventListener("storage", () => this.renderUsers());
+
+        // 1. Sincronização inicial com o Supabase
+        await this.fetchAndSyncUsers();
+
+        // 2. Auto-refresh periódico enquanto estiver na visualização de usuários
+        if (!this._presenceTimer) {
+            this._presenceTimer = setInterval(async () => {
+                const usersView = document.getElementById("view-users");
+                if (usersView && usersView.style.display !== "none") {
+                    await this.fetchAndSyncUsers();
+                }
+            }, 10000); // sincroniza a cada 10s
+        }
+    },
+
+    async fetchAndSyncUsers() {
         try {
             const SUPABASE_URL = "https://ogrbsonpkiamoytxjshg.supabase.co";
             const SUPABASE_KEY = "sb_publishable_Wi3eKJi5uyEzqihEDF6Eaw_-i0zcHe7";
@@ -69,38 +88,33 @@ export const Users = {
             });
             if (res.ok) {
                 const remoteUsers = await res.json();
-                if (Array.isArray(remoteUsers) && remoteUsers.length > 0) {
-                    const localUsers = JSON.parse(localStorage.getItem("comercial_users")) || [];
-                    const userMap = new Map();
-                    localUsers.forEach(u => {
-                        if (u && u.email) userMap.set(u.email.toLowerCase().trim(), u);
-                    });
-                    remoteUsers.forEach(u => {
-                        if (u && u.email) {
-                            const emailNorm = u.email.toLowerCase().trim();
-                            const existing = userMap.get(emailNorm) || {};
-                            const isMika = emailNorm === "mika@vellia.com" || (u.name && u.name.toLowerCase().includes("mika"));
-                            const companyAccess = u.companyAccess || existing.companyAccess || (isMika ? "Excelência Ambiental" : "Ambas");
-                            userMap.set(emailNorm, { ...existing, ...u, companyAccess });
+                if (Array.isArray(remoteUsers)) {
+                    const deletedEmails = new Set((JSON.parse(localStorage.getItem("comercial_deleted_user_emails")) || []).map(e => e.toLowerCase().trim()));
+                    const deletedIds = new Set(JSON.parse(localStorage.getItem("comercial_deleted_user_ids")) || []);
+
+                    const validUsers = [];
+                    for (const u of remoteUsers) {
+                        if (!u || !u.email) continue;
+                        const emailNorm = u.email.toLowerCase().trim();
+                        if (deletedEmails.has(emailNorm) || deletedIds.has(u.id)) {
+                            // Deletar resquício no Supabase se reaparecer
+                            fetch(`${SUPABASE_URL}/rest/v1/comercial_users?id=eq.${encodeURIComponent(u.id)}`, {
+                                method: "DELETE",
+                                headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
+                            }).catch(() => {});
+                            continue;
                         }
-                    });
-                    const merged = Array.from(userMap.values());
-                    localStorage.setItem("comercial_users", JSON.stringify(merged));
+                        const isMika = emailNorm === "mika@vellia.com" || (u.name && u.name.toLowerCase().includes("mika"));
+                        const companyAccess = u.companyAccess || (isMika ? "Excelência Ambiental" : "Ambas");
+                        validUsers.push({ ...u, companyAccess });
+                    }
+
+                    localStorage.setItem("comercial_users", JSON.stringify(validUsers));
                     this.renderUsers();
                 }
             }
         } catch (e) {
             console.log("Users presence sync fallback:", e);
-        }
-
-        // 2. Auto-refresh periódico de presença enquanto estiver na visualização de usuários
-        if (!this._presenceTimer) {
-            this._presenceTimer = setInterval(() => {
-                const usersView = document.getElementById("view-users");
-                if (usersView && usersView.style.display !== "none") {
-                    this.renderUsers();
-                }
-            }, 10000); // atualiza a cada 10s
         }
     },
 
@@ -824,7 +838,7 @@ export const Users = {
         });
     },
 
-    deleteUser(id, name) {
+    async deleteUser(id, name) {
         const currentUser = Auth.getCurrentUser();
 
         // Segurança: bloquear auto-exclusão
@@ -833,10 +847,25 @@ export const Users = {
             return;
         }
 
-        const confirmed = confirm(`⚠️ Tem certeza que deseja EXCLUIR o usuário "${name}"?\n\nEsta ação é permanente e não pode ser desfeita.`);
+        const confirmed = confirm(`⚠️ Tem certeza que deseja EXCLUIR o usuário "${name}"?\n\nEsta ação é permanente no banco de dados e ele não retornará mais.`);
         if (!confirmed) return;
 
-        Store.deleteUser(id);
+        // Feedback visual imediato
+        const toast = document.createElement("div");
+        toast.textContent = `⏳ Excluindo "${name}" do banco de dados...`;
+        toast.style.cssText = `
+            position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+            background: #1e293b; color: #f1f5f9;
+            padding: 12px 20px; border-radius: 10px;
+            font-size: 13px; font-weight: 600;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            border-left: 4px solid #f59e0b;
+            animation: fadeIn 0.2s ease;
+        `;
+        document.body.appendChild(toast);
+
+        await Store.deleteUser(id);
+
         Store.addLog(
             currentUser?.email || "admin@vellia.com",
             "USER_DELETED",
@@ -845,20 +874,10 @@ export const Users = {
         );
 
         this.renderUsers();
-        // Feedback visual temporário
-        const toast = document.createElement("div");
-        toast.textContent = `🗑️ Usuário "${name}" excluído com sucesso.`;
-        toast.style.cssText = `
-            position: fixed; bottom: 24px; right: 24px; z-index: 9999;
-            background: #1e293b; color: #f1f5f9;
-            padding: 12px 20px; border-radius: 10px;
-            font-size: 13px; font-weight: 600;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-            border-left: 4px solid #dc2626;
-            animation: fadeIn 0.2s ease;
-        `;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
+
+        toast.textContent = `🗑️ Usuário "${name}" excluído permanentemente com sucesso.`;
+        toast.style.borderLeftColor = "#dc2626";
+        setTimeout(() => toast.remove(), 3500);
     },
 
     openUserDetailsModal(userId) {

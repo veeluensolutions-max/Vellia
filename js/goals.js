@@ -70,7 +70,13 @@ export const Goals = {
         const leads = Store.getLeads();
         const proposals = Store.getProposals();
         const users = Store.getUsers();
-        const sellers = users.filter(u => u.role === "seller" || u.role === "manager");
+        const sellers = users.filter(u => {
+            if (!u || u.status !== "active") return false;
+            if (u.role === "system" || u.id === "usr_meta_config" || (u.email && u.email.includes("config@"))) return false;
+            if (u.name && (u.name.trim().startsWith("{") || u.name.trim().startsWith("["))) return false;
+            const role = (u.role || "").toLowerCase();
+            return role === "seller" || role === "vendedor";
+        });
 
         const period = document.getElementById("goals-period-filter")?.value || "month";
         const { start, end, label } = this.getPeriodRange(period);
@@ -469,7 +475,13 @@ export const Goals = {
         const convRate = totalSent > 0 ? Math.round((totalWon / totalSent) * 100) : 0;
 
         const users = Store.getUsers();
-        const numSellers = users.filter(u => u.role === "seller" || u.role === "manager").length || 1;
+        const numSellers = users.filter(u => {
+            if (!u || u.status !== "active") return false;
+            if (u.role === "system" || u.id === "usr_meta_config" || (u.email && u.email.includes("config@"))) return false;
+            if (u.name && (u.name.trim().startsWith("{") || u.name.trim().startsWith("["))) return false;
+            const role = (u.role || "").toLowerCase();
+            return role === "seller" || role === "vendedor";
+        }).length || 1;
         const teamRevenueGoal = goals.meta_revenue * numSellers;
         const teamRevPct = teamRevenueGoal > 0 ? Math.min(Math.round((totalRevenue / teamRevenueGoal) * 100), 100) : 0;
 
@@ -519,9 +531,15 @@ export const Goals = {
         const selector = document.getElementById("goal-scope-selector");
         if (selector) {
             selector.innerHTML = `<option value="global">Equipe Geral (Padrão)</option>`;
-            const sellers = Store.getUsers().filter(u => u.role === "seller" || u.role === "manager");
+            const sellers = Store.getUsers().filter(u => {
+                if (!u || u.status !== "active") return false;
+                if (u.role === "system" || u.id === "usr_meta_config" || (u.email && u.email.includes("config@"))) return false;
+                if (u.name && (u.name.trim().startsWith("{") || u.name.trim().startsWith("["))) return false;
+                const role = (u.role || "").toLowerCase();
+                return role === "seller" || role === "vendedor";
+            });
             sellers.forEach(s => {
-                selector.innerHTML += `<option value="${s.email}">${s.name} (${s.role === "manager" ? "Gerente" : "Vendedor"})</option>`;
+                selector.innerHTML += `<option value="${s.email}">${s.name} (Vendedor)</option>`;
             });
             
             // Ouvinte de mudança para carregar metas correspondentes

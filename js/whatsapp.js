@@ -49,6 +49,77 @@ export const WhatsApp = {
         if (btnRefreshCopilot) {
             btnRefreshCopilot.addEventListener("click", () => this.loadCopilotSuggestions());
         }
+
+        // Botão copiar mensagem
+        const btnCopyMsg = document.getElementById("btn-copy-wa-message");
+        if (btnCopyMsg) {
+            btnCopyMsg.addEventListener("click", () => {
+                const textEl = document.getElementById("wa-message-text");
+                if (!textEl || !textEl.value.trim()) return;
+                navigator.clipboard.writeText(textEl.value.trim()).then(() => {
+                    const origHtml = btnCopyMsg.innerHTML;
+                    btnCopyMsg.innerHTML = `<span style="color: #25d366; font-weight: 700;">✓ Copiado!</span>`;
+                    setTimeout(() => {
+                        btnCopyMsg.innerHTML = origHtml;
+                    }, 1800);
+                });
+            });
+        }
+
+        // Botão copiar telefone
+        const btnCopyPhone = document.getElementById("btn-copy-wa-phone");
+        if (btnCopyPhone) {
+            btnCopyPhone.addEventListener("click", () => {
+                const phoneEl = document.getElementById("wa-contact-phone");
+                if (!phoneEl) return;
+                const phoneText = phoneEl.textContent.trim();
+                navigator.clipboard.writeText(phoneText).then(() => {
+                    btnCopyPhone.style.color = "#25d366";
+                    setTimeout(() => {
+                        btnCopyPhone.style.color = "";
+                    }, 1500);
+                });
+            });
+        }
+
+        // Contador de caracteres em tempo real
+        const textEl = document.getElementById("wa-message-text");
+        if (textEl) {
+            textEl.addEventListener("input", () => this.updateCharCount());
+        }
+
+        // Tags dinâmicas (+ Contato, + Empresa, + Vendedor)
+        document.querySelectorAll(".wa-tag-pill").forEach(pill => {
+            pill.addEventListener("click", () => {
+                const varName = pill.getAttribute("data-var");
+                const lead = Store.getLeadById(this.activeLeadId);
+                const currentUser = Auth.getCurrentUser();
+                const sellerName = currentUser ? currentUser.name : "Consultor Vellia";
+
+                let insertVal = varName;
+                if (varName === "{contato}") insertVal = lead ? (lead.contact || lead.company) : "Contato";
+                else if (varName === "{empresa}") insertVal = lead ? lead.company : "Empresa";
+                else if (varName === "{vendedor}") insertVal = sellerName;
+
+                if (textEl) {
+                    const start = textEl.selectionStart || textEl.value.length;
+                    const end = textEl.selectionEnd || textEl.value.length;
+                    const cur = textEl.value;
+                    textEl.value = cur.substring(0, start) + insertVal + cur.substring(end);
+                    textEl.selectionStart = textEl.selectionEnd = start + insertVal.length;
+                    textEl.focus();
+                    this.updateCharCount();
+                }
+            });
+        });
+    },
+
+    updateCharCount() {
+        const textEl = document.getElementById("wa-message-text");
+        const countEl = document.getElementById("wa-char-count");
+        if (!textEl || !countEl) return;
+        const len = textEl.value.length;
+        countEl.textContent = `${len} caracteres`;
     },
 
     async openModalForLead(leadId) {
@@ -140,6 +211,7 @@ export const WhatsApp = {
         }
 
         textEl.value = message;
+        this.updateCharCount();
     },
 
     showModal() {
@@ -338,28 +410,55 @@ Diretrizes:
         const option2 = `Olá ${contactName}! Como estão os desafios de vendas em ${segment} na ${lead.company}? Estruturamos uma estratégia para impulsionar esses resultados.`;
         const option3 = `Olá ${contactName}! Entendo a rotina corrida, mas ajudamos empresas como a ${lead.company} a otimizar a conversão de propostas. Vale um café rápido?`;
 
-        container.innerHTML = `
-            <div class="wa-copilot-card" onclick="window.applyCopilotText('${option1.replace(/'/g, "\\'")}')">
-                <span style="font-weight: 700; color: #25d366;">💬 1. Abordagem Direta & Agendamento</span>
-                <p style="margin: 3px 0 0; color: var(--text-secondary);">${option1}</p>
-            </div>
-            <div class="wa-copilot-card" onclick="window.applyCopilotText('${option2.replace(/'/g, "\\'")}')">
-                <span style="font-weight: 700; color: var(--primary-light);">🧠 2. Abordagem Consultiva (Dor)</span>
-                <p style="margin: 3px 0 0; color: var(--text-secondary);">${option2}</p>
-            </div>
-            <div class="wa-copilot-card" onclick="window.applyCopilotText('${option3.replace(/'/g, "\\'")}')">
-                <span style="font-weight: 700; color: #8b5cf6;">🛡️ 3. Foco em Valor & Proposta</span>
-                <p style="margin: 3px 0 0; color: var(--text-secondary);">${option3}</p>
-            </div>
-        `;
-
         window.applyCopilotText = (txt) => {
             const textEl = document.getElementById("wa-message-text");
             if (textEl) {
                 textEl.value = txt;
+                WhatsApp.updateCharCount();
                 textEl.focus();
+                textEl.style.transition = "all 0.3s ease";
+                textEl.style.borderColor = "#25d366";
+                textEl.style.boxShadow = "0 0 0 3px rgba(37, 211, 102, 0.25)";
+                setTimeout(() => {
+                    textEl.style.borderColor = "";
+                    textEl.style.boxShadow = "";
+                }, 700);
             }
         };
+
+        const renderCards = (c1, c2, c3) => {
+            container.innerHTML = `
+                <div class="wa-copilot-card" onclick="window.applyCopilotText('${c1.replace(/'/g, "\\'")}')" title="Clique para aplicar ao editor">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                        <span style="font-weight: 700; font-size: 11.5px; color: #16a34a; display: flex; align-items: center; gap: 5px;">
+                            💬 Direta & Agendamento
+                        </span>
+                        <span style="font-size: 10.5px; color: var(--text-muted); font-weight: 600;">Usar texto ↵</span>
+                    </div>
+                    <p style="margin: 0; font-size: 12px; line-height: 1.45; color: var(--text-secondary);">${c1}</p>
+                </div>
+                <div class="wa-copilot-card" onclick="window.applyCopilotText('${c2.replace(/'/g, "\\'")}')" title="Clique para aplicar ao editor">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                        <span style="font-weight: 700; font-size: 11.5px; color: #2563eb; display: flex; align-items: center; gap: 5px;">
+                            🧠 Consultiva (Foco na dor)
+                        </span>
+                        <span style="font-size: 10.5px; color: var(--text-muted); font-weight: 600;">Usar texto ↵</span>
+                    </div>
+                    <p style="margin: 0; font-size: 12px; line-height: 1.45; color: var(--text-secondary);">${c2}</p>
+                </div>
+                <div class="wa-copilot-card" onclick="window.applyCopilotText('${c3.replace(/'/g, "\\'")}')" title="Clique para aplicar ao editor">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                        <span style="font-weight: 700; font-size: 11.5px; color: #7c3aed; display: flex; align-items: center; gap: 5px;">
+                            🛡️ Valor & Credibilidade
+                        </span>
+                        <span style="font-size: 10.5px; color: var(--text-muted); font-weight: 600;">Usar texto ↵</span>
+                    </div>
+                    <p style="margin: 0; font-size: 12px; line-height: 1.45; color: var(--text-secondary);">${c3}</p>
+                </div>
+            `;
+        };
+
+        renderCards(option1, option2, option3);
 
         try {
             const prompt = `Gere 3 sugestões ultra-curtas e persuasivas de mensagens comerciais para WhatsApp para o lead "${contactName}" (Empresa: ${lead.company}, Segmento: ${segment}, Estágio: ${stage}).
@@ -387,21 +486,7 @@ Retorne estritamente em formato JSON:
                     const p1 = parsed.op1 || option1;
                     const p2 = parsed.op2 || option2;
                     const p3 = parsed.op3 || option3;
-
-                    container.innerHTML = `
-                        <div class="wa-copilot-card" onclick="window.applyCopilotText(\`${p1.replace(/`/g, '\\`')}\`)">
-                            <span style="font-weight: 700; color: #25d366;">💬 1. Abordagem Direta</span>
-                            <p style="margin: 3px 0 0; color: var(--text-secondary);">${p1}</p>
-                        </div>
-                        <div class="wa-copilot-card" onclick="window.applyCopilotText(\`${p2.replace(/`/g, '\\`')}\`)">
-                            <span style="font-weight: 700; color: var(--primary-light);">🧠 2. Abordagem Consultiva</span>
-                            <p style="margin: 3px 0 0; color: var(--text-secondary);">${p2}</p>
-                        </div>
-                        <div class="wa-copilot-card" onclick="window.applyCopilotText(\`${p3.replace(/`/g, '\\`')}\`)">
-                            <span style="font-weight: 700; color: #8b5cf6;">🛡️ 3. Foco em Valor</span>
-                            <p style="margin: 3px 0 0; color: var(--text-secondary);">${p3}</p>
-                        </div>
-                    `;
+                    renderCards(p1, p2, p3);
                 }
             }
         } catch(e) {}

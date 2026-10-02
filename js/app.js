@@ -288,7 +288,7 @@ function showAppShell(user) {
 
     // Ir para a view ativa atual ou padrão (dashboard/calendar)
     let defaultView = "dashboard";
-    if (user.role === "operacional") defaultView = "calendar";
+    if (["operacional", "operacoes", "operacao"].includes(user.role?.toLowerCase())) defaultView = "calendar";
     
     let currentHash = window.location.hash.replace("#", "") || defaultView;
     
@@ -330,8 +330,8 @@ function configureSidebarMenu(role) {
             isVisible = !["logs", "users", "integrations"].includes(viewName);
         } else if (roleLower === "seller" || roleLower === "vendedor") {
             isVisible = !["logs", "team", "services", "integrations", "users"].includes(viewName);
-        } else if (roleLower === "operacional") {
-            isVisible = ["calendar", "dashboard"].includes(viewName);
+        } else if (["operacional", "operacoes", "operacao"].includes(roleLower)) {
+            isVisible = ["calendar", "dashboard", "inspections"].includes(viewName);
         } else {
             isVisible = true;
         }

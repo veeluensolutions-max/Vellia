@@ -133,8 +133,8 @@ function processIncomingLead(lead) {
 
     console.log("⚡ [Realtime] Novo lead recebido:", lead.company, lead.id);
 
-    // Salvar localmente
-    localLeads.push(lead);
+    // Salvar localmente (no topo da lista)
+    localLeads.unshift(lead);
     localStorage.setItem("comercial_leads", JSON.stringify(localLeads));
 
     // Disparar eventos de app

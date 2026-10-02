@@ -259,7 +259,7 @@ export const Dashboard = {
                         <div class="vellia-empty-icon" style="width: 36px; height: 36px; font-size: 15px; margin-bottom: 8px;">📅</div>
                         <div class="vellia-empty-title" style="font-size: 13px;">Nenhum agendamento pendente</div>
                         <div class="vellia-empty-desc" style="font-size: 12px; margin-bottom: 10px;">Quando uma proposta precisar de visita, ela aparecerá aqui automaticamente.</div>
-                        <a href="#proposals" class="btn btn-outline" style="font-size: 11.5px; height: 32px; padding: 0 12px;">Ver propostas</a>
+                        <a href="#inspections" class="btn btn-outline" style="font-size: 11.5px; height: 32px; padding: 0 12px;">Ver inspeções</a>
                     </div>
                 </div>`;
             }
@@ -306,11 +306,21 @@ export const Dashboard = {
         };
 
         container.innerHTML = `
-            <div style="margin-bottom: 16px;">
-                <h3 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0 0 2px 0;">
-                    Agendamentos Operacionais
-                </h3>
-                <p style="font-size: 12.5px; color: var(--text-secondary); margin: 0;">Controle rápido de vistorias técnicas e visitas a clientes</p>
+            <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h3 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0 0 2px 0;">
+                        Agendamentos & Vistorias Operacionais
+                    </h3>
+                    <p style="font-size: 12.5px; color: var(--text-secondary); margin: 0;">Controle rápido de vistorias técnicas, visitas a clientes e laudos</p>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <a href="#inspections" class="btn btn-primary" style="font-size: 12px; height: 34px; padding: 0 14px; display: inline-flex; align-items: center; gap: 6px;">
+                        <span>📋</span> Central de Inspeções
+                    </a>
+                    <a href="#calendar" class="btn btn-outline" style="font-size: 12px; height: 34px; padding: 0 14px; display: inline-flex; align-items: center; gap: 6px;">
+                        <span>📅</span> Agenda Completa
+                    </a>
+                </div>
             </div>
             <div style="display: flex; gap: 16px; flex-wrap: wrap;">
                 ${renderCompactAgendamentosList(awaiting, "Aguardando Agendamento", true)}

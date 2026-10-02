@@ -449,3 +449,108 @@ ${inspection.meta?.notes || inspection.description || "Inspeção técnica reali
 // Expor globalmente para cliques em HTML
 window.generateInspectionPDF = (leadId, inspectionId) => PDFGenerator.generateInspectionPDF(leadId, inspectionId);
 window.exportInspectionsSummaryPDF = () => PDFGenerator.exportInspectionsSummaryPDF();
+
+/**
+ * ─── Gerar PDF de Proposta Comercial ─────────────────────────────────────────
+ * Chamado por clients.js via dynamic import:
+ *   import("./pdf-generator.js").then(m => m.PDFGenerator.generateProposalPDF(id))
+ */
+PDFGenerator.generateProposalPDF = function(proposalId) {
+    // Delega para window.Proposals.exportProposalToPDF (definida em proposals.js)
+    if (window.Proposals && typeof window.Proposals.exportProposalToPDF === "function") {
+        window.Proposals.exportProposalToPDF(proposalId);
+        return;
+    }
+
+    // Fallback: geração básica via jsPDF diretamente
+    const jsPDFLib = window.jspdf;
+    if (!jsPDFLib || !jsPDFLib.jsPDF) {
+        alert("Biblioteca PDF não carregada. Recarregue a página e tente novamente.");
+        return;
+    }
+    const { jsPDF } = jsPDFLib;
+
+    const proposal = Store.getProposalById(proposalId);
+    if (!proposal) { alert("Proposta não encontrada."); return; }
+
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const pageW = 210;
+    const pageH = 297;
+
+    // Header
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, 0, pageW, 38, "F");
+    doc.setFillColor(59, 130, 246);
+    doc.roundedRect(14, 9, 24, 20, 3, 3, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(255, 255, 255);
+    doc.text("Vellia", 17, 21);
+    doc.setFontSize(13);
+    doc.text("PROPOSTA COMERCIAL", 46, 18);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(148, 163, 184);
+    doc.text(`${proposal.company || ""}  •  ${proposal.service || ""}  •  Emitida em ${new Date().toLocaleDateString("pt-BR")}`, 46, 27);
+
+    // Valor
+    let y = 50;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(15, 23, 42);
+    doc.text("Cliente:", 14, y);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`${proposal.company || "—"}  |  ${proposal.contact || "—"}`, 35, y);
+    y += 8;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(15, 23, 42);
+    doc.text("Serviço:", 14, y);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139);
+    doc.text(proposal.service || "—", 36, y);
+    y += 8;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(59, 130, 246);
+    const fmt = (v) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
+    doc.text(`Valor: ${fmt(proposal.value)}`, 14, y);
+    y += 14;
+
+    // Notas
+    if (proposal.notes) {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.setTextColor(15, 23, 42);
+        doc.text("Escopo / Observações:", 14, y);
+        y += 7;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(71, 85, 105);
+        const noteLines = doc.splitTextToSize(proposal.notes, pageW - 28);
+        noteLines.forEach(line => {
+            if (y > pageH - 25) { doc.addPage(); y = 20; }
+            doc.text(line, 14, y);
+            y += 5.5;
+        });
+    }
+
+    // Footer
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, pageH - 12, pageW, 12, "F");
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text("Vellia CRM — Sistema Comercial Inteligente  •  Documento confidencial", 14, pageH - 4);
+    doc.setTextColor(148, 163, 184);
+    doc.text("Página 1 de 1", pageW - 28, pageH - 4);
+
+    const safeName = (proposal.company || "Proposta").replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "").substring(0, 20);
+    doc.save(`Proposta_${safeName}_${proposalId.substring(0, 8)}.pdf`);
+};
+
+window.generateProposalPDF = (proposalId) => PDFGenerator.generateProposalPDF(proposalId);
+

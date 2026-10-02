@@ -194,6 +194,27 @@ function decodeLeadFromSupabase(rawLead) {
     return rawLead;
 }
 
+export function getLeadTimestamp(lead) {
+    if (!lead) return 0;
+    if (lead.createdAt) {
+        const t = new Date(lead.createdAt).getTime();
+        if (!isNaN(t) && t > 0) return t;
+    }
+    if (Array.isArray(lead.stageHistory) && lead.stageHistory.length > 0) {
+        const first = lead.stageHistory[0];
+        if (first && first.timestamp) {
+            const t = new Date(first.timestamp).getTime();
+            if (!isNaN(t) && t > 0) return t;
+        }
+    }
+    if (typeof lead.id === "string" && lead.id.startsWith("lead_")) {
+        const parts = lead.id.split("_");
+        const parsed = parseInt(parts[1], 10);
+        if (!isNaN(parsed) && parsed > 1000000000000) return parsed;
+    }
+    return 0;
+}
+
 const TABLE_SCHEMAS = {
     comercial_users: ['id', 'name', 'email', 'password', 'role', 'avatar', 'status', 'lastLoginAt'],
     comercial_leads: ['id', 'workspace', 'company', 'contact', 'role', 'phone', 'whatsapp', 'email', 'city', 'state', 'segment', 'source', 'stage', 'owner', 'interactions', 'stageHistory', 'phone2', 'email2', 'notes'],
@@ -329,7 +350,7 @@ async function syncFromSupabase() {
                     leadMap.set(l.id, { ...existing, ...l });
                 }
             });
-            const mergedLeads = Array.from(leadMap.values());
+            const mergedLeads = Array.from(leadMap.values()).sort((a, b) => getLeadTimestamp(b) - getLeadTimestamp(a));
             localStorage.setItem("comercial_leads", JSON.stringify(mergedLeads));
 
             // Sincronizar para o Supabase os leads locais que não estão no remoto
@@ -437,6 +458,14 @@ function initStorage() {
     }
     if (!localStorage.getItem("comercial_leads")) {
         localStorage.setItem("comercial_leads", JSON.stringify([]));
+    } else {
+        try {
+            const existingLeads = JSON.parse(localStorage.getItem("comercial_leads"));
+            if (Array.isArray(existingLeads) && existingLeads.length > 1) {
+                existingLeads.sort((a, b) => getLeadTimestamp(b) - getLeadTimestamp(a));
+                localStorage.setItem("comercial_leads", JSON.stringify(existingLeads));
+            }
+        } catch(e) {}
     }
     if (!localStorage.getItem("comercial_proposals")) {
         localStorage.setItem("comercial_proposals", JSON.stringify([]));
@@ -458,7 +487,7 @@ function startSyncPolling() {
         try {
             const rawRemoteLeads = await supabaseFetch("comercial_leads");
             if (Array.isArray(rawRemoteLeads)) {
-                const remoteLeads = rawRemoteLeads.map(l => decodeLeadFromSupabase(l));
+                const remoteLeads = rawRemoteLeads.map(l => decodeLeadFromSupabase(l)).sort((a, b) => getLeadTimestamp(b) - getLeadTimestamp(a));
                 const localLeads = JSON.parse(localStorage.getItem("comercial_leads")) || [];
                 
                 // Identificar novos leads que estão no Supabase mas não localmente
@@ -597,15 +626,17 @@ export const Store = {
     },
 
     // LEADS (CRM)
+    getLeadTimestamp: getLeadTimestamp,
+
     getLeads() {
-        // Retorna apenas leads ativos (sem deleted_at), excluindo itens da lixeira
+        // Retorna apenas leads ativos (sem deleted_at), excluindo itens da lixeira, sempre com cadastrados mais recentes no topo
         const allLeads = JSON.parse(localStorage.getItem("comercial_leads")) || [];
         const activeCompany = localStorage.getItem("activeCompany") || "Veeluen Solutions";
         return allLeads.filter(l => {
             if(l.deleted_at) return false;
             const w = l.workspace || "Veeluen Solutions";
             return w === activeCompany;
-        });
+        }).sort((a, b) => getLeadTimestamp(b) - getLeadTimestamp(a));
     },
 
     getAllLeadsRaw() {
@@ -753,7 +784,7 @@ export const Store = {
                 }
             ]
         };
-        leads.push(newLead);
+        leads.unshift(newLead);
         localStorage.setItem("comercial_leads", JSON.stringify(leads));
         upsertSupabase("comercial_leads", encodeLeadForSupabase(newLead));
 

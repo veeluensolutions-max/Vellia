@@ -104,7 +104,9 @@ export const Auth = {
             gerente: ["dashboard", "clients", "crm", "kanban", "proposals", "calculators", "isocinetica", "team", "goals", "services", "inspections", "calendar", "ai-agents"],
             seller: ["dashboard", "clients", "crm", "kanban", "proposals", "calculators", "isocinetica", "goals", "inspections", "calendar", "ai-agents"],
             vendedor: ["dashboard", "clients", "crm", "kanban", "proposals", "calculators", "isocinetica", "goals", "inspections", "calendar", "ai-agents"],
-            operacional: ["dashboard", "calendar"]
+            operacional: ["dashboard", "calendar", "inspections"],
+            operacoes: ["dashboard", "calendar", "inspections"],
+            operacao: ["dashboard", "calendar", "inspections"]
         };
 
         const allowed = permissions[roleLower] || [];

@@ -1022,35 +1022,168 @@ Retorne APENAS o texto completo da minuta limpo e pronto para impressão ou cóp
         }
     },
 
-    exportContractDraftPDF(text) {
+    exportContractDraftPDF(text, filename) {
         if (!text) return;
-        const { jsPDF } = window.jspdf || {};
-        if (!jsPDF) {
-            alert("Biblioteca jsPDF não encontrada no navegador.");
-            return;
+
+        const now = new Date();
+        const issueDate = now.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+        const codeAuth = `VEL-CTR-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+        const pdfFilename = filename || `Minuta_Contrato_${Date.now()}.pdf`;
+
+        // Converter texto em parágrafos HTML
+        const paragraphs = text
+            .split(/\n\n+/)
+            .map(p => p.trim())
+            .filter(Boolean)
+            .map(p => {
+                // Detectar cláusulas/títulos em maiúsculas
+                if (/^(CL[AÁ]USULA|PARTES|OBJETO|PRE[ÇC]O|CONTRATANTE|CONTRATADA|VALOR|VIGI[EÊ]NCIA|E POR ESTAREM)/i.test(p)) {
+                    return `<p class="clause-title">${p.replace(/\n/g, "<br>")}</p>`;
+                }
+                return `<p class="clause-body">${p.replace(/\n/g, "<br>")}</p>`;
+            })
+            .join("");
+
+        const htmlContent = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>${pdfFilename}</title>
+    <style>
+        @page { size: A4; margin: 20mm 18mm; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Times New Roman', Times, Georgia, serif;
+            color: #1e293b;
+            background: #fff;
+            font-size: 12.5px;
+            line-height: 1.75;
         }
+        .no-print {
+            background: #6257F5;
+            color: #fff;
+            padding: 12px 20px;
+            text-align: center;
+            font-weight: 700;
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            border-radius: 8px;
+            margin: 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(98,87,245,0.35);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2.5px solid #1e293b;
+            padding-bottom: 14px;
+            margin-bottom: 22px;
+        }
+        .logo-block .logo { font-family: Helvetica, Arial, sans-serif; font-size: 22px; font-weight: 900; color: #6257F5; letter-spacing: -1px; }
+        .logo-block .sub { font-family: Helvetica, Arial, sans-serif; font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+        .doc-info { text-align: right; font-family: Helvetica, Arial, sans-serif; font-size: 10px; color: #64748b; }
+        .doc-info strong { color: #1e293b; }
+        .title-box {
+            text-align: center;
+            margin-bottom: 24px;
+            padding: 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            background: #f8fafc;
+        }
+        .title-box h1 { font-family: Helvetica, Arial, sans-serif; font-size: 15px; font-weight: 900; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; }
+        .title-box p { font-family: Helvetica, Arial, sans-serif; font-size: 10.5px; color: #64748b; margin-top: 4px; }
+        .clause-title {
+            font-weight: 700;
+            font-size: 12.5px;
+            color: #0f172a;
+            margin: 18px 0 6px 0;
+            text-transform: uppercase;
+        }
+        .clause-body {
+            margin-bottom: 10px;
+            text-align: justify;
+            color: #334155;
+        }
+        .footer {
+            margin-top: 48px;
+            padding-top: 14px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 10px;
+            color: #94a3b8;
+        }
+        @media print { .no-print { display: none !important; } body { padding: 0; } }
+    </style>
+</head>
+<body>
+    <div class="no-print" onclick="window.print()">
+        🖨️ CLIQUE AQUI PARA IMPRIMIR OU SALVAR COMO PDF
+    </div>
 
-        const doc = new jsPDF();
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(14);
-        doc.text("MINUTA DE CONTRATO COMERCIAL", 14, 20);
+    <div class="header">
+        <div class="logo-block">
+            <div class="logo">Vellia</div>
+            <div class="sub">Engineering &amp; Commercial Solutions</div>
+        </div>
+        <div class="doc-info">
+            <div><strong>🛡️ CÓDIGO AUTENTICADOR</strong></div>
+            <div>${codeAuth}</div>
+            <div>Emissão: ${issueDate}</div>
+        </div>
+    </div>
 
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(9);
-        
-        const lines = doc.splitTextToSize(text, 180);
-        let y = 30;
+    <div class="title-box">
+        <h1>Minuta de Contrato Particular de Prestação de Serviços</h1>
+        <p>Documento gerado eletronicamente pelo Vellia CRM • Sujeito a revisão jurídica antes da assinatura</p>
+    </div>
 
-        lines.forEach(line => {
-            if (y > 280) {
-                doc.addPage();
-                y = 20;
+    <div class="content">
+        ${paragraphs}
+    </div>
+
+    <div class="footer">
+        <div>🔒 Vellia CRM Engine — Documento Gerado Digitalmente</div>
+        <div>Auth: ${codeAuth}</div>
+    </div>
+
+    <script>
+        window.onload = function() { setTimeout(function() { window.print(); }, 500); };
+    </script>
+</body>
+</html>`;
+
+        const win = window.open("", "_blank");
+        if (win) {
+            win.document.write(htmlContent);
+            win.document.close();
+        } else {
+            // Fallback: download direto via jsPDF
+            const jsPDFLib = window.jspdf;
+            if (!jsPDFLib || !jsPDFLib.jsPDF) {
+                alert("Por favor, permita popups neste site para visualizar e baixar o contrato em PDF.");
+                return;
             }
-            doc.text(line, 14, y);
-            y += 5;
-        });
-
-        doc.save(`Minuta_Contrato_${Date.now()}.pdf`);
+            const { jsPDF } = jsPDFLib;
+            const doc = new jsPDF();
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(14);
+            doc.text("MINUTA DE CONTRATO COMERCIAL", 14, 20);
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9);
+            const lines = doc.splitTextToSize(text, 180);
+            let y = 30;
+            lines.forEach(line => {
+                if (y > 280) { doc.addPage(); y = 20; }
+                doc.text(line, 14, y);
+                y += 5;
+            });
+            doc.save(pdfFilename);
+        }
     }
 };
 

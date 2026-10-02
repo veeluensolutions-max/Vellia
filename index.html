@@ -13,8 +13,10 @@
     <!-- Chart.js para dashboards -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- jsPDF (Geração de PDF) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.3/jspdf.plugin.autotable.min.js" crossorigin="anonymous"></script>
+    <!-- html2canvas (Screenshots para PDF) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous"></script>
     <!-- PDF.js (Leitura de PDFs para a Base de Conhecimento do Guru) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -1956,6 +1958,17 @@
                                 <option value="all">Todos os Vendedores</option>
                             </select>
                         </div>
+
+                        <!-- Ordenação dos Leads -->
+                        <div class="filter-group" id="crm-filter-sort-group" style="min-width: 190px;">
+                            <label for="crm-filter-sort">Ordenação</label>
+                            <select id="crm-filter-sort" class="filter-control" style="height: 38px; font-weight: 500;">
+                                <option value="recent-created" selected>⚡ Cadastrados Recentes (Topo)</option>
+                                <option value="score-desc">🔥 Maior Score IA</option>
+                                <option value="sla-desc">⏱️ Maior SLA / Sem Contato</option>
+                                <option value="company-asc">🔤 Empresa (A-Z)</option>
+                            </select>
+                        </div>
                     </div>
 
                     <!-- Tabela de Leads -->
@@ -2027,6 +2040,15 @@
                             <div id="kanban-filter-owner-group" style="min-width: 180px; display: none;">
                                 <select id="kanban-filter-owner" class="filter-control" style="height: 38px; font-size: 13px;">
                                     <option value="all">Todos os Vendedores</option>
+                                </select>
+                            </div>
+
+                            <div id="kanban-filter-sort-group" style="min-width: 190px;">
+                                <select id="kanban-filter-sort" class="filter-control" style="height: 38px; font-size: 13px; font-weight: 500;">
+                                    <option value="recent-created" selected>⚡ Cadastrados Recentes (Topo)</option>
+                                    <option value="score-desc">🔥 Maior Score IA</option>
+                                    <option value="value-desc">💰 Maior Valor</option>
+                                    <option value="company-asc">🔤 Empresa (A-Z)</option>
                                 </select>
                             </div>
                         </div>
@@ -5969,7 +5991,7 @@ Condições de pagamento:
                     <select id="user-role" class="form-control" style="height: 42px;">
                         <option value="seller">Vendedor</option>
                         <option value="manager">Gerente Comercial</option>
-                        <option value="operacional">Operações (Agendamento)</option>
+                        <option value="operacional">Operações (Agendamento & Inspeções)</option>
                         <option value="admin">Administrador</option>
                     </select>
                 </div>

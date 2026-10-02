@@ -132,6 +132,8 @@ export const CRM = {
         // Filtros e Busca
         if (elements.crmSearch) elements.crmSearch.addEventListener("input", () => this.renderLeadsTable());
         if (elements.crmFilterStage) elements.crmFilterStage.addEventListener("change", () => this.renderLeadsTable());
+        const crmFilterSort = document.getElementById("crm-filter-sort");
+        if (crmFilterSort) crmFilterSort.addEventListener("change", () => this.renderLeadsTable());
 
         // Pílulas de Filtros Rápidos (Pill Filters)
         const pillContainer = document.getElementById("crm-pill-filters");
@@ -526,6 +528,30 @@ export const CRM = {
             return matchesSearch && matchesStage && matchesOwner && matchesPill;
         });
 
+        // Ordenação inteligente dos leads (padrão: cadastrados mais recentes no topo)
+        const sortSelect = document.getElementById("crm-filter-sort");
+        const sortMode = sortSelect ? sortSelect.value : "recent-created";
+
+        filteredLeads.sort((a, b) => {
+            if (sortMode === "score-desc") {
+                const scoreA = a.aiScore != null ? a.aiScore : 0;
+                const scoreB = b.aiScore != null ? b.aiScore : 0;
+                if (scoreB !== scoreA) return scoreB - scoreA;
+                return Store.getLeadTimestamp(b) - Store.getLeadTimestamp(a);
+            }
+            if (sortMode === "sla-desc") {
+                const slaA = getLeadMinutesSLA(a);
+                const slaB = getLeadMinutesSLA(b);
+                if (slaB !== slaA) return slaB - slaA;
+                return Store.getLeadTimestamp(b) - Store.getLeadTimestamp(a);
+            }
+            if (sortMode === "company-asc") {
+                return (a.company || "").localeCompare(b.company || "");
+            }
+            // Padrão: "recent-created" (cadastrados mais recentes no topo)
+            return Store.getLeadTimestamp(b) - Store.getLeadTimestamp(a);
+        });
+
         if (filteredLeads.length === 0) {
             tableBody.innerHTML = `
                             <tr>
@@ -612,14 +638,26 @@ export const CRM = {
                      <span style="font-size:13px;font-weight:500;">${ownerName}</span>
                    </div>`;
 
+            // Dados de data de cadastro e destaque para novos cadastros
+            const createdAtTs = Store.getLeadTimestamp ? Store.getLeadTimestamp(lead) : 0;
+            const isRecent = createdAtTs > 0 && (Date.now() - createdAtTs) < 48 * 60 * 60 * 1000;
+            const dateStr = createdAtTs > 0 ? new Date(createdAtTs).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
+            const recentBadge = isRecent ? `<span class="badge" style="font-size: 9.5px; font-weight: 700; background: rgba(16, 185, 129, 0.12); color: #059669; border: 1px solid rgba(16, 185, 129, 0.3); padding: 1.5px 6px; border-radius: 99px; margin-left: 6px; display: inline-flex; align-items: center; gap: 3px;" title="Lead cadastrado recentemente (${dateStr})">✨ Novo</span>` : "";
+
             return `
                 <tr class="clickable-row" data-id="${lead.id}">
                     <td style="min-width: 180px;">
                         <div class="table-company-cell">
                             <div class="table-avatar">${(lead.company || 'L').substring(0, 2).toUpperCase()}</div>
                             <div>
-                                <div style="font-weight: 600; color: var(--text-primary); font-size: 13.5px; line-height: 1.25;">${lead.company}</div>
-                                ${lead.cnpj ? `<div style="font-size: 11px; font-family: monospace; color: var(--text-muted); font-weight: 500; margin-top: 1px;">${CNPJService.formatCNPJ(lead.cnpj)}</div>` : ''}
+                                <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
+                                    <span style="font-weight: 600; color: var(--text-primary); font-size: 13.5px; line-height: 1.25;">${lead.company}</span>
+                                    ${recentBadge}
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px; margin-top: 2px;">
+                                    ${lead.cnpj ? `<span style="font-size: 11px; font-family: monospace; color: var(--text-muted); font-weight: 500;">${CNPJService.formatCNPJ(lead.cnpj)}</span>` : ''}
+                                    <span style="font-size: 10.5px; color: var(--text-muted); font-weight: 500;" title="Data de cadastro">📅 ${dateStr}</span>
+                                </div>
                             </div>
                         </div>
                     </td>

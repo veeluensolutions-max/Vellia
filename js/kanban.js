@@ -36,6 +36,11 @@ export const Kanban = {
             ownerSelect.addEventListener("change", () => this.renderKanban());
         }
 
+        const sortSelect = document.getElementById("kanban-filter-sort");
+        if (sortSelect) {
+            sortSelect.addEventListener("change", () => this.renderKanban());
+        }
+
         this._filtersInitialized = true;
     },
 
@@ -119,6 +124,31 @@ export const Kanban = {
 
         let totalPipelineValue = 0;
         const proposals = Store.getProposals();
+
+        // Ordenação inteligente do Kanban (padrão: cadastrados mais recentes no topo de cada coluna)
+        const sortSelect = document.getElementById("kanban-filter-sort");
+        const sortMode = sortSelect ? sortSelect.value : "recent-created";
+
+        leads.sort((a, b) => {
+            if (sortMode === "score-desc") {
+                const scoreA = a.aiScore != null ? a.aiScore : 0;
+                const scoreB = b.aiScore != null ? b.aiScore : 0;
+                if (scoreB !== scoreA) return scoreB - scoreA;
+                return Store.getLeadTimestamp(b) - Store.getLeadTimestamp(a);
+            }
+            if (sortMode === "value-desc") {
+                const getVal = l => proposals.filter(p => p.leadId === l.id && p.status !== "Perdido").reduce((s, p) => s + (p.value || 0), 0);
+                const valA = getVal(a);
+                const valB = getVal(b);
+                if (valB !== valA) return valB - valA;
+                return Store.getLeadTimestamp(b) - Store.getLeadTimestamp(a);
+            }
+            if (sortMode === "company-asc") {
+                return (a.company || "").localeCompare(b.company || "");
+            }
+            // Padrão: "recent-created" (cadastrados mais recentes no topo)
+            return Store.getLeadTimestamp(b) - Store.getLeadTimestamp(a);
+        });
 
         // Renderizar cada Lead
         leads.forEach(lead => {
@@ -278,11 +308,17 @@ export const Kanban = {
                 contactLine = `<div class="kanban-card-contact" style="color:var(--text-muted); font-size:11px;">${roleSubtitle}</div>`;
             }
 
+            const createdAtTs = Store.getLeadTimestamp ? Store.getLeadTimestamp(lead) : 0;
+            const isRecent = createdAtTs > 0 && (Date.now() - createdAtTs) < 48 * 60 * 60 * 1000;
+            const newBadge = isRecent ? `<span class="badge" style="font-size: 9px; font-weight: 700; background: rgba(16, 185, 129, 0.12); color: #059669; border: 1px solid rgba(16, 185, 129, 0.25); padding: 1.5px 5px; border-radius: 4px;" title="Cadastrado recentemente">✨ Novo</span>` : "";
+            const regDateStr = createdAtTs > 0 ? new Date(createdAtTs).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : "";
+
             card.innerHTML = `
                 <div class="kanban-card-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
                     <div style="display: flex; gap: 4px; align-items: center;">
                         <span class="badge ${priorityClass}" style="font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px;">${priority}</span>
                         ${tempBadge}
+                        ${newBadge}
                     </div>
                     <div class="user-avatar" style="width: 20px; height: 20px; font-size: 9px; font-weight: 700; margin-left: auto; border: 1px solid var(--border-color); border-radius: 4px;" title="Responsável: ${ownerName}">
                         ${avatar}
@@ -300,7 +336,10 @@ export const Kanban = {
                 ${scoreBarHtml}
 
                 <div class="kanban-card-details" style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted); border-top: 1px solid #F1F3F7; padding-top: 8px; margin-top: 4px;">
-                    <span class="kanban-card-tag" style="background: #F3F4F6; border: 1px solid #E5E7EB; color: #4B5563; font-size: 10.5px; font-weight: 500; padding: 2px 6px; border-radius: 4px;">${lead.segment || 'Geral'}</span>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span class="kanban-card-tag" style="background: #F3F4F6; border: 1px solid #E5E7EB; color: #4B5563; font-size: 10.5px; font-weight: 500; padding: 2px 6px; border-radius: 4px;">${lead.segment || 'Geral'}</span>
+                        ${regDateStr ? `<span style="font-size: 10px; color: var(--text-muted);" title="Data de cadastro">📅 ${regDateStr}</span>` : ''}
+                    </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span class="kanban-card-time" style="color: ${timeColor}; font-size: 11px; font-weight: 500;">
                             🕒 ${daysNoContact === 0 ? 'Hoje' : `${daysNoContact}d`}

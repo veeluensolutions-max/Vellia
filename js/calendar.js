@@ -306,7 +306,7 @@ export const Calendar = {
 
                 <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                     ${(() => {
-                        if (!Auth.getCurrentUser()?.role || !['operacional', 'admin'].includes(Auth.getCurrentUser().role.toLowerCase())) return '';
+                        if (!Auth.getCurrentUser()?.role || !['operacional', 'operacoes', 'operacao', 'admin'].includes(Auth.getCurrentUser().role.toLowerCase())) return '';
                         const dateToBlock = this.selectedDateStr || new Date().toISOString().split("T")[0];
                         const blockedEvent = allEvents.find(e => 
                             e.date === dateToBlock && 
@@ -411,11 +411,11 @@ export const Calendar = {
                     ${ev.notes ? `<div style="font-size:11.5px; color:var(--text-secondary); margin-top:4px; line-height:1.4;">📝 ${ev.notes}</div>` : ''}
                 </div>
                 <div style="display:flex; gap:8px; align-items:center;">
-                    ${ev.status === 'pendente' && Auth.getCurrentUser()?.role && ['operacional', 'admin'].includes(Auth.getCurrentUser().role.toLowerCase()) ? `
+                    ${ev.status === 'pendente' && Auth.getCurrentUser()?.role && ['operacional', 'operacoes', 'operacao', 'admin'].includes(Auth.getCurrentUser().role.toLowerCase()) ? `
                         <button onclick="window.Calendar.approveEvent('${ev.id}')" class="btn btn-sm" style="background:#10b981; color:#fff; font-size:11px; padding:6px 10px; font-weight:700; border:none; border-radius:6px; cursor:pointer;">✅ Aprovar</button>
                         <button onclick="window.Calendar.rejectEvent('${ev.id}')" class="btn btn-sm" style="background:#ef4444; color:#fff; font-size:11px; padding:6px 10px; font-weight:700; border:none; border-radius:6px; cursor:pointer;">❌ Recusar</button>
                     ` : ''}
-                    ${ev.status === 'bloqueado' && Auth.getCurrentUser()?.role && ['operacional', 'admin'].includes(Auth.getCurrentUser().role.toLowerCase()) ? `
+                    ${ev.status === 'bloqueado' && Auth.getCurrentUser()?.role && ['operacional', 'operacoes', 'operacao', 'admin'].includes(Auth.getCurrentUser().role.toLowerCase()) ? `
                         <button onclick="window.Calendar.unlockDate('${ev.id}')" class="btn btn-sm" style="background:#ef4444; color:#fff; font-size:11px; padding:6px 10px; font-weight:700; border:none; border-radius:6px; cursor:pointer;">🔓 Destravar</button>
                     ` : ''}
                     ${ev.phone ? `<a href="https://wa.me/${ev.phone.replace(/\D/g,'')}" target="_blank" class="btn btn-sm" style="background:#25d366; color:#fff; font-size:11.5px; padding:6px 12px; font-weight:700; border:none; text-decoration:none; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">💬 WhatsApp</a>` : ''}
@@ -539,7 +539,7 @@ export const Calendar = {
                 const notes = document.getElementById("cal-event-notes").value;
                 
                 const user = Auth.getCurrentUser();
-                if (user && user.role && user.role.toLowerCase() !== "operacional" && user.role.toLowerCase() !== "admin") {
+                if (user && user.role && !['operacional', 'operacoes', 'operacao', 'admin'].includes(user.role.toLowerCase())) {
                     statusVal = "pendente"; // Vendedor agenda como pendente
                 }
 

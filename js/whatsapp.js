@@ -111,7 +111,41 @@ export const WhatsApp = {
                     this.updateCharCount();
                 }
             });
+        // Chips interativos de templates
+        document.querySelectorAll(".wa-template-chip").forEach(chip => {
+            chip.addEventListener("click", () => {
+                const tpl = chip.getAttribute("data-template");
+                this.setActiveTemplate(tpl);
+            });
         });
+
+        // Botão limpar mensagem
+        const btnClear = document.getElementById("btn-clear-wa-message");
+        if (btnClear) {
+            btnClear.addEventListener("click", () => {
+                const textEl = document.getElementById("wa-message-text");
+                if (textEl) {
+                    textEl.value = "";
+                    textEl.focus();
+                    this.updateCharCount();
+                }
+            });
+        }
+    },
+
+    setActiveTemplate(templateName) {
+        const select = document.getElementById("wa-template-select");
+        if (select) select.value = templateName;
+
+        document.querySelectorAll(".wa-template-chip").forEach(chip => {
+            if (chip.getAttribute("data-template") === templateName) {
+                chip.classList.add("active");
+            } else {
+                chip.classList.remove("active");
+            }
+        });
+
+        this.updateTemplateMessage();
     },
 
     updateCharCount() {
@@ -127,19 +161,22 @@ export const WhatsApp = {
         this.activeProposalId = null;
         this.populateContactInfo();
         
-        const select = document.getElementById("wa-template-select");
-        if (select) {
-            try {
-                const { analyzeContext } = await import('./ai.js');
-                const ctx = analyzeContext();
-                const isCold = ctx.coldLeads.some(l => l.id === leadId);
-                select.value = isCold ? "reengage" : "welcome";
-            } catch (e) {
-                select.value = "welcome";
-            }
-        }
-        this.updateTemplateMessage();
+        let initialTpl = "welcome";
+        try {
+            const { analyzeContext } = await import('./ai.js');
+            const ctx = analyzeContext();
+            const isCold = ctx.coldLeads.some(l => l.id === leadId);
+            if (isCold) initialTpl = "reengage";
+        } catch (e) {}
+
+        this.setActiveTemplate(initialTpl);
         this.loadCopilotSuggestions();
+
+        const timeEl = document.getElementById("wa-simulated-time");
+        if (timeEl) {
+            const now = new Date();
+            timeEl.textContent = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+        }
 
         this.showModal();
     },
@@ -149,10 +186,14 @@ export const WhatsApp = {
         this.activeProposalId = proposalId;
         this.populateContactInfo();
 
-        const select = document.getElementById("wa-template-select");
-        if (select) select.value = "proposal";
-        this.updateTemplateMessage();
+        this.setActiveTemplate("proposal");
         this.loadCopilotSuggestions();
+
+        const timeEl = document.getElementById("wa-simulated-time");
+        if (timeEl) {
+            const now = new Date();
+            timeEl.textContent = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+        }
 
         this.showModal();
     },

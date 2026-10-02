@@ -622,7 +622,11 @@ export const Users = {
         if (btnCreate) {
             btnCreate.addEventListener("click", () => {
                 title.textContent = "Novo Usuário";
-                pwdGroup.querySelector("label").textContent = "Senha de Acesso *";
+                const sub = document.getElementById("user-modal-subtitle");
+                if (sub) sub.textContent = "Gerencie dados de acesso e permissões na plataforma";
+                const pwdLabel = document.getElementById("user-password-label-text");
+                if (pwdLabel) pwdLabel.textContent = "Senha de Acesso *";
+                else if (pwdGroup.querySelector("label")) pwdGroup.querySelector("label").textContent = "Senha de Acesso *";
                 document.getElementById("user-password").setAttribute("required", "required");
                 document.getElementById("user-email").removeAttribute("readonly");
                 openModal();
@@ -778,7 +782,11 @@ export const Users = {
         const pwdGroup = document.getElementById("password-field-group");
 
         title.textContent = "Editar Usuário";
-        pwdGroup.querySelector("label").textContent = "Nova Senha (opcional)";
+        const sub = document.getElementById("user-modal-subtitle");
+        if (sub) sub.textContent = "Atualize os dados e privilégios de acesso do usuário";
+        const pwdLabel = document.getElementById("user-password-label-text");
+        if (pwdLabel) pwdLabel.textContent = "Nova Senha (opcional)";
+        else if (pwdGroup.querySelector("label")) pwdGroup.querySelector("label").textContent = "Nova Senha (opcional)";
 
         document.getElementById("users-modal-overlay").style.display = "block";
         document.getElementById("user-config-modal").classList.add("open");

@@ -319,6 +319,9 @@ async function syncFromSupabase() {
             // O Supabase é a fonte autoritativa: atualiza localStorage diretamente
             localStorage.setItem("comercial_users", JSON.stringify(validUsers));
             localStorage.setItem("comercial_users_initialized", "true");
+            try {
+                window.dispatchEvent(new CustomEvent("vellia:userUpdated", { detail: validUsers }));
+            } catch(evErr) {}
         }
     } catch (e) { console.log("Users sync fallback:", e.message); }
 
@@ -563,9 +566,20 @@ export const Store = {
         upsertSupabase("comercial_calendar_events", events);
     },
 
+    DEFAULT_USERS,
+
     // USUÁRIOS
     getUsers() {
-        return JSON.parse(localStorage.getItem("comercial_users")) || [];
+        try {
+            const raw = localStorage.getItem("comercial_users");
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    return parsed;
+                }
+            }
+        } catch (e) {}
+        return DEFAULT_USERS;
     },
 
     saveUsers(users) {

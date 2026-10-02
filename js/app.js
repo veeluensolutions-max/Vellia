@@ -35,6 +35,7 @@ import { Calculators } from "./calculators.js";
 import { QualificationAI } from "./qualification-ai.js";
 import { VisionOCR } from "./vision-ocr.js";
 import { Clients } from "./clients.js";
+import { Users } from "./users.js";
 
 // Elementos Globais DOM (Getters Dinâmicos para garantia de não-nulidade)
 const elements = {
@@ -483,7 +484,7 @@ function navigateTo(viewName) {
     } else if (viewName === "integrations") {
         Integrations.init();
     } else if (viewName === "users") {
-        import('./users.js').then(m => m.Users.init());
+        Users.init();
     } else if (viewName === "ai-agents") {
         import('./ai-agents.js').then(m => m.AIAgents.init());
     } else if (viewName === "trash") {
@@ -1539,7 +1540,7 @@ function setupEventListeners() {
     const btnChangePwd = document.getElementById("btn-change-password");
     if (btnChangePwd) {
         btnChangePwd.addEventListener("click", () => {
-            import('./users.js').then(m => m.Users.openChangePasswordModal());
+            Users.openChangePasswordModal();
         });
     }
 

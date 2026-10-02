@@ -1,6 +1,7 @@
 import { Store } from "./store.js";
 import { Auth } from "./auth.js";
 import { generatePerformancePDF } from "./report.js";
+import { Toast } from "./toast.js";
 
 // Paleta de cores premium para cada cargo
 const ROLE_STYLES = {
@@ -54,21 +55,28 @@ const AVATAR_GRADIENTS = {
 
 export const Users = {
     initialized: false,
+    _eventsConfigured: false,
     _presenceTimer: null,
 
     async init() {
-        this.setupModalEvents();
+        if (!this._eventsConfigured) {
+            this._eventsConfigured = true;
+            this.setupModalEvents();
+
+            // Ouvir eventos em tempo real
+            window.addEventListener("vellia:userDeleted", () => this.renderUsers());
+            window.addEventListener("vellia:userUpdated", () => this.renderUsers());
+            window.addEventListener("vellia:usersLoaded", () => this.renderUsers());
+            window.addEventListener("storage", () => this.renderUsers());
+        }
+
+        // 1. Renderiza imediatamente com dados disponíveis
         this.renderUsers();
 
-        // Ouvir eventos em tempo real
-        window.addEventListener("vellia:userDeleted", () => this.renderUsers());
-        window.addEventListener("vellia:userUpdated", () => this.renderUsers());
-        window.addEventListener("storage", () => this.renderUsers());
-
-        // 1. Sincronização inicial com o Supabase
+        // 2. Sincronização inicial com o Supabase
         await this.fetchAndSyncUsers();
 
-        // 2. Auto-refresh periódico enquanto estiver na visualização de usuários
+        // 3. Auto-refresh periódico enquanto estiver na visualização de usuários
         if (!this._presenceTimer) {
             this._presenceTimer = setInterval(async () => {
                 const usersView = document.getElementById("view-users");
@@ -88,7 +96,7 @@ export const Users = {
             });
             if (res.ok) {
                 const remoteUsers = await res.json();
-                if (Array.isArray(remoteUsers)) {
+                if (Array.isArray(remoteUsers) && remoteUsers.length > 0) {
                     const deletedEmails = new Set((JSON.parse(localStorage.getItem("comercial_deleted_user_emails")) || []).map(e => e.toLowerCase().trim()));
                     const deletedIds = new Set(JSON.parse(localStorage.getItem("comercial_deleted_user_ids")) || []);
 
@@ -109,7 +117,9 @@ export const Users = {
                         validUsers.push({ ...u, companyAccess });
                     }
 
-                    localStorage.setItem("comercial_users", JSON.stringify(validUsers));
+                    if (validUsers.length > 0) {
+                        localStorage.setItem("comercial_users", JSON.stringify(validUsers));
+                    }
                     this.renderUsers();
                 }
             }
@@ -122,11 +132,20 @@ export const Users = {
         const tableBody = document.getElementById("users-table-body");
         if (!tableBody) return;
 
-        const users = Store.getUsers();
+        let users = Store.getUsers();
         const leads = Store.getLeads();
 
-        // Filtrar contas reais (ocultar contas de sistema/configurações)
-        const validUsers = users.filter(u => u && u.name && u.role !== "system" && !u.email.includes("config@"));
+        if (!Array.isArray(users) || users.length === 0) {
+            users = Store.DEFAULT_USERS || [];
+        }
+
+        // Filtrar contas reais (ocultar contas de sistema/configurações com checagem segura)
+        const validUsers = users.filter(u => {
+            if (!u || !u.name) return false;
+            if (u.role === "system") return false;
+            if (u.email && typeof u.email === "string" && u.email.toLowerCase().includes("config@")) return false;
+            return true;
+        });
 
         // Helper de cálculo de presença e data/hora
         const getPresenceInfo = (user, isSelf) => {
@@ -146,13 +165,21 @@ export const Users = {
                 };
             }
 
-            const lastTime = new Date(user.lastLoginAt).getTime();
+            const d = new Date(user.lastLoginAt);
+            const lastTime = d.getTime();
+            if (isNaN(lastTime)) {
+                return {
+                    status: "offline",
+                    badge: `<span class="presence-badge presence-offline"><span class="presence-dot"></span> Offline</span>`,
+                    timeText: `<span style="font-size: 11px; color: var(--text-muted); font-style: italic;">Nunca acessou</span>`
+                };
+            }
+
             const diffMs = Date.now() - lastTime;
             const diffMins = Math.floor(diffMs / 60000);
             const diffHours = Math.floor(diffMins / 60);
             const diffDays = Math.floor(diffHours / 24);
 
-            const d = new Date(user.lastLoginAt);
             const isToday = new Date().toDateString() === d.toDateString();
             const isYesterday = new Date(Date.now() - 86400000).toDateString() === d.toDateString();
             
@@ -599,6 +626,32 @@ export const Users = {
                 document.getElementById("user-password").setAttribute("required", "required");
                 document.getElementById("user-email").removeAttribute("readonly");
                 openModal();
+            });
+        }
+
+        const btnRefresh = document.getElementById("btn-refresh-users");
+        if (btnRefresh) {
+            btnRefresh.addEventListener("click", async () => {
+                btnRefresh.disabled = true;
+                const icon = btnRefresh.querySelector("svg");
+                if (icon) {
+                    icon.style.transition = "transform 0.8s ease";
+                    icon.style.transform = "rotate(360deg)";
+                }
+                try {
+                    await this.fetchAndSyncUsers();
+                    Toast.show({ type: "success", title: "Sincronização", message: "Lista de usuários sincronizada com sucesso!" });
+                } catch(e) {
+                    Toast.show({ type: "error", title: "Sincronização", message: "Erro ao sincronizar usuários com a nuvem." });
+                } finally {
+                    setTimeout(() => {
+                        btnRefresh.disabled = false;
+                        if (icon) {
+                            icon.style.transition = "";
+                            icon.style.transform = "";
+                        }
+                    }, 800);
+                }
             });
         }
 

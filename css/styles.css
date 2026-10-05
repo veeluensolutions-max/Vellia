@@ -2085,6 +2085,7 @@ a {
     left: 50%;
     transform: translate(-50%, -50%) scale(0.95);
     opacity: 0;
+    pointer-events: none;
     width: 90%;
     max-width: 650px;
     max-height: 90vh;
@@ -2101,6 +2102,7 @@ a {
 
 .modal.open {
     opacity: 1;
+    pointer-events: auto;
     transform: translate(-50%, -50%) scale(1);
     display: flex;
 }

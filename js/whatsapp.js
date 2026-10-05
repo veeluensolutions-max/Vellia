@@ -8,6 +8,7 @@ export const WhatsApp = {
 
     init() {
         this.bindEvents();
+        this.closeModal();
     },
 
     bindEvents() {
@@ -260,14 +261,20 @@ export const WhatsApp = {
     showModal() {
         const modal = document.getElementById("whatsapp-modal");
         const overlay = document.getElementById("whatsapp-modal-overlay");
-        if (modal) modal.classList.add("open");
+        if (modal) {
+            modal.style.display = "flex";
+            modal.classList.add("open");
+        }
         if (overlay) overlay.style.display = "block";
     },
 
     closeModal() {
         const modal = document.getElementById("whatsapp-modal");
         const overlay = document.getElementById("whatsapp-modal-overlay");
-        if (modal) modal.classList.remove("open");
+        if (modal) {
+            modal.style.display = "none";
+            modal.classList.remove("open");
+        }
         if (overlay) overlay.style.display = "none";
         this.activeLeadId = null;
         this.activeProposalId = null;

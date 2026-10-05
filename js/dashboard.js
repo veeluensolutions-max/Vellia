@@ -227,9 +227,6 @@ export const Dashboard = {
             this.renderNextActivities(filteredLeads, filteredProposals);
             this.renderAttentionClients(filteredLeads, filteredProposals);
             this.renderRevenueChart(filteredProposals);
-            this.renderConversionDonut(filteredProposals);
-            this.renderSegmentBreakdown(filteredLeads);
-            this.renderSourcesChart(filteredLeads);
             this.renderVendorRanking(filteredProposals);
             this.renderRecentActivity(filteredLeads, filteredProposals);
             this.renderTasksWeekChart();

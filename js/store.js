@@ -81,7 +81,8 @@ const SUPABASE_KEY = "sb_publishable_Wi3eKJi5uyEzqihEDF6Eaw_-i0zcHe7";
 
 async function supabaseFetch(table) {
     const separator = table.includes('?') ? '&' : '?';
-    const url = `${SUPABASE_URL}/rest/v1/${table}${separator}select=*`;
+    const selectParam = table.includes('select=') ? '' : `${separator}select=*`;
+    const url = `${SUPABASE_URL}/rest/v1/${table}${selectParam}`;
     const response = await fetch(url, {
         headers: {
             "apikey": SUPABASE_KEY,
@@ -417,28 +418,38 @@ async function syncFromSupabase() {
         }
     } catch (e) { console.log("Services sync fallback:", e.message); }
 
-    // Sincronizar Tarefas dos Vendedores
+    // Sincronizar Tarefas dos Vendedores (Consulta única em lote para alta performance)
     try {
         const users = JSON.parse(localStorage.getItem("comercial_users")) || [];
         const sellers = users.filter(u => u.role === "seller" || u.role === "manager");
+        const allRemoteTasks = await supabaseFetch("comercial_tasks?select=*&limit=300") || [];
+        
+        const tasksByOwner = {};
+        if (Array.isArray(allRemoteTasks)) {
+            allRemoteTasks.forEach(t => {
+                if (!t || !t.owner) return;
+                const owner = t.owner.toLowerCase().trim();
+                if (!tasksByOwner[owner]) tasksByOwner[owner] = [];
+                tasksByOwner[owner].push({
+                    id: t.id,
+                    text: t.text,
+                    done: t.done === true || t.done === "true" || t.done === 1 || t.done === "1",
+                    date: t.date,
+                    priority: t.priority || "normal",
+                    assignedBy: t.assignedBy
+                });
+            });
+        }
+
         for (const s of sellers) {
+            if (!s || !s.email) continue;
             const key = `seller_tasks_${s.email}`;
-            const remoteTasks = await supabaseFetch(`comercial_tasks?owner=eq.${s.email}`) || [];
-            // Mapeia de volta para o formato de array simples esperado pelo frontend
-            const formattedTasks = remoteTasks.map(t => ({
-                id: t.id,
-                text: t.text,
-                done: t.done === true || t.done === "true" || t.done === 1 || t.done === "1",
-                date: t.date,
-                priority: t.priority || "normal",
-                assignedBy: t.assignedBy
-            }));
+            const formattedTasks = tasksByOwner[s.email.toLowerCase().trim()] || [];
             localStorage.setItem(key, JSON.stringify(formattedTasks));
         }
     } catch (e) { console.log("Tasks sync fallback:", e.message); }
 
-    // Disparar evento global para atualizar a UI do app após puxar dados do Supabase
-    window.dispatchEvent(new CustomEvent("vellia:waSent"));
+    // Disparar evento de storage para atualizar componentes sem recarregar tudo
     window.dispatchEvent(new Event("storage"));
 }
 
@@ -547,16 +558,6 @@ syncFromSupabase();
 startSyncPolling();
 
 export const Store = {
-    // TAREFAS
-    getTasks(email) {
-        let tasks = JSON.parse(localStorage.getItem("comercial_tasks")) || [];
-        return tasks.filter(t => t.owner === email);
-    },
-    saveTasks(tasks) {
-        localStorage.setItem("comercial_tasks", JSON.stringify(tasks));
-        upsertSupabase("comercial_tasks", tasks);
-    },
-
     // CALENDÁRIO
     getCalendarEvents() {
         return JSON.parse(localStorage.getItem("vellia_calendar_events")) || [];
@@ -1228,11 +1229,34 @@ export const Store = {
     // TAREFAS DOS VENDEDORES (TASKS)
     // ==========================================
     getTasks(email) {
+        if (!email) {
+            let tasks = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && k.startsWith("seller_tasks_") && !k.startsWith("seller_tasks_old_")) {
+                    try {
+                        const parsed = JSON.parse(localStorage.getItem(k));
+                        if (Array.isArray(parsed)) tasks.push(...parsed);
+                    } catch(e) {}
+                }
+            }
+            return tasks;
+        }
         const key = `seller_tasks_${email}`;
         return JSON.parse(localStorage.getItem(key) || "[]");
     },
 
     async saveTasks(email, tasks) {
+        if (Array.isArray(email) && tasks === undefined) {
+            tasks = email;
+            try {
+                const session = JSON.parse(localStorage.getItem("comercial_session"));
+                email = session?.email || "gestao@vellia.com";
+            } catch(e) {
+                email = "gestao@vellia.com";
+            }
+        }
+        if (!email) return;
         const key = `seller_tasks_${email}`;
         localStorage.setItem(key, JSON.stringify(tasks));
         

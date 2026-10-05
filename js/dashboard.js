@@ -52,18 +52,16 @@ export const Dashboard = {
         this.setupAdminTaskManager();
 
         this.renderLiveTasksMonitor();
-        if (!this._liveTimerInterval) {
-            this._liveTimerInterval = setInterval(() => {
-                this.updateLiveTimers();
-            }, 1000);
-        }
+        if (this._liveTimerInterval) clearInterval(this._liveTimerInterval);
+        this._liveTimerInterval = setInterval(() => {
+            this.updateLiveTimers();
+        }, 1000);
 
-        // Sincronização em tempo real contínua das atividades extras (Cloud Supabase)
-        if (!this._liveSyncInterval) {
-            this._liveSyncInterval = setInterval(() => {
-                this.syncLiveActivitiesFromCloud();
-            }, 3500);
-        }
+        // Sincronização periódica em background (WebSocket Realtime já sincroniza instantaneamente)
+        if (this._liveSyncInterval) clearInterval(this._liveSyncInterval);
+        this._liveSyncInterval = setInterval(() => {
+            this.syncLiveActivitiesFromCloud();
+        }, 15000);
         this.syncLiveActivitiesFromCloud();
 
         // BroadcastChannel para sincronização instantânea entre abas no mesmo computador (< 10ms)
@@ -78,47 +76,51 @@ export const Dashboard = {
             } catch (err) {}
         }
 
-        window.addEventListener("vellia:liveTasksChanged", () => {
-            this.renderLiveTasksMonitor();
-        });
+        // Vincular ouvintes globais apenas UMA vez para evitar vazamentos de memória e repetições
+        if (!this._dashboardListenersBound) {
+            this._dashboardListenersBound = true;
 
-        window.addEventListener("storage", (e) => {
-            if (e.key === "vellia_live_activities" || (e.key && e.key.startsWith("seller_tasks_"))) {
+            window.addEventListener("vellia:liveTasksChanged", () => {
                 this.renderLiveTasksMonitor();
-            }
-        });
+            });
 
-        // Atualização automática em tempo real do ranking e dos KPIs
-        const refreshDashboardData = () => {
-            const viewDashboard = document.getElementById("view-dashboard");
-            if (viewDashboard && viewDashboard.style.display !== "none") {
-                let proposals = Store.getProposals();
-                let leads = Store.getLeads();
-                const session = JSON.parse(localStorage.getItem("comercial_session"));
-                if (session && session.role === "seller") {
-                    leads = leads.filter(l => l.owner === session.email);
-                    proposals = proposals.filter(p => p.authorEmail === session.email);
+            window.addEventListener("storage", (e) => {
+                if (e.key === "vellia_live_activities" || (e.key && e.key.startsWith("seller_tasks_"))) {
+                    this.renderLiveTasksMonitor();
                 }
-                const filteredLeads = this.filterByTimeframe(leads, "createdAt");
-                const filteredProposals = this.filterByTimeframe(proposals, "createdAt");
-                this.renderVendorRanking(filteredProposals);
-                this.renderKPIs(filteredLeads, filteredProposals);
-                this.renderRecentActivity(filteredLeads, filteredProposals);
-            }
-        };
+            });
 
-        window.addEventListener("vellia:scoreUpdated", refreshDashboardData);
-        window.addEventListener("vellia:leadAdded", refreshDashboardData);
-        window.addEventListener("vellia:leadUpdated", refreshDashboardData);
-        window.addEventListener("vellia:proposalUpdated", refreshDashboardData);
-        window.addEventListener("vellia:waSent", refreshDashboardData);
+            // Atualização automática do ranking e KPIs sob eventos relevantes
+            const refreshDashboardData = () => {
+                const viewDashboard = document.getElementById("view-dashboard");
+                if (viewDashboard && viewDashboard.style.display !== "none") {
+                    let proposals = Store.getProposals();
+                    let leads = Store.getLeads();
+                    const session = JSON.parse(localStorage.getItem("comercial_session"));
+                    if (session && session.role === "seller") {
+                        leads = leads.filter(l => l.owner === session.email);
+                        proposals = proposals.filter(p => p.authorEmail === session.email);
+                    }
+                    const filteredLeads = this.filterByTimeframe(leads, "createdAt");
+                    const filteredProposals = this.filterByTimeframe(proposals, "createdAt");
+                    this.renderVendorRanking(filteredProposals);
+                    this.renderKPIs(filteredLeads, filteredProposals);
+                    this.renderRecentActivity(filteredLeads, filteredProposals);
+                }
+            };
 
-        // Atualização em tempo real (Real-time) do painel de Atividades Recentes
-        setInterval(() => {
+            window.addEventListener("vellia:scoreUpdated", refreshDashboardData);
+            window.addEventListener("vellia:leadAdded", refreshDashboardData);
+            window.addEventListener("vellia:leadUpdated", refreshDashboardData);
+            window.addEventListener("vellia:proposalUpdated", refreshDashboardData);
+            window.addEventListener("vellia:waSent", refreshDashboardData);
+        }
+
+        // Atualização suave do painel de Atividades Recentes com limpeza de intervalo anterior
+        if (this._recentActivityInterval) clearInterval(this._recentActivityInterval);
+        this._recentActivityInterval = setInterval(() => {
             if (document.hidden) return;
             const viewDashboard = document.getElementById("view-dashboard");
-            
-            // Só consome processamento se o usuário estiver de fato com a aba Dashboard aberta
             if (viewDashboard && viewDashboard.style.display !== "none") {
                 let currentLeads = Store.getLeads();
                 let currentProposals = Store.getProposals();
@@ -133,7 +135,7 @@ export const Dashboard = {
                 const filteredProposals = this.filterByTimeframe(currentProposals, "createdAt");
                 this.renderRecentActivity(filteredLeads, filteredProposals);
             }
-        }, 5000); // A cada 5 segundos
+        }, 12000);
     },
 
     bindEvents() {
@@ -1741,9 +1743,10 @@ export const Dashboard = {
                     const taskId = btn.getAttribute("data-id");
                     let list = Store.getTasks(mail);
                     list = list.filter(t => (t.id !== taskId && t.text !== taskId));
-                    Store.saveTasks(mail, list).then(() => {
+                    Promise.resolve(Store.saveTasks(mail, list)).then(() => {
                         renderAssignedTasks();
                         window.dispatchEvent(new Event("storage"));
+                        if (typeof Toast !== "undefined") Toast.show("Tarefa removida com sucesso.", "info");
                     });
                 };
             });
@@ -1757,11 +1760,13 @@ export const Dashboard = {
             const priority = prioritySelect.value;
 
             if (!targetSeller) {
-                alert("Selecione o vendedor para atribuir a tarefa.");
+                if (typeof Toast !== "undefined") Toast.show("Selecione o vendedor para atribuir a tarefa.", "warning");
+                else alert("Selecione o vendedor para atribuir a tarefa.");
                 return;
             }
             if (!text) {
-                alert("Escreva uma instrução/tarefa.");
+                if (typeof Toast !== "undefined") Toast.show("Escreva uma instrução/tarefa.", "warning");
+                else alert("Escreva uma instrução/tarefa.");
                 return;
             }
 
@@ -1777,15 +1782,14 @@ export const Dashboard = {
                 assignedBy: Auth.getCurrentUser()?.email || "gestao@vellia.com"
             });
 
-            Store.saveTasks(targetSeller, tasks).then(() => {
+            Promise.resolve(Store.saveTasks(targetSeller, tasks)).then(() => {
                 inputTask.value = "";
-                
-                // Disparar evento para atualizar a listagem local imediatamente (útil se estiver no mesmo navegador)
                 window.dispatchEvent(new Event("storage"));
-                
-                // Forçar visualização a selecionar o vendedor a quem foi atribuído
                 viewSeller.value = targetSeller;
                 renderAssignedTasks();
+                if (typeof Toast !== "undefined") Toast.show("Tarefa atribuída ao vendedor com sucesso!", "success");
+            }).catch(err => {
+                console.error("Erro ao salvar tarefa:", err);
             });
         };
 
@@ -1941,6 +1945,210 @@ export const Dashboard = {
         }
         this.saveLiveActivities(localList);
         this.renderLiveTasksMonitor();
+    },
+
+    openAssignActivityModal(sellerEmail, sellerName) {
+        const oldModal = document.getElementById("vellia-assign-activity-modal-overlay");
+        if (oldModal) oldModal.remove();
+
+        const initials = ((sellerName || sellerEmail || "VD").substring(0, 2)).toUpperCase();
+
+        const overlay = document.createElement("div");
+        overlay.id = "vellia-assign-activity-modal-overlay";
+        overlay.style.cssText = `
+            position: fixed; inset: 0; z-index: 10000;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(6px);
+            display: flex; align-items: center; justify-content: center;
+            padding: 16px; animation: fadeIn 0.2s ease;
+        `;
+
+        const presets = [
+            { text: "📞 Prospecção Ativa por Telefone", val: "Prospecção Ativa por Telefone", dur: 30 },
+            { text: "💬 Follow-up WhatsApp com Leads", val: "Follow-up WhatsApp com Leads", dur: 30 },
+            { text: "📝 Elaboração e Envio de Propostas", val: "Elaboração e Envio de Propostas", dur: 45 },
+            { text: "👥 Reunião / Alinhamento Comercial", val: "Reunião / Alinhamento Comercial", dur: 30 },
+            { text: "🚗 Visita Externa a Cliente", val: "Visita Externa a Cliente", dur: 60 },
+            { text: "📊 Atualização e Higienização do CRM", val: "Atualização e Higienização do CRM", dur: 30 }
+        ];
+
+        overlay.innerHTML = `
+            <div style="background: var(--bg-card, #ffffff); border: 1px solid var(--border-color, #e2e8f0); border-radius: 16px; width: 100%; max-width: 520px; box-shadow: 0 20px 50px rgba(0,0,0,0.25); overflow: hidden;">
+                <!-- Cabeçalho -->
+                <div style="padding: 18px 22px; border-bottom: 1px solid var(--border-color, #e2e8f0); display: flex; align-items: center; justify-content: space-between; background: var(--bg-surface, #f8fafc);">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; box-shadow: 0 4px 12px rgba(99,102,241,0.3);">
+                            ⚡
+                        </div>
+                        <div>
+                            <h4 style="margin: 0; font-size: 15.5px; font-weight: 800; color: var(--text-primary, #0f172a);">Atribuir Atividade em Tempo Real</h4>
+                            <span style="font-size: 11.5px; color: var(--text-muted, #64748b);">A atividade entrará em execução no painel do vendedor imediatamente.</span>
+                        </div>
+                    </div>
+                    <button id="btn-close-assign-modal" style="background: none; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer; padding: 4px 8px; border-radius: 6px;">✕</button>
+                </div>
+
+                <!-- Conteúdo -->
+                <div style="padding: 22px;">
+                    <!-- Card do Vendedor Selecionado -->
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-body, #f1f5f9); border: 1px solid var(--border-color, #e2e8f0); border-radius: 10px; margin-bottom: 18px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 34px; height: 34px; border-radius: 50%; background: #6366f1; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px;">
+                                ${initials}
+                            </div>
+                            <div>
+                                <div style="font-weight: 700; font-size: 13.5px; color: var(--text-primary);">${sellerName || sellerEmail}</div>
+                                <div style="font-size: 11px; color: var(--text-muted);">${sellerEmail}</div>
+                            </div>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 700; color: #059669; background: rgba(16,185,129,0.12); padding: 3px 8px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px;">
+                            <span class="live-pulse-indicator"></span> Disponível
+                        </span>
+                    </div>
+
+                    <!-- Presets Rápidos -->
+                    <div style="margin-bottom: 16px;">
+                        <label style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 8px; letter-spacing: 0.4px;">
+                            Atividades Sugeridas (Clique para selecionar)
+                        </label>
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                            ${presets.map(p => `
+                                <button type="button" class="btn-assign-preset-chip" data-val="${p.val}" data-dur="${p.dur}" style="background: var(--bg-surface); border: 1px solid var(--border-color); color: var(--text-primary); padding: 6px 10px; border-radius: 8px; font-size: 11.5px; font-weight: 600; cursor: pointer; transition: all 0.15s ease;">
+                                    ${p.text}
+                                </button>
+                            `).join("")}
+                        </div>
+                    </div>
+
+                    <!-- Campo Descrição -->
+                    <div style="margin-bottom: 18px;">
+                        <label style="font-size: 12px; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 6px;">
+                            O que o vendedor deve fazer agora? *
+                        </label>
+                        <textarea id="assign-activity-text" class="form-control" placeholder="Ex: Prospecção ativa de 20 clientes da lista de químicos..." style="width: 100%; min-height: 72px; padding: 10px 12px; font-size: 13px; border-radius: 8px; border: 1.5px solid var(--border-color); background: var(--bg-body); box-sizing: border-box; resize: vertical;" required></textarea>
+                    </div>
+
+                    <!-- Seletor de Duração -->
+                    <div style="margin-bottom: 22px;">
+                        <label style="font-size: 12px; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 6px;">
+                            Duração prevista:
+                        </label>
+                        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                            <button type="button" class="btn-assign-dur" data-min="15" style="padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-surface); font-size: 12px; font-weight: 600; cursor: pointer;">15 min</button>
+                            <button type="button" class="btn-assign-dur active" data-min="30" style="padding: 6px 12px; border-radius: 8px; border: 1.5px solid #6366f1; background: rgba(99,102,241,0.1); color: #6366f1; font-size: 12px; font-weight: 700; cursor: pointer;">30 min</button>
+                            <button type="button" class="btn-assign-dur" data-min="45" style="padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-surface); font-size: 12px; font-weight: 600; cursor: pointer;">45 min</button>
+                            <button type="button" class="btn-assign-dur" data-min="60" style="padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-surface); font-size: 12px; font-weight: 600; cursor: pointer;">1 hora</button>
+                            <button type="button" class="btn-assign-dur" data-min="90" style="padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-surface); font-size: 12px; font-weight: 600; cursor: pointer;">1h 30m</button>
+                            <button type="button" class="btn-assign-dur" data-min="120" style="padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-surface); font-size: 12px; font-weight: 600; cursor: pointer;">2 horas</button>
+                            <div style="display: flex; align-items: center; gap: 4px; margin-left: 4px;">
+                                <input type="number" id="assign-activity-custom-min" value="30" min="5" max="480" style="width: 50px; height: 32px; text-align: center; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-surface); font-size: 12px; font-weight: 700; outline: none;">
+                                <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;">min</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botões de Ação -->
+                    <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+                        <button type="button" id="btn-cancel-assign-modal" class="btn btn-outline" style="padding: 9px 16px; font-size: 12.5px; border-radius: 8px;">Cancelar</button>
+                        <button type="button" id="btn-submit-assign-activity" class="btn btn-primary" style="padding: 9px 20px; font-size: 13px; font-weight: 700; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(99,102,241,0.35);">
+                            <span>Iniciar Atividade Agora</span>
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        const textarea = overlay.querySelector("#assign-activity-text");
+        const customMin = overlay.querySelector("#assign-activity-custom-min");
+
+        // Eventos dos chips de presets
+        overlay.querySelectorAll(".btn-assign-preset-chip").forEach(chip => {
+            chip.addEventListener("click", () => {
+                const val = chip.getAttribute("data-val");
+                const dur = chip.getAttribute("data-dur");
+                textarea.value = val;
+                customMin.value = dur;
+                
+                overlay.querySelectorAll(".btn-assign-dur").forEach(b => {
+                    if (b.getAttribute("data-min") === dur) {
+                        b.classList.add("active");
+                        b.style.borderColor = "#6366f1";
+                        b.style.background = "rgba(99,102,241,0.1)";
+                        b.style.color = "#6366f1";
+                    } else {
+                        b.classList.remove("active");
+                        b.style.borderColor = "var(--border-color)";
+                        b.style.background = "var(--bg-surface)";
+                        b.style.color = "var(--text-primary)";
+                    }
+                });
+
+                textarea.focus();
+            });
+        });
+
+        // Eventos dos botões de duração
+        overlay.querySelectorAll(".btn-assign-dur").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const m = btn.getAttribute("data-min");
+                customMin.value = m;
+                overlay.querySelectorAll(".btn-assign-dur").forEach(b => {
+                    b.classList.remove("active");
+                    b.style.borderColor = "var(--border-color)";
+                    b.style.background = "var(--bg-surface)";
+                    b.style.color = "var(--text-primary)";
+                });
+                btn.classList.add("active");
+                btn.style.borderColor = "#6366f1";
+                btn.style.background = "rgba(99,102,241,0.1)";
+                btn.style.color = "#6366f1";
+            });
+        });
+
+        customMin.addEventListener("input", () => {
+            const val = customMin.value;
+            overlay.querySelectorAll(".btn-assign-dur").forEach(b => {
+                if (b.getAttribute("data-min") === val) {
+                    b.classList.add("active");
+                    b.style.borderColor = "#6366f1";
+                    b.style.background = "rgba(99,102,241,0.1)";
+                    b.style.color = "#6366f1";
+                } else {
+                    b.classList.remove("active");
+                    b.style.borderColor = "var(--border-color)";
+                    b.style.background = "var(--bg-surface)";
+                    b.style.color = "var(--text-primary)";
+                }
+            });
+        });
+
+        const closeModal = () => {
+            overlay.remove();
+        };
+
+        overlay.querySelector("#btn-close-assign-modal").onclick = closeModal;
+        overlay.querySelector("#btn-cancel-assign-modal").onclick = closeModal;
+        overlay.addEventListener("click", (e) => {
+            if (e.target === overlay) closeModal();
+        });
+
+        // Submeter atribuição
+        overlay.querySelector("#btn-submit-assign-activity").onclick = () => {
+            const text = textarea.value.trim();
+            if (!text) {
+                Toast.show("Por favor, informe a atividade a ser executada.", "warning");
+                textarea.focus();
+                return;
+            }
+            const duration = parseInt(customMin.value) || 30;
+            closeModal();
+            this.startLiveActivity(sellerEmail, sellerName, text, duration);
+        };
+
+        setTimeout(() => textarea.focus(), 100);
     },
 
     startLiveActivity(sellerEmail, sellerName, activityText, durationMinutes) {
@@ -2468,11 +2676,7 @@ export const Dashboard = {
                 btn.onclick = () => {
                     const email = btn.getAttribute("data-email");
                     const name = btn.getAttribute("data-name");
-                    const actName = prompt(`Informe a atividade que ${name} irá executar agora:`);
-                    if (actName && actName.trim()) {
-                        const dur = prompt("Duração prevista em minutos (ex: 30, 45, 60):", "30");
-                        this.startLiveActivity(email, name, actName.trim(), parseInt(dur) || 30);
-                    }
+                    this.openAssignActivityModal(email, name);
                 };
             });
 

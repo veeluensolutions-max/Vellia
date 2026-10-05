@@ -294,12 +294,32 @@ async function deleteSupabase(table, filter = "") {
     }
 }
 
-// Sincronização em background no início da aplicação
+// Sincronização em background no início da aplicação (Execução paralela ultrarrápida)
 async function syncFromSupabase() {
     try {
-        const remoteUsers = await supabaseFetch("comercial_users");
-        if (Array.isArray(remoteUsers) && remoteUsers.length > 0) {
-            // Obter blacklist de usuários deletados para garantir que não ressuscitem
+        const [
+            usersRes,
+            goalsRes,
+            eventsRes,
+            leadsRes,
+            proposalsRes,
+            logsRes,
+            servicesRes,
+            tasksRes
+        ] = await Promise.allSettled([
+            supabaseFetch("comercial_users"),
+            supabaseFetch("comercial_goals"),
+            supabaseFetch("comercial_calendar_events"),
+            supabaseFetch("comercial_leads"),
+            supabaseFetch("comercial_proposals"),
+            supabaseFetch("comercial_logs?order=timestamp.desc&limit=100"),
+            supabaseFetch("comercial_services"),
+            supabaseFetch("comercial_tasks?select=*&limit=300")
+        ]);
+
+        // 1. Usuários
+        if (usersRes.status === "fulfilled" && Array.isArray(usersRes.value) && usersRes.value.length > 0) {
+            const remoteUsers = usersRes.value;
             const deletedEmails = new Set((JSON.parse(localStorage.getItem("comercial_deleted_user_emails")) || []).map(e => e.toLowerCase().trim()));
             const deletedIds = new Set(JSON.parse(localStorage.getItem("comercial_deleted_user_ids")) || []);
 
@@ -307,7 +327,6 @@ async function syncFromSupabase() {
             for (const u of remoteUsers) {
                 if (!u || !u.email) continue;
                 const emailNorm = u.email.toLowerCase().trim();
-                // Se estiver marcado como deletado, garantir deleção no Supabase e não adicionar localmente
                 if (deletedEmails.has(emailNorm) || deletedIds.has(u.id)) {
                     deleteSupabase("comercial_users", `?id=eq.${encodeURIComponent(u.id)}`);
                     continue;
@@ -317,33 +336,31 @@ async function syncFromSupabase() {
                 validUsers.push({ ...u, companyAccess });
             }
 
-            // O Supabase é a fonte autoritativa: atualiza localStorage diretamente
             localStorage.setItem("comercial_users", JSON.stringify(validUsers));
             localStorage.setItem("comercial_users_initialized", "true");
             try {
                 window.dispatchEvent(new CustomEvent("vellia:userUpdated", { detail: validUsers }));
             } catch(evErr) {}
         }
-    } catch (e) { console.log("Users sync fallback:", e.message); }
 
-    try {
-        const remoteGoals = await supabaseFetch("comercial_goals") || [];
-        localStorage.setItem("comercial_goals", JSON.stringify(remoteGoals));
-    } catch (e) { console.log("Goals sync fallback:", e.message); }
+        // 2. Metas
+        if (goalsRes.status === "fulfilled" && Array.isArray(goalsRes.value)) {
+            localStorage.setItem("comercial_goals", JSON.stringify(goalsRes.value));
+        }
 
-    try {
-        const remoteEvents = await supabaseFetch("comercial_calendar_events") || [];
-        // Merge calendar events using ID
-        const localEvents = JSON.parse(localStorage.getItem("vellia_calendar_events")) || [];
-        const eventMap = new Map();
-        localEvents.forEach(e => eventMap.set(e.id, e));
-        remoteEvents.forEach(e => eventMap.set(e.id, e));
-        localStorage.setItem("vellia_calendar_events", JSON.stringify(Array.from(eventMap.values())));
-    } catch (e) { console.log("Calendar events sync fallback:", e.message); }
+        // 3. Calendário
+        if (eventsRes.status === "fulfilled" && Array.isArray(eventsRes.value)) {
+            const remoteEvents = eventsRes.value;
+            const localEvents = JSON.parse(localStorage.getItem("vellia_calendar_events")) || [];
+            const eventMap = new Map();
+            localEvents.forEach(e => eventMap.set(e.id, e));
+            remoteEvents.forEach(e => eventMap.set(e.id, e));
+            localStorage.setItem("vellia_calendar_events", JSON.stringify(Array.from(eventMap.values())));
+        }
 
-    try {
-        const remoteLeads = await supabaseFetch("comercial_leads");
-        if (Array.isArray(remoteLeads)) {
+        // 4. Leads
+        if (leadsRes.status === "fulfilled" && Array.isArray(leadsRes.value)) {
+            const remoteLeads = leadsRes.value;
             const decodedLeads = remoteLeads.map(l => decodeLeadFromSupabase(l));
             const localLeads = JSON.parse(localStorage.getItem("comercial_leads")) || [];
             const leadMap = new Map();
@@ -357,17 +374,16 @@ async function syncFromSupabase() {
             const mergedLeads = Array.from(leadMap.values()).sort((a, b) => getLeadTimestamp(b) - getLeadTimestamp(a));
             localStorage.setItem("comercial_leads", JSON.stringify(mergedLeads));
 
-            // Sincronizar para o Supabase os leads locais que não estão no remoto
+            // Sincronizar em lote único os leads locais que não estão no remoto
             const missingLeads = localLeads.filter(ll => !remoteLeads.some(rl => rl.id === ll.id));
-            for (const ml of missingLeads) {
-                await upsertSupabase("comercial_leads", encodeLeadForSupabase(ml));
+            if (missingLeads.length > 0) {
+                upsertSupabase("comercial_leads", missingLeads.map(ml => encodeLeadForSupabase(ml)));
             }
         }
-    } catch (e) { console.log("Leads sync fallback:", e.message); }
 
-    try {
-        const remoteProposals = await supabaseFetch("comercial_proposals");
-        if (Array.isArray(remoteProposals)) {
+        // 5. Propostas
+        if (proposalsRes.status === "fulfilled" && Array.isArray(proposalsRes.value)) {
+            const remoteProposals = proposalsRes.value;
             const decodedProposals = remoteProposals.map(p => decodeProposalFromSupabase(p));
             const localProposals = JSON.parse(localStorage.getItem("comercial_proposals")) || [];
             const propMap = new Map();
@@ -381,51 +397,44 @@ async function syncFromSupabase() {
             const mergedProps = Array.from(propMap.values());
             localStorage.setItem("comercial_proposals", JSON.stringify(mergedProps));
 
-            // Sincronizar para o Supabase as propostas locais que não estão no remoto
+            // Sincronizar em lote único as propostas locais que não estão no remoto
             const missingProps = localProposals.filter(lp => !remoteProposals.some(rp => rp.id === lp.id));
-            for (const mp of missingProps) {
-                await upsertSupabase("comercial_proposals", encodeProposalForSupabase(mp));
+            if (missingProps.length > 0) {
+                upsertSupabase("comercial_proposals", missingProps.map(mp => encodeProposalForSupabase(mp)));
             }
         }
-    } catch (e) { console.log("Proposals sync fallback:", e.message); }
 
-    try {
-        const logs = await supabaseFetch("comercial_logs");
-        if (Array.isArray(logs)) {
-            const sortedLogs = logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        // 6. Logs de Auditoria (Últimos 100)
+        if (logsRes.status === "fulfilled" && Array.isArray(logsRes.value)) {
+            const sortedLogs = logsRes.value.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
             localStorage.setItem("comercial_logs", JSON.stringify(sortedLogs));
         }
-    } catch (e) { console.log("Logs sync fallback:", e.message); }
 
-    try {
-        const remoteServices = await supabaseFetch("comercial_services") || [];
-        const localServices = JSON.parse(localStorage.getItem("comercial_services")) || INITIAL_SERVICES;
-        
-        let mergedServices = [...remoteServices];
-        let needsUpsert = false;
-        
-        localServices.forEach(localS => {
-            const exists = mergedServices.some(s => s.id === localS.id);
-            if (!exists) {
-                mergedServices.push(localS);
-                needsUpsert = true;
+        // 7. Serviços
+        if (servicesRes.status === "fulfilled" && Array.isArray(servicesRes.value)) {
+            const remoteServices = servicesRes.value;
+            const localServices = JSON.parse(localStorage.getItem("comercial_services")) || INITIAL_SERVICES;
+            let mergedServices = [...remoteServices];
+            let needsUpsert = false;
+            localServices.forEach(localS => {
+                const exists = mergedServices.some(s => s.id === localS.id);
+                if (!exists) {
+                    mergedServices.push(localS);
+                    needsUpsert = true;
+                }
+            });
+            localStorage.setItem("comercial_services", JSON.stringify(mergedServices));
+            if (needsUpsert) {
+                upsertSupabase("comercial_services", mergedServices);
             }
-        });
-        
-        localStorage.setItem("comercial_services", JSON.stringify(mergedServices));
-        if (needsUpsert) {
-            upsertSupabase("comercial_services", mergedServices);
         }
-    } catch (e) { console.log("Services sync fallback:", e.message); }
 
-    // Sincronizar Tarefas dos Vendedores (Consulta única em lote para alta performance)
-    try {
-        const users = JSON.parse(localStorage.getItem("comercial_users")) || [];
-        const sellers = users.filter(u => u.role === "seller" || u.role === "manager");
-        const allRemoteTasks = await supabaseFetch("comercial_tasks?select=*&limit=300") || [];
-        
-        const tasksByOwner = {};
-        if (Array.isArray(allRemoteTasks)) {
+        // 8. Tarefas dos Vendedores
+        if (tasksRes.status === "fulfilled" && Array.isArray(tasksRes.value)) {
+            const allRemoteTasks = tasksRes.value;
+            const users = JSON.parse(localStorage.getItem("comercial_users")) || [];
+            const sellers = users.filter(u => u.role === "seller" || u.role === "manager");
+            const tasksByOwner = {};
             allRemoteTasks.forEach(t => {
                 if (!t || !t.owner) return;
                 const owner = t.owner.toLowerCase().trim();
@@ -439,18 +448,20 @@ async function syncFromSupabase() {
                     assignedBy: t.assignedBy
                 });
             });
+
+            for (const s of sellers) {
+                if (!s || !s.email) continue;
+                const key = `seller_tasks_${s.email}`;
+                const formattedTasks = tasksByOwner[s.email.toLowerCase().trim()] || [];
+                localStorage.setItem(key, JSON.stringify(formattedTasks));
+            }
         }
 
-        for (const s of sellers) {
-            if (!s || !s.email) continue;
-            const key = `seller_tasks_${s.email}`;
-            const formattedTasks = tasksByOwner[s.email.toLowerCase().trim()] || [];
-            localStorage.setItem(key, JSON.stringify(formattedTasks));
-        }
-    } catch (e) { console.log("Tasks sync fallback:", e.message); }
-
-    // Disparar evento de storage para atualizar componentes sem recarregar tudo
-    window.dispatchEvent(new Event("storage"));
+        // Disparar evento de storage para atualizar componentes
+        window.dispatchEvent(new Event("storage"));
+    } catch (e) {
+        console.warn("syncFromSupabase error:", e);
+    }
 }
 
 // Inicialização segura do localStorage

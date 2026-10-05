@@ -185,15 +185,11 @@ function initApp() {
     window.CRM = CRM;
     window.Proposals = Proposals;
     WhatsApp.init();
-    Pricing.init();
     Copilot.init();
-    Contracts.init();
-    PostSales.init();
     Intervention.init();
     ChurnAutopilot.init();
     Leaderboard.init();
     ThemeManager.init();
-    Calculators.init();
     
     // Inicializar Workspace
     const savedCompany = localStorage.getItem("activeCompany") || "Veeluen Solutions";

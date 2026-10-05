@@ -1676,24 +1676,77 @@ export const Dashboard = {
 
         if (!selectSeller || !viewSeller) return;
 
-        // Popular selects com vendedores ativos
-        const sellers = Store.getUsers().filter(u => {
-            if (!u || u.status !== "active") return false;
-            if (u.role === "system" || u.id === "usr_meta_config" || (u.email && u.email.includes("config@"))) return false;
-            if (u.name && (u.name.trim().startsWith("{") || u.name.trim().startsWith("["))) return false;
-            const role = (u.role || "").toLowerCase();
-            return role === "seller" || role === "vendedor";
-        });
-        
-        // Evitar repopular infinitamente
-        if (selectSeller.options.length <= 1) {
-            sellers.forEach(s => {
-                const opt1 = new Option(s.name, s.email);
-                const opt2 = new Option(s.name, s.email);
-                selectSeller.add(opt1);
-                viewSeller.add(opt2);
+        // Popular selects com todos os membros ativos da equipe
+        const populateSellerSelects = () => {
+            const currentSelected = selectSeller.value;
+            const currentView = viewSeller.value;
+
+            const teamMembers = Store.getUsers().filter(u => {
+                if (!u || u.status !== "active") return false;
+                if (u.role === "system" || u.id === "usr_meta_config" || (u.email && u.email.includes("config@"))) return false;
+                if (u.name && (u.name.trim().startsWith("{") || u.name.trim().startsWith("["))) return false;
+                return true;
             });
+
+            // Ordenar por nome
+            teamMembers.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
+            selectSeller.innerHTML = `<option value="">Selecione o vendedor / responsável...</option>`;
+            viewSeller.innerHTML = `<option value="">Ver tarefas de...</option>`;
+
+            teamMembers.forEach(s => {
+                let roleBadge = "";
+                const r = (s.role || "").toLowerCase();
+                if (r === "seller" || r === "vendedor") roleBadge = " (Vendedor)";
+                else if (r === "admin" || r === "administrador") roleBadge = " (Admin)";
+                else if (r === "gerente" || r === "manager") roleBadge = " (Gerente)";
+                else if (r) roleBadge = ` (${s.role})`;
+
+                const label = `${s.name || s.email}${roleBadge}`;
+                selectSeller.add(new Option(label, s.email));
+                viewSeller.add(new Option(label, s.email));
+            });
+
+            if (currentSelected && teamMembers.some(m => m.email === currentSelected)) {
+                selectSeller.value = currentSelected;
+            }
+            if (currentView && teamMembers.some(m => m.email === currentView)) {
+                viewSeller.value = currentView;
+            }
+        };
+
+        populateSellerSelects();
+
+        // Conectar botões de sugestões rápidas (Chips)
+        document.querySelectorAll(".btn-task-preset-chip").forEach(chip => {
+            chip.onclick = () => {
+                const taskText = chip.getAttribute("data-task");
+                if (taskText && inputTask) {
+                    inputTask.value = taskText;
+                    inputTask.focus();
+                    chip.style.transform = "scale(0.95)";
+                    setTimeout(() => { chip.style.transform = ""; }, 150);
+                }
+            };
+        });
+
+        // Suporte à tecla Enter para atribuir rapidamente
+        if (inputTask) {
+            inputTask.onkeydown = (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (btnAssign) btnAssign.click();
+                }
+            };
         }
+
+        // Ao mudar o vendedor no cadastro, atualiza também a visualização
+        selectSeller.onchange = () => {
+            if (selectSeller.value) {
+                viewSeller.value = selectSeller.value;
+                renderAssignedTasks();
+            }
+        };
 
         const renderAssignedTasks = () => {
             const email = viewSeller.value;
@@ -1753,17 +1806,25 @@ export const Dashboard = {
 
         btnAssign.onclick = () => {
             const targetSeller = selectSeller.value;
-            const text = inputTask.value.trim();
-            const priority = prioritySelect.value;
+            const text = inputTask ? inputTask.value.trim() : "";
+            const priority = prioritySelect ? prioritySelect.value : "normal";
 
             if (!targetSeller) {
-                if (typeof Toast !== "undefined") Toast.show("Selecione o vendedor para atribuir a tarefa.", "warning");
-                else alert("Selecione o vendedor para atribuir a tarefa.");
+                selectSeller.focus();
+                selectSeller.style.borderColor = "#ef4444";
+                setTimeout(() => { selectSeller.style.borderColor = ""; }, 2500);
+                if (typeof Toast !== "undefined") Toast.show("Por favor, selecione quem receberá a tarefa.", "warning");
+                else alert("Por favor, selecione quem receberá a tarefa.");
                 return;
             }
             if (!text) {
-                if (typeof Toast !== "undefined") Toast.show("Escreva uma instrução/tarefa.", "warning");
-                else alert("Escreva uma instrução/tarefa.");
+                if (inputTask) {
+                    inputTask.focus();
+                    inputTask.style.borderColor = "#ef4444";
+                    setTimeout(() => { inputTask.style.borderColor = ""; }, 2500);
+                }
+                if (typeof Toast !== "undefined") Toast.show("Digite a tarefa ou clique em uma das sugestões rápidas.", "warning");
+                else alert("Digite a tarefa ou clique em uma das sugestões rápidas.");
                 return;
             }
 
@@ -1780,15 +1841,19 @@ export const Dashboard = {
             });
 
             Promise.resolve(Store.saveTasks(targetSeller, tasks)).then(() => {
-                inputTask.value = "";
+                if (inputTask) inputTask.value = "";
                 window.dispatchEvent(new Event("storage"));
+                window.dispatchEvent(new CustomEvent("vellia:tasksChanged"));
                 viewSeller.value = targetSeller;
                 renderAssignedTasks();
-                if (typeof Toast !== "undefined") Toast.show("Tarefa atribuída ao vendedor com sucesso!", "success");
+                if (typeof Toast !== "undefined") Toast.show("Tarefa atribuída com sucesso!", "success");
             }).catch(err => {
                 console.error("Erro ao salvar tarefa:", err);
             });
         };
+
+        // Recarregar lista de membros caso os usuários sejam atualizados em segundo plano
+        window.addEventListener("vellia:userUpdated", populateSellerSelects);
 
         if (!window._adminTasksListenerBound) {
             const handleAdminTasksUpdate = () => {

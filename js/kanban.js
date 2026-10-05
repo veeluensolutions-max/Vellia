@@ -96,6 +96,12 @@ export const Kanban = {
                 }
             });
 
+            container.addEventListener("wheel", (e) => {
+                if (e.deltaY !== 0) {
+                    container.scrollTop += e.deltaY;
+                }
+            }, { passive: true });
+
             container.addEventListener("drop", (e) => {
                 e.preventDefault();
                 container.classList.remove("drag-over");

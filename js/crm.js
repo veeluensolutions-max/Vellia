@@ -286,6 +286,17 @@ export const CRM = {
         const btnCancelQualify = document.getElementById("btn-cancel-qualify");
         if (btnCancelQualify) btnCancelQualify.addEventListener("click", () => this.cancelQualifyLeadRequest());
 
+        const btnSkipQualify = document.getElementById("btn-skip-qualify");
+        if (btnSkipQualify) {
+            btnSkipQualify.addEventListener("click", () => {
+                const leadId = activeLeadId;
+                this.closeQualifyLeadModal();
+                if (leadId) {
+                    this.executeDirectStageChange(leadId, "Lead Qualificado");
+                }
+            });
+        }
+
         const qualifyForm = document.getElementById("qualify-lead-form");
         if (qualifyForm) qualifyForm.addEventListener("submit", (e) => {
             e.preventDefault();
@@ -1702,7 +1713,38 @@ export const CRM = {
 
         // Qualificação estruturada (estimativa de valor/probabilidade/serviço)
         if (newStage === "Lead Qualificado") {
-            document.getElementById("qualify-lead-form").reset();
+            const form = document.getElementById("qualify-lead-form");
+            if (form) form.reset();
+            
+            // Pré-preenchimento inteligente para não travar o usuário
+            const srvEl = document.getElementById("qualify-service");
+            if (srvEl) {
+                const seg = lead.segment || "";
+                let matched = false;
+                for (let i = 0; i < srvEl.options.length; i++) {
+                    if (srvEl.options[i].value && (srvEl.options[i].value.includes(seg) || seg.includes(srvEl.options[i].value))) {
+                        srvEl.selectedIndex = i;
+                        matched = true;
+                        break;
+                    }
+                }
+                if (!matched) srvEl.value = "Consultorias Técnicas";
+            }
+            const valEl = document.getElementById("qualify-value");
+            if (valEl) valEl.value = (lead.qualification && lead.qualification.estimatedValue) || 10000;
+            const deadEl = document.getElementById("qualify-deadline");
+            if (deadEl) {
+                const d = new Date(Date.now() + 30 * 86400000);
+                deadEl.value = d.toISOString().split("T")[0];
+            }
+            const probEl = document.getElementById("qualify-prob");
+            if (probEl) {
+                probEl.value = 50;
+                probEl.style.setProperty("--pct", "50%");
+                const b = document.getElementById("qualify-prob-badge");
+                if (b) b.textContent = "50%";
+            }
+
             document.getElementById("qualify-lead-modal").classList.add("open");
             document.getElementById("modal-overlay").style.display = "block";
             return;
@@ -1726,13 +1768,11 @@ export const CRM = {
     confirmQualifyLead() {
         if (!activeLeadId || pendingStageChange !== "Lead Qualificado") return;
 
-        const service = document.getElementById("qualify-service").value;
-        const value = parseFloat(document.getElementById("qualify-value").value) || 0;
-        const prob = parseInt(document.getElementById("qualify-prob").value) || 0;
-        const deadline = document.getElementById("qualify-deadline").value;
-        const notes = document.getElementById("qualify-notes").value.trim();
-
-        if (!service || !value || !prob || !deadline) return;
+        const service = document.getElementById("qualify-service")?.value || "Consultorias Técnicas";
+        const value = parseFloat(document.getElementById("qualify-value")?.value) || 0;
+        const prob = parseInt(document.getElementById("qualify-prob")?.value) || 50;
+        const deadline = document.getElementById("qualify-deadline")?.value || new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
+        const notes = document.getElementById("qualify-notes")?.value.trim() || "";
 
         const lead = Store.getLeadById(activeLeadId);
         const currentUser = Auth.getCurrentUser();

@@ -1,15 +1,19 @@
 import { Store } from "./store.js";
 import { CRM } from "./crm.js";
-import { analyzeContext } from "./ai.js";
 
 let draggedLeadId = null;
 
 export const Kanban = {
     _filtersInitialized: false,
+    _dragInitialized: false,
+    _listenersInitialized: false,
+    _searchDebounceTimer: null,
 
     init() {
-        CRM.init(); // Garante a inicializacao dos modais globais e eventos do CRM
+        CRM.init(); // Garante inicialização de modais globais e eventos do CRM
         this.initFilters();
+        this.initDragAndDrop();
+        this.initListeners();
         this.renderKanban();
     },
 
@@ -18,7 +22,10 @@ export const Kanban = {
 
         const searchInput = document.getElementById("kanban-search");
         if (searchInput) {
-            searchInput.addEventListener("input", () => this.renderKanban());
+            searchInput.addEventListener("input", () => {
+                clearTimeout(this._searchDebounceTimer);
+                this._searchDebounceTimer = setTimeout(() => this.renderKanban(), 120);
+            });
         }
 
         const ownerSelect = document.getElementById("kanban-filter-owner");
@@ -28,7 +35,7 @@ export const Kanban = {
         if (session && session.role !== "seller" && ownerGroup && ownerSelect) {
             ownerGroup.style.display = "block";
             const users = Store.getUsers();
-            const sellers = users.filter(u => u.role === "seller" || u.role === "admin" || u.role === "manager");
+            const sellers = users.filter(u => u.role === "seller" || u.role === "admin" || u.role === "manager" || u.role === "vendedor");
             
             ownerSelect.innerHTML = `<option value="all">Todos os Vendedores</option>` +
                 sellers.map(s => `<option value="${s.email}">${s.name}</option>`).join("");
@@ -44,15 +51,76 @@ export const Kanban = {
         this._filtersInitialized = true;
     },
 
+    initListeners() {
+        if (this._listenersInitialized) return;
+        window.addEventListener("vellia:stageChanged", () => this.renderKanban());
+        window.addEventListener("vellia:agentScoreUpdated", () => this.renderKanban());
+        window.addEventListener("vellia:leadDeleted", () => this.renderKanban());
+        window.addEventListener("vellia:leadRestored", () => this.renderKanban());
+        this._listenersInitialized = true;
+    },
+
+    initDragAndDrop() {
+        if (this._dragInitialized) return;
+
+        const stageContainers = [
+            { id: "cards-Contato", stage: "Contato" },
+            { id: "cards-Lead-Gerado", stage: "Lead Gerado" },
+            { id: "cards-Lead-Qualificado", stage: "Lead Qualificado" },
+            { id: "cards-Proposta-Enviada", stage: "Proposta Enviada" },
+            { id: "cards-Negociacao", stage: "Negociação" },
+            { id: "cards-Cliente-Fechado", stage: "Cliente Fechado" },
+            { id: "cards-Cliente-Perdido", stage: "Cliente Perdido" }
+        ];
+
+        stageContainers.forEach(({ id, stage }) => {
+            const container = document.getElementById(id);
+            if (!container) return;
+
+            container.addEventListener("dragover", (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+                if (!container.classList.contains("drag-over")) {
+                    container.classList.add("drag-over");
+                }
+            });
+
+            container.addEventListener("dragenter", (e) => {
+                e.preventDefault();
+                container.classList.add("drag-over");
+            });
+
+            container.addEventListener("dragleave", (e) => {
+                if (!container.contains(e.relatedTarget)) {
+                    container.classList.remove("drag-over");
+                }
+            });
+
+            container.addEventListener("drop", (e) => {
+                e.preventDefault();
+                container.classList.remove("drag-over");
+
+                const leadId = e.dataTransfer.getData("text/plain") || draggedLeadId;
+                if (!leadId) return;
+
+                const lead = Store.getLeadById(leadId);
+                if (!lead || lead.stage === stage) return;
+
+                // Execução direta e instantânea no CRM sem travar o Kanban
+                CRM.executeDirectStageChange(leadId, stage);
+            });
+        });
+
+        this._dragInitialized = true;
+    },
+
     renderKanban() {
-        const ctx = analyzeContext();
         let leads = Store.getLeads();
         
         const session = JSON.parse(localStorage.getItem("comercial_session"));
         if (session && session.role === "seller") {
             leads = leads.filter(l => l.owner === session.email);
         } else {
-            // Filtro por vendedor selecionado no dropdown (se admin/manager)
             const ownerSelect = document.getElementById("kanban-filter-owner");
             if (ownerSelect && ownerSelect.value && ownerSelect.value !== "all") {
                 leads = leads.filter(l => l.owner === ownerSelect.value);
@@ -76,7 +144,7 @@ export const Kanban = {
             });
         }
         
-        // Colunas e IDs
+        // Elementos das Colunas e Contadores
         const columns = {
             "Contato": document.getElementById("cards-Contato"),
             "Lead Gerado": document.getElementById("cards-Lead-Gerado"),
@@ -97,21 +165,6 @@ export const Kanban = {
             "Cliente Perdido": document.getElementById("count-Cliente-Perdido")
         };
 
-        // Limpar colunas e contadores
-        Object.keys(columns).forEach(stage => {
-            if (columns[stage]) columns[stage].innerHTML = "";
-            if (counters[stage]) counters[stage].textContent = "0";
-        });
-
-        // Rerrenderizar ao receber update de score dos agentes, exclusão ou restauração de lead
-        if (!this._scoreListenerBound) {
-            window.addEventListener("vellia:agentScoreUpdated", () => this.renderKanban());
-            window.addEventListener("vellia:leadDeleted", () => this.renderKanban());
-            window.addEventListener("vellia:leadRestored", () => this.renderKanban());
-            this._scoreListenerBound = true;
-        }
-
-        // Contadores locais e valor total do pipeline
         const stageCounts = {
             "Contato": 0,
             "Lead Gerado": 0,
@@ -122,10 +175,24 @@ export const Kanban = {
             "Cliente Perdido": 0
         };
 
-        let totalPipelineValue = 0;
-        const proposals = Store.getProposals();
+        // Cache de dados (Executado apenas 1x fora do loop para máxima velocidade)
+        const users = Store.getUsers();
+        const userMap = new Map();
+        users.forEach(u => {
+            if (u && u.email) userMap.set(u.email, u);
+        });
 
-        // Ordenação inteligente do Kanban (padrão: cadastrados mais recentes no topo de cada coluna)
+        const proposals = Store.getProposals();
+        const leadValueMap = new Map();
+        proposals.forEach(p => {
+            if (p && p.leadId && p.status !== "Perdido") {
+                leadValueMap.set(p.leadId, (leadValueMap.get(p.leadId) || 0) + (p.value || 0));
+            }
+        });
+
+        let totalPipelineValue = 0;
+
+        // Ordenação do Kanban
         const sortSelect = document.getElementById("kanban-filter-sort");
         const sortMode = sortSelect ? sortSelect.value : "recent-created";
 
@@ -137,36 +204,48 @@ export const Kanban = {
                 return Store.getLeadTimestamp(b) - Store.getLeadTimestamp(a);
             }
             if (sortMode === "value-desc") {
-                const getVal = l => proposals.filter(p => p.leadId === l.id && p.status !== "Perdido").reduce((s, p) => s + (p.value || 0), 0);
-                const valA = getVal(a);
-                const valB = getVal(b);
+                const valA = leadValueMap.get(a.id) || 0;
+                const valB = leadValueMap.get(b.id) || 0;
                 if (valB !== valA) return valB - valA;
                 return Store.getLeadTimestamp(b) - Store.getLeadTimestamp(a);
             }
             if (sortMode === "company-asc") {
                 return (a.company || "").localeCompare(b.company || "");
             }
-            // Padrão: "recent-created" (cadastrados mais recentes no topo)
             return Store.getLeadTimestamp(b) - Store.getLeadTimestamp(a);
         });
 
+        // DocumentFragments para montagem em lote de alta performance (1 repaint por coluna)
+        const fragments = {
+            "Contato": document.createDocumentFragment(),
+            "Lead Gerado": document.createDocumentFragment(),
+            "Lead Qualificado": document.createDocumentFragment(),
+            "Proposta Enviada": document.createDocumentFragment(),
+            "Negociação": document.createDocumentFragment(),
+            "Cliente Fechado": document.createDocumentFragment(),
+            "Cliente Perdido": document.createDocumentFragment()
+        };
+
+        const now = Date.now();
+        const currencyFmt = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+
         // Renderizar cada Lead
         leads.forEach(lead => {
-            const container = columns[lead.stage];
-            if (!container) return;
+            const stage = lead.stage;
+            const fragment = fragments[stage];
+            if (!fragment) return;
 
-            // Incrementar contagem
-            stageCounts[lead.stage]++;
+            stageCounts[stage]++;
 
             // Calcular dias sem contato
             let daysNoContact = 0;
             if (lead.interactions && lead.interactions.length > 0) {
                 const sortedInts = [...lead.interactions].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
-                const diffTime = Math.abs(new Date() - new Date(sortedInts[0].timestamp));
+                const diffTime = Math.abs(now - new Date(sortedInts[0].timestamp).getTime());
                 daysNoContact = Math.floor(diffTime / (1000 * 60 * 60 * 24));
             } else if (lead.stageHistory && lead.stageHistory.length > 0) {
                 const sortedHist = [...lead.stageHistory].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
-                const diffTime = Math.abs(new Date() - new Date(sortedHist[0].timestamp));
+                const diffTime = Math.abs(now - new Date(sortedHist[0].timestamp).getTime());
                 daysNoContact = Math.floor(diffTime / (1000 * 60 * 60 * 24));
             }
 
@@ -175,26 +254,23 @@ export const Kanban = {
             card.setAttribute("draggable", "true");
             card.setAttribute("data-id", lead.id);
 
-            // Ícone e estilo para dias sem contato
             let timeColor = "var(--text-muted)";
-            if (daysNoContact >= 7 && lead.stage !== "Cliente Fechado" && lead.stage !== "Cliente Perdido") {
+            if (daysNoContact >= 7 && stage !== "Cliente Fechado" && stage !== "Cliente Perdido") {
                 timeColor = "var(--danger)";
-            } else if (daysNoContact >= 3 && lead.stage !== "Cliente Fechado" && lead.stage !== "Cliente Perdido") {
+            } else if (daysNoContact >= 3 && stage !== "Cliente Fechado" && stage !== "Cliente Perdido") {
                 timeColor = "var(--warning)";
             }
 
-            const leadProps = proposals.filter(p => p.leadId === lead.id && p.status !== "Perdido");
-            const leadValue = leadProps.reduce((s, p) => s + (p.value || 0), 0);
-            if (lead.stage !== "Cliente Perdido") {
+            const leadValue = leadValueMap.get(lead.id) || 0;
+            if (stage !== "Cliente Perdido") {
                 totalPipelineValue += leadValue;
             }
             
-            const users = Store.getUsers();
-            const ownerUser = users.find(u => u && u.email === lead.owner);
+            const ownerUser = userMap.get(lead.owner);
             const avatar = ownerUser ? ownerUser.avatar : "U";
             const ownerName = ownerUser ? ownerUser.name : "Indefinido";
 
-            // Prioridade dinâmica baseada no valor ou segmento
+            // Prioridade
             let priority = "Baixa";
             let priorityClass = "badge-priority-baixa"; 
             if (leadValue > 15000 || lead.segment === "Tecnologia") {
@@ -205,78 +281,53 @@ export const Kanban = {
                 priorityClass = "badge-priority-media";
             }
 
-            // Usar aiScore do SDR Agent (Store) com fallback para ctx
-            let aiScore = lead.aiScore != null ? lead.aiScore : (ctx.scoredLeads.find(l => l.id === lead.id)?._score || 0);
-            if (!aiScore && lead.interactions) {
+            // Score IA
+            let aiScore = lead.aiScore != null ? lead.aiScore : 40;
+            if (!lead.aiScore && lead.interactions) {
                 const sdrInt = lead.interactions.find(i => i.description && i.description.includes("Score IA:"));
                 if (sdrInt) {
                     const match = sdrInt.description.match(/Score IA:\s*(\d+)/i);
-                    if (match) {
-                        aiScore = parseInt(match[1]);
-                    }
+                    if (match) aiScore = parseInt(match[1]);
                 }
             }
 
-            // Determinar estilo dinâmico com base no Score IA (Visual Premium e Curado)
             let cardColor = "var(--primary, #6366f1)";
-            let glowColor = "rgba(99, 102, 241, 0.08)";
             let scoreIcon = "❄️", scoreLabel = "Baixa", scoreColor = "#6366f1";
             let scoreBg = "rgba(99, 102, 241, 0.12)", scoreBorder = "rgba(99, 102, 241, 0.3)";
 
             if (aiScore >= 75) {
                 cardColor = "var(--danger, #ef4444)";
-                glowColor = "rgba(239, 68, 68, 0.08)";
                 scoreIcon = "🔥"; scoreLabel = "Alta"; scoreColor = "#ef4444";
                 scoreBg = "rgba(239, 68, 68, 0.12)"; scoreBorder = "rgba(239, 68, 68, 0.3)";
             } else if (aiScore >= 45) {
                 cardColor = "var(--warning, #f59e0b)";
-                glowColor = "rgba(245, 158, 11, 0.08)";
                 scoreIcon = "⚡"; scoreLabel = "Média"; scoreColor = "#f59e0b";
                 scoreBg = "rgba(245, 158, 11, 0.12)"; scoreBorder = "rgba(245, 158, 11, 0.3)";
             }
 
             card.style.borderLeft = `3.5px solid ${cardColor}`;
-            card.style.boxShadow = `0 1px 3px rgba(0,0,0,0.04), 0 2px 8px ${glowColor}`;
-
-            // Micro-animações de Hover Premium
-            card.addEventListener("mouseenter", () => {
-                if (!card.classList.contains("dragging")) {
-                    card.style.transform = "translateY(-2px)";
-                    card.style.borderColor = `${cardColor}60`;
-                    card.style.boxShadow = `var(--shadow-md), 0 4px 14px ${cardColor}18`;
-                }
-            });
-            card.addEventListener("mouseleave", () => {
-                if (!card.classList.contains("dragging")) {
-                    card.style.transform = "";
-                    card.style.borderColor = "";
-                    card.style.boxShadow = `0 1px 3px rgba(0,0,0,0.04), 0 2px 8px ${glowColor}`;
-                }
-            });
 
             let tempBadge = "";
-            if (lead.stage !== "Cliente Fechado" && lead.stage !== "Cliente Perdido") {
-                tempBadge = `<span class="badge ai-score-badge" data-lead-id="${lead.id}" style="font-size: 9.5px; padding: 2px 7px; border-radius: 99px; background: ${scoreBg}; color: ${scoreColor}; border: 1px solid ${scoreBorder}; display: inline-flex; align-items: center; gap: 3px;" title="Score SDR Agent: ${aiScore}/100 — Prioridade ${scoreLabel}">${scoreIcon} <strong style='font-size:9.5px;'>${aiScore}</strong></span>`;
+            if (stage !== "Cliente Fechado" && stage !== "Cliente Perdido") {
+                tempBadge = `<span class="badge ai-score-badge" style="font-size: 9.5px; padding: 2px 7px; border-radius: 99px; background: ${scoreBg}; color: ${scoreColor}; border: 1px solid ${scoreBorder}; display: inline-flex; align-items: center; gap: 3px;" title="Score SDR Agent: ${aiScore}/100 — Prioridade ${scoreLabel}">${scoreIcon} <strong style='font-size:9.5px;'>${aiScore}</strong></span>`;
             }
 
-            const fmtVal = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(leadValue);
+            const fmtVal = leadValue > 0 ? currencyFmt.format(leadValue) : "";
 
-            // Barra de progresso do Score IA
-            const scoreBarHtml = (lead.stage !== "Cliente Fechado" && lead.stage !== "Cliente Perdido") ? `
+            const scoreBarHtml = (stage !== "Cliente Fechado" && stage !== "Cliente Perdido") ? `
                 <div style="margin: 2px 0 0 0;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
                         <span style="font-size: 9px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px;">Score IA</span>
                         <span style="font-size: 9.5px; font-weight: 800; color: ${scoreColor};">${aiScore}/100</span>
                     </div>
                     <div style="background: var(--border-color); border-radius: 99px; height: 4px; overflow: hidden;">
-                        <div class="kanban-score-bar" data-score="${aiScore}" style="width: 0%; height: 100%; border-radius: 99px; background: linear-gradient(90deg, ${scoreColor}99, ${scoreColor}); transition: width 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);"></div>
+                        <div class="kanban-score-bar" style="width: ${aiScore}%; height: 100%; border-radius: 99px; background: linear-gradient(90deg, ${scoreColor}99, ${scoreColor});"></div>
                     </div>
                 </div>
             ` : "";
 
-            // Banner de lembrete para leads frios
             let coldLeadBanner = "";
-            if (lead.stage !== "Cliente Fechado" && lead.stage !== "Cliente Perdido") {
+            if (stage !== "Cliente Fechado" && stage !== "Cliente Perdido") {
                 if (daysNoContact >= 7) {
                     coldLeadBanner = `
                         <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); font-size: 10px; font-weight: 700; border-radius: 4px; padding: 4px 8px; margin-top: 4px; display: flex; align-items: center; gap: 6px;">
@@ -294,7 +345,6 @@ export const Kanban = {
                 }
             }
 
-            // Tratamento elegante de fallbacks para contatos nulos ou vazios
             const compTitle = (lead.company && lead.company !== "null" && lead.company !== "---") ? lead.company : (lead.contact && lead.contact !== "null" ? lead.contact : "Lead sem identificação");
             const contSubtitle = (lead.contact && lead.contact !== "null" && lead.contact !== "---") ? lead.contact : "";
             const roleSubtitle = (lead.role && lead.role !== "null" && lead.role !== "---") ? lead.role : "";
@@ -309,7 +359,7 @@ export const Kanban = {
             }
 
             const createdAtTs = Store.getLeadTimestamp ? Store.getLeadTimestamp(lead) : 0;
-            const isRecent = createdAtTs > 0 && (Date.now() - createdAtTs) < 48 * 60 * 60 * 1000;
+            const isRecent = createdAtTs > 0 && (now - createdAtTs) < 48 * 60 * 60 * 1000;
             const newBadge = isRecent ? `<span class="badge" style="font-size: 9px; font-weight: 700; background: rgba(16, 185, 129, 0.12); color: #059669; border: 1px solid rgba(16, 185, 129, 0.25); padding: 1.5px 5px; border-radius: 4px;" title="Cadastrado recentemente">✨ Novo</span>` : "";
             const regDateStr = createdAtTs > 0 ? new Date(createdAtTs).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : "";
 
@@ -352,54 +402,46 @@ export const Kanban = {
                 ${coldLeadBanner}
             `;
 
-            // Clique para detalhes
+            // Clique direto para detalhes do lead
             card.addEventListener("click", () => {
                 CRM.openLeadDrawer(lead.id);
             });
 
-            // Eventos de arrastar
-            card.addEventListener("dragstart", (e) => this.handleDragStart(e, lead.id));
-            card.addEventListener("dragend", (e) => this.handleDragEnd(e));
-
-            // Animação de entrada staggered
-            const cardIndex = stageCounts[lead.stage] - 1;
-            card.style.opacity = "0";
-            card.style.transform = "translateY(10px)";
-            card.style.transition = "opacity 0.25s ease, transform 0.25s ease";
-
-            container.appendChild(card);
-
-            // Animar cada cartão com delay progressivo
-            requestAnimationFrame(() => {
-                setTimeout(() => {
-                    card.style.opacity = "";
-                    card.style.transform = "";
-                    // Após entrada, ativar barra de progresso do score
-                    const bar = card.querySelector(".kanban-score-bar");
-                    if (bar) {
-                        setTimeout(() => {
-                            bar.style.width = `${bar.dataset.score}%`;
-                        }, 80);
-                    }
-                }, Math.min(cardIndex * 35, 300));
+            // Drag Start & End
+            card.addEventListener("dragstart", (e) => {
+                draggedLeadId = lead.id;
+                e.dataTransfer.setData("text/plain", lead.id);
+                e.dataTransfer.effectAllowed = "move";
+                card.classList.add("dragging");
             });
+
+            card.addEventListener("dragend", () => {
+                card.classList.remove("dragging");
+                document.querySelectorAll(".kanban-col-cards").forEach(col => col.classList.remove("drag-over"));
+                draggedLeadId = null;
+            });
+
+            fragment.appendChild(card);
         });
 
-        // Adicionar empty states para colunas sem cards
+        // Atualizar cada coluna no DOM em uma única operação
         Object.keys(columns).forEach(stage => {
             const container = columns[stage];
-            if (container && stageCounts[stage] === 0) {
+            if (!container) return;
+
+            container.innerHTML = "";
+
+            if (stageCounts[stage] === 0) {
                 container.innerHTML = `
                     <div class="kanban-empty-column">
                         <div class="kanban-empty-icon">📭</div>
                         <span>Nenhum lead nesta etapa</span>
                     </div>
                 `;
+            } else {
+                container.appendChild(fragments[stage]);
             }
-        });
 
-        // Atualizar contadores no topo das colunas
-        Object.keys(counters).forEach(stage => {
             if (counters[stage]) {
                 counters[stage].textContent = stageCounts[stage];
             }
@@ -413,103 +455,7 @@ export const Kanban = {
 
         const totalValueEl = document.getElementById("kanban-summary-total-value");
         if (totalValueEl) {
-            totalValueEl.textContent = totalPipelineValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+            totalValueEl.textContent = currencyFmt.format(totalPipelineValue);
         }
-
-        // Configurar zonas de Drop (containers de cards de cada coluna)
-        Object.keys(columns).forEach(stage => {
-            const container = columns[stage];
-            if (!container) return;
-
-            container.addEventListener("dragover", (e) => this.handleDragOver(e));
-            container.addEventListener("dragenter", (e) => this.handleDragEnter(e, container));
-            container.addEventListener("dragleave", (e) => this.handleDragLeave(e, container));
-            container.addEventListener("drop", (e) => this.handleDrop(e, stage, container));
-        });
-    },
-
-    // ==========================================================================
-    // TRATADORES DE EVENTO DRAG & DROP
-    // ==========================================================================
-
-    _removePlaceholders() {
-        document.querySelectorAll(".kanban-drop-placeholder").forEach(p => p.remove());
-    },
-
-    _getDropPosition(e, container) {
-        const cards = [...container.querySelectorAll(".kanban-card:not(.dragging)")];
-        for (const card of cards) {
-            const rect = card.getBoundingClientRect();
-            if (e.clientY < rect.top + rect.height / 2) return card;
-        }
-        return null; // inserir no final
-    },
-
-    handleDragStart(e, leadId) {
-        draggedLeadId = leadId;
-        e.dataTransfer.setData("text/plain", leadId);
-        e.dataTransfer.effectAllowed = "move";
-        requestAnimationFrame(() => e.currentTarget.classList.add("dragging"));
-    },
-
-    handleDragEnd(e) {
-        e.currentTarget.classList.remove("dragging");
-        document.querySelectorAll(".kanban-col-cards").forEach(col => {
-            col.classList.remove("drag-over");
-        });
-        this._removePlaceholders();
-        draggedLeadId = null;
-    },
-
-    handleDragOver(e) {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = "move";
-        const container = e.currentTarget;
-        const beforeCard = this._getDropPosition(e, container);
-        this._removePlaceholders();
-        const placeholder = document.createElement("div");
-        placeholder.className = "kanban-drop-placeholder";
-        placeholder.style.cssText = "height: 4px; border-radius: 99px; background: var(--primary); margin: 2px 0; opacity: 0.8; animation: placeholderPulse 0.8s ease-in-out infinite;";
-        if (beforeCard) {
-            container.insertBefore(placeholder, beforeCard);
-        } else {
-            container.appendChild(placeholder);
-        }
-    },
-
-    handleDragEnter(e, container) {
-        e.preventDefault();
-        container.classList.add("drag-over");
-    },
-
-    handleDragLeave(e, container) {
-        if (!container.contains(e.relatedTarget)) {
-            container.classList.remove("drag-over");
-            this._removePlaceholders();
-        }
-    },
-
-    handleDrop(e, targetStage, container) {
-        e.preventDefault();
-        container.classList.remove("drag-over");
-        
-        const leadId = e.dataTransfer.getData("text/plain") || draggedLeadId;
-        if (!leadId) return;
-
-        const lead = Store.getLeadById(leadId);
-        if (!lead) return;
-
-        if (lead.stage === targetStage) return;
-
-        const onStageChanged = () => {
-            this.renderKanban();
-            window.removeEventListener("vellia:stageChanged", onStageChanged);
-            window.removeEventListener("vellia:stageCancelled", onStageChanged);
-        };
-
-        window.addEventListener("vellia:stageChanged", onStageChanged, { once: true });
-        window.addEventListener("vellia:stageCancelled", onStageChanged, { once: true });
-
-        CRM.triggerStageChange(leadId, targetStage);
     }
 };

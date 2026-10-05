@@ -2430,12 +2430,15 @@ a {
     gap: 8px;
     min-height: 200px;
     background-color: transparent;
+    contain: content;
+    will-change: scroll-position;
+    scroll-behavior: smooth;
     transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
 .kanban-col-cards.drag-over {
-    background-color: rgba(98, 87, 245, 0.06) !important;
-    border: 1.5px dashed var(--primary) !important;
+    background-color: rgba(98, 87, 245, 0.08) !important;
+    border: 2px dashed var(--primary) !important;
     border-radius: 8px !important;
 }
 

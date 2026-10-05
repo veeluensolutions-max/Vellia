@@ -5354,15 +5354,20 @@ Condições de pagamento:
                 </div>
             </div>
 
-            <div class="ql-modal-footer">
+            <div class="ql-modal-footer" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
                 <button type="button" id="btn-cancel-qualify" class="ql-btn-cancel">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     Cancelar
                 </button>
-                <button type="submit" class="ql-btn-submit">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                    Qualificar Lead
-                </button>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button type="button" id="btn-skip-qualify" class="btn btn-outline btn-sm" style="font-size: 12px; padding: 7px 12px; border-radius: 8px; border-color: var(--border-color); color: var(--text-secondary); background: var(--bg-surface);">
+                        Mover sem Preencher
+                    </button>
+                    <button type="submit" class="ql-btn-submit">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        Qualificar Lead
+                    </button>
+                </div>
             </div>
         </form>
     </div>

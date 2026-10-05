@@ -670,6 +670,7 @@ export const Users = {
 
         if (btnClose) btnClose.addEventListener("click", closeModal);
         if (btnCancel) btnCancel.addEventListener("click", closeModal);
+        if (overlay) overlay.addEventListener("click", closeModal);
 
         form.addEventListener("submit", async (e) => {
             e.preventDefault();

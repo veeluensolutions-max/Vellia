@@ -5992,15 +5992,16 @@ Condições de pagamento:
 
     <!-- Modal: Cadastro/Edição de Usuários -->
     <div id="users-modal-overlay" class="modal-overlay" style="z-index: 1200; backdrop-filter: blur(4px); background: rgba(15, 23, 42, 0.55);"></div>
-    <div id="user-config-modal" class="modal" style="z-index: 1201; max-width: 520px; border-radius: 18px; border: 1px solid var(--border-color); background: var(--bg-card); box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05); overflow: hidden; padding: 0;">
+    <div id="user-config-modal" class="modal" style="z-index: 1201; max-width: 520px; max-height: 90vh; border-radius: 18px; border: 1px solid var(--border-color); background: var(--bg-card); box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05); overflow: hidden; padding: 0; display: none; flex-direction: column;">
         <style>
             #user-config-modal .modal-header {
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                padding: 20px 24px;
+                padding: 18px 24px;
                 border-bottom: 1px solid var(--border-color);
                 background: var(--bg-surface);
+                flex-shrink: 0;
             }
             #user-config-modal .user-modal-icon-badge {
                 width: 44px;
@@ -6093,16 +6094,17 @@ Condições de pagamento:
                 font-weight: 500;
             }
             #user-config-modal .user-modal-footer {
-                padding: 16px 24px 20px 24px;
+                padding: 14px 24px;
                 background: var(--bg-surface);
                 border-top: 1px solid var(--border-color);
                 display: flex;
                 justify-content: flex-end;
                 align-items: center;
                 gap: 12px;
+                flex-shrink: 0;
             }
             #user-config-modal .btn-user-cancel {
-                height: 42px;
+                height: 40px;
                 border-radius: 10px;
                 padding: 0 18px;
                 font-weight: 600;
@@ -6119,7 +6121,7 @@ Condições de pagamento:
                 border-color: var(--text-muted);
             }
             #user-config-modal .btn-user-save {
-                height: 42px;
+                height: 40px;
                 border-radius: 10px;
                 padding: 0 22px;
                 font-weight: 700;
@@ -6154,80 +6156,82 @@ Condições de pagamento:
                     <p id="user-modal-subtitle" style="margin: 3px 0 0 0; font-size: 12.5px; color: var(--text-muted); font-weight: 500;">Gerencie dados de acesso e permissões na plataforma</p>
                 </div>
             </div>
-            <button id="btn-close-users-modal" class="btn-icon-close-modern" aria-label="Fechar">
+            <button id="btn-close-users-modal" class="btn-icon-close-modern" aria-label="Fechar" type="button">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
         </div>
 
-        <form id="user-form" class="modal-body" style="display: flex; flex-direction: column; gap: 18px; padding: 24px 26px 20px 26px;">
+        <form id="user-form" style="display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; margin: 0;">
             <input type="hidden" id="user-id">
             
-            <div class="form-group" style="margin: 0;">
-                <label for="user-name" class="user-modal-label">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    Nome Completo *
-                </label>
-                <input type="text" id="user-name" class="form-control user-modal-input" required placeholder="Ex: Lucas Vendedor">
-            </div>
-
-            <div class="form-group" style="margin: 0;">
-                <label for="user-email" class="user-modal-label">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                    E-mail Corporativo *
-                </label>
-                <input type="email" id="user-email" class="form-control user-modal-input" required placeholder="Ex: lucas@vellia.com">
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px;">
+            <div class="modal-body" style="flex: 1; min-height: 0; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 16px;">
                 <div class="form-group" style="margin: 0;">
-                    <label for="user-role" class="user-modal-label">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                        Cargo / Permissão *
+                    <label for="user-name" class="user-modal-label">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        Nome Completo *
                     </label>
-                    <select id="user-role" class="form-control user-modal-select">
-                        <option value="seller">Vendedor</option>
-                        <option value="manager">Gerente Comercial</option>
-                        <option value="operacional">Operações (Agendamento & Inspeções)</option>
-                        <option value="admin">Administrador</option>
-                    </select>
+                    <input type="text" id="user-name" class="form-control user-modal-input" required placeholder="Ex: Lucas Vendedor">
                 </div>
+
                 <div class="form-group" style="margin: 0;">
-                    <label for="user-status" class="user-modal-label">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
-                        Status *
+                    <label for="user-email" class="user-modal-label">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                        E-mail Corporativo *
                     </label>
-                    <select id="user-status" class="form-control user-modal-select">
-                        <option value="active">Ativo</option>
-                        <option value="inactive">Inativo</option>
+                    <input type="email" id="user-email" class="form-control user-modal-input" required placeholder="Ex: lucas@vellia.com">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px;">
+                    <div class="form-group" style="margin: 0;">
+                        <label for="user-role" class="user-modal-label">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            Cargo / Permissão *
+                        </label>
+                        <select id="user-role" class="form-control user-modal-select">
+                            <option value="seller">Vendedor</option>
+                            <option value="manager">Gerente Comercial</option>
+                            <option value="operacional">Operações (Agendamento & Inspeções)</option>
+                            <option value="admin">Administrador</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label for="user-status" class="user-modal-label">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                            Status *
+                        </label>
+                        <select id="user-status" class="form-control user-modal-select">
+                            <option value="active">Ativo</option>
+                            <option value="inactive">Inativo</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin: 0;">
+                    <label for="user-companyAccess" class="user-modal-label">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M8 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M16 14h.01"/></svg>
+                        Acesso a Empresa *
+                    </label>
+                    <select id="user-companyAccess" class="form-control user-modal-select">
+                        <option value="Ambas">Ambas as Empresas (Acesso Total)</option>
+                        <option value="Excelência Ambiental">Somente Excelência Ambiental</option>
+                        <option value="Veeluen Solutions">Somente Veeluen Solutions</option>
                     </select>
+                    <div class="user-modal-hint">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        <span>Usuários com acesso único não poderão alternar empresas.</span>
+                    </div>
                 </div>
-            </div>
 
-            <div class="form-group" style="margin: 0;">
-                <label for="user-companyAccess" class="user-modal-label">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M8 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M16 14h.01"/></svg>
-                    Acesso a Empresa *
-                </label>
-                <select id="user-companyAccess" class="form-control user-modal-select">
-                    <option value="Ambas">Ambas as Empresas (Acesso Total)</option>
-                    <option value="Excelência Ambiental">Somente Excelência Ambiental</option>
-                    <option value="Veeluen Solutions">Somente Veeluen Solutions</option>
-                </select>
-                <div class="user-modal-hint">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                    <span>Usuários com acesso único não poderão alternar empresas.</span>
-                </div>
-            </div>
-
-            <div class="form-group" id="password-field-group" style="margin: 0;">
-                <label for="user-password" class="user-modal-label">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                    <span id="user-password-label-text">Senha de Acesso</span>
-                </label>
-                <input type="password" id="user-password" class="form-control user-modal-input" placeholder="Mínimo 4 caracteres (padrão: 123456)" minlength="4">
-                <div class="user-modal-hint">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                    <span>Deixe em branco se estiver editando e não quiser alterar.</span>
+                <div class="form-group" id="password-field-group" style="margin: 0;">
+                    <label for="user-password" class="user-modal-label">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <span id="user-password-label-text">Senha de Acesso</span>
+                    </label>
+                    <input type="password" id="user-password" class="form-control user-modal-input" placeholder="Mínimo 4 caracteres (padrão: 123456)" minlength="4">
+                    <div class="user-modal-hint">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <span>Deixe em branco se estiver editando e não quiser alterar.</span>
+                    </div>
                 </div>
             </div>
 
@@ -6235,7 +6239,7 @@ Condições de pagamento:
                 <button type="button" id="btn-cancel-user" class="btn-user-cancel">Cancelar</button>
                 <button type="submit" id="btn-save-user" class="btn-user-save">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                    Salvar Usuário
+                    Salvar Alterações
                 </button>
             </div>
         </form>

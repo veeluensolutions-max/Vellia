@@ -2087,6 +2087,7 @@ a {
     opacity: 0;
     width: 90%;
     max-width: 650px;
+    max-height: 90vh;
     background-color: var(--bg-surface);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);

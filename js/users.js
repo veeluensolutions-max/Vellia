@@ -112,8 +112,10 @@ export const Users = {
                             }).catch(() => {});
                             continue;
                         }
+                        const localUsers = JSON.parse(localStorage.getItem("comercial_users") || "[]");
+                        const localUser = localUsers.find(lu => lu && (lu.id === u.id || (lu.email && u.email && lu.email.toLowerCase() === u.email.toLowerCase())));
                         const isMika = emailNorm === "mika@vellia.com" || (u.name && u.name.toLowerCase().includes("mika"));
-                        const companyAccess = u.companyAccess || (isMika ? "Excelência Ambiental" : "Ambas");
+                        const companyAccess = u.companyAccess || (localUser && localUser.companyAccess) || (isMika ? "Excelência Ambiental" : "Ambas");
                         validUsers.push({ ...u, companyAccess });
                     }
 
@@ -402,11 +404,12 @@ export const Users = {
             tr.appendChild(tdLeads);
 
             // Tornar a linha clicável para abrir a janela de status e opções
+            // Tornar a linha clicável para abrir diretamente o modal de EDIÇÃO
             tr.style.cursor = "pointer";
-            tr.title = `Clique para ver o status, horário de login e opções de ${user.name}`;
+            tr.title = `Clique duas vezes ou use os botões para editar ${user.name}`;
             tr.onclick = (e) => {
                 if (!e.target.closest("button") && !e.target.closest("a")) {
-                    this.openUserDetailsModal(user.id);
+                    this.openEditModal(user.id);
                 }
             };
 
@@ -415,15 +418,32 @@ export const Users = {
             tdActions.style.cssText = "padding: 14px 16px; text-align: right;";
             
             const actionsDiv = document.createElement("div");
-            actionsDiv.style.cssText = "display: flex; gap: 6px; justify-content: flex-end; align-items: center;";
+            actionsDiv.style.cssText = "display: flex; gap: 8px; justify-content: flex-end; align-items: center;";
+
+            // Botão Editar Destacado (Principal)
+            const editBtn = document.createElement("button");
+            editBtn.title = `Editar dados e permissões de ${user.name}`;
+            editBtn.className = "btn-edit-user-table";
+            editBtn.style.cssText = `
+                height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid rgba(99, 102, 241, 0.4);
+                background: rgba(99, 102, 241, 0.12); color: var(--primary);
+                display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700;
+                cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+            `;
+            editBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg><span>Editar</span>`;
+            editBtn.onclick = (e) => {
+                e.stopPropagation();
+                this.openEditModal(user.id);
+            };
+            actionsDiv.appendChild(editBtn);
 
             // Botão Ver Status e Detalhes
             const viewBtn = document.createElement("button");
-            viewBtn.title = "Abrir Janela de Status, Login e Opções de Uso";
+            viewBtn.title = "Ver Estatísticas e Atividades do Usuário";
             viewBtn.className = "user-action-btn user-action-info";
             viewBtn.style.cssText = `
-                width: 32px; height: 32px; border-radius: 8px; border: 1px solid rgba(99, 102, 241, 0.3);
-                background: rgba(99, 102, 241, 0.08); color: var(--primary);
+                width: 32px; height: 32px; border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.3);
+                background: rgba(148, 163, 184, 0.1); color: var(--text-secondary);
                 display: flex; align-items: center; justify-content: center;
                 cursor: pointer; transition: all 0.2s; flex-shrink: 0;
             `;
@@ -433,23 +453,6 @@ export const Users = {
                 this.openUserDetailsModal(user.id);
             };
             actionsDiv.appendChild(viewBtn);
-
-            // Botão Editar
-            const editBtn = document.createElement("button");
-            editBtn.title = "Editar Usuário";
-            editBtn.className = "user-action-btn";
-            editBtn.style.cssText = `
-                width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border-color);
-                background: var(--bg-card); color: var(--text-secondary);
-                display: flex; align-items: center; justify-content: center;
-                cursor: pointer; transition: all 0.2s; flex-shrink: 0;
-            `;
-            editBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
-            editBtn.onclick = (e) => {
-                e.stopPropagation();
-                this.openEditModal(user.id);
-            };
-            actionsDiv.appendChild(editBtn);
 
             // Botão Reset Senha
             const resetBtn = document.createElement("button");
@@ -608,13 +611,19 @@ export const Users = {
         const pwdGroup = document.getElementById("password-field-group");
 
         const openModal = () => {
-            overlay.style.display = "block";
-            modal.classList.add("open");
+            if (overlay) overlay.style.display = "block";
+            if (modal) {
+                modal.style.display = "flex";
+                modal.classList.add("open");
+            }
         };
 
         const closeModal = () => {
-            overlay.style.display = "none";
-            modal.classList.remove("open");
+            if (overlay) overlay.style.display = "none";
+            if (modal) {
+                modal.style.display = "none";
+                modal.classList.remove("open");
+            }
             form.reset();
             document.getElementById("user-id").value = "";
         };
@@ -689,14 +698,32 @@ export const Users = {
 
                 if (userId) {
                     // Modo Edição
-                    const idx = users.findIndex(u => u.id === userId);
+                    const idx = users.findIndex(u => u && (u.id === userId || u.email === userId));
                     if (idx !== -1) {
                         users[idx].name = name;
+                        users[idx].email = email;
                         users[idx].role = role;
                         users[idx].status = status;
                         users[idx].companyAccess = companyAccess;
                         if (password) users[idx].password = password;
                         Store.saveUsers(users);
+
+                        // Sincronizar PATCH direto com o Supabase
+                        try {
+                            const SUPABASE_URL = "https://ogrbsonpkiamoytxjshg.supabase.co";
+                            const SUPABASE_KEY = "sb_publishable_Wi3eKJi5uyEzqihEDF6Eaw_-i0zcHe7";
+                            const patchPayload = { name, email, role, status };
+                            if (password) patchPayload.password = password;
+                            fetch(`${SUPABASE_URL}/rest/v1/comercial_users?id=eq.${encodeURIComponent(users[idx].id)}`, {
+                                method: "PATCH",
+                                headers: {
+                                    "apikey": SUPABASE_KEY,
+                                    "Authorization": `Bearer ${SUPABASE_KEY}`,
+                                    "Content-Type": "application/json"
+                                },
+                                body: JSON.stringify(patchPayload)
+                            }).catch(err => console.warn("Supabase user patch error:", err));
+                        } catch(err) {}
 
                         try {
                             const cur = Auth.getCurrentUser();
@@ -766,30 +793,41 @@ export const Users = {
     },
 
     openEditModal(id) {
-        const user = Store.getUsers().find(u => u.id === id);
+        const user = Store.getUsers().find(u => u && (u.id === id || u.email === id));
         if (!user) return;
 
+        const roleLower = (user.role || "").toLowerCase();
+        let roleVal = "seller";
+        if (roleLower === "admin" || roleLower === "administrador") roleVal = "admin";
+        else if (roleLower === "manager" || roleLower === "gerente" || roleLower === "gerente comercial") roleVal = "manager";
+        else if (roleLower === "operacional" || roleLower === "operacoes" || roleLower === "operacao") roleVal = "operacional";
+
         document.getElementById("user-id").value = user.id;
-        document.getElementById("user-name").value = user.name;
-        document.getElementById("user-email").value = user.email;
-        document.getElementById("user-email").setAttribute("readonly", "readonly");
-        document.getElementById("user-role").value = user.role;
-        document.getElementById("user-status").value = user.status || "active";
+        document.getElementById("user-name").value = user.name || "";
+        document.getElementById("user-email").value = user.email || "";
+        document.getElementById("user-email").removeAttribute("readonly");
+        document.getElementById("user-role").value = roleVal;
+        document.getElementById("user-status").value = (user.status === "inactive" || user.status === "inativo") ? "inactive" : "active";
         document.getElementById("user-companyAccess").value = user.companyAccess || "Ambas";
         document.getElementById("user-password").removeAttribute("required");
 
         const title = document.getElementById("user-modal-title");
         const pwdGroup = document.getElementById("password-field-group");
 
-        title.textContent = "Editar Usuário";
+        if (title) title.textContent = "Editar Usuário";
         const sub = document.getElementById("user-modal-subtitle");
         if (sub) sub.textContent = "Atualize os dados e privilégios de acesso do usuário";
         const pwdLabel = document.getElementById("user-password-label-text");
         if (pwdLabel) pwdLabel.textContent = "Nova Senha (opcional)";
-        else if (pwdGroup.querySelector("label")) pwdGroup.querySelector("label").textContent = "Nova Senha (opcional)";
+        else if (pwdGroup && pwdGroup.querySelector("label")) pwdGroup.querySelector("label").textContent = "Nova Senha (opcional)";
 
-        document.getElementById("users-modal-overlay").style.display = "block";
-        document.getElementById("user-config-modal").classList.add("open");
+        const overlay = document.getElementById("users-modal-overlay");
+        const modal = document.getElementById("user-config-modal");
+        if (overlay) overlay.style.display = "block";
+        if (modal) {
+            modal.style.display = "flex";
+            modal.classList.add("open");
+        }
     },
 
     toggleStatus(id) {
@@ -1132,13 +1170,16 @@ export const Users = {
                 };
             }
 
+            const triggerEdit = () => {
+                this.closeUserDetailsModal();
+                this.openEditModal(user.id);
+            };
+
             const btnEdit = document.getElementById("btn-user-detail-edit");
-            if (btnEdit) {
-                btnEdit.onclick = () => {
-                    this.closeUserDetailsModal();
-                    this.openEditModal(user.id);
-                };
-            }
+            if (btnEdit) btnEdit.onclick = triggerEdit;
+
+            const btnEditTop = document.getElementById("btn-user-detail-edit-top");
+            if (btnEditTop) btnEditTop.onclick = triggerEdit;
 
             const btnClose = document.getElementById("btn-close-user-details");
             if (btnClose) btnClose.onclick = () => this.closeUserDetailsModal();

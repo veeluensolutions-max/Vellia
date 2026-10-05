@@ -232,6 +232,31 @@ export const CRM = {
             btnAIDraft.addEventListener("click", () => this.generateWaAIDraft());
         }
 
+        // Chips de seleção rápida de tipo de interação
+        document.querySelectorAll(".interaction-chip").forEach(chip => {
+            chip.addEventListener("click", () => {
+                const type = chip.getAttribute("data-type");
+                const selectEl = document.getElementById("interaction-type");
+                if (selectEl) selectEl.value = type;
+
+                document.querySelectorAll(".interaction-chip").forEach(c => {
+                    if (c.getAttribute("data-type") === type) {
+                        c.classList.add("active");
+                        c.style.borderColor = "#6366f1";
+                        c.style.background = "rgba(99, 102, 241, 0.1)";
+                        c.style.color = "#6366f1";
+                        c.style.fontWeight = "700";
+                    } else {
+                        c.classList.remove("active");
+                        c.style.borderColor = "var(--border-color)";
+                        c.style.background = "var(--bg-card)";
+                        c.style.color = "var(--text-secondary)";
+                        c.style.fontWeight = "600";
+                    }
+                });
+            });
+        });
+
         // Submissão de Interações
         if (elements.drawerInteractionForm) {
             elements.drawerInteractionForm.addEventListener("submit", (e) => {
@@ -1590,6 +1615,18 @@ export const CRM = {
         // Limpar campo e recarregar timeline
         descEl.value = "";
         
+        // Feedback visual no botão
+        const btnSubmit = document.getElementById("btn-submit-interaction");
+        if (btnSubmit) {
+            const origHTML = btnSubmit.innerHTML;
+            btnSubmit.innerHTML = `<span>✓ Registrado!</span>`;
+            btnSubmit.style.background = "#10b981";
+            setTimeout(() => {
+                btnSubmit.innerHTML = origHTML;
+                btnSubmit.style.background = "";
+            }, 1600);
+        }
+
         const updatedLead = Store.getLeadById(activeLeadId);
         this.renderTimeline(updatedLead);
     },

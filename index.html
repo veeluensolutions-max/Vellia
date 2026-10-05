@@ -13,7 +13,7 @@
     <!-- Chart.js para dashboards -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- jsPDF (Geração de PDF) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.3/jspdf.plugin.autotable.min.js" crossorigin="anonymous"></script>
     <!-- html2canvas (Screenshots para PDF) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous"></script>
@@ -4675,6 +4675,60 @@ Condições de pagamento:
                 </div>
             </div>
 
+            <!-- Seção: Registrar Interação (Posicionada no topo para acesso imediato) -->
+            <div class="drawer-section" id="drawer-interaction-section" style="border-top: 1px solid var(--border-color); padding-top: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span class="drawer-section-title" style="margin-bottom: 0; border: none; padding: 0; display: flex; align-items: center; gap: 6px; color: var(--text-primary); font-size: 13px; font-weight: 800;">
+                        <span style="color: var(--primary);">⚡</span> Registrar Interação
+                    </span>
+                    <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">Salva na timeline</span>
+                </div>
+
+                <form id="drawer-interaction-form" class="interaction-form" onsubmit="return false;" style="background: var(--bg-surface); border: 1.5px solid var(--border-color); border-radius: 12px; padding: 12px 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 10px;">
+                    <!-- Chips de Seleção Rápida de Tipo de Interação -->
+                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                        <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none;" id="interaction-type-chips">
+                            <button type="button" class="interaction-chip active" data-type="Ligação" style="border: 1.5px solid #6366f1; background: rgba(99, 102, 241, 0.1); color: #6366f1; font-weight: 700; padding: 5px 10px; border-radius: 20px; font-size: 11.5px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s ease;">
+                                📞 Ligação
+                            </button>
+                            <button type="button" class="interaction-chip" data-type="WhatsApp" style="border: 1.5px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary); font-weight: 600; padding: 5px 10px; border-radius: 20px; font-size: 11.5px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s ease;">
+                                💬 WhatsApp
+                            </button>
+                            <button type="button" class="interaction-chip" data-type="E-mail" style="border: 1.5px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary); font-weight: 600; padding: 5px 10px; border-radius: 20px; font-size: 11.5px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s ease;">
+                                ✉️ E-mail
+                            </button>
+                            <button type="button" class="interaction-chip" data-type="Reunião" style="border: 1.5px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary); font-weight: 600; padding: 5px 10px; border-radius: 20px; font-size: 11.5px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s ease;">
+                                👥 Reunião
+                            </button>
+                            <button type="button" class="interaction-chip" data-type="Visita" style="border: 1.5px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary); font-weight: 600; padding: 5px 10px; border-radius: 20px; font-size: 11.5px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s ease;">
+                                🚗 Visita
+                            </button>
+                            <button type="button" class="interaction-chip" data-type="Observação" style="border: 1.5px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary); font-weight: 600; padding: 5px 10px; border-radius: 20px; font-size: 11.5px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s ease;">
+                                📝 Nota
+                            </button>
+                        </div>
+                        <!-- Select original mantido para suporte nativo e retrocompatibilidade -->
+                        <select id="interaction-type" style="display: none;" required>
+                            <option value="Ligação" selected>📞 Ligação</option>
+                            <option value="WhatsApp">💬 WhatsApp</option>
+                            <option value="E-mail">✉️ E-mail</option>
+                            <option value="Reunião">👥 Reunião</option>
+                            <option value="Visita">🚗 Visita</option>
+                            <option value="Observação">📝 Nota</option>
+                        </select>
+                    </div>
+
+                    <textarea id="interaction-desc" class="form-control" placeholder="Descreva os pontos principais conversados, acordos ou próximos passos..." style="width: 100%; min-height: 72px; padding: 10px 12px; font-size: 13px; line-height: 1.5; resize: vertical; border-radius: 8px; border: 1.5px solid var(--border-color); background: var(--bg-card); box-sizing: border-box;" required></textarea>
+
+                    <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px;">
+                        <button type="submit" id="btn-submit-interaction" class="btn btn-primary" style="padding: 0 18px; height: 36px; font-size: 12.5px; font-weight: 700; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);">
+                            <span>Registrar</span>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
             <!-- Seção: Integração Vellia Docs -->
             <div class="drawer-section" id="drawer-docs-integration-section" style="border-top: 1px solid var(--border-color); padding-top: 16px;">
                 <span class="drawer-section-title">Integração Vellia Docs</span>
@@ -4770,27 +4824,7 @@ Condições de pagamento:
                 </div>
             </div>
 
-            <!-- Seção 3: Adicionar Interação -->
-            <div class="drawer-section">
-                <span class="drawer-section-title">Registrar Interação</span>
-                <form id="drawer-interaction-form" class="interaction-form" onsubmit="return false;">
-                    <div style="display: flex; gap: 8px;">
-                        <select id="interaction-type" class="filter-control" style="width: 130px; height: 36px; padding: 4px 8px;" required>
-                            <option value="Ligação">📞 Ligação</option>
-                            <option value="WhatsApp">💬 WhatsApp</option>
-                            <option value="E-mail">✉️ E-mail</option>
-                            <option value="Reunião">👥 Reunião</option>
-                            <option value="Visita">🚗 Visita</option>
-                            <option value="Observação">📝 Nota</option>
-                        </select>
-                        <span style="align-self: center; font-size: 12px; color: var(--text-muted);">Selecione o tipo</span>
-                    </div>
-                    <textarea id="interaction-desc" class="form-control" placeholder="Descreva os pontos principais conversados..." style="min-height: 70px; padding: 8px 12px; font-size: 13px; resize: vertical;" required></textarea>
-                    <button type="submit" class="btn btn-primary" style="padding: 8px 14px; font-size: 12px; align-self: flex-end;">
-                        Registrar
-                    </button>
-                </form>
-            </div>
+
 
             <!-- Seção: Inspeções do Cliente -->
             <div class="drawer-section" id="drawer-inspections-section">

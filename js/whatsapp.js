@@ -111,6 +111,8 @@ export const WhatsApp = {
                     this.updateCharCount();
                 }
             });
+        });
+
         // Chips interativos de templates
         document.querySelectorAll(".wa-template-chip").forEach(chip => {
             chip.addEventListener("click", () => {

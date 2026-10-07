@@ -455,7 +455,7 @@ window.exportInspectionsSummaryPDF = () => PDFGenerator.exportInspectionsSummary
  * Chamado por clients.js via dynamic import:
  *   import("./pdf-generator.js").then(m => m.PDFGenerator.generateProposalPDF(id))
  */
-PDFGenerator.generateProposalPDF = function(proposalId) {
+PDFGenerator.generateProposalPDF = async function(proposalId) {
     // Delega para window.Proposals.exportProposalToPDF (definida em proposals.js)
     if (window.Proposals && typeof window.Proposals.exportProposalToPDF === "function") {
         window.Proposals.exportProposalToPDF(proposalId);
@@ -463,6 +463,11 @@ PDFGenerator.generateProposalPDF = function(proposalId) {
     }
 
     // Fallback: geração básica via jsPDF diretamente
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+        if (window.LazyLoader) {
+            await window.LazyLoader.ensureJsPDF();
+        }
+    }
     const jsPDFLib = window.jspdf;
     if (!jsPDFLib || !jsPDFLib.jsPDF) {
         alert("Biblioteca PDF não carregada. Recarregue a página e tente novamente.");

@@ -10,15 +10,9 @@
     <link rel="stylesheet" href="css/gestaoclick.css?v=20260930_1200">
     <link rel="stylesheet" href="css/isocinetica.css?v=20260921_1140">
     <link rel="stylesheet" href="css/calculators.css?v=20260921_1140">
-    <!-- Chart.js para dashboards -->
+    <!-- Chart.js para dashboards (Carregamento assíncrono diferido) -->
     <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- jsPDF (Geração de PDF) -->
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"></script>
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.3/jspdf.plugin.autotable.min.js" crossorigin="anonymous"></script>
-    <!-- html2canvas (Screenshots para PDF) -->
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous"></script>
-    <!-- PDF.js (Leitura de PDFs para a Base de Conhecimento do Guru) -->
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- Bibliotecas pesadas (jsPDF, PDF.js, etc.) são carregadas sob demanda via LazyLoader -->
 </head>
 <body>
     <!-- Background Glow Blobs for Premium Glassmorphism -->
@@ -2805,7 +2799,11 @@
                                     <option value="Cancelada">Cancelada</option>
                                 </select>
                             </div>
-                            <div style="margin-left: auto; margin-top: auto; display: flex; gap: 10px;">
+                            <div style="margin-left: auto; margin-top: auto; display: flex; gap: 10px; flex-wrap: wrap;">
+                                <button id="btn-sync-proposals-supabase" class="btn btn-outline" style="border-color: #10b981; color: #10b981; display: flex; align-items: center; gap: 6px; height: 38px; font-weight: 600;" title="Sincronizar propostas com o Supabase">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+                                    <span>Sincronizar Nuvem</span>
+                                </button>
                                 <button id="btn-export-pdf-report" class="btn btn-outline" style="border-color: var(--primary); color: var(--primary); display: flex; align-items: center; gap: 6px; height: 38px;">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                                     <span>Exportar PDF</span>
@@ -4412,6 +4410,10 @@ Condições de pagamento:
                             <button type="button" class="gc-btn-cancel" id="gc-insp-btn-cancel">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                                 <span>Cancelar</span>
+                            </button>
+                            <button type="button" class="gc-btn-cancel" id="gc-insp-btn-delete" style="display: none; background: #fee2e2; color: #dc2626; border-color: #fca5a5; margin-left: auto; font-weight: 700;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                <span>Excluir inspeção</span>
                             </button>
                         </div>
                     </div>

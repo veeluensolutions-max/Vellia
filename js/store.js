@@ -96,44 +96,53 @@ async function supabaseFetch(table) {
 // =========================================================================
 // HELPERS DE METADADOS: GESTÃOCLICK & CAMPOS AVANÇADOS NO SUPABASE
 // =========================================================================
+function sanitizeIsoDate(dateVal, fallback = null) {
+    if (!dateVal) return fallback;
+    if (typeof dateVal === "string" && dateVal.trim() === "") return fallback;
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return fallback;
+    return d.toISOString();
+}
+
 function encodeProposalForSupabase(prop) {
     if (!prop) return prop;
-    const meta = {
-        budgetNumber: prop.budgetNumber,
-        seller: prop.seller,
-        deliveryDate: prop.deliveryDate,
-        validityText: prop.validityText,
-        channel: prop.channel,
-        costCenter: prop.costCenter,
-        intro: prop.intro,
-        techDescription: prop.techDescription,
-        freight: prop.freight,
-        carrier: prop.carrier,
-        deliveryAddress: prop.deliveryAddress,
-        generatePayment: prop.generatePayment,
-        paymentType: prop.paymentType,
-        servicesList: prop.servicesList,
-        productsList: prop.productsList,
-        attachments: prop.attachments,
-        internalNotes: prop.internalNotes
-    };
+    const supabaseCols = new Set([
+        'id', 'leadId', 'company', 'contact', 'title', 'value', 'status',
+        'sentAt', 'closedAt', 'validUntil', 'competitor', 'lossReason',
+        'notes', 'createdBy', 'createdAt', 'workspace'
+    ]);
 
-    // Remove chaves vazias ou indefinidas
-    const cleanMeta = {};
-    for (const [k, v] of Object.entries(meta)) {
-        if (v !== undefined && v !== null && v !== "" && !(Array.isArray(v) && v.length === 0)) {
-            cleanMeta[k] = v;
+    const meta = {};
+    for (const [k, v] of Object.entries(prop)) {
+        if (!supabaseCols.has(k)) {
+            if (v !== undefined && v !== null && v !== "" && !(Array.isArray(v) && v.length === 0)) {
+                meta[k] = v;
+            }
         }
     }
 
     let notesText = (prop.notes || "").replace(/\n\n<!-- GESTAOCLICK_METADATA:[\s\S]*?-->/g, "").trim();
-    if (Object.keys(cleanMeta).length > 0) {
-        notesText = `${notesText}\n\n<!-- GESTAOCLICK_METADATA:${JSON.stringify(cleanMeta)} -->`;
+    if (Object.keys(meta).length > 0) {
+        notesText = `${notesText}\n\n<!-- GESTAOCLICK_METADATA:${JSON.stringify(meta)} -->`;
     }
 
     return {
-        ...prop,
-        notes: notesText
+        id: prop.id,
+        leadId: prop.leadId ? String(prop.leadId).trim() : null,
+        company: String(prop.company || "").trim(),
+        contact: String(prop.contact || "").trim(),
+        title: String(prop.title || "").trim(),
+        value: typeof prop.value === "number" && !isNaN(prop.value) ? prop.value : (parseFloat(prop.value) || 0),
+        status: String(prop.status || "Enviada").trim(),
+        sentAt: sanitizeIsoDate(prop.sentAt, new Date().toISOString()),
+        closedAt: sanitizeIsoDate(prop.closedAt, null),
+        validUntil: sanitizeIsoDate(prop.validUntil, null),
+        competitor: String(prop.competitor || "").trim(),
+        lossReason: String(prop.lossReason || "").trim(),
+        notes: notesText,
+        createdBy: String(prop.createdBy || "sistema@vellia.com").trim(),
+        createdAt: sanitizeIsoDate(prop.createdAt, new Date().toISOString()),
+        workspace: String(prop.workspace || localStorage.getItem("activeCompany") || "Veeluen Solutions").trim()
     };
 }
 
@@ -159,20 +168,38 @@ function decodeProposalFromSupabase(rawProp) {
 
 function encodeLeadForSupabase(lead) {
     if (!lead) return lead;
+    const supabaseCols = new Set([
+        'id', 'company', 'contact', 'role', 'phone', 'whatsapp',
+        'email', 'city', 'state', 'segment', 'source', 'stage',
+        'owner', 'interactions', 'stageHistory', 'phone2', 'email2',
+        'notes', 'workspace'
+    ]);
+
     const meta = {};
-    if (lead.cnpj) meta.cnpj = lead.cnpj;
-    if (lead.phone2) meta.phone2 = lead.phone2;
-    if (lead.email2) meta.email2 = lead.email2;
+    for (const [k, v] of Object.entries(lead)) {
+        if (!supabaseCols.has(k)) {
+            if (v !== undefined && v !== null && v !== "" && !(Array.isArray(v) && v.length === 0)) {
+                meta[k] = v;
+            }
+        }
+    }
 
     let notesText = (lead.notes || "").replace(/\n\n<!-- LEAD_META:[\s\S]*?-->/g, "").trim();
     if (Object.keys(meta).length > 0) {
         notesText = `${notesText}\n\n<!-- LEAD_META:${JSON.stringify(meta)} -->`;
     }
 
-    return {
-        ...lead,
-        notes: notesText
-    };
+    const cleanLead = {};
+    for (const key of supabaseCols) {
+        if (lead.hasOwnProperty(key)) {
+            cleanLead[key] = lead[key];
+        }
+    }
+    cleanLead.id = lead.id;
+    cleanLead.company = lead.company || "";
+    cleanLead.notes = notesText;
+    cleanLead.workspace = lead.workspace || localStorage.getItem("activeCompany") || "Veeluen Solutions";
+    return cleanLead;
 }
 
 function decodeLeadFromSupabase(rawLead) {
@@ -234,6 +261,7 @@ async function upsertSupabase(table, data) {
     }
 
     const url = `${SUPABASE_URL}/rest/v1/${table}`;
+    const timestampFields = new Set(['sentAt', 'closedAt', 'validUntil', 'createdAt', 'updatedAt', 'lastLoginAt']);
     try {
         let payload = data;
         if (TABLE_SCHEMAS[table]) {
@@ -242,7 +270,9 @@ async function upsertSupabase(table, data) {
                     const filtered = {};
                     for (const key of TABLE_SCHEMAS[table]) {
                         if (item && item.hasOwnProperty(key)) {
-                            filtered[key] = item[key];
+                            let val = item[key];
+                            if (timestampFields.has(key) && (val === "" || val === undefined)) val = null;
+                            filtered[key] = val;
                         }
                     }
                     return filtered;
@@ -251,7 +281,9 @@ async function upsertSupabase(table, data) {
                 payload = {};
                 for (const key of TABLE_SCHEMAS[table]) {
                     if (data && data.hasOwnProperty(key)) {
-                        payload[key] = data[key];
+                        let val = data[key];
+                        if (timestampFields.has(key) && (val === "" || val === undefined)) val = null;
+                        payload[key] = val;
                     }
                 }
             }
@@ -293,6 +325,59 @@ async function deleteSupabase(table, filter = "") {
         console.warn(`Supabase Delete Error for ${table}:`, e);
     }
 }
+
+// =========================================================================
+// CACHE EM MEMÓRIA (ULTRA FAST IN-MEMORY CACHE)
+// Elimina o gargalo de centenas de JSON.parse/localStorage repetitivos
+// =========================================================================
+const MemoryCache = {
+    _cache: new Map(),
+
+    get(key, fallbackFn = null) {
+        if (this._cache.has(key)) {
+            return this._cache.get(key);
+        }
+        let data = null;
+        try {
+            const raw = localStorage.getItem(key);
+            if (raw !== null && raw !== undefined) {
+                data = JSON.parse(raw);
+            } else if (typeof fallbackFn === "function") {
+                data = fallbackFn();
+            }
+        } catch (e) {
+            data = typeof fallbackFn === "function" ? fallbackFn() : null;
+        }
+        this._cache.set(key, data);
+        return data;
+    },
+
+    set(key, val) {
+        this._cache.set(key, val);
+        try {
+            localStorage.setItem(key, JSON.stringify(val));
+        } catch (e) {
+            console.warn(`[MemoryCache] Falha ao persistir ${key} no localStorage:`, e);
+        }
+    },
+
+    invalidate(key = null) {
+        if (key) {
+            this._cache.delete(key);
+        } else {
+            this._cache.clear();
+        }
+    }
+};
+
+// Sincronização entre abas: se outra aba alterar o localStorage, invalidamos a chave
+window.addEventListener("storage", (e) => {
+    if (e && e.key) {
+        MemoryCache.invalidate(e.key);
+    } else {
+        MemoryCache.invalidate();
+    }
+});
 
 // Sincronização em background no início da aplicação (Execução paralela ultrarrápida)
 async function syncFromSupabase() {
@@ -336,7 +421,7 @@ async function syncFromSupabase() {
                 validUsers.push({ ...u, companyAccess });
             }
 
-            localStorage.setItem("comercial_users", JSON.stringify(validUsers));
+            MemoryCache.set("comercial_users", validUsers);
             localStorage.setItem("comercial_users_initialized", "true");
             try {
                 window.dispatchEvent(new CustomEvent("vellia:userUpdated", { detail: validUsers }));
@@ -345,24 +430,24 @@ async function syncFromSupabase() {
 
         // 2. Metas
         if (goalsRes.status === "fulfilled" && Array.isArray(goalsRes.value)) {
-            localStorage.setItem("comercial_goals", JSON.stringify(goalsRes.value));
+            MemoryCache.set("comercial_goals", goalsRes.value);
         }
 
         // 3. Calendário
         if (eventsRes.status === "fulfilled" && Array.isArray(eventsRes.value)) {
             const remoteEvents = eventsRes.value;
-            const localEvents = JSON.parse(localStorage.getItem("vellia_calendar_events")) || [];
+            const localEvents = MemoryCache.get("vellia_calendar_events", () => []) || [];
             const eventMap = new Map();
             localEvents.forEach(e => eventMap.set(e.id, e));
             remoteEvents.forEach(e => eventMap.set(e.id, e));
-            localStorage.setItem("vellia_calendar_events", JSON.stringify(Array.from(eventMap.values())));
+            MemoryCache.set("vellia_calendar_events", Array.from(eventMap.values()));
         }
 
         // 4. Leads
         if (leadsRes.status === "fulfilled" && Array.isArray(leadsRes.value)) {
             const remoteLeads = leadsRes.value;
             const decodedLeads = remoteLeads.map(l => decodeLeadFromSupabase(l));
-            const localLeads = JSON.parse(localStorage.getItem("comercial_leads")) || [];
+            const localLeads = MemoryCache.get("comercial_leads", () => []) || [];
             const leadMap = new Map();
             localLeads.forEach(l => { if (l && l.id) leadMap.set(l.id, l); });
             decodedLeads.forEach(l => {
@@ -372,7 +457,7 @@ async function syncFromSupabase() {
                 }
             });
             const mergedLeads = Array.from(leadMap.values()).sort((a, b) => getLeadTimestamp(b) - getLeadTimestamp(a));
-            localStorage.setItem("comercial_leads", JSON.stringify(mergedLeads));
+            MemoryCache.set("comercial_leads", mergedLeads);
 
             // Sincronizar em lote único os leads locais que não estão no remoto
             const missingLeads = localLeads.filter(ll => !remoteLeads.some(rl => rl.id === ll.id));
@@ -385,7 +470,7 @@ async function syncFromSupabase() {
         if (proposalsRes.status === "fulfilled" && Array.isArray(proposalsRes.value)) {
             const remoteProposals = proposalsRes.value;
             const decodedProposals = remoteProposals.map(p => decodeProposalFromSupabase(p));
-            const localProposals = JSON.parse(localStorage.getItem("comercial_proposals")) || [];
+            const localProposals = MemoryCache.get("comercial_proposals", () => []) || [];
             const propMap = new Map();
             localProposals.forEach(p => { if (p && p.id) propMap.set(p.id, p); });
             decodedProposals.forEach(p => {
@@ -395,7 +480,7 @@ async function syncFromSupabase() {
                 }
             });
             const mergedProps = Array.from(propMap.values());
-            localStorage.setItem("comercial_proposals", JSON.stringify(mergedProps));
+            MemoryCache.set("comercial_proposals", mergedProps);
 
             // Sincronizar em lote único as propostas locais que não estão no remoto
             const missingProps = localProposals.filter(lp => !remoteProposals.some(rp => rp.id === lp.id));
@@ -407,13 +492,13 @@ async function syncFromSupabase() {
         // 6. Logs de Auditoria (Últimos 100)
         if (logsRes.status === "fulfilled" && Array.isArray(logsRes.value)) {
             const sortedLogs = logsRes.value.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-            localStorage.setItem("comercial_logs", JSON.stringify(sortedLogs));
+            MemoryCache.set("comercial_logs", sortedLogs);
         }
 
         // 7. Serviços
         if (servicesRes.status === "fulfilled" && Array.isArray(servicesRes.value)) {
             const remoteServices = servicesRes.value;
-            const localServices = JSON.parse(localStorage.getItem("comercial_services")) || INITIAL_SERVICES;
+            const localServices = MemoryCache.get("comercial_services", () => INITIAL_SERVICES) || INITIAL_SERVICES;
             let mergedServices = [...remoteServices];
             let needsUpsert = false;
             localServices.forEach(localS => {
@@ -423,7 +508,7 @@ async function syncFromSupabase() {
                     needsUpsert = true;
                 }
             });
-            localStorage.setItem("comercial_services", JSON.stringify(mergedServices));
+            MemoryCache.set("comercial_services", mergedServices);
             if (needsUpsert) {
                 upsertSupabase("comercial_services", mergedServices);
             }
@@ -432,7 +517,7 @@ async function syncFromSupabase() {
         // 8. Tarefas dos Vendedores
         if (tasksRes.status === "fulfilled" && Array.isArray(tasksRes.value)) {
             const allRemoteTasks = tasksRes.value;
-            const users = JSON.parse(localStorage.getItem("comercial_users")) || [];
+            const users = MemoryCache.get("comercial_users", () => DEFAULT_USERS) || [];
             const sellers = users.filter(u => u.role === "seller" || u.role === "manager");
             const tasksByOwner = {};
             allRemoteTasks.forEach(t => {
@@ -453,7 +538,7 @@ async function syncFromSupabase() {
                 if (!s || !s.email) continue;
                 const key = `seller_tasks_${s.email}`;
                 const formattedTasks = tasksByOwner[s.email.toLowerCase().trim()] || [];
-                localStorage.setItem(key, JSON.stringify(formattedTasks));
+                MemoryCache.set(key, formattedTasks);
             }
         }
 
@@ -475,34 +560,34 @@ function initStorage() {
 
     // Injetar DEFAULT_USERS APENAS se for a primeira vez e o banco/storage estiverem vazios
     if (!isInitialized && existingUsers.length === 0) {
-        localStorage.setItem("comercial_users", JSON.stringify(DEFAULT_USERS));
+        MemoryCache.set("comercial_users", DEFAULT_USERS);
         localStorage.setItem("comercial_users_initialized", "true");
     }
     if (!localStorage.getItem("comercial_logs")) {
-        localStorage.setItem("comercial_logs", JSON.stringify(INITIAL_LOGS));
+        MemoryCache.set("comercial_logs", INITIAL_LOGS);
     }
     if (!localStorage.getItem("comercial_leads")) {
-        localStorage.setItem("comercial_leads", JSON.stringify([]));
+        MemoryCache.set("comercial_leads", []);
     } else {
         try {
             const existingLeads = JSON.parse(localStorage.getItem("comercial_leads"));
             if (Array.isArray(existingLeads) && existingLeads.length > 1) {
                 existingLeads.sort((a, b) => getLeadTimestamp(b) - getLeadTimestamp(a));
-                localStorage.setItem("comercial_leads", JSON.stringify(existingLeads));
+                MemoryCache.set("comercial_leads", existingLeads);
             }
         } catch(e) {}
     }
     if (!localStorage.getItem("comercial_proposals")) {
-        localStorage.setItem("comercial_proposals", JSON.stringify([]));
+        MemoryCache.set("comercial_proposals", []);
     }
     if (!localStorage.getItem("comercial_goals")) {
-        localStorage.setItem("comercial_goals", JSON.stringify([]));
+        MemoryCache.set("comercial_goals", []);
     }
     if (!localStorage.getItem("comercial_services") || localStorage.getItem("comercial_services") === "[]") {
-        localStorage.setItem("comercial_services", JSON.stringify(INITIAL_SERVICES));
+        MemoryCache.set("comercial_services", INITIAL_SERVICES);
     }
     if (!localStorage.getItem("vellia_calendar_events")) {
-        localStorage.setItem("vellia_calendar_events", JSON.stringify([]));
+        MemoryCache.set("vellia_calendar_events", []);
     }
 }
 
@@ -513,18 +598,18 @@ function startSyncPolling() {
             const rawRemoteLeads = await supabaseFetch("comercial_leads");
             if (Array.isArray(rawRemoteLeads)) {
                 const remoteLeads = rawRemoteLeads.map(l => decodeLeadFromSupabase(l)).sort((a, b) => getLeadTimestamp(b) - getLeadTimestamp(a));
-                const localLeads = JSON.parse(localStorage.getItem("comercial_leads")) || [];
+                const localLeads = MemoryCache.get("comercial_leads", () => []) || [];
                 
                 // Identificar novos leads que estão no Supabase mas não localmente
                 const newLeads = remoteLeads.filter(rl => !localLeads.some(ll => ll.id === rl.id));
                 
                 if (newLeads.length > 0 || JSON.stringify(remoteLeads) !== JSON.stringify(localLeads)) {
                     console.log("🔄 [Fallback Polling] Detectou novos leads ou atualizações no Supabase. Sincronizando...");
-                    localStorage.setItem("comercial_leads", JSON.stringify(remoteLeads));
+                    MemoryCache.set("comercial_leads", remoteLeads);
                     
                     // Também sincronizar os logs de auditoria
                     const remoteLogs = await supabaseFetch("comercial_logs") || [];
-                    localStorage.setItem("comercial_logs", JSON.stringify(remoteLogs));
+                    MemoryCache.set("comercial_logs", remoteLogs);
                     
                     // Disparar eventos para novos leads
                     newLeads.forEach(newLead => {
@@ -550,9 +635,9 @@ function startSyncPolling() {
             const rawRemoteProps = await supabaseFetch("comercial_proposals");
             if (Array.isArray(rawRemoteProps)) {
                 const remoteProps = rawRemoteProps.map(p => decodeProposalFromSupabase(p));
-                const localProps = JSON.parse(localStorage.getItem("comercial_proposals")) || [];
+                const localProps = MemoryCache.get("comercial_proposals", () => []) || [];
                 if (JSON.stringify(remoteProps) !== JSON.stringify(localProps)) {
-                    localStorage.setItem("comercial_proposals", JSON.stringify(remoteProps));
+                    MemoryCache.set("comercial_proposals", remoteProps);
                     window.dispatchEvent(new CustomEvent("vellia:proposalUpdated"));
                     window.dispatchEvent(new Event("storage"));
                 }
@@ -569,12 +654,14 @@ syncFromSupabase();
 startSyncPolling();
 
 export const Store = {
+    cache: MemoryCache,
+
     // CALENDÁRIO
     getCalendarEvents() {
-        return JSON.parse(localStorage.getItem("vellia_calendar_events")) || [];
+        return MemoryCache.get("vellia_calendar_events", () => []) || [];
     },
     saveCalendarEvents(events) {
-        localStorage.setItem("vellia_calendar_events", JSON.stringify(events));
+        MemoryCache.set("vellia_calendar_events", events);
         upsertSupabase("comercial_calendar_events", events);
     },
 
@@ -582,20 +669,12 @@ export const Store = {
 
     // USUÁRIOS
     getUsers() {
-        try {
-            const raw = localStorage.getItem("comercial_users");
-            if (raw) {
-                const parsed = JSON.parse(raw);
-                if (Array.isArray(parsed) && parsed.length > 0) {
-                    return parsed;
-                }
-            }
-        } catch (e) {}
-        return DEFAULT_USERS;
+        const users = MemoryCache.get("comercial_users", () => DEFAULT_USERS);
+        return (Array.isArray(users) && users.length > 0) ? users : DEFAULT_USERS;
     },
 
     saveUsers(users) {
-        localStorage.setItem("comercial_users", JSON.stringify(users));
+        MemoryCache.set("comercial_users", users);
         upsertSupabase("comercial_users", users);
     },
 
@@ -623,9 +702,9 @@ export const Store = {
             }
         } catch (e) {}
 
-        // 2. Remover do localStorage imediatamente
+        // 2. Remover do cache e localStorage imediatamente
         const updatedUsers = users.filter(u => u && u.id !== targetId && (!targetEmail || u.email?.toLowerCase().trim() !== targetEmail));
-        localStorage.setItem("comercial_users", JSON.stringify(updatedUsers));
+        MemoryCache.set("comercial_users", updatedUsers);
 
         // 3. Deletar no Supabase imediatamente tanto por ID quanto por E-mail
         try {
@@ -656,7 +735,7 @@ export const Store = {
 
     getLeads() {
         // Retorna apenas leads ativos (sem deleted_at), excluindo itens da lixeira, sempre com cadastrados mais recentes no topo
-        const allLeads = JSON.parse(localStorage.getItem("comercial_leads")) || [];
+        const allLeads = this.getAllLeadsRaw();
         const activeCompany = localStorage.getItem("activeCompany") || "Veeluen Solutions";
         return allLeads.filter(l => {
             if(l.deleted_at) return false;
@@ -666,8 +745,8 @@ export const Store = {
     },
 
     getAllLeadsRaw() {
-        // Retorna TODOS os leads incluindo os que estão na lixeira
-        return JSON.parse(localStorage.getItem("comercial_leads")) || [];
+        // Retorna TODOS os leads incluindo os que estão na lixeira (acesso instantâneo via MemoryCache)
+        return MemoryCache.get("comercial_leads", () => []) || [];
     },
 
     getTrashLeads() {
@@ -698,7 +777,7 @@ export const Store = {
         // Add updated leads
         allLeads = allLeads.concat(workspaceLeads);
         
-        localStorage.setItem("comercial_leads", JSON.stringify(allLeads));
+        MemoryCache.set("comercial_leads", allLeads);
         if (Array.isArray(workspaceLeads)) {
             for (const lead of workspaceLeads) {
                 upsertSupabase("comercial_leads", encodeLeadForSupabase(lead));
@@ -707,11 +786,11 @@ export const Store = {
     },
 
     getLogs() {
-        return JSON.parse(localStorage.getItem("comercial_logs")) || [];
+        return MemoryCache.get("comercial_logs", () => []) || [];
     },
 
     saveLogs(logs) {
-        localStorage.setItem("comercial_logs", JSON.stringify(logs));
+        MemoryCache.set("comercial_logs", logs);
         if (Array.isArray(logs) && logs.length > 0) {
             upsertSupabase("comercial_logs", logs[0]);
         }
@@ -729,7 +808,7 @@ export const Store = {
         if (index === -1) return false;
         allLeads[index].deleted_at = new Date().toISOString();
         allLeads[index].deleted_by = userEmail;
-        localStorage.setItem("comercial_leads", JSON.stringify(allLeads));
+        MemoryCache.set("comercial_leads", allLeads);
         upsertSupabase("comercial_leads", encodeLeadForSupabase(allLeads[index]));
         return true;
     },
@@ -741,7 +820,7 @@ export const Store = {
         if (index === -1) return false;
         delete allLeads[index].deleted_at;
         delete allLeads[index].deleted_by;
-        localStorage.setItem("comercial_leads", JSON.stringify(allLeads));
+        MemoryCache.set("comercial_leads", allLeads);
         upsertSupabase("comercial_leads", encodeLeadForSupabase(allLeads[index]));
         this.addLog(userEmail, "LEAD_RESTORED", `Lead "${allLeads[index].company}" restaurado da lixeira por ${userEmail}.`, "SUCCESS");
         return allLeads[index];
@@ -750,7 +829,7 @@ export const Store = {
     purgeLeads(leadIds, userEmail = "sistema@vellia.com") {
         // Exclui definitivamente os leads do banco (uso exclusivo de admins/gerentes)
         const allLeads = this.getAllLeadsRaw().filter(l => !leadIds.includes(l.id));
-        localStorage.setItem("comercial_leads", JSON.stringify(allLeads));
+        MemoryCache.set("comercial_leads", allLeads);
         for (const id of leadIds) {
             deleteSupabase("comercial_leads", `?id=eq.${id}`);
         }
@@ -760,7 +839,7 @@ export const Store = {
     deleteLead(leadId) {
         // Mantido para compatibilidade retroativa - agora chama purgeLeads
         const allLeads = this.getAllLeadsRaw().filter(l => l.id !== leadId);
-        localStorage.setItem("comercial_leads", JSON.stringify(allLeads));
+        MemoryCache.set("comercial_leads", allLeads);
         deleteSupabase("comercial_leads", `?id=eq.${leadId}`);
     },
 
@@ -811,7 +890,7 @@ export const Store = {
             ]
         };
         leads.unshift(newLead);
-        localStorage.setItem("comercial_leads", JSON.stringify(leads));
+        MemoryCache.set("comercial_leads", leads);
         upsertSupabase("comercial_leads", encodeLeadForSupabase(newLead));
 
         // Notificar agentes de IA e rankings sobre o novo lead gerado
@@ -823,13 +902,17 @@ export const Store = {
         return newLead;
     },
 
+    createLead(lead, userEmail = "sistema@vellia.com") {
+        return this.addLead(lead, userEmail);
+    },
+
 
     updateLead(leadId, updatedData, userEmail = "sistema@vellia.com") {
         const leads = this.getAllLeadsRaw();
         const index = leads.findIndex(l => l.id === leadId);
         if (index !== -1) {
             leads[index] = { ...leads[index], ...updatedData };
-            localStorage.setItem("comercial_leads", JSON.stringify(leads));
+            MemoryCache.set("comercial_leads", leads);
             upsertSupabase("comercial_leads", encodeLeadForSupabase(leads[index]));
             this.addLog(userEmail, "LEAD_UPDATED", `Lead ${leads[index].company} atualizado.`);
             window.dispatchEvent(new CustomEvent("vellia:leadUpdated", { detail: leads[index] }));
@@ -860,7 +943,7 @@ export const Store = {
             };
             leads[index].interactions = leads[index].interactions || [];
             leads[index].interactions.push(newInteraction);
-            localStorage.setItem("comercial_leads", JSON.stringify(leads));
+            MemoryCache.set("comercial_leads", leads);
             upsertSupabase("comercial_leads", encodeLeadForSupabase(leads[index]));
             window.dispatchEvent(new CustomEvent("vellia:leadUpdated", { detail: leads[index] }));
             window.dispatchEvent(new CustomEvent("vellia:scoreUpdated", { detail: { sellerEmail: userEmail, action: "INTERACTION_ADDED", points: 10 } }));
@@ -922,7 +1005,7 @@ export const Store = {
                 }).catch(err => console.warn("Erro ao disparar Meta CAPI:", err));
             }
 
-            localStorage.setItem("comercial_leads", JSON.stringify(leads));
+            MemoryCache.set("comercial_leads", leads);
             upsertSupabase("comercial_leads", encodeLeadForSupabase(leads[index]));
             window.dispatchEvent(new CustomEvent("vellia:leadUpdated", { detail: leads[index] }));
             window.dispatchEvent(new CustomEvent("vellia:scoreUpdated", { detail: { sellerEmail: userEmail, action: "STAGE_CHANGED", oldStage, newStage, points: 30 } }));
@@ -939,7 +1022,7 @@ export const Store = {
 
     // CONTRATOS
     getContracts() {
-        return JSON.parse(localStorage.getItem("comercial_contracts")) || [];
+        return MemoryCache.get("comercial_contracts", () => []) || [];
     },
 
     getContractById(id) {
@@ -969,7 +1052,7 @@ export const Store = {
             updatedAt: new Date().toISOString()
         };
         contracts.push(newContract);
-        localStorage.setItem("comercial_contracts", JSON.stringify(contracts));
+        MemoryCache.set("comercial_contracts", contracts);
         upsertSupabase("comercial_contracts", newContract);
         
         if (data.services && data.services.length > 0) {
@@ -984,7 +1067,7 @@ export const Store = {
                 cServices.push(cs);
                 upsertSupabase("comercial_contract_services", cs);
             });
-            localStorage.setItem("comercial_contract_services", JSON.stringify(cServices));
+            MemoryCache.set("comercial_contract_services", cServices);
         }
         
         this.addLog(data.createdBy, "CONTRACT_CREATED", `Contrato ${newContract.number} criado.`);
@@ -996,7 +1079,7 @@ export const Store = {
         const index = contracts.findIndex(c => c.id === id);
         if (index !== -1) {
             contracts[index] = { ...contracts[index], ...updates, updatedAt: new Date().toISOString() };
-            localStorage.setItem("comercial_contracts", JSON.stringify(contracts));
+            MemoryCache.set("comercial_contracts", contracts);
             upsertSupabase("comercial_contracts", contracts[index]);
             this.addLog(userEmail, "CONTRACT_UPDATED", `Contrato ${contracts[index].number} atualizado.`);
             return contracts[index];
@@ -1005,7 +1088,7 @@ export const Store = {
     },
     
     getContractServices() {
-        return JSON.parse(localStorage.getItem("comercial_contract_services")) || [];
+        return MemoryCache.get("comercial_contract_services", () => []) || [];
     },
     
     getServicesForContract(contractId) {
@@ -1023,7 +1106,7 @@ export const Store = {
     },
 
     getProposalsRaw() {
-        return JSON.parse(localStorage.getItem("comercial_proposals")) || [];
+        return MemoryCache.get("comercial_proposals", () => []) || [];
     },
 
     getProposalById(id) {
@@ -1037,12 +1120,18 @@ export const Store = {
         const curAccess = (typeof Auth !== "undefined" && Auth.getCurrentUser) ? Auth.getCurrentUser()?.companyAccess : null;
         let ws = data.workspace;
         if (!ws) {
-            if (curAccess && curAccess !== "Ambas") {
-                ws = curAccess;
-            } else if (isMika) {
-                ws = "Excelência Ambiental";
-            } else {
-                ws = localStorage.getItem('activeCompany') || 'Veeluen Solutions';
+            if (data.leadId) {
+                const lead = this.getLeadById(data.leadId);
+                if (lead && lead.workspace) ws = lead.workspace;
+            }
+            if (!ws) {
+                if (curAccess && curAccess !== "Ambas") {
+                    ws = curAccess;
+                } else if (isMika) {
+                    ws = "Excelência Ambiental";
+                } else {
+                    ws = localStorage.getItem('activeCompany') || 'Veeluen Solutions';
+                }
             }
         }
         const newProposal = {
@@ -1054,14 +1143,14 @@ export const Store = {
             title: data.title || "",
             value: parseFloat(data.value) || 0,
             status: data.status || "Enviada",
-            sentAt: data.sentAt || new Date().toISOString(),
-            closedAt: data.closedAt || null,
-            validUntil: data.validUntil || null,
+            sentAt: data.sentAt ? sanitizeIsoDate(data.sentAt, new Date().toISOString()) : new Date().toISOString(),
+            closedAt: data.closedAt ? sanitizeIsoDate(data.closedAt, null) : null,
+            validUntil: data.validUntil ? sanitizeIsoDate(data.validUntil, null) : null,
             competitor: data.competitor || "",
             lossReason: data.lossReason || "",
             notes: data.notes || "",
             createdBy: data.createdBy || "sistema@vellia.com",
-            createdAt: data.createdAt || new Date().toISOString(),
+            createdAt: data.createdAt ? sanitizeIsoDate(data.createdAt, new Date().toISOString()) : new Date().toISOString(),
             ...data
         };
         if (!newProposal.id) newProposal.id = `prop_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
@@ -1069,7 +1158,7 @@ export const Store = {
         if (!newProposal.createdAt) newProposal.createdAt = new Date().toISOString();
 
         proposals.push(newProposal);
-        localStorage.setItem("comercial_proposals", JSON.stringify(proposals));
+        MemoryCache.set("comercial_proposals", proposals);
         upsertSupabase("comercial_proposals", encodeProposalForSupabase(newProposal));
         
         window.dispatchEvent(new CustomEvent("vellia:proposalUpdated", { detail: newProposal }));
@@ -1084,7 +1173,7 @@ export const Store = {
         const index = proposals.findIndex(p => p.id === id);
         if (index !== -1) {
             proposals[index] = { ...proposals[index], ...updates };
-            localStorage.setItem("comercial_proposals", JSON.stringify(proposals));
+            MemoryCache.set("comercial_proposals", proposals);
             upsertSupabase("comercial_proposals", encodeProposalForSupabase(proposals[index]));
             this.addLog(userEmail, "PROPOSAL_UPDATED", `Proposta ${proposals[index].title || proposals[index].budgetNumber || proposals[index].id} atualizada.`);
             
@@ -1099,7 +1188,7 @@ export const Store = {
 
     deleteProposal(id, userEmail = "sistema@vellia.com") {
         const proposals = this.getProposalsRaw().filter(p => p.id !== id);
-        localStorage.setItem("comercial_proposals", JSON.stringify(proposals));
+        MemoryCache.set("comercial_proposals", proposals);
         deleteSupabase("comercial_proposals", `?id=eq.${id}`);
         this.addLog(userEmail, "PROPOSAL_DELETED", `Proposta ${id} excluída.`);
         window.dispatchEvent(new CustomEvent("vellia:proposalUpdated"));
@@ -1107,29 +1196,84 @@ export const Store = {
     },
 
     saveProposals(proposals) {
-        if (Array.isArray(proposals)) {
-            localStorage.setItem("comercial_proposals", JSON.stringify(proposals));
-            for (const p of proposals) {
-                upsertSupabase("comercial_proposals", encodeProposalForSupabase(p));
+        const listToSave = Array.isArray(proposals) ? proposals : this.getProposalsRaw();
+        MemoryCache.set("comercial_proposals", listToSave);
+        if (listToSave.length > 0) {
+            const payloads = listToSave.map(p => encodeProposalForSupabase(p));
+            upsertSupabase("comercial_proposals", payloads);
+        }
+    },
+
+    async syncProposalsWithSupabase() {
+        try {
+            console.log("☁️ [Store.syncProposalsWithSupabase] Sincronizando propostas com o Supabase...");
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/comercial_proposals?select=*`, {
+                headers: {
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": `Bearer ${SUPABASE_KEY}`
+                }
+            });
+
+            if (!res.ok) {
+                const errText = await res.text();
+                throw new Error(`Falha ao buscar propostas na nuvem: ${res.statusText} (${errText})`);
             }
-        } else {
-            const current = this.getProposalsRaw();
-            localStorage.setItem("comercial_proposals", JSON.stringify(current));
-            for (const p of current) {
-                upsertSupabase("comercial_proposals", encodeProposalForSupabase(p));
+
+            const remoteProposals = await res.json();
+            const decodedRemote = remoteProposals.map(p => decodeProposalFromSupabase(p));
+            const localProposals = this.getProposalsRaw();
+
+            // Mapa para mesclagem inteligente
+            const propMap = new Map();
+            localProposals.forEach(p => { if (p && p.id) propMap.set(p.id, p); });
+
+            // Adicionar ou mesclar propostas da nuvem
+            decodedRemote.forEach(remoteP => {
+                if (!remoteP || !remoteP.id) return;
+                const localP = propMap.get(remoteP.id);
+                if (localP) {
+                    propMap.set(remoteP.id, { ...remoteP, ...localP });
+                } else {
+                    propMap.set(remoteP.id, remoteP);
+                }
+            });
+
+            // Identificar propostas locais que ainda não estão no Supabase
+            const missingInCloud = localProposals.filter(lp => !remoteProposals.some(rp => rp.id === lp.id));
+            if (missingInCloud.length > 0) {
+                const payloads = missingInCloud.map(p => encodeProposalForSupabase(p));
+                await upsertSupabase("comercial_proposals", payloads);
+                console.log(`☁️ [Store.syncProposalsWithSupabase] ${missingInCloud.length} propostas locais enviadas para o Supabase.`);
             }
+
+            const merged = Array.from(propMap.values());
+            MemoryCache.set("comercial_proposals", merged);
+            window.dispatchEvent(new CustomEvent("vellia:proposalUpdated"));
+
+            return {
+                success: true,
+                total: merged.length,
+                syncedFromCloud: decodedRemote.length,
+                uploadedToCloud: missingInCloud.length
+            };
+        } catch (err) {
+            console.error("❌ [Store.syncProposalsWithSupabase] Erro:", err);
+            return {
+                success: false,
+                error: err.message
+            };
         }
     },
 
 
     getLogs() {
-        const logs = JSON.parse(localStorage.getItem("comercial_logs")) || [];
+        const logs = MemoryCache.get("comercial_logs", () => JSON.parse(localStorage.getItem("comercial_logs")) || []);
         // Ordenar do mais novo para o mais antigo
-        return logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        return [...logs].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     },
 
     addLog(userEmail, action, details, status = "SUCCESS") {
-        const logs = this.getLogs();
+        const logs = [...this.getLogs()];
         const newLog = {
             id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
             timestamp: new Date().toISOString(),
@@ -1139,20 +1283,20 @@ export const Store = {
             status
         };
         logs.unshift(newLog);
-        localStorage.setItem("comercial_logs", JSON.stringify(logs));
+        MemoryCache.set("comercial_logs", logs);
         upsertSupabase("comercial_logs", newLog);
         return newLog;
     },
 
     clearLogs() {
-        localStorage.setItem("comercial_logs", JSON.stringify([]));
+        MemoryCache.set("comercial_logs", []);
         deleteSupabase("comercial_logs");
         this.addLog("sistema@vellia.com", "LOGS_CLEARED", "Os logs de auditoria foram limpos.", "WARN");
     },
 
     // CATÁLOGO DE SERVIÇOS (ETAPA 7)
     getServices() {
-        return JSON.parse(localStorage.getItem("comercial_services")) || [];
+        return MemoryCache.get("comercial_services", () => JSON.parse(localStorage.getItem("comercial_services")) || []);
     },
 
     getServiceById(id) {
@@ -1160,7 +1304,7 @@ export const Store = {
     },
 
     addService(data) {
-        const services = this.getServices();
+        const services = [...this.getServices()];
         const newService = {
             id: `srv_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
             name: data.name,
@@ -1169,17 +1313,17 @@ export const Store = {
             isActive: true
         };
         services.push(newService);
-        localStorage.setItem("comercial_services", JSON.stringify(services));
+        MemoryCache.set("comercial_services", services);
         upsertSupabase("comercial_services", newService);
         return newService;
     },
 
     updateService(id, data) {
-        const services = this.getServices();
+        const services = [...this.getServices()];
         const idx = services.findIndex(s => s.id === id);
         if (idx !== -1) {
             services[idx] = { ...services[idx], ...data };
-            localStorage.setItem("comercial_services", JSON.stringify(services));
+            MemoryCache.set("comercial_services", services);
             upsertSupabase("comercial_services", services[idx]);
             return true;
         }
@@ -1191,11 +1335,11 @@ export const Store = {
     // METAS (GOALS)
     // ==========================================
     getGoals() {
-        return JSON.parse(localStorage.getItem("comercial_goals")) || [];
+        return MemoryCache.get("comercial_goals", () => JSON.parse(localStorage.getItem("comercial_goals")) || []);
     },
 
     saveGoals(goalsData) {
-        localStorage.setItem("comercial_goals", JSON.stringify(goalsData));
+        MemoryCache.set("comercial_goals", goalsData);
         upsertSupabase("comercial_goals", goalsData);
     },
 
@@ -1204,7 +1348,7 @@ export const Store = {
     },
 
     setGoal(email, period, targets) {
-        let goals = this.getGoals();
+        let goals = [...this.getGoals()];
         let idx = goals.findIndex(g => g.userEmail === email && g.period === period);
         if (idx !== -1) {
             goals[idx].targets = { ...goals[idx].targets, ...targets };
@@ -1231,7 +1375,7 @@ export const Store = {
         };
         comments.push(newComment);
         leads[index].comments = comments;
-        localStorage.setItem("comercial_leads", JSON.stringify(leads));
+        MemoryCache.set("comercial_leads", leads);
         upsertSupabase("comercial_leads", leads[index]);
         return newComment;
     },
@@ -1246,7 +1390,7 @@ export const Store = {
                 const k = localStorage.key(i);
                 if (k && k.startsWith("seller_tasks_") && !k.startsWith("seller_tasks_old_")) {
                     try {
-                        const parsed = JSON.parse(localStorage.getItem(k));
+                        const parsed = MemoryCache.get(k, () => JSON.parse(localStorage.getItem(k)));
                         if (Array.isArray(parsed)) tasks.push(...parsed);
                     } catch(e) {}
                 }
@@ -1254,7 +1398,7 @@ export const Store = {
             return tasks;
         }
         const key = `seller_tasks_${email}`;
-        return JSON.parse(localStorage.getItem(key) || "[]");
+        return MemoryCache.get(key, () => JSON.parse(localStorage.getItem(key) || "[]"));
     },
 
     async saveTasks(email, tasks) {
@@ -1269,7 +1413,7 @@ export const Store = {
         }
         if (!email) return;
         const key = `seller_tasks_${email}`;
-        localStorage.setItem(key, JSON.stringify(tasks));
+        MemoryCache.set(key, tasks);
         
         // Sincronizar com Supabase utilizando comparação de listas (diff sync)
         try {
@@ -1310,8 +1454,8 @@ export const Store = {
                 await upsertSupabase("comercial_tasks", dbTask);
             }
 
-            // Atualizar localStorage com os IDs possivelmente gerados
-            localStorage.setItem(key, JSON.stringify(tasks));
+            // Atualizar cache e localStorage com os IDs possivelmente gerados
+            MemoryCache.set(key, tasks);
 
             // Disparar evento local de que as tarefas foram alteradas para fazer o broadcast via WebSocket
             window.dispatchEvent(new CustomEvent("vellia:localTasksMutated", {
@@ -1334,7 +1478,7 @@ export const Store = {
                 priority: t.priority || "normal",
                 assignedBy: t.assignedBy
             }));
-            localStorage.setItem(key, JSON.stringify(formattedTasks));
+            MemoryCache.set(key, formattedTasks);
 
             // Obter o usuário logado atualmente para decidir se notifica de novas tarefas
             let currentUser = null;
@@ -1390,8 +1534,8 @@ export const Store = {
         const leads = this.getAllLeadsRaw();
         const proposals = this.getProposalsRaw();
         const users = this.getUsers();
-        const logs = JSON.parse(localStorage.getItem("comercial_logs") || "[]");
-        const guruHistory = JSON.parse(localStorage.getItem("guru_strategy_history") || "[]");
+        const logs = this.getLogs();
+        const guruHistory = MemoryCache.get("guru_strategy_history", () => JSON.parse(localStorage.getItem("guru_strategy_history") || "[]"));
 
         // 1. Leads criados e qualificados no mês
         const monthLeads = leads.filter(l => {
@@ -1420,7 +1564,7 @@ export const Store = {
         let completedTasks = 0;
         let totalTasks = 0;
         users.forEach(u => {
-            const userTasks = JSON.parse(localStorage.getItem(`seller_tasks_${u.email}`) || "[]");
+            const userTasks = this.getTasks(u.email);
             userTasks.forEach(t => {
                 if (t.date && t.date.includes(`/${mStr}/${yStr}`)) {
                     totalTasks++;
@@ -1500,15 +1644,16 @@ export const Store = {
 
     // CALENDÁRIO
     getCalendarEvents() {
-        return JSON.parse(localStorage.getItem("vellia_calendar_events")) || [];
+        return MemoryCache.get("vellia_calendar_events", () => JSON.parse(localStorage.getItem("vellia_calendar_events")) || []);
     },
     saveCalendarEvents(events) {
-        localStorage.setItem("vellia_calendar_events", JSON.stringify(events));
+        MemoryCache.set("vellia_calendar_events", events);
         upsertSupabase("comercial_calendar_events", events);
     },
 
     // Métodos utilitários para resetar banco se necessário
     resetAll() {
+        MemoryCache.invalidate();
         localStorage.removeItem("comercial_users");
         localStorage.removeItem("comercial_logs");
         localStorage.removeItem("comercial_leads");
@@ -1518,6 +1663,9 @@ export const Store = {
         initStorage();
         window.location.reload();
     },
+
+    // Expor o MemoryCache para componentes que precisem invalidar ou consultar diretamente
+    cache: MemoryCache,
 
     // Expor upsert para módulos externos salvarem diretamente em tabelas customizadas
     upsert(table, data) {
@@ -1556,3 +1704,8 @@ export const Store = {
         }
     }
 };
+
+if (typeof window !== "undefined") {
+    window.Store = Store;
+}
+

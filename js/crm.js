@@ -2436,6 +2436,8 @@ Instruções: Retorne APENAS o texto curto pronto da mensagem em tom amigável e
                 ? `<button class="btn btn-sm btn-success" style="background:#25d366; color:white; border:none; border-radius:6px; font-size:10px; cursor:pointer; font-weight:700; padding:4px 8px;" onclick="window.sendInspectionNotification('${lead.id}', '${item.id}')">💬 Alerta</button>`
                 : "";
 
+            const deleteBtn = `<button class="btn btn-sm" style="color:#ef4444; border:1px solid #fca5a5; background:#fff5f5; border-radius:6px; font-size:10px; cursor:pointer; font-weight:700; padding:4px 8px; margin-left:4px;" onclick="window.deleteInspection('${lead.id}', '${item.id}')" title="Excluir Inspeção">🗑️</button>`;
+
             return `
                 <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 10px; display: flex; flex-direction: column; gap: 6px; font-size: 12.5px;">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start;">
@@ -2447,9 +2449,12 @@ Instruções: Retorne APENAS o texto curto pronto da mensagem em tom amigável e
                             <span>Execução: ${formatDate(execDate)}</span><br>
                             <span>Vencimento: <strong>${formatDate(expiryDate)}</strong></span>
                         </div>
-                        <div>
+                        <div style="display: flex; flex-direction: column; align-items: flex-end;">
                             <span style="display:block; text-align:right; margin-bottom:4px;">${remainingText}</span>
-                            ${notifyBtn}
+                            <div style="display: flex; align-items: center;">
+                                ${notifyBtn}
+                                ${deleteBtn}
+                            </div>
                         </div>
                     </div>
                 </div>

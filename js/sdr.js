@@ -267,9 +267,8 @@ Retorne a resposta estritamente no seguinte formato JSON:
     },
 
     sendNativeAlert(title, message) {
-        if ("Notification" in window && Notification.permission === "granted") {
-            new Notification(title, { body: message });
-        }
+        // Notificações nativas do navegador desativadas a pedido do usuário
+        return;
     },
 
     // =========================================================================

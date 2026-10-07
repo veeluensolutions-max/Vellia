@@ -5,12 +5,14 @@
 
 export const AudioEngine = {
     audioCtx: null,
-    enabled: true,
+    enabled: false,
 
     init() {
         const saved = localStorage.getItem("vellia_audio_enabled");
         if (saved !== null) {
             this.enabled = saved === "true";
+        } else {
+            this.enabled = false;
         }
     },
 

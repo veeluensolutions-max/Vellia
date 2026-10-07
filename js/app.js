@@ -1,3 +1,4 @@
+import "./lazy-loader.js";
 import { Store } from "./store.js";
 import { Auth } from "./auth.js";
 import { Audit } from "./audit.js";

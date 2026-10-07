@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Vellia — Inspection Notification Scheduler
  * Detecta automaticamente inspecoes vencendo em 90/60/30 dias e
  * dispara alertas no sistema de notificacoes sem acao manual.
@@ -164,8 +164,8 @@ export const InspectionScheduler = {
     },
 
     schedulePeriodicCheck() {
-        setTimeout(() => this.runDailyCheck(), 3000);
-        setInterval(() => this.runDailyCheck(true), CHECK_INTERVAL_MS);
+        // Desativado a pedido do usuário: varreduras automáticas que geram notificações periódicas foram silenciadas
+        console.log("[InspectionScheduler] Verificações periódicas automáticas de notificações desativadas.");
     },
 
     async markAsNotified(leadId, inspectionId) {

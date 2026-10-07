@@ -21,18 +21,11 @@ export const Notifications = {
         if (!this.panel || !this.btn) return;
 
         this.bindEvents();
-        this.requestNativePermission();
-        this.generateContextualNotifications();
-        this.checkFollowupReminders();
-        this.checkOverdueTasks();
+        // Notificações automáticas desativadas a pedido do usuário para manter o CRM limpo e silencioso
+        this.items = [];
         this.render();
 
-        // Verificar follow-ups a cada 60 segundos
-        setInterval(() => this.checkFollowupReminders(), 60000);
-        // Verificar tarefas pendentes a cada 5 minutos
-        setInterval(() => this.checkOverdueTasks(), 300000);
-
-        // Ouvir novos comentários internos de outros usuários
+        // Ouvir novos comentários internos de outros usuários (apenas quando houver interação real de colegas)
         window.addEventListener("vellia:newComment", (e) => {
             const { company, commenter, commentId } = e.detail || {};
             if (!company) return;
@@ -49,7 +42,7 @@ export const Notifications = {
         // Ouvir notificações de Leads recebidos do Meta Ads / Facebook / Messenger / Instagram Direct
         window.addEventListener("vellia:metaLeadReceived", (e) => {
             const detail = e.detail || {};
-            const { contact, company, source, leadId } = detail;
+            const { contact, company, source } = detail;
             const leadTitle = source === "Instagram Direct"
                 ? "📸 Nova Mensagem Direct no Instagram!"
                 : (source === "Facebook Messenger" ? "💬 Nova Mensagem no Facebook Messenger" : "🚨 Novo Lead do Meta Ads (Facebook)");
@@ -63,8 +56,6 @@ export const Notifications = {
                 read: false,
                 timestamp: new Date()
             });
-
-            this.sendNativeNotification(leadTitle, leadMsg);
         });
 
         // Ouvir criação de novos leads manuais/web
@@ -74,79 +65,23 @@ export const Notifications = {
 
         // Ouvir notificacoes originadas pelos Agentes de IA
         window.addEventListener("vellia:aiNotification", (e) => {
-            const { id, title, message, type } = e.detail || {};
-            if (!id || !title) return;
-            this.addItem({
-                id,
-                title,
-                message,
-                type: type || "info",
-                read: false,
-                timestamp: new Date()
-            });
-            this.sendNativeNotification(title, message);
+            // Silenciado a pedido do usuário
         });
 
         // Ouvir alertas de inspecoes vencendo (gerados pelo InspectionScheduler)
         window.addEventListener("vellia:inspectionAlert", (e) => {
-            const d = e.detail || {};
-            if (!d.notifId) return;
-
-            // Tipo de notif baseado na urgencia
-            const typeMap = {
-                expired  : "danger",
-                urgent   : "danger",
-                critical : "warning",
-                warning  : "info"
-            };
-            const notifType = typeMap[d.alertType] || "warning";
-
-            const title = `🔔 ${d.company} — ${d.alertLabel}`;
-            const message = `${d.serviceName} • Vencimento: ${d.formattedExpiry} (${d.urgencyText})`;
-
-            this.addItem({
-                id: d.notifId,
-                title,
-                message,
-                type: notifType,
-                read: false,
-                timestamp: new Date(),
-                action: {
-                    label: d.isCritical ? "⚡ Disparar WhatsApp Urgente" : "💬 Contatar Cliente",
-                    leadId: d.leadId,
-                    inspectionId: d.inspectionId,
-                    phone: d.phone,
-                    contact: d.contact,
-                    service: d.serviceName,
-                    urgencyText: d.urgencyText,
-                    expiryDate: d.formattedExpiry
-                }
-            });
-
-            // Alerta nativo se critico
-            if (d.isCritical) {
-                this.sendNativeNotification(title, message);
-            }
+            // Silenciado a pedido do usuário
         });
     },
 
     requestNativePermission() {
-        if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
-            Notification.requestPermission();
-        }
+        // Notificações nativas do navegador desativadas a pedido do usuário
+        return;
     },
 
     sendNativeNotification(title, message) {
-        if ("Notification" in window && Notification.permission === "granted") {
-            try {
-                new Notification(title, {
-                    body: message,
-                    icon: "/favicon.ico"
-                });
-            } catch (err) {
-                console.error("Falha ao enviar notificação nativa:", err);
-            }
-        }
+        // Notificações nativas do navegador desativadas a pedido do usuário
+        return;
     },
 
     bindEvents() {
@@ -277,8 +212,9 @@ export const Notifications = {
     },
 
     generateContextualNotifications() {
-        const ctx = analyzeContext();
+        // Desativado a pedido do usuário
         this.items = [];
+        return;
         const currentUser = Auth.getCurrentUser();
         const sentNotifications = JSON.parse(sessionStorage.getItem("sent_native_notifications") || "[]");
         let updated = false;
@@ -453,52 +389,13 @@ export const Notifications = {
     },
 
     checkFollowupReminders() {
-        const currentUser = Auth.getCurrentUser();
-        if (!currentUser) return;
-
-        const allLeads = Store.getLeads();
-        const now = Date.now();
-        const windowMs = 10 * 60 * 1000;
-        const notifiedKey = "vellia_followup_notified";
-        const notified = JSON.parse(sessionStorage.getItem(notifiedKey) || "[]");
-        let changed = false;
-
-        allLeads.forEach(lead => {
-            if (!lead.followups) return;
-            lead.followups.forEach(f => {
-                if (f.done || f.userEmail !== currentUser.email) return;
-                const scheduledMs = new Date(f.scheduledAt).getTime();
-                const diff = scheduledMs - now;
-                const isNearOrOverdue = diff <= windowMs && diff > -windowMs;
-                if (isNearOrOverdue && !notified.includes(f.id)) {
-                    const fmtDt = new Date(f.scheduledAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
-                    const notifItem = {
-                        id: `followup_${f.id}`,
-                        title: `⏰ Follow-up: ${lead.company}`,
-                        message: `${f.note} — ${fmtDt}`,
-                        type: "warning",
-                        read: false,
-                        timestamp: new Date()
-                    };
-                    if (!this.items.find(i => i.id === notifItem.id)) {
-                        this.items.unshift(notifItem);
-                        this.sendNativeNotification(notifItem.title, notifItem.message);
-                    }
-                    notified.push(f.id);
-                    changed = true;
-                }
-            });
-        });
-
-        if (changed) {
-            sessionStorage.setItem(notifiedKey, JSON.stringify(notified));
-            this.render();
-        }
+        // Desativado a pedido do usuário
+        return;
     },
 
     checkOverdueTasks() {
-        const currentUser = Auth.getCurrentUser();
-        if (!currentUser) return;
+        // Desativado a pedido do usuário
+        return;
 
         const today = new Date().toLocaleDateString("pt-BR");
         const storageKey = `seller_tasks_${currentUser.email}`;

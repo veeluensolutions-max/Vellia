@@ -68,7 +68,12 @@ function drawCard(doc, x, y, w, h, title, value, subtitle, valueColor) {
     }
 }
 
-export function generatePerformancePDF(userEmail) {
+export async function generatePerformancePDF(userEmail) {
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+        if (window.LazyLoader) {
+            await window.LazyLoader.ensureJsPDF();
+        }
+    }
     const jsPDFLib = window.jspdf;
     if (!jsPDFLib || !jsPDFLib.jsPDF) {
         alert("Biblioteca PDF não carregada. Recarregue a página e tente novamente.");

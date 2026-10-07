@@ -4,7 +4,12 @@
  */
 
 const IsocineticaPDF = {
-    generateProposal: function(clientName, finalPrice) {
+    generateProposal: async function(clientName, finalPrice) {
+        if (!window.jspdf || !window.jspdf.jsPDF) {
+            if (window.LazyLoader) {
+                await window.LazyLoader.ensureJsPDF();
+            }
+        }
         if (!window.jspdf) {
             console.error("jsPDF não está carregado.");
             alert("Erro: Biblioteca PDF não carregada.");

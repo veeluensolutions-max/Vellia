@@ -42,7 +42,14 @@ export const Inspections = {
     },
 
     getInspections() {
-        const leads = Store.getLeads();
+        const currentUser = Auth.getCurrentUser();
+        const isOperacional = currentUser && ["operacional", "operacoes", "operacao"].includes(currentUser.role?.toLowerCase());
+        const allRawLeads = Store.getAllLeadsRaw ? Store.getAllLeadsRaw() : (JSON.parse(localStorage.getItem("comercial_leads")) || []);
+        
+        // Operacional ou acesso a Ambas acessam inspeções completas de todos os clientes ativos
+        const leads = (isOperacional || currentUser?.companyAccess === "Ambas")
+            ? allRawLeads.filter(l => !l.deleted_at)
+            : Store.getLeads();
         const inspections = [];
 
         leads.forEach(lead => {
@@ -225,6 +232,16 @@ export const Inspections = {
                             >
                                 📄 Laudo
                             </button>
+                            <button 
+                                class="btn btn-outline btn-sm"
+                                style="padding: 8px 12px; border-radius: 8px; font-size: 11.5px; border-color: #ef4444; color: #ef4444; background: #fff5f5; font-weight: 700; cursor: pointer; transition: all 0.2s;"
+                                onmouseover="this.style.background='#fee2e2'"
+                                onmouseout="this.style.background='#fff5f5'"
+                                onclick="window.deleteInspection('${item.leadId}', '${item.id}')"
+                                title="Excluir Inspeção Técnica"
+                            >
+                                🗑️ Excluir
+                            </button>
                         </div>
                     </td>
                 </tr>
@@ -373,6 +390,17 @@ export const Inspections = {
         const btnGcCancel = document.getElementById("gc-insp-btn-cancel");
         if (btnGcCancel) btnGcCancel.onclick = () => this.closeInspectionScreen();
 
+        const btnGcDelete = document.getElementById("gc-insp-btn-delete");
+        if (btnGcDelete) {
+            btnGcDelete.onclick = () => {
+                const leadId = document.getElementById("gc-insp-lead-id")?.value;
+                const interactionId = document.getElementById("gc-insp-interaction-id")?.value;
+                if (leadId && interactionId) {
+                    this.deleteInspection(leadId, interactionId);
+                }
+            };
+        }
+
         const btnGcSubmit = document.getElementById("gc-insp-btn-submit");
         if (btnGcSubmit) btnGcSubmit.onclick = () => this.saveInspectionFromScreen(false);
 
@@ -511,7 +539,8 @@ export const Inspections = {
                 const name = prompt("Digite a Razão Social ou Nome Fantasia da nova empresa:");
                 if (name && name.trim()) {
                     const cleanName = name.trim();
-                    const newLead = Store.createLead({
+                    const createFn = Store.createLead || Store.addLead;
+                    const newLead = createFn.call(Store, {
                         company: cleanName,
                         contact: "Responsável",
                         source: "Inspeções",
@@ -584,7 +613,8 @@ export const Inspections = {
                 // Se for um novo lead detectado pelo laudo
                 if (leadId.startsWith("__NEW__:")) {
                     const companyName = leadId.replace("__NEW__:", "").trim();
-                    const createdLead = Store.createLead({
+                    const createFn = Store.createLead || Store.addLead;
+                    const createdLead = createFn.call(Store, {
                         company: companyName,
                         contact: "Responsável Técnico",
                         source: "Scanner de Laudo",
@@ -594,7 +624,8 @@ export const Inspections = {
                     leadId = createdLead.id;
                 }
 
-                const lead = Store.getLeadById(leadId);
+                const allLeads = Store.getAllLeadsRaw ? Store.getAllLeadsRaw() : (JSON.parse(localStorage.getItem("comercial_leads")) || []);
+                const lead = allLeads.find(l => l.id === leadId) || Store.getLeadById(leadId);
                 if (!lead) {
                     alert("Erro: Não foi possível localizar os dados do cliente selecionado.");
                     return;
@@ -622,7 +653,7 @@ export const Inspections = {
                     id: "int_" + Date.now().toString(36),
                     type: "Inspeção",
                     timestamp: new Date().toISOString(),
-                    description: `Vistoria de ${service} concluída com ${score}% de conformidade. Parecer: ${notes.substring(0, 120)}...`,
+                    description: `Vistoria de ${service} concluída com ${score}% de conformidade. Parecer: ${(notes || "").substring(0, 120)}...`,
                     meta: {
                         serviceName: service,
                         score: score,
@@ -637,9 +668,13 @@ export const Inspections = {
                 lead.interactions.push(newInteraction);
                 
                 try {
-                    const localLeads = JSON.parse(localStorage.getItem("comercial_leads")) || [];
-                    const updatedLocal = localLeads.map(l => l.id === lead.id ? lead : l);
-                    localStorage.setItem("comercial_leads", JSON.stringify(updatedLocal));
+                    if (typeof Store.updateLead === "function") {
+                        Store.updateLead(lead.id, { interactions: lead.interactions }, userEmail);
+                    } else {
+                        const localLeads = JSON.parse(localStorage.getItem("comercial_leads")) || [];
+                        const updatedLocal = localLeads.map(l => l.id === lead.id ? lead : l);
+                        localStorage.setItem("comercial_leads", JSON.stringify(updatedLocal));
+                    }
 
                     const res = await fetch(`${SUPABASE_URL}/rest/v1/comercial_leads?id=eq.${lead.id}`, {
                         method: "PATCH",
@@ -689,7 +724,13 @@ export const Inspections = {
         if (loadingBox) loadingBox.style.display = "none";
         if (successBox) successBox.style.display = "none";
 
-        const leads = Store.getLeads() || [];
+        const currentUser = Auth.getCurrentUser();
+        const isOperacional = currentUser && ["operacional", "operacoes", "operacao"].includes(currentUser.role?.toLowerCase());
+        const allRawLeads = Store.getAllLeadsRaw ? Store.getAllLeadsRaw() : (JSON.parse(localStorage.getItem("comercial_leads")) || []);
+        const leads = (isOperacional || currentUser?.companyAccess === "Ambas")
+            ? allRawLeads.filter(l => !l.deleted_at)
+            : (Store.getLeads() || []);
+
         if (leadSelect) {
             leadSelect.innerHTML = `<option value="">-- Selecionar Cliente / Lead Cadastrado --</option>` +
                 leads.map(l => `<option value="${l.id}">${l.company} (${l.contact || 'Sem contato'})</option>`).join("");
@@ -822,7 +863,8 @@ export const Inspections = {
     populateClientsDatalist() {
         const datalist = document.getElementById("gc-insp-clients-datalist");
         if (!datalist) return;
-        const leads = Store.getLeads ? Store.getLeads() : [];
+        const allRawLeads = Store.getAllLeadsRaw ? Store.getAllLeadsRaw() : (JSON.parse(localStorage.getItem("comercial_leads")) || []);
+        const leads = allRawLeads.filter(l => !l.deleted_at);
         const names = new Set();
         leads.forEach(l => { if (l.company) names.add(l.company.trim()); });
         datalist.innerHTML = Array.from(names).map(name => `<option value="${name}"></option>`).join("");
@@ -893,9 +935,13 @@ export const Inspections = {
                         price: item.meta?.serviceValue || 4500
                     });
                 }
+                const btnGcDelete = document.getElementById("gc-insp-btn-delete");
+                if (btnGcDelete) btnGcDelete.style.display = "inline-flex";
             }
         } else {
             // Nova Inspeção
+            const btnGcDelete = document.getElementById("gc-insp-btn-delete");
+            if (btnGcDelete) btnGcDelete.style.display = "none";
             if (titleEl) titleEl.innerHTML = `
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
                 <span>Nova inspeção & laudo técnico</span>
@@ -968,6 +1014,8 @@ export const Inspections = {
     },
 
     closeInspectionScreen() {
+        const btnGcDelete = document.getElementById("gc-insp-btn-delete");
+        if (btnGcDelete) btnGcDelete.style.display = "none";
         const listContainer = document.getElementById("inspections-list-container");
         const inspView = document.getElementById("gestaoclick-inspection-view");
         if (inspView) inspView.style.display = "none";
@@ -1225,40 +1273,53 @@ export const Inspections = {
             lead = leads.find(l => l.company && l.company.toLowerCase() === clientName.toLowerCase());
         }
         if (!lead) {
-            lead = Store.createLead({
+            const createFn = Store.createLead || Store.addLead;
+            lead = createFn.call(Store, {
                 company: clientName,
                 contact: contact || "Responsável Técnico",
                 address: location || "",
                 source: "Inspeção GestãoClick",
                 stage: "Cliente Ativo"
             });
-            leadId = lead.id;
+            if (lead) leadId = lead.id;
         }
+
+        if (!lead) {
+            alert("Erro: Não foi possível localizar ou criar o cadastro desta empresa.");
+            return;
+        }
+
+        const opinionText = opinion || "";
+        const serviceText = service || "Inspeção Geral";
+        const numberText = number || `INSP-2026-${String(Date.now()).slice(-4)}`;
 
         const newOrUpdatedInteraction = {
             id: interactionId || ("int_" + Date.now().toString(36)),
             type: "Inspeção",
             timestamp: new Date().toISOString(),
-            description: `Vistoria de ${service} (${number}) realizada com ${score}% de conformidade. Parecer: ${opinion.substring(0, 100)}...`,
+            description: `Vistoria de ${serviceText} (${numberText}) realizada com ${score}% de conformidade. Parecer: ${opinionText.substring(0, 100)}...`,
             meta: {
-                inspectionNumber: number,
-                inspector: inspector,
-                serviceName: service,
+                inspectionNumber: numberText,
+                inspector: inspector || "Técnico Responsável",
+                serviceName: serviceText,
                 serviceValue: totalVal,
                 servicesList: servicesList,
                 score: score,
                 executionDate: execDate,
                 expiryDate: expiryDate,
-                status: status,
-                location: location,
-                contact: contact,
-                equipmentTag: equipmentTag,
-                notes: opinion,
-                clientNotes: clientNotes,
-                internalNotes: internalNotes,
+                status: status || "valida",
+                location: location || "",
+                contact: contact || "",
+                equipmentTag: equipmentTag || "",
+                notes: opinionText,
+                clientNotes: clientNotes || "",
+                internalNotes: internalNotes || "",
                 checklist: checklistPayload
             }
         };
+
+        const currentUser = Auth.getCurrentUser();
+        const userEmail = currentUser ? currentUser.email : "sistema@vellia.com";
 
         if (!lead.interactions) lead.interactions = [];
         if (interactionId) {
@@ -1270,9 +1331,13 @@ export const Inspections = {
         }
 
         try {
-            const localLeads = JSON.parse(localStorage.getItem("comercial_leads")) || [];
-            const updatedLocal = localLeads.map(l => l.id === lead.id ? lead : l);
-            localStorage.setItem("comercial_leads", JSON.stringify(updatedLocal));
+            if (typeof Store.updateLead === "function") {
+                Store.updateLead(lead.id, { interactions: lead.interactions }, userEmail);
+            } else {
+                const localLeads = JSON.parse(localStorage.getItem("comercial_leads")) || [];
+                const updatedLocal = localLeads.map(l => l.id === lead.id ? lead : l);
+                localStorage.setItem("comercial_leads", JSON.stringify(updatedLocal));
+            }
 
             // Sincronizar Supabase
             await fetch(`${SUPABASE_URL}/rest/v1/comercial_leads?id=eq.${lead.id}`, {
@@ -1284,10 +1349,12 @@ export const Inspections = {
                     "Prefer": "return=minimal"
                 },
                 body: JSON.stringify({ interactions: lead.interactions })
-            });
+            }).catch(e => console.warn("Aviso PATCH:", e));
         } catch (e) {
             console.warn("Falha ao salvar no Supabase, mantido em cache local:", e);
         }
+
+        Audit.logStageChange(userEmail, lead.company, lead.stage, lead.stage, `Registrou Inspeção Técnica: ${serviceText} (${numberText}) - Score: ${score}%`);
 
         alert("✅ Inspeção técnica e laudo salvos com sucesso no padrão GestãoClick!");
 
@@ -1296,6 +1363,79 @@ export const Inspections = {
         }
 
         this.closeInspectionScreen();
+        this.render();
+    },
+
+    async deleteInspection(leadId, inspectionId) {
+        if (!leadId || !inspectionId) return;
+
+        const allLeads = Store.getAllLeadsRaw ? Store.getAllLeadsRaw() : (JSON.parse(localStorage.getItem("comercial_leads")) || []);
+        const lead = allLeads.find(l => l.id === leadId) || (Store.getLeadById ? Store.getLeadById(leadId) : null);
+
+        if (!lead) {
+            alert("Erro: Empresa / Lead correspondente não foi localizado.");
+            return;
+        }
+
+        const item = (lead.interactions || []).find(i => i.id === inspectionId);
+        const serviceName = item?.meta?.serviceName || item?.description || "Vistoria Geral";
+
+        const confirmed = confirm(`⚠️ Tem certeza que deseja EXCLUIR esta inspeção?\n\n• Empresa: ${lead.company}\n• Serviço: ${serviceName}\n\nEsta ação removerá o laudo e o histórico desta vistoria permanentemente.`);
+        if (!confirmed) return;
+
+        lead.interactions = (lead.interactions || []).filter(i => i.id !== inspectionId);
+
+        const currentUser = Auth.getCurrentUser();
+        const userEmail = currentUser ? currentUser.email : "sistema@vellia.com";
+
+        try {
+            if (typeof Store.updateLead === "function") {
+                Store.updateLead(lead.id, { interactions: lead.interactions }, userEmail);
+            } else {
+                const localLeads = JSON.parse(localStorage.getItem("comercial_leads")) || [];
+                const updatedLocal = localLeads.map(l => l.id === lead.id ? lead : l);
+                localStorage.setItem("comercial_leads", JSON.stringify(updatedLocal));
+            }
+
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/comercial_leads?id=eq.${lead.id}`, {
+                method: "PATCH",
+                headers: {
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": `Bearer ${SUPABASE_KEY}`,
+                    "Content-Type": "application/json",
+                    "Prefer": "return=minimal"
+                },
+                body: JSON.stringify({
+                    interactions: lead.interactions
+                })
+            });
+
+            if (res.ok) {
+                console.log("✅ [Inspections] Inspeção excluída e sincronizada com Supabase.");
+            } else {
+                console.warn("⚠️ [Inspections] Inspeção excluída localmente, resposta Supabase:", await res.text());
+            }
+        } catch (err) {
+            console.error("Erro ao sincronizar exclusão com Supabase:", err);
+        }
+
+        if (typeof Audit !== "undefined" && Audit.logStageChange) {
+            Audit.logStageChange(userEmail, lead.company, lead.stage || "Cliente", lead.stage || "Cliente", `Excluiu a inspeção técnica de "${serviceName}"`);
+        }
+
+        const openLeadId = document.getElementById("gc-insp-lead-id")?.value;
+        const openInspId = document.getElementById("gc-insp-interaction-id")?.value;
+        if (openLeadId === leadId && openInspId === inspectionId) {
+            this.closeInspectionScreen();
+        }
+
+        this.render();
+
+        if (window.CRM && typeof window.CRM.renderDrawerInspections === "function") {
+            window.CRM.renderDrawerInspections(lead);
+        }
+
+        alert(`✅ A inspeção "${serviceName}" da empresa "${lead.company}" foi excluída com sucesso!`);
     },
 
     startGcWebcam() {
@@ -1393,6 +1533,9 @@ export const Inspections = {
     },
 
     async extractFromPdf(file) {
+        if (typeof pdfjsLib === 'undefined' && window.LazyLoader) {
+            await window.LazyLoader.ensurePdfJs();
+        }
         if (typeof pdfjsLib !== 'undefined') {
             try {
                 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -1898,6 +2041,10 @@ window.openChecklistModal = function(leadId = null, autoAction = null) {
 
 window.closeChecklistModal = function() {
     Inspections.closeChecklistModal();
+};
+
+window.deleteInspection = function(leadId, inspectionId) {
+    return Inspections.deleteInspection(leadId, inspectionId);
 };
 
 if (typeof window !== "undefined") {

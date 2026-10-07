@@ -1022,7 +1022,7 @@ Retorne APENAS o texto completo da minuta limpo e pronto para impressão ou cóp
         }
     },
 
-    exportContractDraftPDF(text, filename) {
+    async exportContractDraftPDF(text, filename) {
         if (!text) return;
 
         const now = new Date();
@@ -1163,6 +1163,11 @@ Retorne APENAS o texto completo da minuta limpo e pronto para impressão ou cóp
             win.document.close();
         } else {
             // Fallback: download direto via jsPDF
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                if (window.LazyLoader) {
+                    await window.LazyLoader.ensureJsPDF();
+                }
+            }
             const jsPDFLib = window.jspdf;
             if (!jsPDFLib || !jsPDFLib.jsPDF) {
                 alert("Por favor, permita popups neste site para visualizar e baixar o contrato em PDF.");

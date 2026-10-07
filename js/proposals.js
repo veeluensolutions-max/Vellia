@@ -90,6 +90,35 @@ export const Proposals = {
         const btnVoice = document.getElementById("btn-voice-dictation-proposal");
         if (btnVoice) btnVoice.addEventListener("click", () => this.startVoiceProposalDictation());
 
+        // Botão Sincronizar Propostas com Supabase
+        const btnSyncCloud = document.getElementById("btn-sync-proposals-supabase");
+        if (btnSyncCloud) {
+            btnSyncCloud.addEventListener("click", async () => {
+                const originalHtml = btnSyncCloud.innerHTML;
+                btnSyncCloud.disabled = true;
+                btnSyncCloud.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="spin"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+                    <span>Sincronizando...</span>
+                `;
+                try {
+                    const res = await Store.syncProposalsWithSupabase();
+                    if (res && res.success) {
+                        this.renderStats();
+                        this.renderTable();
+                        this.renderLossAnalysis();
+                        alert(`☁️ Sincronização concluída com sucesso!\n\n• Total no CRM: ${res.total}\n• Baixadas da nuvem: ${res.syncedFromCloud}\n• Enviadas para nuvem: ${res.uploadedToCloud}`);
+                    } else {
+                        alert(`Erro ao sincronizar com o Supabase: ${res?.error || 'Falha na conexão'}`);
+                    }
+                } catch (e) {
+                    alert(`Falha na sincronização: ${e.message}`);
+                } finally {
+                    btnSyncCloud.innerHTML = originalHtml;
+                    btnSyncCloud.disabled = false;
+                }
+            });
+        }
+
         // Botão Exportar PDF
         const btnExportPDF = document.getElementById("btn-export-pdf-report");
         if (btnExportPDF) {
@@ -1035,183 +1064,192 @@ export const Proposals = {
         if (isSaving) return;
         isSaving = true;
 
-        const getVal = (id) => document.getElementById(id)?.value.trim() || "";
+        try {
+            const getVal = (id) => document.getElementById(id)?.value.trim() || "";
 
-        const company = getVal("gc-budget-client");
-        const budgetNumber = getVal("gc-budget-number");
-        const seller = getVal("gc-budget-seller");
-        const date = getVal("gc-budget-date");
-        const deliveryDate = getVal("gc-budget-delivery-date");
-        const contact = getVal("gc-budget-attention");
-        const validityText = getVal("gc-budget-validity");
-        const channel = getVal("gc-budget-channel");
-        const costCenter = getVal("gc-budget-cost-center");
-        const intro = getVal("gc-budget-intro");
-        const techDescription = getVal("gc-budget-tech-desc");
-        const freight = parseFloat(getVal("gc-budget-freight")) || 0;
-        const carrier = getVal("gc-budget-carrier");
-        const notes = getVal("gc-budget-notes");
-        const internalNotes = getVal("gc-budget-internal-notes");
+            const company = getVal("gc-budget-client");
+            const budgetNumber = getVal("gc-budget-number");
+            const seller = getVal("gc-budget-seller");
+            const date = getVal("gc-budget-date");
+            const deliveryDate = getVal("gc-budget-delivery-date");
+            const contact = getVal("gc-budget-attention");
+            const validityText = getVal("gc-budget-validity");
+            const channel = getVal("gc-budget-channel");
+            const costCenter = getVal("gc-budget-cost-center");
+            const intro = getVal("gc-budget-intro");
+            const techDescription = getVal("gc-budget-tech-desc");
+            const freight = parseFloat(getVal("gc-budget-freight")) || 0;
+            const carrier = getVal("gc-budget-carrier");
+            const notes = getVal("gc-budget-notes");
+            const internalNotes = getVal("gc-budget-internal-notes");
 
-        // Itens de serviços
-        const servicesList = [];
-        document.querySelectorAll("#gc-services-tbody .gc-item-row").forEach(row => {
-            const service = row.querySelector(".gc-item-name")?.value.trim() || "";
-            const details = row.querySelector(".gc-item-details")?.value.trim() || "";
-            const qty = parseFloat(row.querySelector(".gc-item-qty")?.value) || 1;
-            const price = parseFloat(row.querySelector(".gc-item-price")?.value) || 0;
-            const discountVal = parseFloat(row.querySelector(".gc-item-discount-val")?.value) || 0;
-            const discountType = row.querySelector(".gc-item-discount-type")?.value || "R$";
-            const subtotalStr = row.querySelector(".gc-item-subtotal")?.value.replace(/\./g, "").replace(",", ".") || "0";
-            const subtotal = parseFloat(subtotalStr) || 0;
+            // Itens de serviços
+            const servicesList = [];
+            document.querySelectorAll("#gc-services-tbody .gc-item-row").forEach(row => {
+                const service = row.querySelector(".gc-item-name")?.value.trim() || "";
+                const details = row.querySelector(".gc-item-details")?.value.trim() || "";
+                const qty = parseFloat(row.querySelector(".gc-item-qty")?.value) || 1;
+                const price = parseFloat(row.querySelector(".gc-item-price")?.value) || 0;
+                const discountVal = parseFloat(row.querySelector(".gc-item-discount-val")?.value) || 0;
+                const discountType = row.querySelector(".gc-item-discount-type")?.value || "R$";
+                const subtotalStr = row.querySelector(".gc-item-subtotal")?.value.replace(/\./g, "").replace(",", ".") || "0";
+                const subtotal = parseFloat(subtotalStr) || 0;
 
-            if (service) {
-                servicesList.push({ service, details, qty, price, discountVal, discountType, subtotal });
+                if (service) {
+                    servicesList.push({ service, details, qty, price, discountVal, discountType, subtotal });
+                }
+            });
+
+            // Itens de produtos
+            const productsList = [];
+            document.querySelectorAll("#gc-products-tbody .gc-item-row").forEach(row => {
+                const product = row.querySelector(".gc-item-name")?.value.trim() || "";
+                const details = row.querySelector(".gc-item-details")?.value.trim() || "";
+                const qty = parseFloat(row.querySelector(".gc-item-qty")?.value) || 1;
+                const price = parseFloat(row.querySelector(".gc-item-price")?.value) || 0;
+                const discountVal = parseFloat(row.querySelector(".gc-item-discount-val")?.value) || 0;
+                const discountType = row.querySelector(".gc-item-discount-type")?.value || "R$";
+                const subtotalStr = row.querySelector(".gc-item-subtotal")?.value.replace(/\./g, "").replace(",", ".") || "0";
+                const subtotal = parseFloat(subtotalStr) || 0;
+
+                if (product) {
+                    productsList.push({ product, details, qty, price, discountVal, discountType, subtotal });
+                }
+            });
+
+            const totalFinalStr = document.getElementById("gc-total-final")?.value.replace(/\./g, "").replace(",", ".") || "0";
+            const finalValue = parseFloat(totalFinalStr) || 0;
+
+            if (!company) {
+                alert("Preencha o campo obrigatório: Cliente.");
+                return;
             }
-        });
 
-        // Itens de produtos
-        const productsList = [];
-        document.querySelectorAll("#gc-products-tbody .gc-item-row").forEach(row => {
-            const product = row.querySelector(".gc-item-name")?.value.trim() || "";
-            const details = row.querySelector(".gc-item-details")?.value.trim() || "";
-            const qty = parseFloat(row.querySelector(".gc-item-qty")?.value) || 1;
-            const price = parseFloat(row.querySelector(".gc-item-price")?.value) || 0;
-            const discountVal = parseFloat(row.querySelector(".gc-item-discount-val")?.value) || 0;
-            const discountType = row.querySelector(".gc-item-discount-type")?.value || "R$";
-            const subtotalStr = row.querySelector(".gc-item-subtotal")?.value.replace(/\./g, "").replace(",", ".") || "0";
-            const subtotal = parseFloat(subtotalStr) || 0;
-
-            if (product) {
-                productsList.push({ product, details, qty, price, discountVal, discountType, subtotal });
+            if (servicesList.length === 0 && productsList.length === 0) {
+                alert("Adicione pelo menos um serviço ou produto ao orçamento.");
+                return;
             }
-        });
 
-        const totalFinalStr = document.getElementById("gc-total-final")?.value.replace(/\./g, "").replace(",", ".") || "0";
-        const finalValue = parseFloat(totalFinalStr) || 0;
+            const mainService = servicesList[0]?.service || (productsList[0]?.product || "Consultoria Técnica");
+            const title = `Orçamento #${budgetNumber} - ${mainService}`;
 
-        if (!company) {
-            alert("Preencha o campo obrigatório: Cliente.");
-            isSaving = false;
-            return;
-        }
+            // Endereço de entrega
+            let deliveryAddress = null;
+            if (document.getElementById("gc-check-delivery-address")?.checked) {
+                deliveryAddress = {
+                    cep: getVal("gc-delivery-cep"),
+                    street: getVal("gc-delivery-street"),
+                    number: getVal("gc-delivery-number"),
+                    neighborhood: getVal("gc-delivery-neighborhood"),
+                    city: getVal("gc-delivery-city"),
+                    state: getVal("gc-delivery-state")
+                };
+            }
 
-        if (servicesList.length === 0 && productsList.length === 0) {
-            alert("Adicione pelo menos um serviço ou produto ao orçamento.");
-            isSaving = false;
-            return;
-        }
+            const generatePayment = document.getElementById("gc-check-generate-payment")?.checked;
+            const paymentType = document.querySelector('input[name="gc-payment-type"]:checked')?.value || "vista";
 
-        const mainService = servicesList[0]?.service || (productsList[0]?.product || "Consultoria Técnica");
-        const title = `Orçamento #${budgetNumber} - ${mainService}`;
-
-        // Endereço de entrega
-        let deliveryAddress = null;
-        if (document.getElementById("gc-check-delivery-address")?.checked) {
-            deliveryAddress = {
-                cep: getVal("gc-delivery-cep"),
-                street: getVal("gc-delivery-street"),
-                number: getVal("gc-delivery-number"),
-                neighborhood: getVal("gc-delivery-neighborhood"),
-                city: getVal("gc-delivery-city"),
-                state: getVal("gc-delivery-state")
-            };
-        }
-
-        const generatePayment = document.getElementById("gc-check-generate-payment")?.checked;
-        const paymentType = document.querySelector('input[name="gc-payment-type"]:checked')?.value || "vista";
-
-        const currentUser = Auth.getCurrentUser();
-
-        if (currentEditingBudgetId) {
-            // Edição
-            const updatedProposal = {
-                company,
-                contact,
-                title,
-                service: mainService,
-                value: finalValue,
-                budgetNumber,
-                seller,
-                deliveryDate,
-                validityText,
-                channel,
-                costCenter,
-                intro,
-                techDescription,
-                freight,
-                carrier,
-                deliveryAddress,
-                generatePayment,
-                paymentType,
-                servicesList,
-                productsList,
-                attachments: [...currentBudgetAttachments],
-                notes,
-                internalNotes
-            };
-
-            Store.updateProposal(currentEditingBudgetId, updatedProposal, currentUser ? currentUser.email : "sistema@vellia.com");
-            Audit.logStageChange(currentUser?.email, company, "Atualização", "Orçamento", `Orçamento #${budgetNumber} atualizado: R$ ${finalValue}`);
-            alert(`Orçamento #${budgetNumber} atualizado com sucesso!`);
-        } else {
-            // Nova proposta
-            const newProposal = {
-                leadId: currentEditingLeadId || null,
-                company,
-                contact,
-                title,
-                service: mainService,
-                value: finalValue,
-                status: "Enviada",
-                sentAt: date ? new Date(date).toISOString() : new Date().toISOString(),
-                validUntil: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
-                budgetNumber,
-                seller,
-                deliveryDate,
-                validityText,
-                channel,
-                costCenter,
-                intro,
-                techDescription,
-                freight,
-                carrier,
-                deliveryAddress,
-                generatePayment,
-                paymentType,
-                servicesList,
-                productsList,
-                attachments: [...currentBudgetAttachments],
-                notes,
-                internalNotes,
-                createdBy: currentUser?.email || "sistema@vellia.com"
-            };
-
-            const created = Store.addProposal(newProposal);
-            Audit.logStageChange(currentUser?.email, company, "Nova", "Enviada", `Orçamento #${budgetNumber} criado: ${title} - R$ ${finalValue}`);
+            const currentUser = Auth.getCurrentUser();
 
             // Sincronizar e Notificar Lead
             const leads = Store.getLeads();
             const targetLead = currentEditingLeadId 
                 ? (Store.getLeadById(currentEditingLeadId) || leads.find(l => l.id === currentEditingLeadId))
-                : leads.find(l => l.company && company && l.company.toLowerCase() === company.toLowerCase());
+                : leads.find(l => l.company && company && l.company.toLowerCase().trim() === company.toLowerCase().trim());
 
-            if (targetLead) {
-                // Atualizar estágio do lead para "Proposta Enviada" caso esteja em fase inicial
-                const earlyStages = ["Sem Contato", "Contato Realizado", "Diagnóstico", "Lead Qualificado", "Novo"];
-                if (earlyStages.includes(targetLead.stage)) {
-                    Store.updateLeadStage(targetLead.id, "Proposta Enviada", currentUser?.email || "sistema@vellia.com", `Orçamento #${budgetNumber} gerado`);
+            if (currentEditingBudgetId) {
+                // Edição
+                const updatedProposal = {
+                    company,
+                    contact,
+                    title,
+                    service: mainService,
+                    value: finalValue,
+                    budgetNumber,
+                    seller,
+                    deliveryDate,
+                    validityText,
+                    channel,
+                    costCenter,
+                    intro,
+                    techDescription,
+                    freight,
+                    carrier,
+                    deliveryAddress,
+                    generatePayment,
+                    paymentType,
+                    servicesList,
+                    productsList,
+                    attachments: [...currentBudgetAttachments],
+                    notes,
+                    internalNotes
+                };
+
+                if (targetLead && targetLead.workspace) {
+                    updatedProposal.workspace = targetLead.workspace;
                 }
-                if (typeof window.WhatsApp?.sendAutomatedMessage === "function") {
-                    window.WhatsApp.sendAutomatedMessage(targetLead.id, "proposal", { proposalId: created.id });
+
+                Store.updateProposal(currentEditingBudgetId, updatedProposal, currentUser ? currentUser.email : "sistema@vellia.com");
+                Audit.logStageChange(currentUser?.email, company, "Atualização", "Orçamento", `Orçamento #${budgetNumber} atualizado: R$ ${finalValue}`);
+                alert(`Orçamento #${budgetNumber} atualizado com sucesso na nuvem!`);
+            } else {
+                // Nova proposta
+                const newProposal = {
+                    leadId: targetLead ? targetLead.id : (currentEditingLeadId || null),
+                    workspace: targetLead ? targetLead.workspace : undefined,
+                    company,
+                    contact,
+                    title,
+                    service: mainService,
+                    value: finalValue,
+                    status: "Enviada",
+                    sentAt: date ? new Date(date).toISOString() : new Date().toISOString(),
+                    validUntil: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+                    budgetNumber,
+                    seller,
+                    deliveryDate,
+                    validityText,
+                    channel,
+                    costCenter,
+                    intro,
+                    techDescription,
+                    freight,
+                    carrier,
+                    deliveryAddress,
+                    generatePayment,
+                    paymentType,
+                    servicesList,
+                    productsList,
+                    attachments: [...currentBudgetAttachments],
+                    notes,
+                    internalNotes,
+                    createdBy: currentUser?.email || "sistema@vellia.com"
+                };
+
+                const created = Store.addProposal(newProposal);
+                Audit.logStageChange(currentUser?.email, company, "Nova", "Enviada", `Orçamento #${budgetNumber} criado: ${title} - R$ ${finalValue}`);
+
+                if (targetLead) {
+                    // Atualizar estágio do lead para "Proposta Enviada" caso esteja em fase inicial
+                    const earlyStages = ["Sem Contato", "Contato Realizado", "Diagnóstico", "Lead Qualificado", "Novo"];
+                    if (earlyStages.includes(targetLead.stage)) {
+                        Store.updateLeadStage(targetLead.id, "Proposta Enviada", currentUser?.email || "sistema@vellia.com", `Orçamento #${budgetNumber} gerado`);
+                    }
+                    if (typeof window.WhatsApp?.sendAutomatedMessage === "function") {
+                        window.WhatsApp.sendAutomatedMessage(targetLead.id, "proposal", { proposalId: created.id });
+                    }
                 }
+
+                alert(`Orçamento #${budgetNumber} cadastrado e salvo com sucesso na nuvem!`);
             }
 
-            alert(`Orçamento #${budgetNumber} cadastrado com sucesso!`);
+            this.closeBudgetScreen();
+        } catch (err) {
+            console.error("❌ [saveBudgetProposal] Erro ao salvar proposta:", err);
+            alert("Ocorreu um erro ao salvar o orçamento: " + (err.message || err));
+        } finally {
+            isSaving = false;
         }
-
-        this.closeBudgetScreen();
-        isSaving = false;
     },
 
     saveProposal() {
@@ -1575,7 +1613,12 @@ Seja profissional, direto e use uma linguagem persuasiva focada em fechamento co
         }
     },
 
-    exportProposalToPDF(id) {
+    async exportProposalToPDF(id) {
+        if (!window.jspdf || !window.jspdf.jsPDF) {
+            if (window.LazyLoader) {
+                await window.LazyLoader.ensureJsPDF();
+            }
+        }
         const jsPDFLib = window.jspdf;
         if (!jsPDFLib || !jsPDFLib.jsPDF) {
             alert("Biblioteca jsPDF não carregada. Recarregue a página e tente novamente.");

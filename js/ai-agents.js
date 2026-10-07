@@ -691,6 +691,12 @@ export const AIAgents = {
         const progressBar = document.getElementById('guru-pdf-progress-bar');
         const progressLbl = document.getElementById('guru-pdf-progress-label');
 
+        if (isPdf) {
+            if (typeof pdfjsLib === 'undefined' && window.LazyLoader) {
+                await window.LazyLoader.ensurePdfJs();
+            }
+        }
+
         if (isPdf && typeof pdfjsLib !== 'undefined') {
             if (progressEl) progressEl.style.display = 'block';
             if (progressBar) progressBar.style.width = '5%';
@@ -993,11 +999,17 @@ Crie 3 a 4 tags [TAREFA_VENDEDOR: ...]. Escreva de forma motivadora e comercial.
         if (tabObjections) tabObjections.onclick = () => setActiveTab(tabObjections, "objections");
     },
 
-    exportStrategyPDF() {
+    async exportStrategyPDF() {
         const strategyText = localStorage.getItem("guru_latest_suggested_strategy");
         if (!strategyText) {
             alert("Nenhum planejamento disponível para exportar em PDF.");
             return;
+        }
+
+        if (typeof window.jspdf === "undefined" || !window.jspdf.jsPDF) {
+            if (window.LazyLoader) {
+                await window.LazyLoader.ensureJsPDF();
+            }
         }
 
         if (typeof window.jspdf === "undefined" || !window.jspdf.jsPDF) {
@@ -1528,12 +1540,18 @@ Crie 3 a 4 tags [TAREFA_VENDEDOR: ...]. Escreva de forma motivadora e comercial.
         overlay.style.display = "flex";
     },
 
-    exportManualStrategyPDF() {
+    async exportManualStrategyPDF() {
         const input = document.getElementById("guru-manual-strategy-input");
         const text = input ? input.value.trim() : "";
         if (!text) {
             alert("Nenhum planejamento manual preenchido para exportar em PDF.");
             return;
+        }
+
+        if (typeof window.jspdf === "undefined" || !window.jspdf.jsPDF) {
+            if (window.LazyLoader) {
+                await window.LazyLoader.ensureJsPDF();
+            }
         }
 
         if (typeof window.jspdf === "undefined" || !window.jspdf.jsPDF) {
@@ -1720,7 +1738,7 @@ Crie 3 a 4 tags [TAREFA_VENDEDOR: ...]. Escreva de forma motivadora e comercial.
         }).join("");
     },
 
-    exportMonthlyComparisonPDF() {
+    async exportMonthlyComparisonPDF() {
         const yearSelect = document.getElementById("comp-select-year");
         const monthASelect = document.getElementById("comp-select-month-a");
         const monthBSelect = document.getElementById("comp-select-month-b");
@@ -1731,6 +1749,12 @@ Crie 3 a 4 tags [TAREFA_VENDEDOR: ...]. Escreva de forma motivadora e comercial.
 
         const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
         const fmtBrl = v => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(v || 0);
+
+        if (typeof window.jspdf === "undefined" || !window.jspdf.jsPDF) {
+            if (window.LazyLoader) {
+                await window.LazyLoader.ensureJsPDF();
+            }
+        }
 
         if (typeof window.jspdf === "undefined" || !window.jspdf.jsPDF) {
             alert("Biblioteca jsPDF não carregada. Recarregue a página.");

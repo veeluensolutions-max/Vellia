@@ -959,6 +959,104 @@
     flex-shrink: 0;
 }
 
+/* Container com Rolagem Horizontal Pro */
+#gc-inspections-table-container {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: #3b82f6 #f1f5f9;
+    -webkit-overflow-scrolling: touch;
+}
+
+#gc-inspections-table-container::-webkit-scrollbar {
+    height: 10px;
+}
+
+#gc-inspections-table-container::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 8px;
+}
+
+#gc-inspections-table-container::-webkit-scrollbar-thumb {
+    background: #3b82f6;
+    border-radius: 8px;
+    border: 2px solid #f1f5f9;
+}
+
+#gc-inspections-table-container::-webkit-scrollbar-thumb:hover {
+    background: #2563eb;
+}
+
+/* Barra de Rolagem Horizontal Flutuante Sempre Visível ao Rolar */
+.gc-floating-scrollbar {
+    position: fixed;
+    bottom: 0;
+    height: 14px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    z-index: 9999;
+    background: rgba(248, 250, 252, 0.96);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(226, 232, 240, 0.9);
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.1);
+    scrollbar-width: thin;
+    scrollbar-color: #3b82f6 #f1f5f9;
+    display: none;
+    transition: opacity 0.2s ease;
+}
+
+.gc-floating-scrollbar::-webkit-scrollbar {
+    height: 10px;
+}
+
+.gc-floating-scrollbar::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 9999px;
+}
+
+.gc-floating-scrollbar::-webkit-scrollbar-thumb {
+    background: #3b82f6;
+    border-radius: 9999px;
+    border: 2px solid #f1f5f9;
+}
+
+.gc-floating-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #2563eb;
+}
+
+.gc-floating-scrollbar-inner {
+    height: 1px;
+}
+
+[data-theme="dark"] #gc-inspections-table-container {
+    scrollbar-color: #3b82f6 #0f172a;
+}
+
+[data-theme="dark"] #gc-inspections-table-container::-webkit-scrollbar-track {
+    background: #0f172a;
+}
+
+[data-theme="dark"] #gc-inspections-table-container::-webkit-scrollbar-thumb {
+    background: #3b82f6;
+    border-color: #0f172a;
+}
+
+[data-theme="dark"] .gc-floating-scrollbar {
+    background: rgba(15, 23, 42, 0.96);
+    border-top-color: #334155;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4);
+    scrollbar-color: #60a5fa #0f172a;
+}
+
+[data-theme="dark"] .gc-floating-scrollbar::-webkit-scrollbar-track {
+    background: #0f172a;
+}
+
+[data-theme="dark"] .gc-floating-scrollbar::-webkit-scrollbar-thumb {
+    background: #60a5fa;
+    border-color: #0f172a;
+}
+
 /* Tabela de inspeções com visual GestãoClick Pro Moderno */
 .gc-inspections-table {
     width: 100%;

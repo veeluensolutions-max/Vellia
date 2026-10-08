@@ -443,6 +443,9 @@ export const Inspections = {
                 </tr>
             `;
         }).join("");
+
+        // Atualizar barra de rolagem horizontal flutuante persistente
+        setTimeout(() => this.updateStickyScrollbar(), 60);
     },
 
     // ─── Painel Analítico: Comparativo Anual & Índice de Renovação ──────────────
@@ -565,6 +568,77 @@ export const Inspections = {
             console.log("🔄 [Inspections] Lead atualizado remotamente — re-renderizando central de inspeções.");
             this.render();
         });
+
+        // Inicializar barra de rolagem horizontal flutuante persistente
+        this.initStickyScrollbar();
+    },
+
+    initStickyScrollbar() {
+        const tableContainer = document.getElementById("gc-inspections-table-container") || document.querySelector("#view-inspections .table-responsive");
+        if (!tableContainer) return;
+
+        let floatingScroll = document.getElementById("gc-inspections-floating-scroll");
+        if (!floatingScroll) {
+            floatingScroll = document.createElement("div");
+            floatingScroll.id = "gc-inspections-floating-scroll";
+            floatingScroll.className = "gc-floating-scrollbar";
+            floatingScroll.title = "Barra de rolagem horizontal da tabela de inspeções";
+            floatingScroll.innerHTML = `<div class="gc-floating-scrollbar-inner"></div>`;
+            document.body.appendChild(floatingScroll);
+
+            let isSyncingFloating = false;
+            let isSyncingTable = false;
+
+            floatingScroll.addEventListener("scroll", () => {
+                if (!isSyncingFloating) {
+                    isSyncingTable = true;
+                    tableContainer.scrollLeft = floatingScroll.scrollLeft;
+                    setTimeout(() => { isSyncingTable = false; }, 30);
+                }
+            });
+
+            tableContainer.addEventListener("scroll", () => {
+                if (!isSyncingTable) {
+                    isSyncingFloating = true;
+                    floatingScroll.scrollLeft = tableContainer.scrollLeft;
+                    setTimeout(() => { isSyncingFloating = false; }, 30);
+                }
+            });
+
+            window.addEventListener("scroll", () => this.updateStickyScrollbar(), { passive: true });
+            window.addEventListener("resize", () => this.updateStickyScrollbar());
+            window.addEventListener("hashchange", () => this.updateStickyScrollbar());
+        }
+
+        this.updateStickyScrollbar();
+    },
+
+    updateStickyScrollbar() {
+        const tableContainer = document.getElementById("gc-inspections-table-container") || document.querySelector("#view-inspections .table-responsive");
+        const floatingScroll = document.getElementById("gc-inspections-floating-scroll");
+        if (!tableContainer || !floatingScroll) return;
+
+        const view = document.getElementById("view-inspections");
+        if (!view || view.style.display === "none") {
+            floatingScroll.style.display = "none";
+            return;
+        }
+
+        const rect = tableContainer.getBoundingClientRect();
+        const hasOverflow = tableContainer.scrollWidth > tableContainer.clientWidth + 5;
+        const inViewport = rect.top < window.innerHeight && rect.bottom > 80;
+        const nativeScrollbarVisible = rect.bottom <= window.innerHeight;
+
+        if (hasOverflow && inViewport && !nativeScrollbarVisible) {
+            const inner = floatingScroll.querySelector(".gc-floating-scrollbar-inner");
+            floatingScroll.style.display = "block";
+            floatingScroll.style.left = `${rect.left}px`;
+            floatingScroll.style.width = `${rect.width}px`;
+            if (inner) inner.style.width = `${tableContainer.scrollWidth}px`;
+            floatingScroll.scrollLeft = tableContainer.scrollLeft;
+        } else {
+            floatingScroll.style.display = "none";
+        }
     },
 
     setupChecklistModal() {

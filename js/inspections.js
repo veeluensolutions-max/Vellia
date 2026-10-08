@@ -54,56 +54,95 @@ export const Inspections = {
 
         leads.forEach(lead => {
             if (lead.interactions && Array.isArray(lead.interactions)) {
-                lead.interactions.forEach(item => {
-                    if (item.type === "Inspeção") {
-                        const executionDateStr = item.meta?.executionDate || item.timestamp?.split("T")[0] || new Date().toISOString().split("T")[0];
-                        
-                        // O vencimento é 1 ano após a execução por padrão
-                        let expiryDateStr = item.meta?.expiryDate;
-                        if (!expiryDateStr) {
-                            const date = new Date(executionDateStr + "T12:00:00");
-                            date.setFullYear(date.getFullYear() + 1);
-                            expiryDateStr = date.toISOString().split("T")[0];
-                        }
+                // Obter todas as inspeções deste lead para cruzamento de ciclos e renovações
+                const leadInspList = lead.interactions.filter(i => i.type === "Inspeção");
 
-                        // Cálculo de dias restantes
-                        const today = new Date();
-                        today.setHours(0,0,0,0);
-                        const expiryDate = new Date(expiryDateStr + "T12:00:00");
-                        expiryDate.setHours(0,0,0,0);
-
-                        const timeDiff = expiryDate.getTime() - today.getTime();
-                        const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
-
-                        // Determinar Status
-                        let status = "valida"; // valida, alerta, vencida
-                        if (daysRemaining < 0) {
-                            status = "vencida";
-                        } else if (daysRemaining <= 90) { // 3 meses (90 dias)
-                            status = "alerta";
-                        }
-
-                        inspections.push({
-                            id: item.id,
-                            leadId: lead.id,
-                            company: lead.company,
-                            contact: lead.contact || "Sem nome",
-                            phone: lead.whatsapp || lead.phone || "",
-                            serviceName: item.meta?.serviceName || "Vistoria Geral",
-                            executionDate: executionDateStr,
-                            expiryDate: expiryDateStr,
-                            daysRemaining: daysRemaining,
-                            status: status,
-                            notes: item.meta?.notes || item.description,
-                            score: item.meta?.score
-                        });
+                leadInspList.forEach(item => {
+                    const executionDateStr = item.meta?.executionDate || item.timestamp?.split("T")[0] || new Date().toISOString().split("T")[0];
+                    
+                    // O vencimento é 1 ano após a execução por padrão
+                    let expiryDateStr = item.meta?.expiryDate;
+                    if (!expiryDateStr) {
+                        const date = new Date(executionDateStr + "T12:00:00");
+                        date.setFullYear(date.getFullYear() + 1);
+                        expiryDateStr = date.toISOString().split("T")[0];
                     }
+
+                    // Cálculo de dias restantes
+                    const today = new Date();
+                    today.setHours(0,0,0,0);
+                    const expiryDate = new Date(expiryDateStr + "T12:00:00");
+                    expiryDate.setHours(0,0,0,0);
+
+                    const timeDiff = expiryDate.getTime() - today.getTime();
+                    const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+                    // Detecção Inteligente de Renovação:
+                    // 1. Flag explícita no cadastro (isRenewed = true ou status = "renovada" ou renewedToId)
+                    // 2. Ou existência de outro laudo no mesmo cliente com data posterior para o mesmo serviço
+                    // 3. Ou outro laudo explicitamente apontando renewedFromId = item.id
+                    let successor = leadInspList.find(other => 
+                        other.id !== item.id && (
+                            other.meta?.renewedFromId === item.id ||
+                            item.meta?.renewedToId === other.id
+                        )
+                    );
+
+                    if (!successor) {
+                        // Buscar laudo sucessor cronologicamente para o mesmo serviço
+                        successor = leadInspList.find(other => 
+                            other.id !== item.id && 
+                            (other.meta?.serviceName === item.meta?.serviceName) &&
+                            (other.meta?.executionDate || other.timestamp?.split("T")[0] || "") > executionDateStr
+                        );
+                    }
+
+                    const isRenewed = Boolean(
+                        item.meta?.isRenewed === true || 
+                        item.meta?.status === "renovada" || 
+                        item.meta?.renewedToId || 
+                        successor
+                    );
+
+                    // Determinar Status
+                    let status = "valida"; // valida, alerta, vencida, renovada
+                    if (isRenewed) {
+                        status = "renovada";
+                    } else if (daysRemaining < 0) {
+                        status = "vencida";
+                    } else if (daysRemaining <= 90) { // 3 meses (90 dias)
+                        status = "alerta";
+                    }
+
+                    inspections.push({
+                        id: item.id,
+                        leadId: lead.id,
+                        company: lead.company,
+                        contact: lead.contact || "Sem nome",
+                        phone: lead.whatsapp || lead.phone || "",
+                        inspectionNumber: item.meta?.inspectionNumber || item.meta?.number || "",
+                        serviceName: item.meta?.serviceName || "Vistoria Geral",
+                        executionDate: executionDateStr,
+                        expiryDate: expiryDateStr,
+                        daysRemaining: daysRemaining,
+                        status: status,
+                        isRenewed: isRenewed,
+                        successorId: successor ? successor.id : (item.meta?.renewedToId || null),
+                        successorNumber: successor ? (successor.meta?.inspectionNumber || "Ciclo Seguinte") : null,
+                        renewedFromId: item.meta?.renewedFromId || null,
+                        notes: item.meta?.notes || item.description,
+                        score: item.meta?.score
+                    });
                 });
             }
         });
 
-        // Ordenar pela proximidade de vencimento (vencidos primeiro, depois alertas, depois válidos)
-        return inspections.sort((a, b) => a.daysRemaining - b.daysRemaining);
+        // Ordenar pela proximidade de vencimento (vencidos primeiro, depois alertas, depois válidos, por último renovados)
+        return inspections.sort((a, b) => {
+            if (a.status === "renovada" && b.status !== "renovada") return 1;
+            if (b.status === "renovada" && a.status !== "renovada") return -1;
+            return a.daysRemaining - b.daysRemaining;
+        });
     },
 
     render() {
@@ -120,7 +159,8 @@ export const Inspections = {
         const filtered = inspections.filter(item => {
             const matchesQuery = item.company.toLowerCase().includes(query) || 
                                  item.contact.toLowerCase().includes(query) || 
-                                 item.serviceName.toLowerCase().includes(query);
+                                 item.serviceName.toLowerCase().includes(query) ||
+                                 (item.inspectionNumber && item.inspectionNumber.toLowerCase().includes(query));
             
             const matchesStatus = statusFilter === "all" || item.status === statusFilter;
             
@@ -129,16 +169,48 @@ export const Inspections = {
             return matchesQuery && matchesStatus && matchesYear;
         });
 
-        // Atualizar KPIs
+        // Atualizar Contadores dos KPIs e Pílulas Rápidas
         const totalCount = inspections.length;
-        const expiredCount = inspections.filter(i => i.status === "vencida").length;
-        const criticalCount = inspections.filter(i => i.status === "alerta").length;
         const validCount = inspections.filter(i => i.status === "valida").length;
+        const criticalCount = inspections.filter(i => i.status === "alerta").length;
+        const expiredCount = inspections.filter(i => i.status === "vencida").length;
+        const renewedCount = inspections.filter(i => i.status === "renovada").length;
 
-        document.getElementById("kpi-inspections-total").textContent = totalCount;
-        document.getElementById("kpi-inspections-expired").textContent = expiredCount;
-        document.getElementById("kpi-inspections-critical").textContent = criticalCount;
-        document.getElementById("kpi-inspections-valid").textContent = validCount;
+        // KPI Cards
+        const kpiTotal = document.getElementById("kpi-inspections-total");
+        const kpiValid = document.getElementById("kpi-inspections-valid");
+        const kpiCrit = document.getElementById("kpi-inspections-critical");
+        const kpiExp = document.getElementById("kpi-inspections-expired");
+        const kpiRen = document.getElementById("kpi-inspections-renewed");
+
+        if (kpiTotal) kpiTotal.textContent = totalCount;
+        if (kpiValid) kpiValid.textContent = validCount;
+        if (kpiCrit) kpiCrit.textContent = criticalCount;
+        if (kpiExp) kpiExp.textContent = expiredCount;
+        if (kpiRen) kpiRen.textContent = renewedCount;
+
+        // Badges nas Pílulas Rápidas GestãoClick
+        const pCountAll = document.getElementById("pill-count-all");
+        const pCountVal = document.getElementById("pill-count-valid");
+        const pCountCrit = document.getElementById("pill-count-critical");
+        const pCountExp = document.getElementById("pill-count-expired");
+        const pCountRen = document.getElementById("pill-count-renewed");
+
+        if (pCountAll) pCountAll.textContent = totalCount;
+        if (pCountVal) pCountVal.textContent = validCount;
+        if (pCountCrit) pCountCrit.textContent = criticalCount;
+        if (pCountExp) pCountExp.textContent = expiredCount;
+        if (pCountRen) pCountRen.textContent = renewedCount;
+
+        // Sincronizar estado visual das pílulas com statusFilter
+        document.querySelectorAll("#inspection-status-pills .gc-pill-btn").forEach(btn => {
+            const btnStatus = btn.getAttribute("data-status");
+            if (btnStatus === statusFilter) {
+                btn.classList.add("active");
+            } else {
+                btn.classList.remove("active");
+            }
+        });
 
         this.renderAnalyticsDashboard(inspections);
 
@@ -146,8 +218,10 @@ export const Inspections = {
         if (filtered.length === 0) {
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="7" style="padding: 40px; text-align: center; color: var(--text-muted);">
-                        Nenhuma inspeção encontrada com os filtros selecionados.
+                    <td colspan="7" style="padding: 48px 20px; text-align: center; color: var(--text-muted);">
+                        <div style="font-size: 28px; margin-bottom: 8px;">📋</div>
+                        <div style="font-weight: 700; font-size: 14px; color: var(--text-primary); margin-bottom: 4px;">Nenhuma vistoria encontrada</div>
+                        <div style="font-size: 12.5px;">Tente ajustar os filtros de busca ou cadastre uma nova inspeção técnica.</div>
                     </td>
                 </tr>
             `;
@@ -155,92 +229,214 @@ export const Inspections = {
         }
 
         tableBody.innerHTML = filtered.map(item => {
-            let statusBadge = "";
-            let rowStyle = "";
-            let remainingText = "";
+            const getInitials = (str) => {
+                if (!str) return "CO";
+                const clean = str.replace(/[^a-zA-Z0-9\s]/g, "").trim();
+                const words = clean.split(/\s+/).filter(Boolean);
+                if (words.length === 0) return "CO";
+                return words[0].length >= 2 ? words[0].substring(0, 2).toUpperCase() : (words[0][0] + (words[1] ? words[1][0] : '')).toUpperCase();
+            };
 
-            if (item.status === "vencida") {
-                statusBadge = `<span class="badge badge-danger" style="background:#fee2e2; color:#dc2626; border:1px solid #fca5a5;">🔴 Vencida</span>`;
-                rowStyle = "background-color: rgba(239, 68, 68, 0.02);";
-                remainingText = `<span style="color:#dc2626; font-weight:700;">Vencida há ${Math.abs(item.daysRemaining)} dias</span>`;
+            const initials = getInitials(item.company);
+            const hue = Math.abs((item.company || "A").split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)) % 360;
+
+            let statusBadge = "";
+            let remainingChip = "";
+
+            if (item.status === "renovada") {
+                statusBadge = `
+                    <span class="gc-status-pill gc-status-renewed" title="Renovação emitida com continuidade de histórico">
+                        <span class="gc-status-indicator"></span>
+                        Renovada
+                    </span>
+                `;
+                const sucText = item.successorNumber ? `Ciclo ${item.successorNumber}` : 'Ciclo Ativo';
+                remainingChip = `
+                    <div class="gc-countdown-chip gc-countdown-renewed" title="${sucText}">
+                        <span class="gc-chip-dot"></span>
+                        <span>Renovado</span>
+                    </div>
+                `;
+            } else if (item.status === "vencida") {
+                statusBadge = `
+                    <span class="gc-status-pill gc-status-expired" title="Laudo expirado">
+                        <span class="gc-status-indicator"></span>
+                        Vencida
+                    </span>
+                `;
+                remainingChip = `
+                    <div class="gc-countdown-chip gc-countdown-expired" title="Vencido há ${Math.abs(item.daysRemaining)} dias">
+                        <span class="gc-chip-dot"></span>
+                        <span>-${Math.abs(item.daysRemaining)} dias</span>
+                    </div>
+                `;
             } else if (item.status === "alerta") {
-                statusBadge = `<span class="badge badge-warning" style="background:#fef3c7; color:#d97706; border:1px solid #fcd34d; font-weight:700; animation: pulse 2s infinite;"> 🟠 Crítico (Notificar)</span>`;
-                rowStyle = "background-color: rgba(245, 158, 11, 0.02);";
-                remainingText = `<span style="color:#d97706; font-weight:700;">Vence em ${item.daysRemaining} dias</span>`;
+                statusBadge = `
+                    <span class="gc-status-pill gc-status-critical" title="Vence em menos de 3 meses">
+                        <span class="gc-status-indicator gc-dot-pulse"></span>
+                        Crítico
+                    </span>
+                `;
+                remainingChip = `
+                    <div class="gc-countdown-chip gc-countdown-critical" title="Vence em ${item.daysRemaining} dias">
+                        <span class="gc-chip-dot gc-dot-pulse"></span>
+                        <span>${item.daysRemaining} dias</span>
+                    </div>
+                `;
             } else {
-                statusBadge = `<span class="badge badge-success" style="background:#dcfce7; color:#16a34a; border:1px solid #86efac;">🟢 Válida</span>`;
-                remainingText = `<span style="color:#16a34a;">Vence em ${item.daysRemaining} dias</span>`;
+                statusBadge = `
+                    <span class="gc-status-pill gc-status-valid" title="Laudo em período regular de validade">
+                        <span class="gc-status-indicator"></span>
+                        Válida
+                    </span>
+                `;
+                remainingChip = `
+                    <div class="gc-countdown-chip gc-countdown-valid" title="Vence em ${item.daysRemaining} dias">
+                        <span class="gc-chip-dot"></span>
+                        <span>${item.daysRemaining} dias</span>
+                    </div>
+                `;
             }
 
             const formatDate = (dateStr) => {
                 if (!dateStr) return "N/A";
                 const parts = dateStr.split("-");
+                if (parts.length < 3) return dateStr;
                 return `${parts[2]}/${parts[1]}/${parts[0]}`;
             };
 
-            const buttonStyle = item.status === "valida" 
-                ? "background: #f1f5f9; color: #94a3b8; border-color: #e2e8f0; cursor: not-allowed;"
-                : "background: #25d366; color: white; border: none; font-weight: 700; cursor: pointer; box-shadow: 0 4px 10px rgba(37,211,102,0.25);";
+            let buttonAction = "";
+            if (item.status === "renovada") {
+                const targetId = item.successorId || item.id;
+                buttonAction = `
+                    <button 
+                        class="gc-btn-action gc-btn-action-cycle"
+                        onclick="window.Inspections.openInspectionScreen('${item.leadId}', '${targetId}')"
+                        title="Abrir o novo ciclo de renovação"
+                    >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                        <span>Ver Ciclo</span>
+                    </button>
+                `;
+            } else if (item.status === "vencida" || item.status === "alerta") {
+                buttonAction = `
+                    <button 
+                        class="gc-btn-action gc-btn-action-renew"
+                        onclick="window.Inspections.createRenewalFrom('${item.leadId}', '${item.id}')"
+                        title="Emitir renovação desta inspeção agora"
+                    >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                        <span>Renovar</span>
+                    </button>
+                `;
+            } else {
+                buttonAction = `
+                    <button 
+                        class="gc-btn-action gc-btn-action-notify"
+                        onclick="window.sendInspectionNotification('${item.leadId}', '${item.id}')"
+                        title="Enviar lembrete de vistoria para o cliente via WhatsApp"
+                    >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        <span>Notificar</span>
+                    </button>
+                `;
+            }
 
-            const buttonText = item.status === "vencida" ? "⚡ Renovar Já" : "💬 Notificar Cliente";
-            const buttonDisabled = item.status === "valida" ? "disabled" : "";
+            const scoreClass = (item.score >= 80) ? 'gc-score-high' : ((item.score >= 50) ? 'gc-score-mid' : 'gc-score-low');
+            const scoreText = item.score !== undefined ? `
+                <span class="gc-score-pill ${scoreClass}">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    Score: ${item.score}%
+                </span>
+            ` : '';
 
-            const scoreText = item.score !== undefined ? ` <span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: ${item.score >= 80 ? 'rgba(16,185,129,0.12)' : (item.score >= 50 ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)')}; color: ${item.score >= 80 ? '#10b981' : (item.score >= 50 ? '#d97706' : '#ef4444')}; font-weight: 700; margin-left: 6px; display: inline-flex; align-items: center; gap: 2px;">Score: ${item.score}%</span>` : '';
+            const numberBadge = item.inspectionNumber 
+                ? `<span style="font-family: monospace; font-size: 10.5px; background: rgba(99,102,241,0.08); color: #4338ca; padding: 1px 6px; border-radius: 4px; font-weight: 700; border: 1px solid rgba(99,102,241,0.2); letter-spacing: 0.3px;" title="Nº do Laudo / Inspeção">${item.inspectionNumber}</span>`
+                : '';
+
+            const cycleIndicator = item.isRenewed 
+                ? `<span class="gc-badge gc-badge-renewed" style="font-size:10px; padding:1px 6px; border-radius:4px;">Ciclo Anterior</span>`
+                : (item.renewedFromId ? `<span class="gc-badge gc-badge-info" style="font-size:10px; padding:1px 6px; border-radius:4px;">Ciclo Renovado</span>` : '');
 
             return `
-                <tr style="${rowStyle} border-bottom: 1px solid var(--border-color); transition: all 0.2s;">
-                    <td style="padding: 16px 20px;">
-                        <div style="font-weight: 700; color: var(--text-primary); font-size: 13.5px;">${item.company}</div>
-                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Contato: ${item.contact}</div>
+                <tr>
+                    <td style="padding: 14px 18px;">
+                        <div style="display: flex; align-items: center; gap: 11px;">
+                            <div class="gc-company-avatar" style="background: linear-gradient(135deg, hsl(${hue}, 65%, 52%), hsl(${(hue + 45) % 360}, 70%, 42%));">
+                                ${initials}
+                            </div>
+                            <div style="min-width: 0;">
+                                <div class="gc-company-name" title="${item.company}">${item.company}</div>
+                                <div style="display: flex; align-items: center; gap: 6px; margin-top: 3px; flex-wrap: wrap;">
+                                    ${numberBadge}
+                                    ${item.contact ? `
+                                        <span class="gc-contact-tag">
+                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                            ${item.contact}
+                                        </span>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
                     </td>
-                    <td style="padding: 16px 20px; font-weight: 600; color: var(--text-primary);">${item.serviceName}${scoreText}</td>
-                    <td style="padding: 16px 20px; color: var(--text-secondary);">${formatDate(item.executionDate)}</td>
-                    <td style="padding: 16px 20px; color: var(--text-secondary); font-weight: 600;">${formatDate(item.expiryDate)}</td>
-                    <td style="padding: 16px 20px;">${remainingText}</td>
-                    <td style="padding: 16px 20px; text-align: center;">${statusBadge}</td>
-                    <td style="padding: 16px 20px; text-align: center;">
-                        <div style="display:flex; gap:6px; justify-content:center; align-items:center; flex-wrap:wrap;">
+                    <td style="padding: 14px 18px;">
+                        <div style="font-weight: 600; color: var(--text-primary); font-size: 13px; line-height: 1.35;">${item.serviceName}</div>
+                        <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: wrap;">
+                            ${scoreText}
+                            ${cycleIndicator}
+                        </div>
+                    </td>
+                    <td style="padding: 14px 18px; color: var(--text-secondary); font-size: 12.5px; white-space: nowrap;">
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text-muted);"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                            <span>${formatDate(item.executionDate)}</span>
+                        </div>
+                    </td>
+                    <td style="padding: 14px 18px; color: var(--text-primary); font-weight: 600; font-size: 12.5px; white-space: nowrap;">
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #6366f1;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            <span>${formatDate(item.expiryDate)}</span>
+                        </div>
+                    </td>
+                    <td style="padding: 14px 18px; white-space: nowrap;">
+                        ${remainingChip}
+                    </td>
+                    <td style="padding: 14px 18px; text-align: center; white-space: nowrap;">
+                        ${statusBadge}
+                    </td>
+                    <td style="padding: 14px 18px; text-align: right;">
+                        <div class="gc-table-actions">
                             <button 
-                                class="btn btn-outline btn-sm"
-                                style="padding: 8px 12px; border-radius: 8px; font-size: 11.5px; border-color: #64748b; color: #334155; background: #f8fafc; font-weight: 700; cursor: pointer;"
+                                class="gc-btn-action gc-btn-action-edit"
                                 onclick="window.Inspections.openInspectionScreen('${item.leadId}', '${item.id}')"
-                                title="Editar Inspeção Técnica (GestãoClick)"
+                                title="Editar Cadastro & Histórico (GestãoClick)"
                             >
-                                ✏️ Detalhes
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                <span>Detalhes</span>
                             </button>
+                            ${buttonAction}
                             <button 
-                                class="btn btn-sm"
-                                style="${buttonStyle} padding: 8px 12px; border-radius: 8px; font-size: 11.5px; transition: all 0.2s;"
-                                onclick="window.sendInspectionNotification('${item.leadId}', '${item.id}')"
-                                ${buttonDisabled}
-                            >
-                                ${buttonText}
-                            </button>
-                            <button 
-                                class="btn btn-outline btn-sm"
-                                style="padding: 8px 12px; border-radius: 8px; font-size: 11.5px; border-color: #3b82f6; color: #3b82f6; background: transparent; font-weight: 700; cursor: pointer;"
+                                class="gc-btn-action gc-btn-action-calendar"
                                 onclick="window.scheduleGoogleCalendar('${item.leadId}', '${item.id}')"
                                 title="Adicionar lembrete no Google Agenda"
                             >
-                                📅 Agendar
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                <span>Agendar</span>
                             </button>
                             <button 
-                                class="btn btn-outline btn-sm"
-                                style="padding: 8px 12px; border-radius: 8px; font-size: 11.5px; border-color: var(--primary); color: var(--primary); background: transparent; font-weight: 700; cursor: pointer;"
+                                class="gc-btn-action gc-btn-action-pdf"
                                 onclick="window.generateInspectionPDF('${item.leadId}', '${item.id}')"
-                                title="Gerar Laudo Oficial em PDF"
+                                title="Gerar Laudo Técnico Oficial em PDF"
                             >
-                                📄 Laudo
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                <span>Laudo</span>
                             </button>
                             <button 
-                                class="btn btn-outline btn-sm"
-                                style="padding: 8px 12px; border-radius: 8px; font-size: 11.5px; border-color: #ef4444; color: #ef4444; background: #fff5f5; font-weight: 700; cursor: pointer; transition: all 0.2s;"
-                                onmouseover="this.style.background='#fee2e2'"
-                                onmouseout="this.style.background='#fff5f5'"
+                                class="gc-btn-action gc-btn-action-delete"
                                 onclick="window.deleteInspection('${item.leadId}', '${item.id}')"
                                 title="Excluir Inspeção Técnica"
                             >
-                                🗑️ Excluir
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                             </button>
                         </div>
                     </td>
@@ -336,11 +532,30 @@ export const Inspections = {
             searchInput.addEventListener("input", () => this.render());
         }
         if (statusSelect) {
-            statusSelect.addEventListener("change", () => this.render());
+            statusSelect.addEventListener("change", (e) => {
+                const val = e.target.value;
+                document.querySelectorAll("#inspection-status-pills .gc-pill-btn").forEach(btn => {
+                    if (btn.getAttribute("data-status") === val) btn.classList.add("active");
+                    else btn.classList.remove("active");
+                });
+                this.render();
+            });
         }
         if (yearSelect) {
             yearSelect.addEventListener("change", () => this.render());
         }
+
+        // Pílulas de filtro rápido de status estilo GestãoClick
+        const pillButtons = document.querySelectorAll("#inspection-status-pills .gc-pill-btn");
+        pillButtons.forEach(btn => {
+            btn.addEventListener("click", () => {
+                const status = btn.getAttribute("data-status") || "all";
+                if (statusSelect) statusSelect.value = status;
+                pillButtons.forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                this.render();
+            });
+        });
 
         // Listener de sincronização em tempo real (novas mensagens ou outros eventos gerais)
         window.addEventListener("vellia:waSent", () => this.render());
@@ -397,6 +612,29 @@ export const Inspections = {
                 const interactionId = document.getElementById("gc-insp-interaction-id")?.value;
                 if (leadId && interactionId) {
                     this.deleteInspection(leadId, interactionId);
+                }
+            };
+        }
+
+        // Botões de Ação de Renovação
+        const btnGcActionRenew = document.getElementById("gc-insp-btn-action-renew");
+        if (btnGcActionRenew) {
+            btnGcActionRenew.onclick = () => {
+                const leadId = document.getElementById("gc-insp-lead-id")?.value;
+                const interactionId = document.getElementById("gc-insp-interaction-id")?.value;
+                if (leadId && interactionId) {
+                    this.createRenewalFrom(leadId, interactionId);
+                }
+            };
+        }
+
+        const btnGcTopRenew = document.getElementById("gc-insp-btn-top-renew");
+        if (btnGcTopRenew) {
+            btnGcTopRenew.onclick = () => {
+                const leadId = document.getElementById("gc-insp-lead-id")?.value;
+                const interactionId = document.getElementById("gc-insp-interaction-id")?.value;
+                if (leadId && interactionId) {
+                    this.createRenewalFrom(leadId, interactionId);
                 }
             };
         }
@@ -937,11 +1175,18 @@ export const Inspections = {
                 }
                 const btnGcDelete = document.getElementById("gc-insp-btn-delete");
                 if (btnGcDelete) btnGcDelete.style.display = "inline-flex";
+
+                const btnGcActionRenew = document.getElementById("gc-insp-btn-action-renew");
+                if (btnGcActionRenew) btnGcActionRenew.style.display = "inline-flex";
             }
         } else {
             // Nova Inspeção
             const btnGcDelete = document.getElementById("gc-insp-btn-delete");
             if (btnGcDelete) btnGcDelete.style.display = "none";
+
+            const btnGcActionRenew = document.getElementById("gc-insp-btn-action-renew");
+            if (btnGcActionRenew) btnGcActionRenew.style.display = "none";
+
             if (titleEl) titleEl.innerHTML = `
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
                 <span>Nova inspeção & laudo técnico</span>
@@ -954,6 +1199,8 @@ export const Inspections = {
 
             const totalExisting = this.getInspections().length + 1;
             const nextNumber = `INSP-2026-${String(totalExisting).padStart(3, '0')}`;
+            const curInputVal = this._scannedInspectionNumber || document.getElementById("gc-insp-number")?.value;
+            const finalNumber = (curInputVal && curInputVal !== "INSP-2026-001") ? curInputVal : nextNumber;
 
             let clientDefault = "";
             let contactDefault = "";
@@ -969,7 +1216,7 @@ export const Inspections = {
 
             setVal("gc-insp-lead-id", leadId || "");
             setVal("gc-insp-interaction-id", "");
-            setVal("gc-insp-number", nextNumber);
+            setVal("gc-insp-number", finalNumber);
             setVal("gc-insp-client", clientDefault);
             setVal("gc-insp-inspector", inspectorDefault);
             setVal("gc-insp-service-select", "Amostragem Isocinética de Chaminé");
@@ -994,6 +1241,9 @@ export const Inspections = {
                 price: 4500
             });
         }
+
+        // Renderizar banner e histórico de renovações no cadastro GestãoClick
+        this.renderRenewalsSection(leadId, interactionId);
 
         // Alternar visualização
         const listContainer = document.getElementById("inspections-list-container");
@@ -1021,6 +1271,309 @@ export const Inspections = {
         if (inspView) inspView.style.display = "none";
         if (listContainer) listContainer.style.display = "block";
         this.render();
+    },
+
+    // ─── Renderização do Histórico e Linha do Tempo de Renovações ───────────────
+    renderRenewalsSection(leadId, currentInteractionId) {
+        const banner = document.getElementById("gc-insp-renewal-banner");
+        const tbody = document.getElementById("gc-insp-renewals-tbody");
+        const cycleBadge = document.getElementById("gc-insp-renewal-cycle-badge");
+        const btnTopRenew = document.getElementById("gc-insp-btn-top-renew");
+        const btnActionRenew = document.getElementById("gc-insp-btn-action-renew");
+
+        if (!tbody) return;
+
+        if (!leadId || !currentInteractionId) {
+            if (banner) {
+                banner.style.display = "none";
+                banner.innerHTML = "";
+            }
+            if (cycleBadge) {
+                cycleBadge.className = "gc-badge gc-badge-neutral";
+                cycleBadge.textContent = "Novo Ciclo";
+            }
+            if (btnTopRenew) btnTopRenew.style.display = "none";
+            if (btnActionRenew) btnActionRenew.style.display = "none";
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="padding: 24px; text-align: center; color: #94a3b8; font-size: 12.5px;">
+                        💡 O histórico de renovações e ciclos anuais será gerado automaticamente assim que você salvar esta inspeção.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        const lead = Store.getLeadById(leadId);
+        if (!lead) return;
+
+        const allLeadInspections = (lead.interactions || []).filter(i => i.type === "Inspeção");
+        const currentItem = allLeadInspections.find(i => i.id === currentInteractionId);
+        if (!currentItem) return;
+
+        // Identificar antecessores e sucessores
+        const successor = allLeadInspections.find(other => 
+            other.id !== currentItem.id && (
+                other.meta?.renewedFromId === currentItem.id ||
+                currentItem.meta?.renewedToId === other.id ||
+                (other.meta?.serviceName === currentItem.meta?.serviceName && 
+                 (other.meta?.executionDate || "") > (currentItem.meta?.executionDate || ""))
+            )
+        );
+
+        const predecessor = allLeadInspections.find(other => 
+            other.id !== currentItem.id && (
+                currentItem.meta?.renewedFromId === other.id ||
+                other.meta?.renewedToId === currentItem.id ||
+                (other.meta?.serviceName === currentItem.meta?.serviceName && 
+                 (other.meta?.executionDate || "") < (currentItem.meta?.executionDate || ""))
+            )
+        );
+
+        const isRenewed = Boolean(currentItem.meta?.isRenewed || currentItem.meta?.status === "renovada" || successor);
+
+        const formatDate = (dateStr) => {
+            if (!dateStr) return "N/A";
+            const parts = dateStr.split("-");
+            if (parts.length < 3) return dateStr;
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        };
+
+        // Atualizar Banner de Status no topo
+        if (banner) {
+            if (successor) {
+                const sucNumber = successor.meta?.inspectionNumber || "Laudo Seguinte";
+                const sucDate = formatDate(successor.meta?.executionDate);
+                banner.className = "gc-renewal-alert gc-renewal-alert-renewed";
+                banner.style.display = "flex";
+                banner.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <span style="font-size:24px;">🔄</span>
+                        <div>
+                            <strong style="font-size:14px; display:block; color:#1e3a8a; margin-bottom:2px;">Inspeção Renovada com Sucesso</strong>
+                            <span style="font-size:12.5px; color:#1e40af;">Este laudo já possui renovação emitida pelo ciclo <strong>${sucNumber}</strong> (${sucDate}). Os parâmetros técnicos foram continuados no novo ciclo.</span>
+                        </div>
+                    </div>
+                    <button type="button" class="gc-btn-main" style="font-size:12px; padding:6px 14px; min-height:34px; cursor:pointer;" onclick="window.Inspections.openInspectionScreen('${lead.id}', '${successor.id}')">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                        <span>Abrir Ciclo Renovado (${sucNumber})</span>
+                    </button>
+                `;
+            } else if (currentItem.meta?.status === "vencida" || currentItem.meta?.status === "alerta") {
+                banner.className = "gc-renewal-alert gc-renewal-alert-pending";
+                banner.style.display = "flex";
+                banner.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <span style="font-size:24px;">⚡</span>
+                        <div>
+                            <strong style="font-size:14px; display:block; color:#92400e; margin-bottom:2px;">Renovação Anual Pendente</strong>
+                            <span style="font-size:12.5px; color:#b45309;">A validade deste laudo expirou ou está próxima ao vencimento de 1 ano. Emita o novo ciclo para manter o cliente em conformidade.</span>
+                        </div>
+                    </div>
+                    <button type="button" class="gc-btn-renew" style="font-size:12px; padding:6px 14px; min-height:34px; cursor:pointer;" onclick="window.Inspections.createRenewalFrom('${lead.id}', '${currentItem.id}')">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                        <span>Emitir Renovação (Novo Ciclo)</span>
+                    </button>
+                `;
+            } else if (predecessor) {
+                const predNumber = predecessor.meta?.inspectionNumber || "Laudo Anterior";
+                banner.className = "gc-renewal-alert gc-renewal-alert-origin";
+                banner.style.display = "flex";
+                banner.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <span style="font-size:22px;">📋</span>
+                        <div>
+                            <strong style="font-size:14px; display:block; color:#334155; margin-bottom:2px;">Ciclo Vigente (Renovação Ativa)</strong>
+                            <span style="font-size:12.5px; color:#475569;">Esta inspeção é a renovação de continuidade do laudo anterior <strong>${predNumber}</strong>.</span>
+                        </div>
+                    </div>
+                    <button type="button" class="gc-btn-sub" style="font-size:12px; padding:6px 14px; min-height:34px; font-weight:700; cursor:pointer;" onclick="window.Inspections.openInspectionScreen('${lead.id}', '${predecessor.id}')">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        <span>Ver Laudo Anterior (${predNumber})</span>
+                    </button>
+                `;
+            } else {
+                banner.style.display = "none";
+                banner.innerHTML = "";
+            }
+        }
+
+        // Atualizar Badge do ciclo
+        if (cycleBadge) {
+            const curYear = (currentItem.meta?.executionDate || "").substring(0, 4) || "Atual";
+            if (isRenewed) {
+                cycleBadge.className = "gc-badge gc-badge-renewed";
+                cycleBadge.textContent = `Ciclo ${curYear} (Renovado)`;
+            } else {
+                cycleBadge.className = "gc-badge gc-badge-success";
+                cycleBadge.textContent = `Ciclo ${curYear} (Vigente)`;
+            }
+        }
+
+        if (btnTopRenew) btnTopRenew.style.display = "inline-flex";
+        if (btnActionRenew) btnActionRenew.style.display = "inline-flex";
+
+        // Ordenar cronologicamente
+        const sortedInspections = [...allLeadInspections].sort((a, b) => {
+            const da = a.meta?.executionDate || a.timestamp || "";
+            const db = b.meta?.executionDate || b.timestamp || "";
+            return da.localeCompare(db);
+        });
+
+        tbody.innerHTML = sortedInspections.map((it, idx) => {
+            const isCurrent = it.id === currentInteractionId;
+            const itYear = (it.meta?.executionDate || it.timestamp || "").substring(0, 4) || `Ciclo ${idx + 1}`;
+            const itNumber = it.meta?.inspectionNumber || `INSP-${itYear}-${it.id.slice(-3)}`;
+            const itExec = formatDate(it.meta?.executionDate || it.timestamp?.split("T")[0]);
+            const itExp = formatDate(it.meta?.expiryDate);
+            
+            const itSuccessor = allLeadInspections.find(o => 
+                o.id !== it.id && (
+                    o.meta?.renewedFromId === it.id ||
+                    it.meta?.renewedToId === o.id ||
+                    (o.meta?.serviceName === it.meta?.serviceName && (o.meta?.executionDate || "") > (it.meta?.executionDate || ""))
+                )
+            );
+            const itIsRenewed = Boolean(it.meta?.isRenewed || it.meta?.status === "renovada" || itSuccessor);
+
+            let itBadge = "";
+            if (isCurrent) {
+                itBadge = `<span class="gc-badge gc-badge-info" style="font-weight:700;">👉 Em Edição</span>`;
+            } else if (itIsRenewed) {
+                itBadge = `<span class="gc-badge gc-badge-renewed">🔄 Renovado</span>`;
+            } else if (it.meta?.status === "vencida") {
+                itBadge = `<span class="gc-badge gc-badge-danger">🔴 Vencido</span>`;
+            } else if (it.meta?.status === "alerta") {
+                itBadge = `<span class="gc-badge gc-badge-warning">🟠 Crítico</span>`;
+            } else {
+                itBadge = `<span class="gc-badge gc-badge-success">🟢 Vigente</span>`;
+            }
+
+            const rowBg = isCurrent ? "background: rgba(37, 99, 235, 0.04); font-weight: 600;" : "";
+
+            return `
+                <tr style="${rowBg}">
+                    <td style="font-weight: 700; color: #1e293b;">
+                        Ano ${itYear}
+                        ${isCurrent ? '<span style="font-size:10px; color:#2563eb; display:block; font-weight:700;">(Visualizando)</span>' : ''}
+                    </td>
+                    <td>
+                        <span style="font-family: monospace; font-size: 11.5px; background: rgba(99,102,241,0.08); color: #4338ca; padding: 2px 6px; border-radius: 4px; font-weight: 700; border: 1px solid rgba(99,102,241,0.2);">
+                            ${itNumber}
+                        </span>
+                        <div style="font-size: 11px; color: #64748b; margin-top: 2px;">${it.meta?.serviceName || 'Vistoria Geral'}</div>
+                    </td>
+                    <td style="color: #475569; font-size: 12px;">${itExec}</td>
+                    <td style="color: #475569; font-size: 12px; font-weight: 600;">${itExp}</td>
+                    <td style="text-align: center;">${itBadge}</td>
+                    <td style="text-align: center;">
+                        ${isCurrent 
+                            ? '<span style="font-size: 11.5px; color: #2563eb; font-weight: 700;">Ativo</span>'
+                            : `<button type="button" class="gc-btn-action gc-btn-action-cycle" onclick="window.Inspections.openInspectionScreen('${lead.id}', '${it.id}')" title="Abrir dados deste ciclo"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg><span>Ver Ciclo</span></button>`
+                        }
+                    </td>
+                </tr>
+            `;
+        }).join("");
+    },
+
+    // ─── Criação Automática do Ciclo de Renovação ──────────────────────────────
+    async createRenewalFrom(leadId, currentInteractionId) {
+        if (!leadId || !currentInteractionId) {
+            alert("Selecione uma inspeção válida para renovar.");
+            return;
+        }
+
+        const lead = Store.getLeadById(leadId);
+        if (!lead) return;
+
+        const currentItem = (lead.interactions || []).find(i => i.id === currentInteractionId);
+        if (!currentItem) return;
+
+        const oldNumber = currentItem.meta?.inspectionNumber || "este laudo";
+        const confirmMsg = `Deseja emitir uma renovação para ${oldNumber} (${lead.company})?\n\nIsso criará automaticamente o próximo ciclo anual, incrementará o número do laudo e manterá o histórico conectado.`;
+        if (!confirm(confirmMsg)) return;
+
+        // Calcular novo número de laudo incrementando o ano (ex: ISO-2026-002 -> ISO-2027-002)
+        let newNumber = "";
+        const curYearMatch = (currentItem.meta?.inspectionNumber || "").match(/\b(20\d{2})\b/);
+        if (curYearMatch) {
+            const detectedYear = parseInt(curYearMatch[1], 10);
+            const nextYearVal = detectedYear + 1;
+            newNumber = currentItem.meta.inspectionNumber.replace(String(detectedYear), String(nextYearVal));
+        } else {
+            const thisYear = new Date().getFullYear();
+            newNumber = `INSP-${thisYear + 1}-${String(Date.now()).slice(-3)}`;
+        }
+
+        const todayStr = new Date().toISOString().split("T")[0];
+        const nextYearDate = new Date();
+        nextYearDate.setFullYear(nextYearDate.getFullYear() + 1);
+        const nextYearStr = nextYearDate.toISOString().split("T")[0];
+
+        const newInteractionId = "int_" + Date.now().toString(36);
+
+        // Atualizar inspeção anterior marcando como renovada
+        currentItem.meta = currentItem.meta || {};
+        currentItem.meta.isRenewed = true;
+        currentItem.meta.status = "renovada";
+        currentItem.meta.renewedToId = newInteractionId;
+
+        // Clonar dados com novo ciclo anual conectado
+        const newInteraction = {
+            id: newInteractionId,
+            type: "Inspeção",
+            timestamp: new Date().toISOString(),
+            description: `Renovação de vistoria: ${currentItem.meta?.serviceName || 'Vistoria Geral'} (${newNumber}). Ciclo sucessor de ${oldNumber}.`,
+            meta: {
+                ...JSON.parse(JSON.stringify(currentItem.meta)),
+                inspectionNumber: newNumber,
+                executionDate: todayStr,
+                expiryDate: nextYearStr,
+                status: "valida",
+                isRenewed: false,
+                renewedFromId: currentItem.id,
+                renewedToId: null,
+                internalNotes: `Renovação anual emitida automaticamente a partir do laudo ${oldNumber}.`
+            }
+        };
+
+        lead.interactions.push(newInteraction);
+
+        // Salvar no Store e sincronizar com Supabase
+        const currentUser = Auth.getCurrentUser();
+        const userEmail = currentUser ? currentUser.email : "sistema@vellia.com";
+
+        try {
+            if (typeof Store.updateLead === "function") {
+                Store.updateLead(lead.id, { interactions: lead.interactions }, userEmail);
+            } else {
+                const localLeads = JSON.parse(localStorage.getItem("comercial_leads")) || [];
+                const updatedLocal = localLeads.map(l => l.id === lead.id ? lead : l);
+                localStorage.setItem("comercial_leads", JSON.stringify(updatedLocal));
+            }
+
+            await fetch(`${SUPABASE_URL}/rest/v1/comercial_leads?id=eq.${lead.id}`, {
+                method: "PATCH",
+                headers: {
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": `Bearer ${SUPABASE_KEY}`,
+                    "Content-Type": "application/json",
+                    "Prefer": "return=minimal"
+                },
+                body: JSON.stringify({ interactions: lead.interactions })
+            }).catch(e => console.warn("Aviso PATCH:", e));
+        } catch (e) {
+            console.warn("Falha ao salvar renovação:", e);
+        }
+
+        Audit.logStageChange(userEmail, lead.company, lead.stage, lead.stage, `Emitiu Renovação de Inspeção: ${newNumber} (sucessora de ${oldNumber})`);
+
+        // Abrir imediatamente a nova inspeção em tela
+        this.openInspectionScreen(lead.id, newInteraction.id);
+        this.render();
+
+        alert(`🎉 Novo ciclo de renovação (${newNumber}) criado com sucesso!\nO histórico do cliente foi conectado e o laudo anterior foi arquivado como renovado.`);
     },
 
     renderChecklistTable(savedItems = null) {
@@ -1291,7 +1844,12 @@ export const Inspections = {
 
         const opinionText = opinion || "";
         const serviceText = service || "Inspeção Geral";
-        const numberText = number || `INSP-2026-${String(Date.now()).slice(-4)}`;
+        const numberVal = document.getElementById("gc-insp-number")?.value?.trim();
+        const numberText = numberVal || (number ? number.trim() : `INSP-2026-${String(Date.now()).slice(-4)}`);
+
+        // Obter metadados prévios se for edição
+        const existingItem = (interactionId && lead.interactions) ? lead.interactions.find(i => i.id === interactionId) : null;
+        const existingMeta = existingItem?.meta || {};
 
         const newOrUpdatedInteraction = {
             id: interactionId || ("int_" + Date.now().toString(36)),
@@ -1299,6 +1857,7 @@ export const Inspections = {
             timestamp: new Date().toISOString(),
             description: `Vistoria de ${serviceText} (${numberText}) realizada com ${score}% de conformidade. Parecer: ${opinionText.substring(0, 100)}...`,
             meta: {
+                ...existingMeta,
                 inspectionNumber: numberText,
                 inspector: inspector || "Técnico Responsável",
                 serviceName: serviceText,
@@ -1308,6 +1867,9 @@ export const Inspections = {
                 executionDate: execDate,
                 expiryDate: expiryDate,
                 status: status || "valida",
+                isRenewed: status === "renovada" ? true : (existingMeta.isRenewed || false),
+                renewedFromId: existingMeta.renewedFromId || null,
+                renewedToId: existingMeta.renewedToId || null,
                 location: location || "",
                 contact: contact || "",
                 equipmentTag: equipmentTag || "",
@@ -1592,6 +2154,7 @@ export const Inspections = {
         const prompt = `Analise este laudo técnico ambiental ou industrial.
 Extraia e retorne EXCLUSIVAMENTE um objeto JSON (sem formatação markdown) com:
 {
+  "inspectionNumber": "Código, identificador ou número do laudo/relatório se presente no documento (ex: ISO-2026-002, LT-2026-01, REL-042/26, INSP-2026-001, etc.) ou vazio se não houver",
   "company": "Razão social ou nome da empresa/condomínio/indústria",
   "serviceName": "AMOSTRAGEM ISOCINÉTICA DE EMISSÕES ATMOSFÉRICAS" | "MONITORAMENTO DA QUALIDADE DO AR" | "MONITORAMENTO DO NÍVEL DE PRESSÃO SONORA EM AMBIENTES EXTERNOS (Ruído Ambiental)" | "INSPEÇÃO DE SEGURANÇA - NR13" | "TESTE DE ESTANQUEIDADE" | "PROGRAMA DE GERENCIAMENTO DE RESÍDUOS SÓLIDOS (PGRS)" | "OUTROS",
   "executionDate": "YYYY-MM-DD",
@@ -1633,6 +2196,41 @@ Extraia e retorne EXCLUSIVAMENTE um objeto JSON (sem formatação markdown) com:
     parseInspectionText(rawText, filename = "") {
         const text = (rawText + " " + filename).toLowerCase();
         const originalText = rawText || "";
+
+        // 0. Identificar Número/Código do Laudo (ex: ISO-2026-002, LT-2026-01, RL-012/26, etc.)
+        let detectedNumber = "";
+        
+        // Padrão explícito por termos de laudo/relatório/código
+        const numberMatch = originalText.match(/(?:Laudo(?:\s+T[ée]cnico)?|Relat[óo]rio(?:\s+T[ée]cnico)?|N[º°o]\s+do\s+Laudo|N[º°o]\s+do\s+Relat[óo]rio|Identifica[çc][ãa]o|Inspe[çc][ãa]o|Certificado|Doc(?:umento)?|C[óo]digo)[\s:Nº°o#\.\-]+([A-Za-z0-9]{2,8}(?:[-_\/\.][A-Za-z0-9]{1,8})+)/i);
+        if (numberMatch && numberMatch[1]) {
+            detectedNumber = numberMatch[1].trim();
+        }
+
+        // Padrões diretos de códigos alfanuméricos com hífens/barras (como ISO-2026-002, LT-2026-01, INSP-2026-01)
+        if (!detectedNumber) {
+            const codePatterns = [
+                /\b(ISO-[0-9]{4}-[0-9]{2,4})\b/i,
+                /\b([A-Z]{2,6}[-_][0-9]{4}[-_][0-9]{2,4})\b/i,
+                /\b([A-Z]{2,6}[-_][0-9]{2,4}[-_][0-9]{2,4})\b/i,
+                /\b([A-Z]{2,6}[-\/][0-9]{2,4}\/[0-9]{2,4})\b/i,
+                /\b([A-Z]{2,6}[0-9]{3,6}[A-Z0-9\-]*)\b/i
+            ];
+            for (const pat of codePatterns) {
+                const match = originalText.match(pat);
+                if (match && match[1]) {
+                    detectedNumber = match[1].trim();
+                    break;
+                }
+            }
+        }
+
+        if (!detectedNumber && filename) {
+            const fileMatch = filename.match(/\b([A-Za-z]{2,6}[-_][0-9]{4}[-_][0-9]{1,4})\b/i) ||
+                              filename.match(/\b([A-Za-z]{2,6}[-_][0-9]{1,6})\b/i);
+            if (fileMatch && fileMatch[1]) {
+                detectedNumber = fileMatch[1].trim();
+            }
+        }
 
         // 1. Identificar Empresa / Cliente
         let detectedCompany = "";
@@ -1733,6 +2331,7 @@ Extraia e retorne EXCLUSIVAMENTE um objeto JSON (sem formatação markdown) com:
         }
 
         return {
+            inspectionNumber: detectedNumber,
             company: detectedCompany,
             serviceName: serviceName,
             executionDate: executionDate,
@@ -1805,6 +2404,7 @@ Extraia e retorne EXCLUSIVAMENTE um objeto JSON (sem formatação markdown) com:
         }
 
         // Sincronizar com os campos da nova tela GestãoClick
+        const gcNumber = document.getElementById("gc-insp-number");
         const gcClient = document.getElementById("gc-insp-client");
         const gcService = document.getElementById("gc-insp-service-select");
         const gcExecDate = document.getElementById("gc-insp-exec-date");
@@ -1812,6 +2412,10 @@ Extraia e retorne EXCLUSIVAMENTE um objeto JSON (sem formatação markdown) com:
         const gcNotes = document.getElementById("gc-insp-notes");
         const gcEqTag = document.getElementById("gc-insp-equipment-tag");
 
+        if (data.inspectionNumber) {
+            this._scannedInspectionNumber = data.inspectionNumber;
+            if (gcNumber) gcNumber.value = data.inspectionNumber;
+        }
         if (data.company && gcClient) gcClient.value = data.company;
         if (data.serviceName && gcService) {
             for (let i = 0; i < gcService.options.length; i++) {
@@ -1827,7 +2431,10 @@ Extraia e retorne EXCLUSIVAMENTE um objeto JSON (sem formatação markdown) com:
         if (gcEqTag && !gcEqTag.value) gcEqTag.value = "Ponto Amostral / Duto da Chaminé Principal";
 
         const gcSuccessBox = document.getElementById("gc-insp-scanner-success");
-        if (gcSuccessBox) gcSuccessBox.style.display = "block";
+        if (gcSuccessBox) {
+            gcSuccessBox.style.display = "block";
+            gcSuccessBox.innerHTML = `✨ Laudo lido! ${data.inspectionNumber ? `Nº: <strong>${data.inspectionNumber}</strong> | ` : ''}Empresa: <strong>${data.company || 'Detectada'}</strong>`;
+        }
 
         this.calculateScore();
         this.updateDaysSummary();

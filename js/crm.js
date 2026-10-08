@@ -2440,8 +2440,11 @@ Instruções: Retorne APENAS o texto curto pronto da mensagem em tom amigável e
 
             return `
                 <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 10px; display: flex; flex-direction: column; gap: 6px; font-size: 12.5px;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                        <strong style="color: var(--text-primary); font-size: 13px;">${serviceName}</strong>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                        <div>
+                            <strong style="color: var(--text-primary); font-size: 13px;">${serviceName}</strong>
+                            ${item.meta?.inspectionNumber ? `<div style="margin-top:2px;"><span style="font-size:10px; font-family:monospace; font-weight:700; background:rgba(99,102,241,0.1); color:#4338ca; padding:1px 5px; border-radius:4px; border:1px solid rgba(99,102,241,0.2);">${item.meta.inspectionNumber}</span></div>` : ''}
+                        </div>
                         ${statusBadge}
                     </div>
                     <div style="display: flex; justify-content: space-between; align-items: center; color: var(--text-muted); font-size: 11px;">

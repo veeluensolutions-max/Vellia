@@ -220,6 +220,7 @@ export const PDFGenerator = {
             <img src="https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=https://velliacrm.vercel.app/verify?auth=${codeAuth}" alt="QR Code de Autenticidade" style="width: 60px; height: 60px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 3px;" />
             <div class="doc-info">
                 <div style="color: #1877F2; font-weight: 800; font-size: 11px;">🛡️ SELO DE AUTENTICIDADE</div>
+                ${inspection.meta?.inspectionNumber ? `<div><strong>Nº do Laudo:</strong> <span style="font-family: monospace; font-weight: 700; color: #0f172a;">${inspection.meta.inspectionNumber}</span></div>` : ''}
                 <div><strong>Código Autenticador:</strong> ${codeAuth}</div>
                 <div><strong>Emissão:</strong> ${issueDate}</div>
             </div>
@@ -258,6 +259,10 @@ export const PDFGenerator = {
             <div class="info-val" style="color: #1877F2;">${serviceName}</div>
         </div>
         <div class="info-card">
+            <div class="info-label">Nº do Laudo / Identificador</div>
+            <div class="info-val" style="font-family: monospace; font-weight: 700; color: #1877F2;">${inspection.meta?.inspectionNumber || codeAuth}</div>
+        </div>
+        <div class="info-card">
             <div class="info-label">Data de Realização</div>
             <div class="info-val">${formatDate(execDate)}</div>
         </div>
@@ -265,7 +270,7 @@ export const PDFGenerator = {
             <div class="info-label">Data de Vencimento / Próxima Vistoria</div>
             <div class="info-val">${formatDate(expiryDate)}</div>
         </div>
-        <div class="info-card">
+        <div class="info-card" style="grid-column: span 2;">
             <div class="info-label">Status da Validade</div>
             <div class="info-val">
                 <span class="status-badge" style="background: ${badgeBg}; color: ${badgeColor}; border: 1px solid ${badgeBorder}; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 99px;">${badgeText}</span>

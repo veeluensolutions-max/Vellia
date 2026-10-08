@@ -3940,109 +3940,151 @@ Condições de pagamento:
                      VIEW: INSPEÇÕES & RENOVAÇÃO
                      ========================================================== -->
                 <div id="view-inspections" class="spa-view" style="display: none;">
-                    <!-- CONTAINER 1: LISTAGEM DE INSPEÇÕES -->
+                    <!-- CONTAINER 1: LISTAGEM DE INSPEÇÕES ESTILO GESTÃOCLICK -->
                     <div id="inspections-list-container">
-                        <!-- Header e Filtros -->
-                        <div class="vellia-card" style="margin-bottom: 24px; padding: 20px 24px;">
-                            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 18px;">
+                        <!-- Header e Filtros Estilo GestãoClick -->
+                        <div class="vellia-card" style="margin-bottom: 20px; padding: 20px 24px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 16px;">
                                 <div>
-                                    <h3 style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0; letter-spacing: -0.01em;">Central de Inspeções & Renovações</h3>
-                                    <p style="font-size: 13px; color: var(--text-muted); margin: 4px 0 0 0;">Monitore laudos técnicos e notifique clientes automaticamente antes do vencimento anual.</p>
+                                    <h3 style="font-size: 19px; font-weight: 800; color: var(--text-primary); margin: 0; letter-spacing: -0.01em; display: flex; align-items: center; gap: 8px;">
+                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                                        Central de Inspeções & Renovações Técnicas
+                                    </h3>
+                                    <p style="font-size: 13px; color: var(--text-muted); margin: 4px 0 0 0;">Gestão inteligente de ciclos de laudos, validade anual e controle de clientes com renovações emitidas.</p>
                                 </div>
-                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                    <button class="btn btn-primary" id="btn-open-checklist-modal" style="font-size: 13px; font-weight: 600; padding: 8px 16px; gap: 6px; display: inline-flex; align-items: center;">
+                                <div class="gc-header-actions">
+                                    <button class="gc-btn-main" id="btn-open-checklist-modal" title="Cadastrar nova vistoria ou inspeção técnica">
                                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
                                         <span>Nova Inspeção Técnica</span>
                                     </button>
-                                    <button class="btn btn-outline" id="btn-open-checklist-scanner-top" style="font-size: 13px; font-weight: 600; padding: 8px 16px; gap: 6px; display: inline-flex; align-items: center; border-color: #6366f1; color: #6366f1; background: rgba(99, 102, 241, 0.05);" title="Carregar PDF ou fotografar laudo com a câmera">
-                                        📷 Ler PDF / Câmera
+                                    <button class="gc-btn-sub gc-btn-scanner" id="btn-open-checklist-scanner-top" title="Carregar PDF ou fotografar laudo com a câmera">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                                        <span>Ler PDF / Câmera</span>
                                     </button>
-                                    <button class="btn btn-outline" style="font-size: 13px; font-weight: 600; padding: 8px 16px; gap: 6px; display: inline-flex; align-items: center;" onclick="window.exportInspectionsSummaryPDF()">
-                                        📄 Relatório PDF
+                                    <button class="gc-btn-sub" onclick="window.exportInspectionsSummaryPDF()" title="Exportar relatório resumo das inspeções">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                                        <span>Relatório PDF</span>
                                     </button>
                                 </div>
                             </div>
                             
-                            <!-- Barra de Filtros -->
-                            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; background: #F8FAFC; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border-color);">
-                                <div style="flex: 1; min-width: 220px; display: flex; align-items: center; gap: 8px; background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 8px; padding: 0 12px;">
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #94A3B8;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                                    <input type="text" id="filter-inspection-search" class="form-control" placeholder="Buscar por cliente, laudo ou serviço..." style="border: none; background: transparent; height: 36px; padding: 0; font-size: 13px;">
+                            <!-- Barra de Filtros & Pílulas Rápidas -->
+                            <div style="display: flex; flex-direction: column; gap: 12px; background: #F8FAFC; padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border-color);">
+                                <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                                    <div style="flex: 1; min-width: 240px; display: flex; align-items: center; gap: 8px; background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 8px; padding: 0 12px;">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #94A3B8;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                        <input type="text" id="filter-inspection-search" class="form-control" placeholder="Buscar por cliente, laudo, tag ou serviço..." style="border: none; background: transparent; height: 38px; padding: 0; font-size: 13px;">
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">Situação:</span>
+                                        <select id="filter-inspection-status" class="form-control" style="height: 38px; padding: 6px 12px; min-width: 190px; font-size: 12.5px;">
+                                            <option value="all">Todos os Status</option>
+                                            <option value="valida">🟢 Válidos (Mais de 3 meses)</option>
+                                            <option value="alerta">🟠 Críticos (Vence em &lt; 3 meses)</option>
+                                            <option value="vencida">🔴 Vencidos (Expirados)</option>
+                                            <option value="renovada">🔄 Renovados (Ciclo Atualizado)</option>
+                                        </select>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">Ano:</span>
+                                        <select id="filter-inspection-year" class="form-control" style="height: 38px; padding: 6px 12px; min-width: 100px; font-size: 12.5px;">
+                                            <option value="all">Todos</option>
+                                            <option value="2027">2027</option>
+                                            <option value="2026">2026</option>
+                                            <option value="2025">2025</option>
+                                            <option value="2024">2024</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">Status:</span>
-                                    <select id="filter-inspection-status" class="form-control" style="height: 36px; padding: 6px 12px; min-width: 175px; font-size: 12.5px;">
-                                        <option value="all">Todos os Status</option>
-                                        <option value="alerta">Crítico (Vence em &lt; 3 meses)</option>
-                                        <option value="valida">Válida (Mais de 3 meses)</option>
-                                        <option value="vencida">Vencida (Laudo Expirado)</option>
-                                    </select>
-                                </div>
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">Ano:</span>
-                                    <select id="filter-inspection-year" class="form-control" style="height: 36px; padding: 6px 12px; min-width: 100px; font-size: 12.5px;">
-                                        <option value="all">Todos</option>
-                                        <option value="2026">2026</option>
-                                        <option value="2025">2025</option>
-                                        <option value="2024">2024</option>
-                                    </select>
+
+                                <!-- Pílulas de filtro rápido padrão GestãoClick -->
+                                <div class="gc-filter-pills" id="inspection-status-pills">
+                                    <button type="button" class="gc-pill-btn active" data-status="all" id="pill-filter-all">
+                                        <span>Todos</span>
+                                        <span class="gc-pill-badge" id="pill-count-all">0</span>
+                                    </button>
+                                    <button type="button" class="gc-pill-btn" data-status="valida" id="pill-filter-valid">
+                                        <span>🟢 Válidos</span>
+                                        <span class="gc-pill-badge" id="pill-count-valid">0</span>
+                                    </button>
+                                    <button type="button" class="gc-pill-btn" data-status="alerta" id="pill-filter-critical">
+                                        <span>🟠 Críticos (&lt; 3m)</span>
+                                        <span class="gc-pill-badge" id="pill-count-critical">0</span>
+                                    </button>
+                                    <button type="button" class="gc-pill-btn" data-status="vencida" id="pill-filter-expired">
+                                        <span>🔴 Vencidos</span>
+                                        <span class="gc-pill-badge" id="pill-count-expired">0</span>
+                                    </button>
+                                    <button type="button" class="gc-pill-btn" data-status="renovada" id="pill-filter-renewed">
+                                        <span>🔄 Renovados</span>
+                                        <span class="gc-pill-badge" id="pill-count-renewed">0</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Grid de KPIs rápidos -->
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
-                            <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
-                                <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
-                                    <span class="stat-label">Total de Inspeções</span>
-                                    <span class="stat-value" id="kpi-inspections-total">0</span>
+                        <!-- Grid de KPIs rápidos padrão GestãoClick (5 Cards) -->
+                        <div class="gc-kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 24px;">
+                            <div class="gc-kpi-card">
+                                <div>
+                                    <span class="gc-kpi-label">Total Cadastrado</span>
+                                    <div class="gc-kpi-value" id="kpi-inspections-total">0</div>
                                 </div>
-                                <div class="stat-icon-box" style="background: rgba(98, 87, 245, 0.08); color: var(--primary);">
+                                <div class="gc-kpi-icon" style="background: rgba(98, 87, 245, 0.08); color: var(--primary);">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                                 </div>
                             </div>
-                            <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
-                                <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
-                                    <span class="stat-label">Laudos Vencidos</span>
-                                    <span class="stat-value" id="kpi-inspections-expired" style="color: #DC2626;">0</span>
+                            <div class="gc-kpi-card">
+                                <div>
+                                    <span class="gc-kpi-label">Laudos Regulares</span>
+                                    <div class="gc-kpi-value" id="kpi-inspections-valid" style="color: #059669;">0</div>
                                 </div>
-                                <div class="stat-icon-box" style="background: #FEF2F2; color: #DC2626;">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                <div class="gc-kpi-icon" style="background: #ECFDF5; color: #16A36A;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
                                 </div>
                             </div>
-                            <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
-                                <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
-                                    <span class="stat-label">Críticos (&lt; 3 meses)</span>
-                                    <span class="stat-value" id="kpi-inspections-critical" style="color: #D97706;">0</span>
+                            <div class="gc-kpi-card">
+                                <div>
+                                    <span class="gc-kpi-label">Críticos (&lt; 3 meses)</span>
+                                    <div class="gc-kpi-value" id="kpi-inspections-critical" style="color: #D97706;">0</div>
                                 </div>
-                                <div class="stat-icon-box warning" style="background: #FFFBEB; color: #D97706;">
+                                <div class="gc-kpi-icon" style="background: #FFFBEB; color: #D97706;">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                                 </div>
                             </div>
-                            <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
-                                <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
-                                    <span class="stat-label">Laudos Regulares</span>
-                                    <span class="stat-value" id="kpi-inspections-valid" style="color: #059669;">0</span>
+                            <div class="gc-kpi-card">
+                                <div>
+                                    <span class="gc-kpi-label">Laudos Vencidos</span>
+                                    <div class="gc-kpi-value" id="kpi-inspections-expired" style="color: #DC2626;">0</div>
                                 </div>
-                                <div class="stat-icon-box success" style="background: #ECFDF5; color: #16A36A;">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                                <div class="gc-kpi-icon" style="background: #FEF2F2; color: #DC2626;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                </div>
+                            </div>
+                            <div class="gc-kpi-card">
+                                <div>
+                                    <span class="gc-kpi-label">Já Renovados</span>
+                                    <div class="gc-kpi-value" id="kpi-inspections-renewed" style="color: #2563eb;">0</div>
+                                </div>
+                                <div class="gc-kpi-icon" style="background: #EFF6FF; color: #2563eb;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Tabela de Inspeções -->
-                        <div class="vellia-card" style="padding: 0; overflow: hidden; margin-bottom: 24px;">
-                            <div class="table-responsive" style="margin: 0;">
-                                <table class="custom-table" style="width: 100%; border: none;">
+                        <!-- Tabela de Inspeções Clean Padrão GestãoClick Pro -->
+                        <div class="gc-card" style="padding: 0; overflow: hidden; margin-bottom: 24px; border-radius: 12px; box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05); border: 1px solid var(--border-color);">
+                            <div class="table-responsive" style="margin: 0; overflow-x: auto;">
+                                <table class="gc-inspections-table" style="width: 100%; border: none; min-width: 960px;">
                                     <thead>
                                         <tr>
-                                            <th>Cliente / Empresa</th>
-                                            <th>Serviço Executado</th>
-                                            <th>Data Execução</th>
-                                            <th>Vencimento</th>
-                                            <th>Prazo Restante</th>
-                                            <th style="text-align: center;">Status</th>
-                                            <th style="text-align: center;">Ações de Revenda</th>
+                                            <th style="width: 25%;">Cliente / Empresa</th>
+                                            <th style="width: 21%;">Serviço & Laudo</th>
+                                            <th style="width: 10%;">Execução</th>
+                                            <th style="width: 10%;">Vencimento</th>
+                                            <th style="width: 11%;">Prazo</th>
+                                            <th style="width: 9%; text-align: center;">Status</th>
+                                            <th style="width: 14%; text-align: right; padding-right: 18px;">Ações</th>
                                         </tr>
                                     </thead>
                                     <tbody id="inspections-table-body">
@@ -4126,6 +4168,9 @@ Condições de pagamento:
                             </div>
                         </div>
 
+                        <!-- BANNER DINÂMICO DE RENOVAÇÃO & STATUS DO CICLO -->
+                        <div id="gc-insp-renewal-banner" class="gc-renewal-alert" style="display: none;"></div>
+
                         <!-- CARD 1: DADOS GERAIS DA INSPEÇÃO TÉCNICA -->
                         <div class="gc-card">
                             <div class="gc-card-header">
@@ -4143,8 +4188,8 @@ Condições de pagamento:
                                     <div class="gc-form-group">
                                         <label class="gc-label" for="gc-insp-number">Nº do laudo / inspeção</label>
                                         <div class="gc-input-group">
-                                            <input type="text" id="gc-insp-number" class="gc-input gc-input-readonly" value="INSP-2026-001" readonly>
-                                            <button type="button" class="gc-input-append-btn" id="gc-insp-btn-edit-number" title="Alterar número">
+                                            <input type="text" id="gc-insp-number" class="gc-input" placeholder="Ex: ISO-2026-002 ou INSP-2026-001" value="INSP-2026-001">
+                                            <button type="button" class="gc-input-append-btn" id="gc-insp-btn-edit-number" title="Editar código do laudo">
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                             </button>
                                         </div>
@@ -4193,6 +4238,7 @@ Condições de pagamento:
                                             <option value="valida" selected>🟢 Válido (Regular)</option>
                                             <option value="alerta">🟠 Crítico (&lt; 3 meses para vencer)</option>
                                             <option value="vencida">🔴 Vencido (Laudo expirado)</option>
+                                            <option value="renovada">🔄 Renovado (Novo ciclo emitido)</option>
                                             <option value="elaboracao">⚪ Em elaboração</option>
                                         </select>
                                     </div>
@@ -4208,6 +4254,44 @@ Condições de pagamento:
                                         <label class="gc-label" for="gc-insp-contact">Contato / Acompanhante na Planta</label>
                                         <input type="text" id="gc-insp-contact" class="gc-input" placeholder="Ex.: Gerente de Manutenção / (81) 98888-0000">
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CARD: HISTÓRICO DE RENOVAÇÕES & CICLOS ANUAIS (ESTILO GESTÃOCLICK) -->
+                        <div class="gc-card" id="gc-insp-renewals-card">
+                            <div class="gc-card-header" style="justify-content: space-between;">
+                                <h4 class="gc-card-title">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                                    Histórico de renovações & ciclos anuais da empresa
+                                </h4>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span class="gc-badge gc-badge-neutral" id="gc-insp-renewal-cycle-badge">Ciclo Atual</span>
+                                    <button type="button" class="gc-btn-renew" id="gc-insp-btn-top-renew" style="padding: 5px 12px; font-size: 11.5px;">
+                                        ⚡ Renovar esta inspeção
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="gc-card-body">
+                                <div style="margin-bottom: 12px; font-size: 12.5px; color: #64748b;">
+                                    Acompanhe a linha do tempo e status de renovação desta vistoria. Todas as edições e renovações anuais permanecem conectadas.
+                                </div>
+                                <div class="gc-table-wrapper">
+                                    <table class="gc-table">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 14%;">Ano / Ciclo</th>
+                                                <th style="width: 22%;">Nº do Laudo</th>
+                                                <th style="width: 15%;">Execução</th>
+                                                <th style="width: 15%;">Validade</th>
+                                                <th style="width: 20%; text-align: center;">Status do Ciclo</th>
+                                                <th style="width: 14%; text-align: center;">Ação</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="gc-insp-renewals-tbody">
+                                            <!-- Preenchido dinamicamente via Inspections.renderRenewalsSection -->
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
@@ -4407,11 +4491,15 @@ Condições de pagamento:
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                                 <span>Salvar e gerar laudo técnico PDF</span>
                             </button>
+                            <button type="button" class="gc-btn-renew" id="gc-insp-btn-action-renew" title="Emitir renovação para o próximo ciclo anual" style="display: none;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                                <span>⚡ Renovar inspeção (Novo ciclo)</span>
+                            </button>
                             <button type="button" class="gc-btn-cancel" id="gc-insp-btn-cancel">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                                 <span>Cancelar</span>
                             </button>
-                            <button type="button" class="gc-btn-cancel" id="gc-insp-btn-delete" style="display: none; background: #fee2e2; color: #dc2626; border-color: #fca5a5; margin-left: auto; font-weight: 700;">
+                            <button type="button" class="gc-btn-danger" id="gc-insp-btn-delete" style="display: none;">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                                 <span>Excluir inspeção</span>
                             </button>

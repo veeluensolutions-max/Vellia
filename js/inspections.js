@@ -6,6 +6,21 @@ import { Audit } from "./audit.js";
 const SUPABASE_URL = "https://ogrbsonpkiamoytxjshg.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Wi3eKJi5uyEzqihEDF6Eaw_-i0zcHe7";
 
+export const COMPANY_PALETTES = [
+    { id: "teal", name: "Ciano Oceano", gradient: "linear-gradient(135deg, #0d9488, #0284c7)", solid: "#0d9488" },
+    { id: "blue", name: "Azul Real", gradient: "linear-gradient(135deg, #2563eb, #1d4ed8)", solid: "#2563eb" },
+    { id: "indigo", name: "Índigo Profundo", gradient: "linear-gradient(135deg, #6366f1, #4338ca)", solid: "#6366f1" },
+    { id: "purple", name: "Violeta Cósmico", gradient: "linear-gradient(135deg, #9333ea, #6b21a8)", solid: "#9333ea" },
+    { id: "magenta", name: "Rosa Magenta", gradient: "linear-gradient(135deg, #ec4899, #be185d)", solid: "#ec4899" },
+    { id: "rose", name: "Coral Carmesim", gradient: "linear-gradient(135deg, #f43f5e, #9f1239)", solid: "#f43f5e" },
+    { id: "orange", name: "Laranja Solar", gradient: "linear-gradient(135deg, #f97316, #c2410c)", solid: "#f97316" },
+    { id: "gold", name: "Dourado Âmbar", gradient: "linear-gradient(135deg, #eab308, #a16207)", solid: "#eab308" },
+    { id: "emerald", name: "Verde Esmeralda", gradient: "linear-gradient(135deg, #10b981, #047857)", solid: "#10b981" },
+    { id: "forest", name: "Verde Floresta", gradient: "linear-gradient(135deg, #059669, #065f46)", solid: "#059669" },
+    { id: "slate", name: "Grafite Noturno", gradient: "linear-gradient(135deg, #475569, #1e293b)", solid: "#475569" },
+    { id: "navy", name: "Azul Marinho", gradient: "linear-gradient(135deg, #1e3a8a, #0f172a)", solid: "#1e3a8a" }
+];
+
 export const Inspections = {
     async init() {
         // Inicializar listeners e modal imediatamente para resposta instantânea ao clique
@@ -39,6 +54,187 @@ export const Inspections = {
         } catch (err) {
             console.warn("[Inspections] Falha ao sincronizar com Supabase, usando cache local:", err.message);
         }
+    },
+
+    getCompanyColor(companyName, lead = null, itemMeta = null) {
+        if (lead && (lead.companyColor || lead.color)) return lead.companyColor || lead.color;
+        if (itemMeta && (itemMeta.companyColor || itemMeta.color)) return itemMeta.companyColor || itemMeta.color;
+        if (companyName) {
+            const allLeads = Store.getAllLeadsRaw ? Store.getAllLeadsRaw() : (JSON.parse(localStorage.getItem("comercial_leads")) || []);
+            const found = allLeads.find(l => l && l.company && l.company.trim().toLowerCase() === companyName.trim().toLowerCase());
+            if (found && (found.companyColor || found.color)) {
+                return found.companyColor || found.color;
+            }
+            // Dispersão de hash para distribuir uniformemente entre as 12 paletas bem distintas
+            let hash = 0;
+            const clean = companyName.trim().toUpperCase();
+            for (let i = 0; i < clean.length; i++) {
+                hash = ((hash << 5) - hash) + clean.charCodeAt(i);
+                hash |= 0;
+            }
+            const index = Math.abs(hash) % COMPANY_PALETTES.length;
+            return COMPANY_PALETTES[index].gradient;
+        }
+        return COMPANY_PALETTES[0].gradient;
+    },
+
+    async setCompanyColor(leadId, companyName, newColor) {
+        if (!newColor) return;
+        const currentUser = Auth.getCurrentUser();
+        const userEmail = currentUser ? currentUser.email : "sistema@vellia.com";
+
+        // 1. Atualizar lead no Store se leadId disponível
+        if (leadId && Store.updateLead) {
+            Store.updateLead(leadId, { companyColor: newColor }, userEmail);
+        }
+
+        // 2. Atualizar em comercial_leads (localStorage e Supabase)
+        let allLeads = [];
+        try { allLeads = JSON.parse(localStorage.getItem("comercial_leads")) || []; } catch(e) {}
+        let targetLead = null;
+
+        allLeads.forEach(l => {
+            if (!l) return;
+            const matchesId = leadId && l.id === leadId;
+            const matchesName = companyName && l.company && l.company.trim().toLowerCase() === companyName.trim().toLowerCase();
+            if (matchesId || matchesName) {
+                l.companyColor = newColor;
+                targetLead = l;
+                if (Array.isArray(l.interactions)) {
+                    l.interactions.forEach(it => {
+                        if (it.type === "Inspeção") {
+                            it.meta = it.meta || {};
+                            it.meta.companyColor = newColor;
+                        }
+                    });
+                }
+            }
+        });
+
+        localStorage.setItem("comercial_leads", JSON.stringify(allLeads));
+
+        // Sincronizar PATCH com Supabase
+        if (targetLead && targetLead.id) {
+            try {
+                await fetch(`${SUPABASE_URL}/rest/v1/comercial_leads?id=eq.${targetLead.id}`, {
+                    method: "PATCH",
+                    headers: {
+                        "apikey": SUPABASE_KEY,
+                        "Authorization": `Bearer ${SUPABASE_KEY}`,
+                        "Content-Type": "application/json",
+                        "Prefer": "return=minimal"
+                    },
+                    body: JSON.stringify({ 
+                        companyColor: newColor,
+                        interactions: targetLead.interactions 
+                    })
+                }).catch(e => console.warn("Aviso PATCH cor:", e));
+            } catch(e) {
+                console.warn("Falha PATCH cor:", e);
+            }
+        }
+
+        // Atualizar seletor no modal se estiver aberto
+        const modalPreview = document.getElementById("gc-insp-color-preview");
+        const modalInput = document.getElementById("gc-insp-company-color");
+        if (modalPreview) modalPreview.style.background = newColor;
+        if (modalInput) modalInput.value = newColor;
+
+        // Fechar qualquer popover aberto
+        this.closeColorPalettePopover();
+
+        // Re-renderizar tabela
+        this.render();
+
+        if (window.Toast) {
+            window.Toast.show(`Cor de "${companyName || 'Empresa'}" atualizada com sucesso!`, "success");
+        }
+    },
+
+    openColorPaletteModal(leadId, companyName, triggerEl) {
+        this.closeColorPalettePopover();
+
+        const safeName = (companyName || "Empresa").replace(/"/g, "&quot;");
+        const currentColor = this.getCompanyColor(companyName, leadId ? Store.getLeadById?.(leadId) : null);
+        const rect = triggerEl ? triggerEl.getBoundingClientRect() : null;
+
+        const popover = document.createElement("div");
+        popover.id = "gc-color-palette-popover";
+        popover.className = "gc-palette-popover";
+
+        if (rect) {
+            let left = rect.left + window.scrollX;
+            let top = rect.bottom + window.scrollY + 8;
+            if (left + 300 > window.innerWidth) {
+                left = Math.max(10, window.innerWidth - 310);
+            }
+            if (top + 280 > window.innerHeight + window.scrollY) {
+                top = Math.max(10, rect.top + window.scrollY - 280);
+            }
+            popover.style.left = `${Math.max(10, left)}px`;
+            popover.style.top = `${top}px`;
+        } else {
+            popover.style.top = "50%";
+            popover.style.left = "50%";
+            popover.style.transform = "translate(-50%, -50%)";
+        }
+
+        const swatchesHtml = COMPANY_PALETTES.map(p => {
+            const isActive = currentColor === p.gradient || currentColor === p.solid;
+            return `
+                <button 
+                    type="button" 
+                    class="gc-palette-swatch ${isActive ? 'active' : ''}" 
+                    style="background: ${p.gradient};" 
+                    title="${p.name}"
+                    onclick="window.Inspections.setCompanyColor('${leadId || ''}', '${safeName.replace(/'/g, "\\'")}', '${p.gradient}')"
+                >
+                    ${isActive ? '✓' : ''}
+                </button>
+            `;
+        }).join("");
+
+        popover.innerHTML = `
+            <div class="gc-palette-header">
+                <span class="gc-palette-title">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
+                    Cor da Empresa
+                </span>
+                <button type="button" class="gc-palette-close" onclick="window.Inspections.closeColorPalettePopover()" title="Fechar">✕</button>
+            </div>
+            <div class="gc-palette-company-name" title="${safeName}">
+                🏢 ${safeName}
+            </div>
+            <div class="gc-palette-grid">
+                ${swatchesHtml}
+            </div>
+            <div class="gc-palette-custom-row">
+                <span class="gc-palette-custom-label">Cor personalizada:</span>
+                <input 
+                    type="color" 
+                    class="gc-palette-color-picker" 
+                    title="Escolher cor personalizada"
+                    value="${currentColor.startsWith('#') ? currentColor : '#2563eb'}"
+                    onchange="window.Inspections.setCompanyColor('${leadId || ''}', '${safeName.replace(/'/g, "\\'")}', this.value)"
+                >
+            </div>
+        `;
+
+        document.body.appendChild(popover);
+
+        // Fechar ao clicar fora
+        const outsideClickListener = (e) => {
+            if (!popover.contains(e.target) && (!triggerEl || !triggerEl.contains(e.target))) {
+                this.closeColorPalettePopover();
+                document.removeEventListener("click", outsideClickListener);
+            }
+        };
+        setTimeout(() => document.addEventListener("click", outsideClickListener), 50);
+    },
+
+    closeColorPalettePopover() {
+        const existing = document.getElementById("gc-color-palette-popover");
+        if (existing) existing.remove();
     },
 
     getInspections() {
@@ -77,25 +273,13 @@ export const Inspections = {
                     const timeDiff = expiryDate.getTime() - today.getTime();
                     const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
 
-                    // Detecção Inteligente de Renovação:
-                    // 1. Flag explícita no cadastro (isRenewed = true ou status = "renovada" ou renewedToId)
-                    // 2. Ou existência de outro laudo no mesmo cliente com data posterior para o mesmo serviço
-                    // 3. Ou outro laudo explicitamente apontando renewedFromId = item.id
-                    let successor = leadInspList.find(other => 
+                    // Detecção de Renovação por vínculo explícito de histórico
+                    const successor = leadInspList.find(other => 
                         other.id !== item.id && (
                             other.meta?.renewedFromId === item.id ||
                             item.meta?.renewedToId === other.id
                         )
                     );
-
-                    if (!successor) {
-                        // Buscar laudo sucessor cronologicamente para o mesmo serviço
-                        successor = leadInspList.find(other => 
-                            other.id !== item.id && 
-                            (other.meta?.serviceName === item.meta?.serviceName) &&
-                            (other.meta?.executionDate || other.timestamp?.split("T")[0] || "") > executionDateStr
-                        );
-                    }
 
                     const isRenewed = Boolean(
                         item.meta?.isRenewed === true || 
@@ -104,20 +288,23 @@ export const Inspections = {
                         successor
                     );
 
-                    // Determinar Status
+                    // Determinar Status:
+                    // Inspeções no prazo (daysRemaining >= 0) têm status "valida" (Válido) ou "alerta" (Crítico se <= 90 dias)
                     let status = "valida"; // valida, alerta, vencida, renovada
-                    if (isRenewed) {
-                        status = "renovada";
-                    } else if (daysRemaining < 0) {
-                        status = "vencida";
-                    } else if (daysRemaining <= 90) { // 3 meses (90 dias)
+                    if (daysRemaining < 0) {
+                        // Vencido: se possui renovação emitida, marca como renovado no histórico; senão vencido
+                        status = isRenewed ? "renovada" : "vencida";
+                    } else if (daysRemaining <= 90) { // Menos de 3 meses (90 dias)
                         status = "alerta";
+                    } else {
+                        status = "valida";
                     }
 
                     inspections.push({
                         id: item.id,
                         leadId: lead.id,
                         company: lead.company,
+                        companyColor: this.getCompanyColor(lead.company, lead, item.meta),
                         contact: lead.contact || "Sem nome",
                         phone: lead.whatsapp || lead.phone || "",
                         inspectionNumber: item.meta?.inspectionNumber || item.meta?.number || "",
@@ -238,7 +425,8 @@ export const Inspections = {
             };
 
             const initials = getInitials(item.company);
-            const hue = Math.abs((item.company || "A").split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)) % 360;
+            const companyColor = item.companyColor || this.getCompanyColor(item.company);
+            const safeCompanyName = (item.company || 'Empresa').replace(/'/g, "\\'");
 
             let statusBadge = "";
             let remainingChip = "";
@@ -247,7 +435,7 @@ export const Inspections = {
                 statusBadge = `
                     <span class="gc-status-pill gc-status-renewed" title="Renovação emitida com continuidade de histórico">
                         <span class="gc-status-indicator"></span>
-                        Renovada
+                        Renovado
                     </span>
                 `;
                 const sucText = item.successorNumber ? `Ciclo ${item.successorNumber}` : 'Ciclo Ativo';
@@ -261,7 +449,7 @@ export const Inspections = {
                 statusBadge = `
                     <span class="gc-status-pill gc-status-expired" title="Laudo expirado">
                         <span class="gc-status-indicator"></span>
-                        Vencida
+                        Vencido
                     </span>
                 `;
                 remainingChip = `
@@ -287,7 +475,7 @@ export const Inspections = {
                 statusBadge = `
                     <span class="gc-status-pill gc-status-valid" title="Laudo em período regular de validade">
                         <span class="gc-status-indicator"></span>
-                        Válida
+                        Válido
                     </span>
                 `;
                 remainingChip = `
@@ -354,7 +542,7 @@ export const Inspections = {
                 ? `<span style="font-family: monospace; font-size: 10.5px; background: rgba(99,102,241,0.08); color: #4338ca; padding: 1px 6px; border-radius: 4px; font-weight: 700; border: 1px solid rgba(99,102,241,0.2); letter-spacing: 0.3px;" title="Nº do Laudo / Inspeção">${item.inspectionNumber}</span>`
                 : '';
 
-            const cycleIndicator = item.isRenewed 
+            const cycleIndicator = (item.isRenewed && item.status === "renovada")
                 ? `<span class="gc-badge gc-badge-renewed" style="font-size:10px; padding:1px 6px; border-radius:4px;">Ciclo Anterior</span>`
                 : (item.renewedFromId ? `<span class="gc-badge gc-badge-info" style="font-size:10px; padding:1px 6px; border-radius:4px;">Ciclo Renovado</span>` : '');
 
@@ -362,8 +550,16 @@ export const Inspections = {
                 <tr>
                     <td style="padding: 14px 18px;">
                         <div style="display: flex; align-items: center; gap: 11px;">
-                            <div class="gc-company-avatar" style="background: linear-gradient(135deg, hsl(${hue}, 65%, 52%), hsl(${(hue + 45) % 360}, 70%, 42%));">
+                            <div 
+                                class="gc-company-avatar gc-avatar-interactive" 
+                                style="background: ${companyColor};"
+                                title="Clique para alterar a cor da empresa ${item.company}"
+                                onclick="window.Inspections.openColorPaletteModal('${item.leadId || ''}', '${safeCompanyName}', this)"
+                            >
                                 ${initials}
+                                <span class="gc-avatar-edit-badge" title="Mudar cor">
+                                    <svg width="7.5" height="7.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                                </span>
                             </div>
                             <div style="min-width: 0;">
                                 <div class="gc-company-name" title="${item.company}">${item.company}</div>
@@ -1224,7 +1420,13 @@ export const Inspections = {
                 setVal("gc-insp-service-select", item.meta?.serviceName || "Amostragem Isocinética de Chaminé");
                 setVal("gc-insp-exec-date", item.meta?.executionDate || item.timestamp?.split("T")[0] || todayStr);
                 setVal("gc-insp-expiry-date", item.meta?.expiryDate || nextYearStr);
-                setVal("gc-insp-status", item.meta?.status || "valida");
+                const itemExpStr = item.meta?.expiryDate || nextYearStr;
+                const isItemExpired = itemExpStr ? (new Date(itemExpStr + "T12:00:00").getTime() < new Date().setHours(0,0,0,0)) : false;
+                let initialStatus = item.meta?.status || "valida";
+                if (!isItemExpired && initialStatus === "renovada") {
+                    initialStatus = "valida";
+                }
+                setVal("gc-insp-status", initialStatus);
                 setVal("gc-insp-location", item.meta?.location || lead.address || "Planta Central");
                 setVal("gc-insp-contact", item.meta?.contact || lead.contact || "");
                 setVal("gc-insp-equipment-tag", item.meta?.equipmentTag || "Chaminé Caldeira 01 / Duto Principal");
@@ -1316,6 +1518,36 @@ export const Inspections = {
             });
         }
 
+        // Configurar seletor e preview de cor da empresa no formulário
+        const colorPreview = document.getElementById("gc-insp-color-preview");
+        const colorInput = document.getElementById("gc-insp-company-color");
+        const currentClientVal = document.getElementById("gc-insp-client")?.value || "";
+        const targetLead = leadId ? (Store.getLeadById ? Store.getLeadById(leadId) : null) : null;
+        const currentCompanyColor = this.getCompanyColor(currentClientVal, targetLead, (interactionId && targetLead?.interactions) ? targetLead.interactions.find(i => i.id === interactionId)?.meta : null);
+
+        if (colorPreview) {
+            colorPreview.style.background = currentCompanyColor;
+            colorPreview.onclick = () => {
+                const currentName = document.getElementById("gc-insp-client")?.value || currentClientVal || "Empresa";
+                this.openColorPaletteModal(leadId, currentName, colorPreview);
+            };
+        }
+        if (colorInput) {
+            colorInput.value = currentCompanyColor;
+        }
+
+        const clientInputEl = document.getElementById("gc-insp-client");
+        if (clientInputEl) {
+            clientInputEl.oninput = () => {
+                const val = clientInputEl.value.trim();
+                if (val) {
+                    const col = this.getCompanyColor(val);
+                    if (colorPreview) colorPreview.style.background = col;
+                    if (colorInput) colorInput.value = col;
+                }
+            };
+        }
+
         // Renderizar banner e histórico de renovações no cadastro GestãoClick
         this.renderRenewalsSection(leadId, interactionId);
 
@@ -1385,26 +1617,24 @@ export const Inspections = {
         const currentItem = allLeadInspections.find(i => i.id === currentInteractionId);
         if (!currentItem) return;
 
-        // Identificar antecessores e sucessores
+        // Identificar antecessores e sucessores por vínculo explícito
         const successor = allLeadInspections.find(other => 
             other.id !== currentItem.id && (
                 other.meta?.renewedFromId === currentItem.id ||
-                currentItem.meta?.renewedToId === other.id ||
-                (other.meta?.serviceName === currentItem.meta?.serviceName && 
-                 (other.meta?.executionDate || "") > (currentItem.meta?.executionDate || ""))
+                currentItem.meta?.renewedToId === other.id
             )
         );
 
         const predecessor = allLeadInspections.find(other => 
             other.id !== currentItem.id && (
                 currentItem.meta?.renewedFromId === other.id ||
-                other.meta?.renewedToId === currentItem.id ||
-                (other.meta?.serviceName === currentItem.meta?.serviceName && 
-                 (other.meta?.executionDate || "") < (currentItem.meta?.executionDate || ""))
+                other.meta?.renewedToId === currentItem.id
             )
         );
 
-        const isRenewed = Boolean(currentItem.meta?.isRenewed || currentItem.meta?.status === "renovada" || successor);
+        const curExpDate = currentItem.meta?.expiryDate ? new Date(currentItem.meta.expiryDate + "T12:00:00") : null;
+        const curIsExpired = curExpDate ? (curExpDate.getTime() < new Date().setHours(0,0,0,0)) : false;
+        const isRenewed = curIsExpired && Boolean(currentItem.meta?.isRenewed || currentItem.meta?.status === "renovada" || successor);
 
         const formatDate = (dateStr) => {
             if (!dateStr) return "N/A";
@@ -1504,11 +1734,12 @@ export const Inspections = {
             const itSuccessor = allLeadInspections.find(o => 
                 o.id !== it.id && (
                     o.meta?.renewedFromId === it.id ||
-                    it.meta?.renewedToId === o.id ||
-                    (o.meta?.serviceName === it.meta?.serviceName && (o.meta?.executionDate || "") > (it.meta?.executionDate || ""))
+                    it.meta?.renewedToId === o.id
                 )
             );
-            const itIsRenewed = Boolean(it.meta?.isRenewed || it.meta?.status === "renovada" || itSuccessor);
+            const itExpDate = it.meta?.expiryDate ? new Date(it.meta.expiryDate + "T12:00:00") : null;
+            const itIsExpired = itExpDate ? (itExpDate.getTime() < new Date().setHours(0,0,0,0)) : false;
+            const itIsRenewed = itIsExpired && Boolean(it.meta?.isRenewed || it.meta?.status === "renovada" || itSuccessor);
 
             let itBadge = "";
             if (isCurrent) {
@@ -1925,6 +2156,8 @@ export const Inspections = {
         const existingItem = (interactionId && lead.interactions) ? lead.interactions.find(i => i.id === interactionId) : null;
         const existingMeta = existingItem?.meta || {};
 
+        const companyColorVal = document.getElementById("gc-insp-company-color")?.value;
+
         const newOrUpdatedInteraction = {
             id: interactionId || ("int_" + Date.now().toString(36)),
             type: "Inspeção",
@@ -1933,6 +2166,7 @@ export const Inspections = {
             meta: {
                 ...existingMeta,
                 inspectionNumber: numberText,
+                companyColor: companyColorVal || existingMeta.companyColor || null,
                 inspector: inspector || "Técnico Responsável",
                 serviceName: serviceText,
                 serviceValue: totalVal,
@@ -1966,9 +2200,13 @@ export const Inspections = {
             lead.interactions.push(newOrUpdatedInteraction);
         }
 
+        if (companyColorVal) {
+            lead.companyColor = companyColorVal;
+        }
+
         try {
             if (typeof Store.updateLead === "function") {
-                Store.updateLead(lead.id, { interactions: lead.interactions }, userEmail);
+                Store.updateLead(lead.id, { interactions: lead.interactions, companyColor: lead.companyColor }, userEmail);
             } else {
                 const localLeads = JSON.parse(localStorage.getItem("comercial_leads")) || [];
                 const updatedLocal = localLeads.map(l => l.id === lead.id ? lead : l);
@@ -1984,7 +2222,7 @@ export const Inspections = {
                     "Content-Type": "application/json",
                     "Prefer": "return=minimal"
                 },
-                body: JSON.stringify({ interactions: lead.interactions })
+                body: JSON.stringify({ interactions: lead.interactions, companyColor: lead.companyColor })
             }).catch(e => console.warn("Aviso PATCH:", e));
         } catch (e) {
             console.warn("Falha ao salvar no Supabase, mantido em cache local:", e);

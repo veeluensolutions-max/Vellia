@@ -2420,7 +2420,7 @@ Instruções: Retorne APENAS o texto curto pronto da mensagem em tom amigável e
             let showNotify = false;
 
             if (daysRemaining < 0) {
-                statusBadge = `<span style="font-size: 9px; font-weight:700; color:#dc2626; background:#fee2e2; border:1px solid #fca5a5; padding: 2px 6px; border-radius: 4px; display:inline-block;">🔴 Vencida</span>`;
+                statusBadge = `<span style="font-size: 9px; font-weight:700; color:#dc2626; background:#fee2e2; border:1px solid #fca5a5; padding: 2px 6px; border-radius: 4px; display:inline-block;">🔴 Vencido</span>`;
                 remainingText = `Vencido há ${Math.abs(daysRemaining)} dias`;
                 showNotify = true;
             } else if (daysRemaining <= 90) {
@@ -2428,7 +2428,7 @@ Instruções: Retorne APENAS o texto curto pronto da mensagem em tom amigável e
                 remainingText = `Vence em ${daysRemaining} dias`;
                 showNotify = true;
             } else {
-                statusBadge = `<span style="font-size: 9px; font-weight:700; color:#16a34a; background:#dcfce7; border:1px solid #86efac; padding: 2px 6px; border-radius: 4px; display:inline-block;">🟢 Válida</span>`;
+                statusBadge = `<span style="font-size: 9px; font-weight:700; color:#16a34a; background:#dcfce7; border:1px solid #86efac; padding: 2px 6px; border-radius: 4px; display:inline-block;">🟢 Válido</span>`;
                 remainingText = `Vence em ${daysRemaining} dias`;
             }
 

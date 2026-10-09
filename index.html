@@ -4195,7 +4195,14 @@ Condições de pagamento:
                                         </div>
                                     </div>
                                     <div class="gc-form-group">
-                                        <label class="gc-label" for="gc-insp-client">Cliente / Empresa inspecionada <span class="gc-required">*</span></label>
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                            <label class="gc-label" for="gc-insp-client" style="margin-bottom: 0;">Cliente / Empresa inspecionada <span class="gc-required">*</span></label>
+                                            <div style="display: flex; align-items: center; gap: 6px;">
+                                                <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Cor:</span>
+                                                <div id="gc-insp-color-preview" style="width: 20px; height: 20px; border-radius: 6px; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.25); border: 1.5px solid #ffffff; transition: transform 0.15s;" title="Clique para escolher a cor desta empresa"></div>
+                                                <input type="hidden" id="gc-insp-company-color" value="">
+                                            </div>
+                                        </div>
                                         <input type="text" id="gc-insp-client" class="gc-input" list="gc-insp-clients-datalist" placeholder="Digite para buscar empresa..." autocomplete="off" required>
                                         <datalist id="gc-insp-clients-datalist"></datalist>
                                     </div>

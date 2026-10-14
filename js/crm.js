@@ -131,9 +131,69 @@ export const CRM = {
 
         // Filtros e Busca
         if (elements.crmSearch) elements.crmSearch.addEventListener("input", () => this.renderLeadsTable());
-        if (elements.crmFilterStage) elements.crmFilterStage.addEventListener("change", () => this.renderLeadsTable());
+        if (elements.crmFilterStage) {
+            elements.crmFilterStage.addEventListener("change", (e) => {
+                const colStage = document.getElementById("lead-col-filter-stage");
+                if (colStage) colStage.value = e.target.value;
+                this.renderLeadsTable();
+            });
+        }
+        const topOwnerFilter = document.getElementById("crm-filter-owner");
+        if (topOwnerFilter) {
+            topOwnerFilter.addEventListener("change", (e) => {
+                const colOwner = document.getElementById("lead-col-filter-owner");
+                if (colOwner) colOwner.value = e.target.value;
+                this.renderLeadsTable();
+            });
+        }
         const crmFilterSort = document.getElementById("crm-filter-sort");
         if (crmFilterSort) crmFilterSort.addEventListener("change", () => this.renderLeadsTable());
+
+        // Filtros dinâmicos por coluna da tabela de leads
+        const colCompany = document.getElementById("lead-col-filter-company");
+        const colContact = document.getElementById("lead-col-filter-contact");
+        const colInfo = document.getElementById("lead-col-filter-info");
+        const colSegment = document.getElementById("lead-col-filter-segment");
+        const colStage = document.getElementById("lead-col-filter-stage");
+        const colScore = document.getElementById("lead-col-filter-score");
+        const colOwner = document.getElementById("lead-col-filter-owner");
+        const btnClearColFilters = document.getElementById("btn-clear-lead-col-filters");
+
+        if (colCompany) colCompany.addEventListener("input", () => this.renderLeadsTable());
+        if (colContact) colContact.addEventListener("input", () => this.renderLeadsTable());
+        if (colInfo) colInfo.addEventListener("input", () => this.renderLeadsTable());
+        if (colSegment) colSegment.addEventListener("input", () => this.renderLeadsTable());
+        if (colStage) {
+            colStage.addEventListener("change", (e) => {
+                if (elements.crmFilterStage) elements.crmFilterStage.value = e.target.value;
+                this.renderLeadsTable();
+            });
+        }
+        if (colScore) colScore.addEventListener("change", () => this.renderLeadsTable());
+        if (colOwner) {
+            colOwner.addEventListener("change", (e) => {
+                const topOwner = document.getElementById("crm-filter-owner");
+                if (topOwner) topOwner.value = e.target.value;
+                this.renderLeadsTable();
+            });
+        }
+
+        if (btnClearColFilters) {
+            btnClearColFilters.addEventListener("click", () => {
+                if (colCompany) colCompany.value = "";
+                if (colContact) colContact.value = "";
+                if (colInfo) colInfo.value = "";
+                if (colSegment) colSegment.value = "";
+                if (colStage) colStage.value = "all";
+                if (colScore) colScore.value = "all";
+                if (colOwner) colOwner.value = "all";
+                if (elements.crmSearch) elements.crmSearch.value = "";
+                if (elements.crmFilterStage) elements.crmFilterStage.value = "all";
+                const topOwner = document.getElementById("crm-filter-owner");
+                if (topOwner) topOwner.value = "all";
+                this.renderLeadsTable();
+            });
+        }
 
         // Pílulas de Filtros Rápidos (Pill Filters)
         const pillContainer = document.getElementById("crm-pill-filters");
@@ -509,9 +569,30 @@ export const CRM = {
             if (ownerFilterGroup) ownerFilterGroup.style.display = "none";
         }
 
+        // Popular dropdown de vendedores da coluna da tabela
+        const colOwnerFilter = document.getElementById("lead-col-filter-owner");
+        if (colOwnerFilter && colOwnerFilter.options.length <= 1) {
+            const sellers = Store.getUsers().filter(u => u.role === "seller" || u.role === "manager" || u.role === "admin");
+            sellers.forEach(u => {
+                const opt = document.createElement("option");
+                opt.value = u.email;
+                opt.textContent = u.name || u.email;
+                colOwnerFilter.appendChild(opt);
+            });
+        }
+
         const searchQuery = document.getElementById("crm-search")?.value.toLowerCase().trim() || "";
         const stageFilter = document.getElementById("crm-filter-stage")?.value || "all";
         const ownerFilterValue = ownerFilter?.value || "all";
+
+        // Filtros específicos por coluna
+        const colCompany = (document.getElementById("lead-col-filter-company")?.value || "").toLowerCase().trim();
+        const colContact = (document.getElementById("lead-col-filter-contact")?.value || "").toLowerCase().trim();
+        const colInfo = (document.getElementById("lead-col-filter-info")?.value || "").toLowerCase().trim();
+        const colSegment = (document.getElementById("lead-col-filter-segment")?.value || "").toLowerCase().trim();
+        const colStage = document.getElementById("lead-col-filter-stage")?.value || "all";
+        const colScore = document.getElementById("lead-col-filter-score")?.value || "all";
+        const colOwner = document.getElementById("lead-col-filter-owner")?.value || "all";
 
         const proposals = Store.getProposals();
         const now = new Date();
@@ -589,7 +670,67 @@ export const CRM = {
                 matchesPill = getLeadMinutesSLA(lead) >= 15 && lead.stage !== "Cliente Fechado" && lead.stage !== "Cliente Perdido";
             }
 
-            return matchesSearch && matchesStage && matchesOwner && matchesPill;
+            if (!matchesSearch || !matchesStage || !matchesOwner || !matchesPill) {
+                return false;
+            }
+
+            // 1. Coluna Empresa
+            if (colCompany) {
+                const comp = (lead.company || "").toLowerCase();
+                const cnpj = (lead.cnpj || "").toLowerCase();
+                if (!comp.includes(colCompany) && !cnpj.includes(colCompany)) {
+                    return false;
+                }
+            }
+
+            // 2. Coluna Contato / Cargo
+            if (colContact) {
+                const cont = (lead.contact || "").toLowerCase();
+                const role = (lead.role || lead.cargo || "").toLowerCase();
+                if (!cont.includes(colContact) && !role.includes(colContact)) {
+                    return false;
+                }
+            }
+
+            // 3. Coluna Contato Info (Email / Telefone / WhatsApp)
+            if (colInfo) {
+                const email = (lead.email || "").toLowerCase();
+                const phone = (lead.phone || "").replace(/\D/g, "");
+                const cleanInfoDigits = colInfo.replace(/\D/g, "");
+                const matchesPhone = cleanInfoDigits.length >= 2 && phone.includes(cleanInfoDigits);
+                if (!email.includes(colInfo) && !matchesPhone) {
+                    return false;
+                }
+            }
+
+            // 4. Coluna Segmento / Origem
+            if (colSegment) {
+                const seg = (lead.segment || "").toLowerCase();
+                const src = (lead.source || "").toLowerCase();
+                if (!seg.includes(colSegment) && !src.includes(colSegment)) {
+                    return false;
+                }
+            }
+
+            // 5. Coluna Estágio Atual
+            if (colStage !== "all" && lead.stage !== colStage) {
+                return false;
+            }
+
+            // 6. Coluna Score IA
+            if (colScore !== "all") {
+                const score = lead.aiScore != null ? lead.aiScore : 0;
+                if (colScore === "hot" && !(score >= 75)) return false;
+                if (colScore === "warm" && !(score >= 45 && score < 75)) return false;
+                if (colScore === "cold" && !(score < 45)) return false;
+            }
+
+            // 7. Coluna Responsável
+            if (colOwner !== "all" && lead.owner !== colOwner) {
+                return false;
+            }
+
+            return true;
         });
 
         // Ordenação inteligente dos leads (padrão: cadastrados mais recentes no topo)

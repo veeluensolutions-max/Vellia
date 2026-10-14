@@ -54,6 +54,9 @@ export const Kanban = {
     initListeners() {
         if (this._listenersInitialized) return;
         window.addEventListener("vellia:stageChanged", () => this.renderKanban());
+        window.addEventListener("vellia:leadUpdated", () => this.renderKanban());
+        window.addEventListener("vellia:leadAdded", () => this.renderKanban());
+        window.addEventListener("storage", () => this.renderKanban());
         window.addEventListener("vellia:agentScoreUpdated", () => this.renderKanban());
         window.addEventListener("vellia:leadDeleted", () => this.renderKanban());
         window.addEventListener("vellia:leadRestored", () => this.renderKanban());
@@ -63,48 +66,55 @@ export const Kanban = {
     initDragAndDrop() {
         if (this._dragInitialized) return;
 
-        const stageContainers = [
-            { id: "cards-Contato", stage: "Contato" },
-            { id: "cards-Lead-Gerado", stage: "Lead Gerado" },
-            { id: "cards-Lead-Qualificado", stage: "Lead Qualificado" },
-            { id: "cards-Proposta-Enviada", stage: "Proposta Enviada" },
-            { id: "cards-Negociacao", stage: "Negociação" },
-            { id: "cards-Cliente-Fechado", stage: "Cliente Fechado" },
-            { id: "cards-Cliente-Perdido", stage: "Cliente Perdido" }
+        const stages = [
+            "Contato",
+            "Lead Gerado",
+            "Lead Qualificado",
+            "Proposta Enviada",
+            "Negociação",
+            "Cliente Fechado",
+            "Cliente Perdido"
         ];
 
-        stageContainers.forEach(({ id, stage }) => {
-            const container = document.getElementById(id);
-            if (!container) return;
+        const cardsIdMap = {
+            "Contato": "cards-Contato",
+            "Lead Gerado": "cards-Lead-Gerado",
+            "Lead Qualificado": "cards-Lead-Qualificado",
+            "Proposta Enviada": "cards-Proposta-Enviada",
+            "Negociação": "cards-Negociacao",
+            "Cliente Fechado": "cards-Cliente-Fechado",
+            "Cliente Perdido": "cards-Cliente-Perdido"
+        };
 
-            container.addEventListener("dragover", (e) => {
+        const attachDragToElement = (elem, stage) => {
+            if (!elem) return;
+
+            elem.addEventListener("dragover", (e) => {
                 e.preventDefault();
                 e.dataTransfer.dropEffect = "move";
-                if (!container.classList.contains("drag-over")) {
-                    container.classList.add("drag-over");
+                const targetCardsCol = document.getElementById(cardsIdMap[stage]);
+                if (targetCardsCol && !targetCardsCol.classList.contains("drag-over")) {
+                    targetCardsCol.classList.add("drag-over");
                 }
             });
 
-            container.addEventListener("dragenter", (e) => {
+            elem.addEventListener("dragenter", (e) => {
                 e.preventDefault();
-                container.classList.add("drag-over");
+                const targetCardsCol = document.getElementById(cardsIdMap[stage]);
+                if (targetCardsCol) targetCardsCol.classList.add("drag-over");
             });
 
-            container.addEventListener("dragleave", (e) => {
-                if (!container.contains(e.relatedTarget)) {
-                    container.classList.remove("drag-over");
+            elem.addEventListener("dragleave", (e) => {
+                if (!elem.contains(e.relatedTarget)) {
+                    const targetCardsCol = document.getElementById(cardsIdMap[stage]);
+                    if (targetCardsCol) targetCardsCol.classList.remove("drag-over");
                 }
             });
 
-            container.addEventListener("wheel", (e) => {
-                if (e.deltaY !== 0) {
-                    container.scrollTop += e.deltaY;
-                }
-            }, { passive: true });
-
-            container.addEventListener("drop", (e) => {
+            elem.addEventListener("drop", (e) => {
                 e.preventDefault();
-                container.classList.remove("drag-over");
+                const targetCardsCol = document.getElementById(cardsIdMap[stage]);
+                if (targetCardsCol) targetCardsCol.classList.remove("drag-over");
 
                 const leadId = e.dataTransfer.getData("text/plain") || draggedLeadId;
                 if (!leadId) return;
@@ -112,9 +122,24 @@ export const Kanban = {
                 const lead = Store.getLeadById(leadId);
                 if (!lead || lead.stage === stage) return;
 
-                // Execução direta e instantânea no CRM sem travar o Kanban
+                // Transição otimista instantânea no DOM
+                const draggedCard = document.querySelector(`.kanban-card[data-id="${leadId}"]`);
+                if (draggedCard && targetCardsCol) {
+                    targetCardsCol.prepend(draggedCard);
+                }
+
+                // Execução direta e permanente no CRM e banco
                 CRM.executeDirectStageChange(leadId, stage);
             });
+        };
+
+        stages.forEach(stage => {
+            const cardsCol = document.getElementById(cardsIdMap[stage]);
+            attachDragToElement(cardsCol, stage);
+
+            if (cardsCol && cardsCol.parentElement && cardsCol.parentElement.classList.contains("kanban-col")) {
+                attachDragToElement(cardsCol.parentElement, stage);
+            }
         });
 
         this._dragInitialized = true;
@@ -125,11 +150,13 @@ export const Kanban = {
         
         const session = JSON.parse(localStorage.getItem("comercial_session"));
         if (session && session.role === "seller") {
-            leads = leads.filter(l => l.owner === session.email);
+            const sellerEmail = (session.email || "").toLowerCase().trim();
+            leads = leads.filter(l => (l.owner || "").toLowerCase().trim() === sellerEmail);
         } else {
             const ownerSelect = document.getElementById("kanban-filter-owner");
             if (ownerSelect && ownerSelect.value && ownerSelect.value !== "all") {
-                leads = leads.filter(l => l.owner === ownerSelect.value);
+                const selectedOwner = ownerSelect.value.toLowerCase().trim();
+                leads = leads.filter(l => (l.owner || "").toLowerCase().trim() === selectedOwner);
             }
         }
 

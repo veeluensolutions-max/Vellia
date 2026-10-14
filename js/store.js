@@ -452,10 +452,36 @@ async function syncFromSupabase() {
             const localLeads = MemoryCache.get("comercial_leads", () => []) || [];
             const leadMap = new Map();
             localLeads.forEach(l => { if (l && l.id) leadMap.set(l.id, l); });
-            decodedLeads.forEach(l => {
-                if (l && l.id) {
-                    const existing = leadMap.get(l.id) || {};
-                    leadMap.set(l.id, { ...existing, ...l });
+            decodedLeads.forEach(remote => {
+                if (remote && remote.id) {
+                    const local = leadMap.get(remote.id);
+                    if (!local) {
+                        leadMap.set(remote.id, remote);
+                    } else {
+                        // Preservar alterações locais recentes de estágio se forem mais novas que o remoto
+                        const localHist = Array.isArray(local.stageHistory) && local.stageHistory.length > 0 ? local.stageHistory[local.stageHistory.length - 1] : null;
+                        const remoteHist = Array.isArray(remote.stageHistory) && remote.stageHistory.length > 0 ? remote.stageHistory[remote.stageHistory.length - 1] : null;
+
+                        const localTime = localHist?.timestamp ? new Date(localHist.timestamp).getTime() : (local._lastModified || 0);
+                        const remoteTime = remoteHist?.timestamp ? new Date(remoteHist.timestamp).getTime() : 0;
+
+                        if (localTime > remoteTime && local.stage && local.stage !== remote.stage) {
+                            leadMap.set(remote.id, { ...remote, ...local, stage: local.stage, stageHistory: local.stageHistory });
+                            // Sincronizar o Supabase em background
+                            fetch(`${SUPABASE_URL}/rest/v1/comercial_leads?id=eq.${encodeURIComponent(remote.id)}`, {
+                                method: "PATCH",
+                                headers: {
+                                    "apikey": SUPABASE_KEY,
+                                    "Authorization": `Bearer ${SUPABASE_KEY}`,
+                                    "Content-Type": "application/json",
+                                    "Prefer": "return=minimal"
+                                },
+                                body: JSON.stringify({ stage: local.stage, stageHistory: local.stageHistory })
+                            }).catch(() => {});
+                        } else {
+                            leadMap.set(remote.id, { ...local, ...remote });
+                        }
+                    }
                 }
             });
             const mergedLeads = Array.from(leadMap.values()).sort((a, b) => getLeadTimestamp(b) - getLeadTimestamp(a));
@@ -599,26 +625,63 @@ function startSyncPolling() {
         try {
             const rawRemoteLeads = await supabaseFetch("comercial_leads");
             if (Array.isArray(rawRemoteLeads)) {
-                const remoteLeads = rawRemoteLeads.map(l => decodeLeadFromSupabase(l)).sort((a, b) => getLeadTimestamp(b) - getLeadTimestamp(a));
+                const decodedRemoteLeads = rawRemoteLeads.map(l => decodeLeadFromSupabase(l));
                 const localLeads = MemoryCache.get("comercial_leads", () => []) || [];
+                const leadMap = new Map();
+                localLeads.forEach(l => { if (l && l.id) leadMap.set(l.id, l); });
                 
-                // Identificar novos leads que estão no Supabase mas não localmente
-                const newLeads = remoteLeads.filter(rl => !localLeads.some(ll => ll.id === rl.id));
-                
-                if (newLeads.length > 0 || JSON.stringify(remoteLeads) !== JSON.stringify(localLeads)) {
+                let hasChanges = false;
+                const newLeads = [];
+
+                decodedRemoteLeads.forEach(remote => {
+                    if (remote && remote.id) {
+                        const local = leadMap.get(remote.id);
+                        if (!local) {
+                            leadMap.set(remote.id, remote);
+                            newLeads.push(remote);
+                            hasChanges = true;
+                        } else {
+                            const localHist = Array.isArray(local.stageHistory) && local.stageHistory.length > 0 ? local.stageHistory[local.stageHistory.length - 1] : null;
+                            const remoteHist = Array.isArray(remote.stageHistory) && remote.stageHistory.length > 0 ? remote.stageHistory[remote.stageHistory.length - 1] : null;
+
+                            const localTime = localHist?.timestamp ? new Date(localHist.timestamp).getTime() : (local._lastModified || 0);
+                            const remoteTime = remoteHist?.timestamp ? new Date(remoteHist.timestamp).getTime() : 0;
+
+                            if (localTime > remoteTime && local.stage && local.stage !== remote.stage) {
+                                // Local é mais recente! Manter o stage local e enviar PATCH para o Supabase
+                                leadMap.set(remote.id, { ...remote, ...local, stage: local.stage, stageHistory: local.stageHistory });
+                                fetch(`${SUPABASE_URL}/rest/v1/comercial_leads?id=eq.${encodeURIComponent(remote.id)}`, {
+                                    method: "PATCH",
+                                    headers: {
+                                        "apikey": SUPABASE_KEY,
+                                        "Authorization": `Bearer ${SUPABASE_KEY}`,
+                                        "Content-Type": "application/json",
+                                        "Prefer": "return=minimal"
+                                    },
+                                    body: JSON.stringify({ stage: local.stage, stageHistory: local.stageHistory })
+                                }).catch(() => {});
+                            } else {
+                                if (local.stage !== remote.stage) {
+                                    hasChanges = true;
+                                }
+                                leadMap.set(remote.id, { ...local, ...remote });
+                            }
+                        }
+                    }
+                });
+
+                if (hasChanges || newLeads.length > 0) {
                     console.log("🔄 [Fallback Polling] Detectou novos leads ou atualizações no Supabase. Sincronizando...");
-                    MemoryCache.set("comercial_leads", remoteLeads);
+                    const mergedLeads = Array.from(leadMap.values()).sort((a, b) => getLeadTimestamp(b) - getLeadTimestamp(a));
+                    MemoryCache.set("comercial_leads", mergedLeads);
                     
-                    // Também sincronizar os logs de auditoria
                     const remoteLogs = await supabaseFetch("comercial_logs") || [];
                     MemoryCache.set("comercial_logs", remoteLogs);
                     
-                    // Disparar eventos para novos leads
                     newLeads.forEach(newLead => {
                         console.log(`📡 [Fallback Polling] Disparando vellia:leadAdded para ${newLead.company}`);
                         window.dispatchEvent(new CustomEvent("vellia:leadAdded", { detail: newLead }));
                         
-                        // Se for do Meta Ads e SDR automático ativo, iniciar triagem
                         const waConfig = JSON.parse(localStorage.getItem("comercial_wa_api_config")) || { sdrActive: true };
                         if (newLead.source === "Meta Ads" && waConfig.sdrActive !== false) {
                             setTimeout(() => {
@@ -627,7 +690,8 @@ function startSyncPolling() {
                         }
                     });
                     
-                    // Forçar atualização do CRM/Kanban/Dashboard
+                    window.dispatchEvent(new CustomEvent("vellia:stageChanged"));
+                    window.dispatchEvent(new CustomEvent("vellia:leadUpdated"));
                     window.dispatchEvent(new CustomEvent("vellia:waSent"));
                     window.dispatchEvent(new Event("storage"));
                 }
@@ -961,6 +1025,7 @@ export const Store = {
         if (index !== -1) {
             const oldStage = leads[index].stage;
             leads[index].stage = newStage;
+            leads[index]._lastModified = Date.now();
             
             // Gravar histórico de etapas
             leads[index].stageHistory = leads[index].stageHistory || [];
@@ -971,47 +1036,38 @@ export const Store = {
                 reason: reason || `Transição manual de etapa.`
             });
 
-            // Disparar Meta Conversions API (CAPI) para estágios estratégicos
-            const metaConfig = JSON.parse(localStorage.getItem("comercial_meta_config")) || {};
-            const relevantStages = ["Lead Qualificado", "Proposta Enviada", "Negociação", "Cliente Fechado"];
-            
-            if (relevantStages.includes(newStage)) {
-                fetch('/api/meta-capi', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        lead: leads[index],
-                        pixelId: metaConfig.pixelId,
-                        accessToken: metaConfig.accessToken
-                    })
-                }).then(res => res.json()).then(data => {
-                    if (data && data.success) {
-                        const targetLead = this.getLeadById(leadId);
-                        if (targetLead) {
-                            targetLead.interactions = targetLead.interactions || [];
-                            targetLead.interactions.push({
-                                id: 'capi_notif_' + Date.now(),
-                                type: "Observação",
-                                description: `📊 **Meta Conversions API (CAPI):** Evento \`${data.eventName}\` enviado com sucesso para a Meta (${data.mode || 'Sandbox'}).`,
-                                timestamp: new Date().toISOString(),
-                                userEmail: "sistema@vellia.com"
-                            });
-                            const currentLeads = this.getLeads();
-                            const idx = currentLeads.findIndex(l => l.id === leadId);
-                            if (idx !== -1) {
-                                currentLeads[idx] = targetLead;
-                                localStorage.setItem("comercial_leads", JSON.stringify(currentLeads));
-                            }
-                        }
-                    }
-                }).catch(err => console.warn("Erro ao disparar Meta CAPI:", err));
-            }
-
+            // Salvar no cache local e localStorage imediatamente
             MemoryCache.set("comercial_leads", leads);
-            upsertSupabase("comercial_leads", encodeLeadForSupabase(leads[index]));
+
+            // 1. PATCH Direto e Atômico no Supabase (garante gravação imediata do stage no banco)
+            fetch(`${SUPABASE_URL}/rest/v1/comercial_leads?id=eq.${encodeURIComponent(leadId)}`, {
+                method: "PATCH",
+                headers: {
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": `Bearer ${SUPABASE_KEY}`,
+                    "Content-Type": "application/json",
+                    "Prefer": "return=minimal"
+                },
+                body: JSON.stringify({
+                    stage: newStage,
+                    stageHistory: leads[index].stageHistory
+                })
+            }).then(res => {
+                if (!res.ok) {
+                    console.warn("⚠️ PATCH Supabase stage retornou status:", res.status);
+                    upsertSupabase("comercial_leads", encodeLeadForSupabase(leads[index]));
+                }
+            }).catch(err => {
+                console.error("❌ Erro no PATCH Supabase:", err);
+                upsertSupabase("comercial_leads", encodeLeadForSupabase(leads[index]));
+            });
+
+            // 2. Disparar eventos para todos os ouvintes da aplicação (Kanban, CRM, Dashboard)
+            window.dispatchEvent(new CustomEvent("vellia:stageChanged", { detail: { leadId, oldStage, newStage } }));
             window.dispatchEvent(new CustomEvent("vellia:leadUpdated", { detail: leads[index] }));
             window.dispatchEvent(new CustomEvent("vellia:scoreUpdated", { detail: { sellerEmail: userEmail, action: "STAGE_CHANGED", oldStage, newStage, points: 30 } }));
             window.dispatchEvent(new CustomEvent("vellia:waSent"));
+            window.dispatchEvent(new Event("storage"));
             return { success: true, oldStage, newStage };
         }
         return { success: false };
@@ -1704,6 +1760,14 @@ export const Store = {
             console.error("❌ [Store.syncToSupabase] Erro ao sincronizar:", e);
             return { success: false, error: e.message };
         }
+    },
+
+    decodeLead(l) {
+        return decodeLeadFromSupabase(l);
+    },
+
+    encodeLead(l) {
+        return encodeLeadForSupabase(l);
     }
 };
 

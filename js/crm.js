@@ -1649,8 +1649,20 @@ export const CRM = {
 
     executeDirectStageChange(leadId, newStage, reason = "") {
         const lead = Store.getLeadById(leadId);
-        const currentUser = Auth.getCurrentUser();
-        if (!lead || !currentUser) return;
+        if (!lead) return;
+
+        let currentUser = null;
+        try {
+            currentUser = (typeof Auth !== "undefined" && Auth.getCurrentUser) ? Auth.getCurrentUser() : null;
+        } catch(e) {}
+        if (!currentUser) {
+            try {
+                currentUser = JSON.parse(localStorage.getItem("comercial_session"));
+            } catch(e) {}
+        }
+        if (!currentUser) {
+            currentUser = { email: lead.owner || "vendedor@vellia.com", name: "Vendedor", role: "seller" };
+        }
 
         const oldStage = lead.stage;
         const finalReason = reason || (oldStage === "Lead Gerado" && newStage === "Contato"
@@ -1661,11 +1673,15 @@ export const CRM = {
         Store.updateLeadStage(leadId, newStage, currentUser.email, finalReason);
 
         // Registrar no log de auditoria operacional
-        Audit.logStageChange(currentUser.email, lead.company, oldStage, newStage, finalReason);
+        try {
+            Audit.logStageChange(currentUser.email, lead.company, oldStage, newStage, finalReason);
+        } catch(e) {}
 
         // Se for Cliente Fechado, registrar vitória comercial
         if (newStage === "Cliente Fechado") {
-            Audit.logSaleWon(currentUser.email, lead.company, "Sob Consulta (Ver Propostas)");
+            try {
+                Audit.logSaleWon(currentUser.email, lead.company, "Sob Consulta (Ver Propostas)");
+            } catch(e) {}
         }
 
         // Atualizar dropdown do drawer se for o lead ativo

@@ -155,12 +155,14 @@ function processIncomingLead(lead) {
 }
 
 // ─── Processar atualização de lead existente via WS (UPDATE) ─────────────
-function processLeadUpdate(lead) {
-    if (!lead || !lead.id) return;
+function processLeadUpdate(rawLead) {
+    if (!rawLead || !rawLead.id) return;
+
+    const lead = (Store && Store.decodeLead) ? Store.decodeLead(rawLead) : rawLead;
 
     let localLeads = [];
     try {
-        localLeads = JSON.parse(localStorage.getItem("comercial_leads")) || [];
+        localLeads = (Store && Store.getAllLeadsRaw) ? Store.getAllLeadsRaw() : (JSON.parse(localStorage.getItem("comercial_leads")) || []);
     } catch (e) {
         localLeads = [];
     }
@@ -170,15 +172,29 @@ function processLeadUpdate(lead) {
         // Lead não existe localmente ainda — adicionar
         localLeads.push(lead);
     } else {
-        // Mesclar lead remoto com dados locais (o remoto tem precedência)
-        localLeads[existingIdx] = { ...localLeads[existingIdx], ...lead };
+        const localLead = localLeads[existingIdx];
+        const isRecentlyModifiedLocally = localLead._lastModified && (Date.now() - localLead._lastModified < 8000);
+        
+        if (isRecentlyModifiedLocally && localLead.stage !== lead.stage) {
+            // O usuário acabou de mover este card localmente (< 8s)! Ignorar eco antigo do WebSocket
+            console.log("🛡️ [Realtime] Ignorando eco antigo do WebSocket para preservar movimentação recente:", lead.company, "Etapa mantida:", localLead.stage);
+            localLeads[existingIdx] = { ...lead, ...localLead, stage: localLead.stage, stageHistory: localLead.stageHistory };
+        } else {
+            // Mesclar lead remoto com dados locais
+            localLeads[existingIdx] = { ...localLead, ...lead };
+        }
     }
 
-    localStorage.setItem("comercial_leads", JSON.stringify(localLeads));
-    console.log("🔄 [Realtime] Lead atualizado localmente:", lead.company, lead.id);
+    if (Store && Store.cache) {
+        Store.cache.set("comercial_leads", localLeads);
+    } else {
+        localStorage.setItem("comercial_leads", JSON.stringify(localLeads));
+    }
+    console.log("🔄 [Realtime] Lead atualizado localmente:", lead.company, lead.id, "Stage:", localLeads[existingIdx]?.stage || lead.stage);
 
     // Disparar sincronização geral para atualizar CRM, Kanban e Central de Inspeções
-    window.dispatchEvent(new CustomEvent("vellia:leadUpdated", { detail: lead }));
+    window.dispatchEvent(new CustomEvent("vellia:stageChanged", { detail: { leadId: lead.id, stage: localLeads[existingIdx]?.stage || lead.stage } }));
+    window.dispatchEvent(new CustomEvent("vellia:leadUpdated", { detail: localLeads[existingIdx] || lead }));
     window.dispatchEvent(new CustomEvent("vellia:waSent"));
     window.dispatchEvent(new Event("storage"));
 }

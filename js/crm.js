@@ -153,6 +153,34 @@ export const CRM = {
         // Drawer Detalhes e Botões de Ação Rápida
         if (elements.btnCloseDrawer) elements.btnCloseDrawer.addEventListener("click", () => this.closeLeadDrawer());
         if (elements.drawerOverlay) elements.drawerOverlay.addEventListener("click", () => this.closeLeadDrawer());
+        if (elements.modalOverlay) {
+            elements.modalOverlay.addEventListener("click", () => {
+                this.closeNewLeadModal();
+                this.closeEditLeadModal();
+                this.closeQualifyLeadModal?.();
+                this.cancelStageChangeRequest?.();
+                document.getElementById("modal-overlay").style.display = "none";
+            });
+        }
+
+        // Tecla ESC fecha instantaneamente gavetas e modais evitando tela embaçada
+        window.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+                this.closeLeadDrawer();
+                this.closeNewLeadModal();
+                this.closeEditLeadModal();
+                this.closeQualifyLeadModal?.();
+                this.cancelStageChangeRequest?.();
+                const mOverlay = document.getElementById("modal-overlay");
+                if (mOverlay) mOverlay.style.display = "none";
+                const dOverlay = document.getElementById("drawer-overlay");
+                if (dOverlay) dOverlay.style.display = "none";
+                const uOverlay = document.getElementById("users-modal-overlay");
+                if (uOverlay) uOverlay.style.display = "none";
+                const udOverlay = document.getElementById("user-details-modal-overlay");
+                if (udOverlay) udOverlay.style.display = "none";
+            }
+        });
 
         const btnQuickWa = document.getElementById("btn-drawer-quick-wa");
         if (btnQuickWa) {

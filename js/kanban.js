@@ -435,13 +435,21 @@ export const Kanban = {
                 ${coldLeadBanner}
             `;
 
-            // Clique direto para detalhes do lead
-            card.addEventListener("click", () => {
+            let dragStartTime = 0;
+
+            // Clique direto para detalhes do lead (ignora cliques acidentais logo após arrasto)
+            card.addEventListener("click", (e) => {
+                if (Date.now() - dragStartTime < 400) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                }
                 CRM.openLeadDrawer(lead.id);
             });
 
             // Drag Start & End
             card.addEventListener("dragstart", (e) => {
+                dragStartTime = Date.now();
                 draggedLeadId = lead.id;
                 e.dataTransfer.setData("text/plain", lead.id);
                 e.dataTransfer.effectAllowed = "move";

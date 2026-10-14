@@ -333,29 +333,105 @@ export const Inspections = {
         });
     },
 
+    populateServiceFilter(inspections) {
+        const select = document.getElementById("col-filter-service");
+        if (!select) return;
+
+        const currentVal = select.value;
+        const uniqueServices = new Set();
+        inspections.forEach(i => {
+            if (i.serviceName) uniqueServices.add(i.serviceName.trim());
+        });
+        const storeServices = Store.getServices ? Store.getServices() : [];
+        storeServices.forEach(s => {
+            if (s.name) uniqueServices.add(s.name.trim());
+        });
+
+        const sorted = Array.from(uniqueServices).sort((a,b) => a.localeCompare(b));
+        const optionsHtml = `<option value="all">Todos os Laudos</option>` +
+            sorted.map(s => `<option value="${s}">${s}</option>`).join("");
+        
+        if (select.innerHTML !== optionsHtml) {
+            select.innerHTML = optionsHtml;
+            if (currentVal && currentVal !== "all" && sorted.includes(currentVal)) {
+                select.value = currentVal;
+            }
+        }
+    },
+
     render() {
         const tableBody = document.getElementById("inspections-table-body");
         if (!tableBody) return;
 
         const inspections = this.getInspections();
+        this.populateServiceFilter(inspections);
         
-        // Filtros ativos
+        // Filtros ativos gerais
         const query = (document.getElementById("filter-inspection-search")?.value || "").toLowerCase().trim();
         const statusFilter = document.getElementById("filter-inspection-status")?.value || "all";
         const yearFilter = document.getElementById("filter-inspection-year")?.value || "all";
 
+        // Filtros específicos por coluna da tabela
+        const colCompany = (document.getElementById("col-filter-company")?.value || "").toLowerCase().trim();
+        const colService = document.getElementById("col-filter-service")?.value || "all";
+        const colExecution = (document.getElementById("col-filter-execution")?.value || "").toLowerCase().trim();
+        const colExpiry = (document.getElementById("col-filter-expiry")?.value || "").toLowerCase().trim();
+        const colDeadline = document.getElementById("col-filter-deadline")?.value || "all";
+        const colStatus = document.getElementById("col-filter-status")?.value || "all";
+
         const filtered = inspections.filter(item => {
-            const matchesQuery = item.company.toLowerCase().includes(query) || 
+            // 1. Busca Geral
+            const matchesQuery = !query || 
+                                 item.company.toLowerCase().includes(query) || 
                                  item.contact.toLowerCase().includes(query) || 
                                  item.serviceName.toLowerCase().includes(query) ||
                                  (item.location && item.location.toLowerCase().includes(query)) ||
                                  (item.inspectionNumber && item.inspectionNumber.toLowerCase().includes(query));
             
+            // 2. Filtro Geral Superior de Status e Ano
             const matchesStatus = statusFilter === "all" || item.status === statusFilter;
-            
             const matchesYear = yearFilter === "all" || item.executionDate.startsWith(yearFilter);
 
-            return matchesQuery && matchesStatus && matchesYear;
+            // 3. Coluna: Cliente / Empresa
+            const matchesColCompany = !colCompany || 
+                                      item.company.toLowerCase().includes(colCompany) || 
+                                      item.contact.toLowerCase().includes(colCompany) ||
+                                      (item.inspectionNumber && item.inspectionNumber.toLowerCase().includes(colCompany));
+
+            // 4. Coluna: Serviço & Laudo
+            const matchesColService = colService === "all" || item.serviceName.toLowerCase() === colService.toLowerCase();
+
+            // 5. Coluna: Execução (data, ano ou mês)
+            const execRaw = item.executionDate || "";
+            const execFmt = execRaw ? execRaw.split("-").reverse().join("/") : "";
+            const matchesColExec = !colExecution || execRaw.includes(colExecution) || execFmt.includes(colExecution);
+
+            // 6. Coluna: Vencimento (data, ano ou mês)
+            const expRaw = item.expiryDate || "";
+            const expFmt = expRaw ? expRaw.split("-").reverse().join("/") : "";
+            const matchesColExp = !colExpiry || expRaw.includes(colExpiry) || expFmt.includes(colExpiry);
+
+            // 7. Coluna: Prazo (Urgência)
+            let matchesColDeadline = true;
+            if (colDeadline === "expired") {
+                matchesColDeadline = item.daysRemaining < 0;
+            } else if (colDeadline === "30d") {
+                matchesColDeadline = item.daysRemaining >= 0 && item.daysRemaining <= 30;
+            } else if (colDeadline === "60d") {
+                matchesColDeadline = item.daysRemaining >= 0 && item.daysRemaining <= 60;
+            } else if (colDeadline === "90d") {
+                matchesColDeadline = item.daysRemaining >= 0 && item.daysRemaining <= 90;
+            } else if (colDeadline === "future") {
+                matchesColDeadline = item.daysRemaining > 90;
+            }
+
+            // 8. Coluna: Status
+            const matchesColStatus = colStatus === "all" || item.status === colStatus;
+
+            return matchesQuery && matchesStatus && matchesYear && 
+                   matchesColCompany && matchesColService && 
+                   matchesColExec && matchesColExp && 
+                   matchesColDeadline && matchesColStatus;
         });
 
         // Atualizar Contadores dos KPIs e Pílulas Rápidas
@@ -735,12 +811,70 @@ export const Inspections = {
         const statusSelect = document.getElementById("filter-inspection-status");
         const yearSelect = document.getElementById("filter-inspection-year");
 
+        // Novos controles por coluna da tabela
+        const colCompanyInput = document.getElementById("col-filter-company");
+        const colServiceSelect = document.getElementById("col-filter-service");
+        const colExecutionInput = document.getElementById("col-filter-execution");
+        const colExpiryInput = document.getElementById("col-filter-expiry");
+        const colDeadlineSelect = document.getElementById("col-filter-deadline");
+        const colStatusSelect = document.getElementById("col-filter-status");
+        const btnClearColFilters = document.getElementById("btn-clear-col-filters");
+
+        if (colCompanyInput) {
+            colCompanyInput.addEventListener("input", () => this.render());
+        }
+        if (colServiceSelect) {
+            colServiceSelect.addEventListener("change", () => this.render());
+        }
+        if (colExecutionInput) {
+            colExecutionInput.addEventListener("input", () => this.render());
+        }
+        if (colExpiryInput) {
+            colExpiryInput.addEventListener("input", () => this.render());
+        }
+        if (colDeadlineSelect) {
+            colDeadlineSelect.addEventListener("change", () => this.render());
+        }
+        if (colStatusSelect) {
+            colStatusSelect.addEventListener("change", (e) => {
+                const val = e.target.value;
+                if (statusSelect) statusSelect.value = val;
+                document.querySelectorAll("#inspection-status-pills .gc-pill-btn").forEach(btn => {
+                    if (btn.getAttribute("data-status") === val) btn.classList.add("active");
+                    else btn.classList.remove("active");
+                });
+                this.render();
+            });
+        }
+
+        if (btnClearColFilters) {
+            btnClearColFilters.addEventListener("click", () => {
+                if (colCompanyInput) colCompanyInput.value = "";
+                if (colServiceSelect) colServiceSelect.value = "all";
+                if (colExecutionInput) colExecutionInput.value = "";
+                if (colExpiryInput) colExpiryInput.value = "";
+                if (colDeadlineSelect) colDeadlineSelect.value = "all";
+                if (colStatusSelect) colStatusSelect.value = "all";
+                if (searchInput) searchInput.value = "";
+                if (statusSelect) statusSelect.value = "all";
+                if (yearSelect) yearSelect.value = "all";
+
+                document.querySelectorAll("#inspection-status-pills .gc-pill-btn").forEach(btn => {
+                    if (btn.getAttribute("data-status") === "all") btn.classList.add("active");
+                    else btn.classList.remove("active");
+                });
+
+                this.render();
+            });
+        }
+
         if (searchInput) {
             searchInput.addEventListener("input", () => this.render());
         }
         if (statusSelect) {
             statusSelect.addEventListener("change", (e) => {
                 const val = e.target.value;
+                if (colStatusSelect) colStatusSelect.value = val;
                 document.querySelectorAll("#inspection-status-pills .gc-pill-btn").forEach(btn => {
                     if (btn.getAttribute("data-status") === val) btn.classList.add("active");
                     else btn.classList.remove("active");

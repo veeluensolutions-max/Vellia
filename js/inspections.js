@@ -305,7 +305,8 @@ export const Inspections = {
                         leadId: lead.id,
                         company: lead.company,
                         companyColor: this.getCompanyColor(lead.company, lead, item.meta),
-                        contact: lead.contact || "Sem nome",
+                        contact: item.meta?.contact || lead.contact || "Sem nome",
+                        location: item.meta?.location || lead.address || "",
                         phone: lead.whatsapp || lead.phone || "",
                         inspectionNumber: item.meta?.inspectionNumber || item.meta?.number || "",
                         serviceName: item.meta?.serviceName || "Vistoria Geral",
@@ -347,6 +348,7 @@ export const Inspections = {
             const matchesQuery = item.company.toLowerCase().includes(query) || 
                                  item.contact.toLowerCase().includes(query) || 
                                  item.serviceName.toLowerCase().includes(query) ||
+                                 (item.location && item.location.toLowerCase().includes(query)) ||
                                  (item.inspectionNumber && item.inspectionNumber.toLowerCase().includes(query));
             
             const matchesStatus = statusFilter === "all" || item.status === statusFilter;
@@ -569,6 +571,12 @@ export const Inspections = {
                                         <span class="gc-contact-tag">
                                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                                             ${item.contact}
+                                        </span>
+                                    ` : ''}
+                                    ${item.location ? `
+                                        <span class="gc-location-tag" style="font-size: 11px; color: var(--text-muted); background: var(--bg-hover, rgba(255,255,255,0.06)); border: 1px solid var(--border-color, rgba(255,255,255,0.1)); padding: 1.5px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;" title="Unidade/Planta: ${item.location}">
+                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                            ${item.location.replace(/ \/ Unidade Operacional/gi, '').trim()}
                                         </span>
                                     ` : ''}
                                 </div>
@@ -1378,6 +1386,215 @@ export const Inspections = {
         datalist.innerHTML = Array.from(names).map(name => `<option value="${name}"></option>`).join("");
     },
 
+    getCompanyPlantsAndContacts(companyName) {
+        if (!companyName) return { plants: [], contacts: [], plantToContact: {}, contactToPlant: {} };
+        const normName = companyName.trim().toLowerCase();
+        const allRawLeads = Store.getAllLeadsRaw ? Store.getAllLeadsRaw() : (JSON.parse(localStorage.getItem("comercial_leads")) || []);
+        const matchingLeads = allRawLeads.filter(l => !l.deleted_at && l.company && (
+            l.company.trim().toLowerCase() === normName ||
+            normName.includes(l.company.trim().toLowerCase()) ||
+            l.company.trim().toLowerCase().includes(normName)
+        ));
+
+        const plantsSet = new Set();
+        const contactsSet = new Set();
+        const plantToContact = {};
+        const contactToPlant = {};
+
+        matchingLeads.forEach(lead => {
+            const leadPlant = (lead.address || "").trim();
+            const rawContact = (lead.contact || "").trim();
+            const leadContact = rawContact && rawContact !== "Sem nome" && rawContact !== "--" && rawContact !== "---" && rawContact !== "null"
+                ? (rawContact.charAt(0).toUpperCase() + rawContact.slice(1))
+                : "";
+
+            if (leadPlant) {
+                plantsSet.add(leadPlant);
+                if (leadContact && !plantToContact[leadPlant.toLowerCase()]) {
+                    plantToContact[leadPlant.toLowerCase()] = leadContact;
+                    contactToPlant[leadContact.toLowerCase()] = leadPlant;
+                }
+            }
+            if (leadContact) {
+                contactsSet.add(leadContact);
+            }
+
+            if (Array.isArray(lead.interactions)) {
+                lead.interactions.forEach(item => {
+                    const loc = (item.meta?.location || "").trim();
+                    const rawC = (item.meta?.contact || "").trim();
+                    const con = rawC && rawC !== "Sem nome" && rawC !== "--" && rawC !== "---" && rawC !== "null"
+                        ? (rawC.charAt(0).toUpperCase() + rawC.slice(1))
+                        : "";
+                    if (loc) {
+                        plantsSet.add(loc);
+                    }
+                    if (con) {
+                        contactsSet.add(con);
+                    }
+                    if (loc && con) {
+                        plantToContact[loc.toLowerCase()] = con;
+                        contactToPlant[con.toLowerCase()] = loc;
+                    }
+                });
+            }
+        });
+
+        // Deduplicar plantas de forma insensível a maiúsculas/minúsculas
+        const uniquePlants = [];
+        const seenPlants = new Set();
+        plantsSet.forEach(p => {
+            const low = p.toLowerCase();
+            if (!seenPlants.has(low)) {
+                seenPlants.add(low);
+                uniquePlants.push(p);
+            }
+        });
+
+        // Deduplicar contatos de forma insensível a maiúsculas/minúsculas
+        const uniqueContacts = [];
+        const seenContacts = new Set();
+        contactsSet.forEach(c => {
+            const low = c.toLowerCase();
+            if (!seenContacts.has(low)) {
+                seenContacts.add(low);
+                uniqueContacts.push(c);
+            }
+        });
+
+        return {
+            plants: uniquePlants,
+            contacts: uniqueContacts,
+            plantToContact,
+            contactToPlant
+        };
+    },
+
+    updatePlantsAndContacts(companyName) {
+        const locInput = document.getElementById("gc-insp-location");
+        const contactInput = document.getElementById("gc-insp-contact");
+        const locDatalist = document.getElementById("gc-insp-locations-datalist");
+        const contactDatalist = document.getElementById("gc-insp-contacts-datalist");
+        const pillsContainer = document.getElementById("gc-insp-contact-pills");
+        const contactHint = document.getElementById("gc-insp-contact-hint");
+        const locHint = document.getElementById("gc-insp-location-hint");
+
+        if (!locInput || !contactInput) return;
+
+        const info = this.getCompanyPlantsAndContacts(companyName);
+
+        // Preencher datalist de plantas
+        if (locDatalist) {
+            locDatalist.innerHTML = info.plants.map(p => `<option value="${p}"></option>`).join("");
+        }
+
+        // Preencher datalist de contatos
+        if (contactDatalist) {
+            contactDatalist.innerHTML = info.contacts.map(c => `<option value="${c}"></option>`).join("");
+        }
+
+        // Atualizar dica da planta
+        if (locHint) {
+            if (info.plants.length > 0) {
+                locHint.innerHTML = `📍 <strong>${info.plants.length} unidade(s)</strong> disponível(is) para esta empresa.`;
+            } else {
+                locHint.textContent = "Selecione ou digite a unidade/planta desta empresa";
+            }
+        }
+
+        // Renderizar pills de contatos
+        const renderPills = () => {
+            if (!pillsContainer) return;
+            const currentLocVal = (locInput.value || "").trim().toLowerCase();
+            const currentContactVal = (contactInput.value || "").trim().toLowerCase();
+            const suggestedContact = info.plantToContact[currentLocVal] || "";
+
+            if (info.contacts.length === 0) {
+                pillsContainer.innerHTML = "";
+                if (contactHint) contactHint.textContent = "Responsável vinculado à planta";
+                return;
+            }
+
+            pillsContainer.innerHTML = info.contacts.map(c => {
+                const isSelected = c.toLowerCase() === currentContactVal;
+                const isMatchPlant = suggestedContact && c.toLowerCase() === suggestedContact.toLowerCase();
+                const plantLabel = info.contactToPlant[c.toLowerCase()] 
+                    ? ` (${info.contactToPlant[c.toLowerCase()].replace(/ \/ Unidade Operacional/gi, '').split(',')[0].trim()})` 
+                    : "";
+                
+                const bg = isSelected ? "var(--primary-color, #2563eb)" : (isMatchPlant ? "rgba(16, 185, 129, 0.15)" : "var(--bg-hover, rgba(255,255,255,0.08))");
+                const color = isSelected ? "#ffffff" : (isMatchPlant ? "#10b981" : "var(--text-secondary, #cbd5e1)");
+                const border = isMatchPlant && !isSelected ? "1px solid #10b981" : "1px solid var(--border-color, rgba(255,255,255,0.1))";
+
+                return `
+                    <button type="button" class="gc-contact-pill-btn" data-contact="${c}" style="font-size: 11px; padding: 2px 8px; border-radius: 12px; background: ${bg}; color: ${color}; border: ${border}; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s;" title="Clique para definir ${c} como responsável">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <span>${c}${plantLabel}</span>
+                    </button>
+                `;
+            }).join("");
+
+            // Click listener nos pills
+            pillsContainer.querySelectorAll(".gc-contact-pill-btn").forEach(btn => {
+                btn.onclick = () => {
+                    const cVal = btn.getAttribute("data-contact");
+                    contactInput.value = cVal;
+                    if (contactHint) {
+                        contactHint.innerHTML = `<span style="color:#10b981; font-weight:600;">✓ Responsável definido: ${cVal}</span>`;
+                    }
+                    renderPills();
+                };
+            });
+
+            // Atualizar dica descritiva do contato
+            if (contactHint) {
+                if (suggestedContact && suggestedContact.toLowerCase() !== currentContactVal) {
+                    contactHint.innerHTML = `💡 Responsável registrado nesta planta: <strong>${suggestedContact}</strong> (<a href="javascript:void(0)" id="gc-apply-suggested-contact" style="color:#3b82f6; text-decoration:underline; font-weight:600;">clique para alternar</a>)`;
+                    const applyLink = document.getElementById("gc-apply-suggested-contact");
+                    if (applyLink) {
+                        applyLink.onclick = () => {
+                            contactInput.value = suggestedContact;
+                            renderPills();
+                        };
+                    }
+                } else if (suggestedContact && suggestedContact.toLowerCase() === currentContactVal) {
+                    contactHint.innerHTML = `<span style="color:#10b981; font-weight:600;">✓ Responsável alinhado à planta selecionada</span>`;
+                } else {
+                    contactHint.textContent = "Selecione ou digite o responsável nesta planta";
+                }
+            }
+        };
+
+        renderPills();
+
+        // Configurar listener no input de localização / planta
+        locInput.oninput = () => {
+            const currentLoc = (locInput.value || "").trim().toLowerCase();
+            const mappedContact = info.plantToContact[currentLoc];
+            if (mappedContact) {
+                const curVal = contactInput.value.trim().toLowerCase();
+                const allKnown = info.contacts.map(v => v.toLowerCase());
+                if (!curVal || allKnown.includes(curVal)) {
+                    contactInput.value = mappedContact;
+                }
+            }
+            renderPills();
+        };
+
+        locInput.onchange = () => {
+            const currentLoc = (locInput.value || "").trim().toLowerCase();
+            const mappedContact = info.plantToContact[currentLoc];
+            if (mappedContact) {
+                contactInput.value = mappedContact;
+            }
+            renderPills();
+        };
+
+        contactInput.oninput = () => {
+            renderPills();
+        };
+    },
+
     openInspectionScreen(leadId = null, interactionId = null, autoAction = null) {
         this.populateClientsDatalist();
 
@@ -1536,6 +1753,9 @@ export const Inspections = {
             colorInput.value = currentCompanyColor;
         }
 
+        const initialClient = document.getElementById("gc-insp-client")?.value || "";
+        this.updatePlantsAndContacts(initialClient);
+
         const clientInputEl = document.getElementById("gc-insp-client");
         if (clientInputEl) {
             clientInputEl.oninput = () => {
@@ -1544,6 +1764,13 @@ export const Inspections = {
                     const col = this.getCompanyColor(val);
                     if (colorPreview) colorPreview.style.background = col;
                     if (colorInput) colorInput.value = col;
+                    this.updatePlantsAndContacts(val);
+                }
+            };
+            clientInputEl.onchange = () => {
+                const val = clientInputEl.value.trim();
+                if (val) {
+                    this.updatePlantsAndContacts(val);
                 }
             };
         }

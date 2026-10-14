@@ -251,7 +251,9 @@ const TABLE_SCHEMAS = {
     comercial_services: ['id', 'name', 'category', 'baseMargin', 'isActive'],
     comercial_goals: ['userEmail', 'period', 'targets'],
     comercial_tasks: ['id', 'workspace', 'owner', 'text', 'done', 'date', 'priority', 'assignedBy'],
-    comercial_calendar_events: ['id', 'workspace', 'title', 'company', 'date', 'time', 'type', 'status', 'notes', 'phone', 'contact', 'leadId']
+    comercial_calendar_events: ['id', 'workspace', 'title', 'company', 'date', 'time', 'type', 'status', 'notes', 'phone', 'contact', 'leadId'],
+    comercial_contracts: ['id', 'workspace', 'leadId', 'proposalId', 'number', 'status', 'totalValue', 'recurringValue', 'periodicity', 'startDate', 'endDate', 'autoRenew', 'warningDays', 'owner', 'createdBy', 'notes', 'createdAt', 'updatedAt'],
+    comercial_contract_services: ['id', 'contractId', 'serviceId', 'quantity', 'unitValue']
 };
 
 async function upsertSupabase(table, data) {

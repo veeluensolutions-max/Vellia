@@ -139,19 +139,27 @@
             <div class="sidebar-top">
                 <div class="sidebar-header">
                     <div class="sidebar-logo">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                        <span>Vellia CRM</span>
+                        <div class="sidebar-logo-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                        </div>
+                        <div class="sidebar-logo-text">
+                            <span class="brand-name">Vellia</span>
+                            <span class="brand-badge">CRM</span>
+                        </div>
                     </div>
                     
                     <!-- Workspace Switcher Card -->
                     <div class="workspace-switcher-card">
-                        <span class="workspace-switcher-label">Empresa Atual</span>
+                        <div class="workspace-switcher-head">
+                            <span class="workspace-switcher-label">Empresa Atual</span>
+                            <span class="workspace-sync-badge"><span class="sync-dot"></span>Online</span>
+                        </div>
                         <div class="workspace-select-wrapper">
                             <select id="workspace-select" class="workspace-select-control" onchange="window.switchCompany(this.value, true)">
                                 <option value="Veeluen Solutions">Veeluen Solutions</option>
                                 <option value="Excelência Ambiental">Excelência Ambiental</option>
                             </select>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2" style="position: absolute; right: 0; pointer-events: none;"><path d="M6 9l6 6 6-6"/></svg>
+                            <svg class="workspace-select-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"/></svg>
                         </div>
                     </div>
                 </div>
@@ -302,42 +310,42 @@
         <main class="main-panel">
             <!-- Cabeçalho (Header) -->
             <header class="app-header">
-                <div class="header-title-section" style="display: flex; align-items: center; gap: 12px;">
+                <div class="header-title-section">
                     <!-- Botão de Hambúrguer (Mobile) -->
-                    <button id="menu-toggle-btn" class="menu-toggle">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    <button id="menu-toggle-btn" class="menu-toggle" aria-label="Abrir Menu">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
                     </button>
-                    <div>
+                    <div class="header-titles-group">
                         <nav id="header-breadcrumbs" class="header-breadcrumbs" aria-label="Breadcrumb">
                             <span class="breadcrumb-segment">Vellia CRM</span>
                             <span class="breadcrumb-separator">›</span>
                             <span class="breadcrumb-segment active" id="breadcrumb-current-view">Dashboard</span>
                         </nav>
-                        <h1 id="view-title" class="page-title" style="margin: 0; line-height: 1.2;">Dashboard</h1>
+                        <h1 id="view-title" class="page-title">Dashboard</h1>
                     </div>
                 </div>
 
                 <div class="header-actions">
                     <!-- Alternador de Empresas / Workspace no Topo -->
-                    <div class="company-selector-container workspace-header-switcher" style="display: flex; align-items: center; gap: 8px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 10px; padding: 5px 12px; box-shadow: var(--shadow-sm);">
-                        <div style="display: flex; align-items: center; gap: 6px;">
+                    <div class="company-selector-container workspace-header-switcher">
+                        <div class="workspace-header-pill">
                             <span style="font-size: 13px;">🏢</span>
-                            <span style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Empresa:</span>
-                        </div>
-                        <div style="position: relative; display: flex; align-items: center;">
-                            <select id="header-workspace-select" class="workspace-select-el" onchange="window.switchCompany(this.value, true)" style="appearance: none; -webkit-appearance: none; background: transparent; border: none; color: var(--text-primary); font-size: 12.5px; font-weight: 700; outline: none; cursor: pointer; padding-right: 20px; font-family: inherit;">
-                                <option value="Veeluen Solutions" style="background: var(--bg-surface); color: var(--text-primary);">Veeluen Solutions</option>
-                                <option value="Excelência Ambiental" style="background: var(--bg-surface); color: var(--text-primary);">Excelência Ambiental</option>
-                            </select>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="position: absolute; right: 0; pointer-events: none; color: var(--text-muted);"><path d="M6 9l6 6 6-6"/></svg>
+                            <span class="workspace-header-tag">Empresa:</span>
+                            <div class="workspace-header-select-wrap">
+                                <select id="header-workspace-select" class="workspace-select-el" onchange="window.switchCompany(this.value, true)">
+                                    <option value="Veeluen Solutions">Veeluen Solutions</option>
+                                    <option value="Excelência Ambiental">Excelência Ambiental</option>
+                                </select>
+                                <svg class="workspace-select-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Trigger Command Palette (Ctrl + K) -->
                     <button id="btn-command-palette-trigger" class="cmd-palette-trigger" title="Buscar e Ações Rápidas (Ctrl + K)">
-                        <div style="display: flex; align-items: center; gap: 8px;">
+                        <div class="cmd-palette-inner">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                            <span style="font-size: 13px;">Buscar contatos, propostas ou comandos...</span>
+                            <span class="cmd-palette-placeholder">Buscar contatos, propostas ou comandos...</span>
                         </div>
                         <kbd>Ctrl K</kbd>
                     </button>
@@ -4255,11 +4263,18 @@ Condições de pagamento:
                                 <div class="gc-grid gc-grid-2">
                                     <div class="gc-form-group">
                                         <label class="gc-label" for="gc-insp-location">Local / Unidade Fabril Inspecionada</label>
-                                        <input type="text" id="gc-insp-location" class="gc-input" placeholder="Ex.: Fábrica Central - Galpão 02, Rodovia BR-101 Km 45">
+                                        <input type="text" id="gc-insp-location" class="gc-input" list="gc-insp-locations-datalist" placeholder="Ex.: Fábrica Central - Galpão 02, Rodovia BR-101 Km 45" autocomplete="off">
+                                        <datalist id="gc-insp-locations-datalist"></datalist>
+                                        <span id="gc-insp-location-hint" style="font-size: 11px; color: var(--text-muted); margin-top: 4px; display: block;">Selecione ou digite a unidade/planta desta empresa</span>
                                     </div>
                                     <div class="gc-form-group">
-                                        <label class="gc-label" for="gc-insp-contact">Contato / Acompanhante na Planta</label>
-                                        <input type="text" id="gc-insp-contact" class="gc-input" placeholder="Ex.: Gerente de Manutenção / (81) 98888-0000">
+                                        <label class="gc-label" for="gc-insp-contact">Contato / Responsável nesta Planta</label>
+                                        <input type="text" id="gc-insp-contact" class="gc-input" list="gc-insp-contacts-datalist" placeholder="Ex.: Anderson / Gerente da Unidade" autocomplete="off">
+                                        <datalist id="gc-insp-contacts-datalist"></datalist>
+                                        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px; flex-wrap: wrap; gap: 4px;">
+                                            <span id="gc-insp-contact-hint" style="font-size: 11px; color: var(--text-muted);">Responsável vinculado à planta</span>
+                                            <div id="gc-insp-contact-pills" style="display: flex; gap: 4px; flex-wrap: wrap;"></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

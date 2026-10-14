@@ -240,15 +240,15 @@ export const PDFGenerator = {
         </div>
         <div class="info-card">
             <div class="info-label">Contato Responsável</div>
-            <div class="info-val">${lead.contact || "N/A"} (${lead.role || "Cargo não informado"})</div>
+            <div class="info-val">${inspection.meta?.contact || lead.contact || "N/A"} (${lead.role || "Responsável na Unidade"})</div>
         </div>
         <div class="info-card">
             <div class="info-label">WhatsApp / Telefone</div>
             <div class="info-val">${lead.whatsapp || lead.phone || "N/A"}</div>
         </div>
         <div class="info-card">
-            <div class="info-label">Localização</div>
-            <div class="info-val">${lead.city || "-"} / ${lead.state || "-"}</div>
+            <div class="info-label">Unidade Fabril / Planta Inspecionada</div>
+            <div class="info-val">${inspection.meta?.location || lead.address || (lead.city ? `${lead.city} / ${lead.state || '-'}` : "Planta Operacional")}</div>
         </div>
     </div>
 

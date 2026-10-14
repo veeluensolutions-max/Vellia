@@ -446,18 +446,72 @@ export const Proposals = {
             return true;
         });
 
+        const fmt = (v) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+        const tfoot = document.getElementById("proposals-table-foot");
+
+        const totalCount = filtered.length;
+        const allCount = proposals.length;
+        const totalValue = filtered.reduce((s, p) => s + (parseFloat(p.value) || 0), 0);
+        const avgValue = totalCount > 0 ? (totalValue / totalCount) : 0;
+
+        if (tfoot) {
+            if (totalCount === 0) {
+                tfoot.innerHTML = `
+                    <tr style="background: var(--bg-app, #F8FAFC); border-top: 2px solid var(--border-color, #E2E8F0); font-size: 13px;">
+                        <td colspan="7" style="padding: 12px 16px; color: var(--text-muted); text-align: center; font-size: 12px;">
+                            <span>📊 Total Filtrado: <strong>0 propostas</strong> (${allCount} cadastradas no total) | Valor Total: <strong>R$ 0,00</strong></span>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                // Status breakdown
+                const statusCounts = {};
+                filtered.forEach(p => {
+                    const st = p.status || "Outro";
+                    statusCounts[st] = (statusCounts[st] || 0) + 1;
+                });
+
+                const statusBadgesHtml = Object.entries(statusCounts)
+                    .map(([st, cnt]) => `<span style="background: var(--bg-card, #FFFFFF); border: 1px solid var(--border-color, #CBD5E1); padding: 2.5px 8px; border-radius: 6px; color: var(--text-secondary, #475569);"><strong style="color: var(--text-primary, #1E293B);">${cnt}</strong> ${st}</span>`)
+                    .join("");
+
+                tfoot.innerHTML = `
+                    <tr style="background: var(--bg-app, #F8FAFC); border-top: 2px solid var(--border-color, #E2E8F0); font-size: 13px;">
+                        <td style="padding: 12px 14px; font-weight: 700; color: var(--text-primary);">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 15px;">📊</span>
+                                <span>Total Filtrado:</span>
+                                <span class="badge" style="background: rgba(37,99,235,0.12); color: #2563EB; font-weight: 700; border-radius: 6px; padding: 3px 8px; font-size: 11.5px; border: 1px solid rgba(37,99,235,0.25);">
+                                    ${totalCount} ${totalCount === 1 ? 'proposta' : 'propostas'} ${totalCount !== allCount ? `(de ${allCount})` : ''}
+                                </span>
+                            </div>
+                        </td>
+                        <td style="padding: 12px 14px; color: var(--text-secondary); font-size: 12px;">
+                            Ticket Médio: <strong style="color: var(--text-primary); font-size: 13px;">${fmt(avgValue)}</strong>
+                        </td>
+                        <td style="padding: 12px 14px; font-weight: 800; color: #10B981; font-size: 15px;">
+                            ${fmt(totalValue)}
+                        </td>
+                        <td colspan="4" style="padding: 12px 14px; text-align: right;">
+                            <div style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; font-size: 11.5px;">
+                                ${statusBadgesHtml}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
         if (filtered.length === 0) {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 40px;">
-                        Nenhuma proposta encontrada.
+                        Nenhuma proposta encontrada para os filtros aplicados.
                     </td>
                 </tr>
             `;
             return;
         }
-
-        const fmt = (v) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
         tbody.innerHTML = filtered.map(p => {
             const sentDate = p.sentAt ? new Date(p.sentAt).toLocaleDateString("pt-BR") : "—";

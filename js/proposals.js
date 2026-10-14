@@ -155,7 +155,51 @@ export const Proposals = {
         if (search) search.addEventListener("input", () => this.renderTable());
 
         const filter = document.getElementById("proposals-filter-status");
-        if (filter) filter.addEventListener("change", () => this.renderTable());
+        if (filter) {
+            filter.addEventListener("change", (e) => {
+                const colStatus = document.getElementById("prop-col-filter-status");
+                if (colStatus) colStatus.value = e.target.value;
+                this.renderTable();
+            });
+        }
+
+        // Filtros dinâmicos por coluna da tabela de propostas
+        const colCompany = document.getElementById("prop-col-filter-company");
+        const colTitle = document.getElementById("prop-col-filter-title");
+        const colValue = document.getElementById("prop-col-filter-value");
+        const colStatus = document.getElementById("prop-col-filter-status");
+        const colSent = document.getElementById("prop-col-filter-sent");
+        const colValidity = document.getElementById("prop-col-filter-validity");
+        const btnClearColFilters = document.getElementById("btn-clear-prop-col-filters");
+
+        if (colCompany) colCompany.addEventListener("input", () => this.renderTable());
+        if (colTitle) colTitle.addEventListener("input", () => this.renderTable());
+        if (colValue) colValue.addEventListener("change", () => this.renderTable());
+        if (colStatus) {
+            colStatus.addEventListener("change", (e) => {
+                const topFilter = document.getElementById("proposals-filter-status");
+                if (topFilter) topFilter.value = e.target.value;
+                this.renderTable();
+            });
+        }
+        if (colSent) colSent.addEventListener("input", () => this.renderTable());
+        if (colValidity) colValidity.addEventListener("change", () => this.renderTable());
+
+        if (btnClearColFilters) {
+            btnClearColFilters.addEventListener("click", () => {
+                if (colCompany) colCompany.value = "";
+                if (colTitle) colTitle.value = "";
+                if (colValue) colValue.value = "all";
+                if (colStatus) colStatus.value = "all";
+                if (colSent) colSent.value = "";
+                if (colValidity) colValidity.value = "all";
+                const topSearch = document.getElementById("proposals-search");
+                if (topSearch) topSearch.value = "";
+                const topFilter = document.getElementById("proposals-filter-status");
+                if (topFilter) topFilter.value = "all";
+                this.renderTable();
+            });
+        }
 
         // Fechar modal de detalhes
         const btnCloseDetail = document.getElementById("btn-close-proposal-detail");
@@ -318,12 +362,88 @@ export const Proposals = {
         const search = document.getElementById("proposals-search")?.value.toLowerCase().trim() || "";
         const statusFilter = document.getElementById("proposals-filter-status")?.value || "all";
 
+        // Filtros específicos por coluna
+        const colCompany = (document.getElementById("prop-col-filter-company")?.value || "").toLowerCase().trim();
+        const colTitle = (document.getElementById("prop-col-filter-title")?.value || "").toLowerCase().trim();
+        const colValueRange = document.getElementById("prop-col-filter-value")?.value || "all";
+        const colStatus = document.getElementById("prop-col-filter-status")?.value || "all";
+        const colSent = (document.getElementById("prop-col-filter-sent")?.value || "").toLowerCase().trim();
+        const colValidity = document.getElementById("prop-col-filter-validity")?.value || "all";
+
+        const todayMs = new Date().setHours(0, 0, 0, 0);
+
         const filtered = proposals.filter(p => {
-            const matchSearch = p.company.toLowerCase().includes(search) ||
-                p.title.toLowerCase().includes(search) ||
-                p.contact.toLowerCase().includes(search);
-            const matchStatus = statusFilter === "all" || p.status === statusFilter;
-            return matchSearch && matchStatus;
+            const company = (p.company || "").toLowerCase();
+            const contact = (p.contact || "").toLowerCase();
+            const title = (p.title || "").toLowerCase();
+            const status = p.status || "";
+
+            // Busca geral superior (se preenchida)
+            if (search) {
+                const matchSearch = company.includes(search) || title.includes(search) || contact.includes(search);
+                if (!matchSearch) return false;
+            }
+
+            // Status geral superior
+            if (statusFilter !== "all" && status !== statusFilter) {
+                return false;
+            }
+
+            // 1. Coluna Empresa / Contato
+            if (colCompany) {
+                const matchCompany = company.includes(colCompany) || contact.includes(colCompany);
+                if (!matchCompany) return false;
+            }
+
+            // 2. Coluna Título da Proposta
+            if (colTitle) {
+                if (!title.includes(colTitle)) return false;
+            }
+
+            // 3. Coluna Valor (Faixas de valores)
+            if (colValueRange !== "all") {
+                const val = parseFloat(p.value) || 0;
+                if (colValueRange === "0-5k" && !(val <= 5000)) return false;
+                if (colValueRange === "5k-15k" && !(val > 5000 && val <= 15000)) return false;
+                if (colValueRange === "15k-50k" && !(val > 15000 && val <= 50000)) return false;
+                if (colValueRange === "50k+" && !(val > 50000)) return false;
+            }
+
+            // 4. Coluna Status
+            if (colStatus !== "all" && status !== colStatus) {
+                return false;
+            }
+
+            // 5. Coluna Enviada em
+            if (colSent) {
+                const sentStr = p.sentAt ? new Date(p.sentAt).toLocaleDateString("pt-BR") : "";
+                const rawSent = (p.sentAt || "").toLowerCase();
+                if (!sentStr.toLowerCase().includes(colSent) && !rawSent.includes(colSent)) {
+                    return false;
+                }
+            }
+
+            // 6. Coluna Válida até (Prazo e vencimento)
+            if (colValidity !== "all") {
+                if (!p.validUntil) return false;
+                const validDate = new Date(p.validUntil);
+                const diffMs = validDate.getTime() - todayMs;
+                const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+                if (colValidity === "valid") {
+                    if (diffDays < 0) return false;
+                } else if (colValidity === "expired") {
+                    if (diffDays >= 0) return false;
+                } else if (colValidity === "7d") {
+                    if (diffDays < 0 || diffDays > 7) return false;
+                } else if (colValidity === "15d") {
+                    if (diffDays < 0 || diffDays > 15) return false;
+                } else if (colValidity === "30d") {
+                    if (diffDays < 0 || diffDays > 30) return false;
+                }
+            }
+
+            return true;
         });
 
         if (filtered.length === 0) {

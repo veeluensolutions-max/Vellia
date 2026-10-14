@@ -2833,13 +2833,62 @@
                                 <table class="custom-table">
                                     <thead>
                                         <tr>
-                                            <th>Empresa / Contato</th>
-                                            <th>Título da Proposta</th>
-                                            <th>Valor</th>
-                                            <th>Status</th>
-                                            <th>Enviada em</th>
-                                            <th>Válida até</th>
-                                            <th style="text-align: right;">Ações</th>
+                                            <th style="min-width: 190px;">Empresa / Contato</th>
+                                            <th style="min-width: 210px;">Título da Proposta</th>
+                                            <th style="width: 140px; min-width: 140px;">Valor</th>
+                                            <th style="width: 135px; min-width: 135px;">Status</th>
+                                            <th style="width: 120px; min-width: 120px;">Enviada em</th>
+                                            <th style="width: 135px; min-width: 135px;">Válida até</th>
+                                            <th style="width: 100px; min-width: 100px; text-align: right; padding-right: 14px;">Ações</th>
+                                        </tr>
+                                        <!-- Linha de Filtros Dinâmicos por Coluna de Propostas -->
+                                        <tr class="prop-table-filter-header-row" style="background: var(--bg-app, #F8FAFC); border-bottom: 2px solid var(--border-color, #E2E8F0);">
+                                            <th style="padding: 6px 10px;">
+                                                <input type="text" id="prop-col-filter-company" class="form-control" placeholder="🔍 Filtrar empresa..." style="font-size: 11.5px; height: 32px; padding: 4px 8px; width: 100%; border: 1px solid var(--border-color, #CBD5E1); border-radius: 6px; background: var(--bg-card, #FFFFFF); color: var(--text-primary, #1E293B);">
+                                            </th>
+                                            <th style="padding: 6px 10px;">
+                                                <input type="text" id="prop-col-filter-title" class="form-control" placeholder="🔍 Filtrar título..." style="font-size: 11.5px; height: 32px; padding: 4px 8px; width: 100%; border: 1px solid var(--border-color, #CBD5E1); border-radius: 6px; background: var(--bg-card, #FFFFFF); color: var(--text-primary, #1E293B);">
+                                            </th>
+                                            <th style="padding: 6px 10px;">
+                                                <select id="prop-col-filter-value" class="form-control" style="font-size: 11.5px; height: 32px; padding: 2px 6px; width: 100%; border: 1px solid var(--border-color, #CBD5E1); border-radius: 6px; background: var(--bg-card, #FFFFFF); color: var(--text-primary, #1E293B);">
+                                                    <option value="all">Todos os Valores</option>
+                                                    <option value="0-5k">Até R$ 5.000</option>
+                                                    <option value="5k-15k">R$ 5.000 a R$ 15.000</option>
+                                                    <option value="15k-50k">R$ 15.000 a R$ 50.000</option>
+                                                    <option value="50k+">Acima de R$ 50.000</option>
+                                                </select>
+                                            </th>
+                                            <th style="padding: 6px 10px;">
+                                                <select id="prop-col-filter-status" class="form-control" style="font-size: 11.5px; height: 32px; padding: 2px 6px; width: 100%; border: 1px solid var(--border-color, #CBD5E1); border-radius: 6px; background: var(--bg-card, #FFFFFF); color: var(--text-primary, #1E293B);">
+                                                    <option value="all">Todos</option>
+                                                    <option value="Enviada">Enviada</option>
+                                                    <option value="Em Negociação">Em Negociação</option>
+                                                    <option value="Aguardando Agendamento">Aguardando</option>
+                                                    <option value="Agendada">Agendada</option>
+                                                    <option value="Ganho">Ganho</option>
+                                                    <option value="Perdido">Perdido</option>
+                                                    <option value="Cancelada">Cancelada</option>
+                                                </select>
+                                            </th>
+                                            <th style="padding: 6px 10px;">
+                                                <input type="text" id="prop-col-filter-sent" class="form-control" placeholder="Ano/Mês..." style="font-size: 11.5px; height: 32px; padding: 4px 6px; width: 100%; border: 1px solid var(--border-color, #CBD5E1); border-radius: 6px; background: var(--bg-card, #FFFFFF); color: var(--text-primary, #1E293B);" title="Filtrar por data ou período de envio">
+                                            </th>
+                                            <th style="padding: 6px 10px;">
+                                                <select id="prop-col-filter-validity" class="form-control" style="font-size: 11.5px; height: 32px; padding: 2px 6px; width: 100%; border: 1px solid var(--border-color, #CBD5E1); border-radius: 6px; background: var(--bg-card, #FFFFFF); color: var(--text-primary, #1E293B);">
+                                                    <option value="all">Todos os Prazos</option>
+                                                    <option value="valid">🟢 No Prazo (Válida)</option>
+                                                    <option value="expired">🔴 Expirada / Vencida</option>
+                                                    <option value="7d">⚡ Vence em até 7 dias</option>
+                                                    <option value="15d">🟠 Vence em até 15 dias</option>
+                                                    <option value="30d">🟡 Vence em até 30 dias</option>
+                                                </select>
+                                            </th>
+                                            <th style="padding: 6px 10px; text-align: right; padding-right: 14px;">
+                                                <button type="button" id="btn-clear-prop-col-filters" class="btn btn-sm" style="font-size: 11.5px; height: 32px; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border-color, #CBD5E1); background: var(--bg-card, #FFFFFF); color: var(--text-secondary, #475569); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s;" title="Limpar todos os filtros da tabela de propostas">
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                                    <span>Limpar</span>
+                                                </button>
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody id="proposals-table-body">

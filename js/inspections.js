@@ -1080,6 +1080,20 @@ export const Inspections = {
             };
         }
 
+        const gcServiceSelect = document.getElementById("gc-insp-service-select");
+        if (gcServiceSelect) {
+            gcServiceSelect.onchange = (e) => {
+                const otherGroup = document.getElementById("gc-insp-other-service-group");
+                const otherInput = document.getElementById("gc-insp-other-service-input");
+                if (e.target.value === "Outros Serviços") {
+                    if (otherGroup) otherGroup.style.display = "block";
+                    if (otherInput) otherInput.focus();
+                } else {
+                    if (otherGroup) otherGroup.style.display = "none";
+                }
+            };
+        }
+
         const gcExecDate = document.getElementById("gc-insp-exec-date");
         if (gcExecDate) {
             gcExecDate.onchange = (e) => {
@@ -1768,7 +1782,28 @@ export const Inspections = {
                 setVal("gc-insp-number", item.meta?.inspectionNumber || `INSP-2026-${item.id.slice(-3)}`);
                 setVal("gc-insp-client", lead.company || "");
                 setVal("gc-insp-inspector", item.meta?.inspector || inspectorDefault);
-                setVal("gc-insp-service-select", item.meta?.serviceName || "Amostragem Isocinética de Chaminé");
+                const loadedService = item.meta?.serviceName || "Amostragem Isocinética de Chaminé";
+                const knownServices = [
+                    "Amostragem Isocinética de Chaminé",
+                    "Inspeção NR-13 (Caldeiras e Vasos)",
+                    "Laudo NR-12 (Segurança de Máquinas)",
+                    "Licenciamento e Monitoramento Ambiental",
+                    "Laudo Elétrico NR-10 e SPDA",
+                    "Medição de Ruído e Poluentes",
+                    "Vistoria Técnica Geral"
+                ];
+                const otherGroup = document.getElementById("gc-insp-other-service-group");
+                const otherInput = document.getElementById("gc-insp-other-service-input");
+
+                if (knownServices.includes(loadedService)) {
+                    setVal("gc-insp-service-select", loadedService);
+                    if (otherGroup) otherGroup.style.display = "none";
+                    if (otherInput) otherInput.value = "";
+                } else {
+                    setVal("gc-insp-service-select", "Outros Serviços");
+                    if (otherGroup) otherGroup.style.display = "block";
+                    if (otherInput) otherInput.value = (loadedService === "Outros Serviços" ? "" : loadedService);
+                }
                 setVal("gc-insp-exec-date", item.meta?.executionDate || item.timestamp?.split("T")[0] || todayStr);
                 setVal("gc-insp-expiry-date", item.meta?.expiryDate || nextYearStr);
                 const itemExpStr = item.meta?.expiryDate || nextYearStr;
@@ -1847,6 +1882,10 @@ export const Inspections = {
             setVal("gc-insp-client", clientDefault);
             setVal("gc-insp-inspector", inspectorDefault);
             setVal("gc-insp-service-select", "Amostragem Isocinética de Chaminé");
+            const newOtherGroup = document.getElementById("gc-insp-other-service-group");
+            const newOtherInput = document.getElementById("gc-insp-other-service-input");
+            if (newOtherGroup) newOtherGroup.style.display = "none";
+            if (newOtherInput) newOtherInput.value = "";
             setVal("gc-insp-exec-date", todayStr);
             setVal("gc-insp-expiry-date", nextYearStr);
             setVal("gc-insp-status", "valida");
@@ -2377,7 +2416,9 @@ export const Inspections = {
                     <option value="Licenciamento e Monitoramento Ambiental">Licenciamento e Monitoramento Ambiental</option>
                     <option value="Laudo Elétrico NR-10 e SPDA">Laudo Elétrico NR-10 e SPDA</option>
                     <option value="Medição de Ruído e Poluentes">Medição de Ruído e Poluentes</option>
+                    <option value="Vistoria Técnica Geral">Vistoria Técnica Geral</option>
                     <option value="Emissão de ART e Parecer Técnico">Emissão de ART e Parecer Técnico</option>
+                    <option value="Outros Serviços">Outros Serviços</option>
                 </select>
             </td>
             <td>
@@ -2400,7 +2441,16 @@ export const Inspections = {
         `;
 
         const sel = tr.querySelector(".gc-insp-service-name");
-        if (sel) sel.value = serviceName;
+        if (sel) {
+            let found = Array.from(sel.options).some(o => o.value === serviceName);
+            if (!found && serviceName) {
+                const opt = document.createElement("option");
+                opt.value = serviceName;
+                opt.textContent = serviceName;
+                sel.appendChild(opt);
+            }
+            sel.value = serviceName;
+        }
 
         const updateSub = () => {
             const q = parseFloat(tr.querySelector(".gc-insp-item-qty")?.value) || 0;
@@ -2449,6 +2499,7 @@ export const Inspections = {
         const number = document.getElementById("gc-insp-number")?.value;
         const inspector = document.getElementById("gc-insp-inspector")?.value;
         const service = document.getElementById("gc-insp-service-select")?.value;
+        const otherServiceInput = document.getElementById("gc-insp-other-service-input")?.value?.trim();
         const execDate = document.getElementById("gc-insp-exec-date")?.value || new Date().toISOString().split("T")[0];
         const expiryDate = document.getElementById("gc-insp-expiry-date")?.value;
         const status = document.getElementById("gc-insp-status")?.value;
@@ -2474,10 +2525,13 @@ export const Inspections = {
         const servicesList = [];
         let totalVal = 0;
         document.querySelectorAll("#gc-insp-services-tbody tr").forEach(tr => {
-            const sName = tr.querySelector(".gc-insp-service-name")?.value;
+            let sName = tr.querySelector(".gc-insp-service-name")?.value;
             const det = tr.querySelector(".gc-insp-item-details")?.value;
             const q = parseFloat(tr.querySelector(".gc-insp-item-qty")?.value) || 1;
             const p = parseFloat(tr.querySelector(".gc-insp-item-price")?.value) || 0;
+            if (sName === "Outros Serviços" && otherServiceInput) {
+                sName = otherServiceInput;
+            }
             totalVal += (q * p);
             servicesList.push({ service: sName, details: det, qty: q, price: p, subtotal: q * p });
         });
@@ -2509,7 +2563,10 @@ export const Inspections = {
         }
 
         const opinionText = opinion || "";
-        const serviceText = service || "Inspeção Geral";
+        let serviceText = service || "Inspeção Geral";
+        if (service === "Outros Serviços") {
+            serviceText = otherServiceInput || "Outros Serviços";
+        }
         const numberVal = document.getElementById("gc-insp-number")?.value?.trim();
         const numberText = numberVal || (number ? number.trim() : `INSP-2026-${String(Date.now()).slice(-4)}`);
 
@@ -3091,11 +3148,23 @@ Extraia e retorne EXCLUSIVAMENTE um objeto JSON (sem formatação markdown) com:
         }
         if (data.company && gcClient) gcClient.value = data.company;
         if (data.serviceName && gcService) {
+            let matched = false;
             for (let i = 0; i < gcService.options.length; i++) {
-                if (gcService.options[i].text.toLowerCase().includes(data.serviceName.toLowerCase()) || data.serviceName.toLowerCase().includes(gcService.options[i].text.toLowerCase())) {
+                if (gcService.options[i].value !== "Outros Serviços" && (gcService.options[i].text.toLowerCase().includes(data.serviceName.toLowerCase()) || data.serviceName.toLowerCase().includes(gcService.options[i].text.toLowerCase()))) {
                     gcService.selectedIndex = i;
+                    matched = true;
                     break;
                 }
+            }
+            const otherGrp = document.getElementById("gc-insp-other-service-group");
+            const otherInp = document.getElementById("gc-insp-other-service-input");
+            if (!matched) {
+                gcService.value = "Outros Serviços";
+                if (otherGrp) otherGrp.style.display = "block";
+                if (otherInp) otherInp.value = data.serviceName;
+            } else {
+                if (otherGrp) otherGrp.style.display = "none";
+                if (otherInp) otherInp.value = "";
             }
         }
         if (data.executionDate && gcExecDate) gcExecDate.value = data.executionDate;

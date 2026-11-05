@@ -1,4 +1,5 @@
 import { Store } from "./store.js";
+import { hashPassword } from "./utils.js";
 
 export const Auth = {
     async login(email, password) {
@@ -23,7 +24,28 @@ export const Auth = {
             return { success: false, error: "Usuário ou senha incorretos." };
         }
 
-        if (user.password !== password) {
+        const inputHash = await hashPassword(password);
+        const storedPassword = String(user.password || "");
+        const isSha256 = storedPassword.length === 64 && /^[0-9a-f]{64}$/i.test(storedPassword);
+
+        let passwordValid = false;
+        if (isSha256) {
+            passwordValid = storedPassword.toLowerCase() === inputHash.toLowerCase();
+        } else {
+            // Retrocompatibilidade: se a senha ainda estiver em texto puro, valida e migra para hash SHA-256
+            passwordValid = storedPassword === password;
+            if (passwordValid) {
+                user.password = inputHash;
+                const users = Store.getUsers();
+                const uIdx = users.findIndex(u => u.id === user.id);
+                if (uIdx !== -1) {
+                    users[uIdx].password = inputHash;
+                    Store.saveUsers(users);
+                }
+            }
+        }
+
+        if (!passwordValid) {
             Store.addLog(emailLower, "LOGIN_ATTEMPT", `Tentativa de login falhou: senha incorreta.`, "WARN");
             return { success: false, error: "Usuário ou senha incorretos." };
         }

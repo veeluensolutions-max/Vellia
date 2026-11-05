@@ -1,5 +1,6 @@
 import { Store } from "./store.js";
 import { Auth } from "./auth.js";
+import { hashPassword } from "./utils.js";
 import { generatePerformancePDF } from "./report.js";
 import { Toast } from "./toast.js";
 
@@ -706,7 +707,7 @@ export const Users = {
                         users[idx].role = role;
                         users[idx].status = status;
                         users[idx].companyAccess = companyAccess;
-                        if (password) users[idx].password = password;
+                        if (hashedPassword) users[idx].password = hashedPassword;
                         Store.saveUsers(users);
 
                         // Sincronizar PATCH direto com o Supabase
@@ -714,7 +715,7 @@ export const Users = {
                             const SUPABASE_URL = "https://ogrbsonpkiamoytxjshg.supabase.co";
                             const SUPABASE_KEY = "sb_publishable_Wi3eKJi5uyEzqihEDF6Eaw_-i0zcHe7";
                             const patchPayload = { name, email, role, status };
-                            if (password) patchPayload.password = password;
+                            if (hashedPassword) patchPayload.password = hashedPassword;
                             fetch(`${SUPABASE_URL}/rest/v1/comercial_users?id=eq.${encodeURIComponent(users[idx].id)}`, {
                                 method: "PATCH",
                                 headers: {
@@ -748,7 +749,7 @@ export const Users = {
                         role,
                         status,
                         companyAccess,
-                        password: password || "123456",
+                        password: hashedPassword || (await hashPassword("123456")),
                         avatar: (name ? name.substring(0, 2) : "US").toUpperCase(),
                         lastLoginAt: null
                     };
@@ -851,7 +852,7 @@ export const Users = {
         this.renderUsers();
     },
 
-    resetPassword(id) {
+    async resetPassword(id) {
         const users = Store.getUsers();
         const idx = users.findIndex(u => u.id === id);
         if (idx === -1) return;
@@ -860,7 +861,7 @@ export const Users = {
         const confirmReset = confirm(`Deseja resetar a senha de "${name}" para a senha padrão '123456'?`);
         if (!confirmReset) return;
 
-        users[idx].password = "123456";
+        users[idx].password = await hashPassword("123456");
         Store.saveUsers(users);
         Store.addLog(Auth.getCurrentUser().email, "USER_MANAGEMENT", `Senha do usuário ${name} resetada para padrão pelo Admin.`, "SUCCESS");
 
@@ -894,7 +895,7 @@ export const Users = {
         if (btnCloseChangePwd) btnCloseChangePwd.addEventListener("click", closeChangePwdModal);
         if (btnCancelChangePwd) btnCancelChangePwd.addEventListener("click", closeChangePwdModal);
 
-        changePwdForm.addEventListener("submit", (e) => {
+        changePwdForm.addEventListener("submit", async (e) => {
             e.preventDefault();
 
             const currentPwd = document.getElementById("current-pwd").value;
@@ -912,7 +913,10 @@ export const Users = {
                 return;
             }
 
-            if (users[idx].password !== currentPwd) {
+            const currentHash = await hashPassword(currentPwd);
+            const storedPwd = String(users[idx].password || "");
+            const isMatch = storedPwd === currentPwd || storedPwd.toLowerCase() === currentHash.toLowerCase();
+            if (!isMatch) {
                 alert("Senha atual incorreta!");
                 return;
             }
@@ -929,7 +933,7 @@ export const Users = {
                 return;
             }
 
-            users[idx].password = newPwd;
+            users[idx].password = await hashPassword(newPwd);
             Store.saveUsers(users);
             Store.addLog(currentUser.email, "PASSWORD_CHANGE", "Própria senha redefinida com sucesso.", "SUCCESS");
 

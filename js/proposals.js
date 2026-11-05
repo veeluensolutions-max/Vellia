@@ -1,6 +1,7 @@
 import { Store } from "./store.js";
 import { Auth } from "./auth.js";
 import { Audit } from "./audit.js";
+import { parseCurrency } from "./utils.js";
 
 let activeProposalId = null;
 let isSaving = false;
@@ -1208,8 +1209,8 @@ export const Proposals = {
             totalProducts += subtotal;
         });
 
-        const freight = parseFloat(document.getElementById("gc-budget-freight")?.value) || 0;
-        const discCash = parseFloat(document.getElementById("gc-total-discount-cash")?.value) || 0;
+        const freight = parseCurrency(document.getElementById("gc-budget-freight")?.value);
+        const discCash = parseCurrency(document.getElementById("gc-total-discount-cash")?.value);
         const discPct = parseFloat(document.getElementById("gc-total-discount-pct")?.value) || 0;
 
         const subtotalSum = totalServices + totalProducts + freight;
@@ -1287,7 +1288,7 @@ export const Proposals = {
             const costCenter = getVal("gc-budget-cost-center");
             const intro = getVal("gc-budget-intro");
             const techDescription = getVal("gc-budget-tech-desc");
-            const freight = parseFloat(getVal("gc-budget-freight")) || 0;
+            const freight = parseCurrency(getVal("gc-budget-freight"));
             const carrier = getVal("gc-budget-carrier");
             const notes = getVal("gc-budget-notes");
             const internalNotes = getVal("gc-budget-internal-notes");
@@ -1614,7 +1615,7 @@ export const Proposals = {
         const updatedData = {
             title: document.getElementById("edit-prop-title").value.trim(),
             service: document.getElementById("edit-prop-service").value,
-            value: parseFloat(document.getElementById("edit-prop-value").value) || 0,
+            value: parseCurrency(document.getElementById("edit-prop-value").value),
             validUntil: validUntil ? new Date(validUntil).toISOString() : null,
             notes: document.getElementById("edit-prop-notes").value.trim()
         };
@@ -1669,7 +1670,7 @@ export const Proposals = {
         if (!proposal) return;
 
         const service = document.getElementById("win-service").value;
-        const finalValue = parseFloat(document.getElementById("win-value").value) || proposal.value;
+        const finalValue = parseCurrency(document.getElementById("win-value").value) || proposal.value;
         const executionDate = document.getElementById("win-execution").value;
 
         Store.updateProposal(activeProposalId, {

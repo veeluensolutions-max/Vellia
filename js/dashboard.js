@@ -2828,8 +2828,10 @@ export const Dashboard = {
                     </div>
                 `;
 
-                document.getElementById("btn-finish-current-task").onclick = () => this.finishLiveActivity(activeActivity.id);
-                document.getElementById("btn-cancel-current-task").onclick = () => this.cancelLiveActivity(activeActivity.id);
+                const btnFinish = document.getElementById("btn-finish-current-task");
+                if (btnFinish) btnFinish.onclick = () => this.finishLiveActivity(activeActivity.id);
+                const btnCancel = document.getElementById("btn-cancel-current-task");
+                if (btnCancel) btnCancel.onclick = () => this.cancelLiveActivity(activeActivity.id);
 
             } else {
                 // VENDEDOR NÃO TEM ATIVIDADE EM ANDAMENTO: FORMULÁRIO DE REGISTRO MODERNO E LIMPO
@@ -2970,11 +2972,14 @@ export const Dashboard = {
                 };
 
                 // Botão de iniciar atividade
-                document.getElementById("btn-start-seller-activity").onclick = () => {
-                    const text = inputActivity.value.trim();
-                    const dur = parseInt(customMinInput.value) || 30;
-                    this.startLiveActivity(currentSellerEmail, currentSellerName, text, dur);
-                };
+                const btnStart = document.getElementById("btn-start-seller-activity");
+                if (btnStart) {
+                    btnStart.onclick = () => {
+                        const text = inputActivity ? inputActivity.value.trim() : "";
+                        const dur = parseInt(customMinInput ? customMinInput.value : "30") || 30;
+                        this.startLiveActivity(currentSellerEmail, currentSellerName, text, dur);
+                    };
+                }
             }
         }
 

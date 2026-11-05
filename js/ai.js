@@ -770,7 +770,7 @@ Pergunta do usuário: "${text}"
         }
 
         insightsContainer.innerHTML = insights.map(ins => `
-            <div style="background: var(--bg-app); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border-color)'" onclick="document.getElementById('ai-chat-input').value='${ins.command}'; document.getElementById('ai-chat-form').dispatchEvent(new Event('submit'))">
+            <div style="background: var(--bg-app); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border-color)'" onclick="if(window.Copilot && window.Copilot.openPanel){ window.Copilot.openPanel(); window.Copilot.sendUserMessage('${ins.command}'); }">
                 <div style="display: flex; gap: 10px; align-items: flex-start;">
                     <div style="font-size: 18px;">${ins.icon}</div>
                     <div>

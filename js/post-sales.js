@@ -31,10 +31,24 @@ export const PostSales = {
     },
 
     getClosedClients() {
-        // Obter todos os leads
-        const allLeads = Store.getAllLeadsRaw();
-        // Filtrar apenas os que estão no estágio "Cliente Fechado" e não foram deletados
-        return allLeads.filter(l => l.stage === "Cliente Fechado" && !l.deleted_at);
+        const leads = Store.getLeads ? Store.getLeads() : Store.getAllLeadsRaw();
+        const currentUser = (typeof Auth !== "undefined" && Auth.getCurrentUser) ? Auth.getCurrentUser() : null;
+        const role = (currentUser?.role || "").toLowerCase().trim();
+        const isAdmin = role === "admin" || role === "manager" || role === "gerente";
+
+        // Filtrar apenas os que estão no estágio de fechamento e não foram deletados
+        let closed = leads.filter(l => (l.stage === "Cliente Fechado" || l.stage === "Fechado" || l.stage === "Ganho") && !l.deleted_at);
+
+        // Vendedor visualiza apenas clientes da sua carteira
+        if (!isAdmin && currentUser) {
+            const userEmail = (currentUser.email || "").toLowerCase().trim();
+            closed = closed.filter(l => {
+                const owner = (l.owner || "").toLowerCase().trim();
+                const createdBy = (l.createdBy || "").toLowerCase().trim();
+                return owner === userEmail || createdBy === userEmail;
+            });
+        }
+        return closed;
     },
 
     calculateInactivity(lead) {

@@ -60,7 +60,17 @@ export const Trash = {
 
         const currentUser = Auth.getCurrentUser();
         const canPurge = currentUser && (currentUser.role === "admin" || currentUser.role === "manager");
-        const leads = Store.getTrashLeads();
+        let leads = Store.getTrashLeads();
+
+        // Vendedor visualiza apenas leads excluídos da sua própria carteira
+        if (!canPurge && currentUser) {
+            const userEmail = (currentUser.email || "").toLowerCase().trim();
+            leads = leads.filter(l => {
+                const owner = (l.owner || "").toLowerCase().trim();
+                const createdBy = (l.createdBy || "").toLowerCase().trim();
+                return owner === userEmail || createdBy === userEmail;
+            });
+        }
 
         // Mostrar/ocultar botão de esvaziar lixeira
         const btnEmpty = document.getElementById("btn-empty-trash");

@@ -37,6 +37,7 @@ import { QualificationAI } from "./qualification-ai.js";
 import { VisionOCR } from "./vision-ocr.js";
 import { Clients } from "./clients.js";
 import { Users } from "./users.js";
+import { Learning } from "./learning.js";
 
 // Elementos Globais DOM (Getters Dinâmicos para garantia de não-nulidade)
 const elements = {
@@ -413,6 +414,11 @@ function navigateTo(viewName) {
     document.querySelectorAll(".spa-view").forEach(view => {
         view.style.display = "none";
     });
+
+    // Inicialização da Base de Aprendizado de Serviços
+    if (viewName === "learning" && window.Learning) {
+        window.Learning.init();
+    }
 
     // Mostrar view selecionada
     const targetView = document.getElementById(`view-${viewName}`);

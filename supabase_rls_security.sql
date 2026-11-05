@@ -81,3 +81,4 @@ CREATE INDEX IF NOT EXISTS idx_users_email ON comercial_users (email);
 
 -- Confirmação de execução
 COMMENT ON TABLE comercial_leads IS 'Tabela de leads do Vellia CRM com proteção de acesso por proprietário.';
+

@@ -2230,8 +2230,28 @@ export const CRM = {
     // MODAL DE CADASTRO DE NOVO LEAD
     // ==========================================================================
     
-    openNewLeadModal() {
+    openNewLeadModal(prefillData = null) {
         document.getElementById("new-lead-form").reset();
+        if (prefillData) {
+            if (prefillData.service) {
+                const notesEl = document.getElementById("lead-notes");
+                if (notesEl) {
+                    notesEl.value = "🎯 Lead direcionado via Guia de Serviços:\n" +
+                        "• Serviço: " + prefillData.service + "\n" +
+                        "• Unidade: " + (prefillData.company || "") + "\n" +
+                        "• Referência de Preço: " + (prefillData.priceRef || "") + "\n\n" +
+                        (prefillData.notes || "");
+                }
+            }
+            if (prefillData.segment) {
+                const segEl = document.getElementById("lead-segment");
+                if (segEl) segEl.value = prefillData.segment;
+            }
+            if (prefillData.source) {
+                const srcEl = document.getElementById("lead-source");
+                if (srcEl) srcEl.value = prefillData.source;
+            }
+        }
         const statusEl = document.getElementById("lead-cnpj-status");
         if (statusEl) {
             statusEl.textContent = "Digite o CNPJ para auto-completar";

@@ -834,7 +834,7 @@ export const Proposals = {
         datalist.innerHTML = Array.from(names).map(name => `<option value="${name}"></option>`).join("");
     },
 
-    openBudgetScreen(proposalId = null, leadData = null, suggestedService = null) {
+    openBudgetScreen(proposalId = null, leadData = null, suggestedService = null, suggestedPrice = 0) {
         currentEditingBudgetId = proposalId;
         currentBudgetAttachments = [];
 
@@ -1007,7 +1007,7 @@ export const Proposals = {
                 service: suggestedService || (leadData?.service || "Licenciamento Ambiental"),
                 details: leadData?.company ? `Atendimento especializado para ${leadData.company}` : "",
                 qty: 1,
-                price: 0
+                price: (suggestedPrice !== null && suggestedPrice !== undefined && suggestedPrice > 0) ? suggestedPrice : 0
             });
 
             // Produtos
@@ -1062,8 +1062,8 @@ export const Proposals = {
         this.renderLossAnalysis();
     },
 
-    openModal(leadData = null, suggestedService = null) {
-        this.openBudgetScreen(null, leadData, suggestedService);
+    openModal(leadData = null, suggestedService = null, suggestedPrice = 0) {
+        this.openBudgetScreen(null, leadData, suggestedService, suggestedPrice);
     },
 
     closeModal() {

@@ -747,8 +747,11 @@ export const Learning = {
                         </div>
                     </div>
                     <div style="display: flex; gap: 10px;">
-                        <button type="button" class="btn btn-primary" onclick="window.Learning.openProposalForService('${s.id}')" style="font-size: 12px; padding: 8px 16px;">
-                            📄 Gerar Orçamento Deste Serviço
+                        <button type="button" class="btn btn-outline" onclick="window.Learning.openLeadForService('${s.id}')" style="font-size: 12px; padding: 8px 14px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                            <span>🎯</span> Cadastrar Lead
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="window.Learning.openProposalForService('${s.id}')" style="font-size: 12px; padding: 8px 16px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                            <span>📄</span> Gerar Proposta Direta
                         </button>
                     </div>
                 </div>
@@ -787,6 +790,40 @@ export const Learning = {
         });
     },
 
+    extractReferencePrice(refString) {
+        if (!refString) return 0;
+        const match = refString.match(/R\$\s*([0-9.]+)/i);
+        if (match && match[1]) {
+            const cleanNum = match[1].replace(/\./g, "");
+            const parsed = parseFloat(cleanNum);
+            return isNaN(parsed) ? 0 : parsed;
+        }
+        return 0;
+    },
+
+    openLeadForService(serviceId) {
+        const s = this.services.find(srv => srv.id === serviceId);
+        if (!s) return;
+
+        this.closeDetailModal();
+
+        window.location.hash = "#crm";
+        setTimeout(() => {
+            if (window.CRM && window.CRM.openNewLeadModal) {
+                window.CRM.openNewLeadModal({
+                    service: s.title,
+                    company: s.company,
+                    priceRef: s.pricingReference,
+                    segment: s.category || "Outros",
+                    source: "Outbound",
+                    notes: "Qualificação inicial orientada pelo Manual de Serviços:\n" +
+                        s.qualificationQuestions.slice(0, 3).map((q, i) => `${i + 1}. ${q}`).join("\n")
+                });
+                if (window.Toast) Toast.success("Novo Lead Iniciado!", `Formulário preparado para o serviço: ${s.title}`);
+            }
+        }, 300);
+    },
+
     openProposalForService(serviceId) {
         const s = this.services.find(srv => srv.id === serviceId);
         if (!s) return;
@@ -796,20 +833,27 @@ export const Learning = {
         // Se tiver calculadora específica (ex: isocinética)
         if (s.calculatorRoute === "#isocinetica") {
             window.location.hash = "#isocinetica";
+            if (window.Toast) Toast.info("Calculadora Aberta", `Dimensionamento de ${s.title} pronto para uso.`);
             return;
         }
 
-        // Navegar para propostas e abrir tela de orçamento preenchida
+        const suggestedPrice = this.extractReferencePrice(s.pricingReference);
+
         window.location.hash = "#proposals";
         setTimeout(() => {
             if (window.Proposals && window.Proposals.openBudgetScreen) {
-                window.Proposals.openBudgetScreen();
-                const titleInput = document.getElementById("gc-budget-title");
-                if (titleInput) {
-                    titleInput.value = `Proposta — ${s.title}`;
+                window.Proposals.openBudgetScreen(null, null, s.title, suggestedPrice);
+                
+                const techDesc = document.getElementById("gc-budget-tech-desc");
+                if (techDesc) {
+                    techDesc.value = `Serviço Técnico Especializado: ${s.title}\n\n` +
+                        `Legislação e Normas Aplicáveis: ${s.legislation}\n\n` +
+                        `Escopo Resumido:\n${s.fullDescription}`;
                 }
+
+                if (window.Toast) Toast.success("Orçamento Inicializado!", `Serviço "${s.title}" pré-configurado com sucesso.`);
             }
-        }, 300);
+        }, 350);
     }
 };
 

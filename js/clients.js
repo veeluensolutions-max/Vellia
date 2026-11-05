@@ -117,8 +117,32 @@ export const Clients = {
     getClientsList() {
         const leads = Store.getLeads() || [];
         const proposals = Store.getProposals() || [];
+        const users = Store.getUsers() || [];
+        const currentUser = Auth.getCurrentUser();
 
-        return leads.map(lead => {
+        // Controle de Acesso: Apenas Administrador/Gerente visualiza toda a carteira;
+        // Vendedores visualizam APENAS os clientes que eles mesmos cadastraram ou dos quais são responsáveis (owner/createdBy).
+        const role = (currentUser?.role || "").toLowerCase().trim();
+        const isAdmin = role === "admin" || role === "manager" || role === "gerente";
+
+        let filteredLeads = leads;
+        if (!isAdmin && currentUser) {
+            const userEmail = (currentUser.email || "").toLowerCase().trim();
+            filteredLeads = leads.filter(lead => {
+                const ownerEmail = (lead.owner || "").toLowerCase().trim();
+                const createdByEmail = (lead.createdBy || "").toLowerCase().trim();
+                return ownerEmail === userEmail || createdByEmail === userEmail;
+            });
+        }
+
+        const userMap = new Map();
+        users.forEach(u => {
+            if (u.email) userMap.set(u.email.toLowerCase().trim(), u.name || u.email);
+        });
+
+        return filteredLeads.map(lead => {
+            const leadOwnerEmail = (lead.owner || "").toLowerCase().trim();
+            const ownerDisplayName = userMap.get(leadOwnerEmail) || lead.owner || "Não atribuído";
             // Vincula propostas pelo leadId OU pelo nome exato da empresa
             const clientProposals = proposals.filter(p => {
                 if (p.leadId && String(p.leadId) === String(lead.id)) return true;
@@ -173,6 +197,8 @@ export const Clients = {
                 segment: lead.segment || "Geral",
                 stage: lead.stage || "lead",
                 owner: lead.owner || "Não atribuído",
+                ownerName: ownerDisplayName,
+                createdBy: lead.createdBy || lead.owner || "",
                 createdAt: lead.createdAt || lead.dateAdded || new Date().toISOString(),
                 situacao,
                 situacaoClass,
@@ -217,10 +243,22 @@ export const Clients = {
         const filter = document.getElementById("clients-seller-filter");
         if (!filter) return;
 
+        const currentUser = Auth.getCurrentUser();
+        const role = (currentUser?.role || "").toLowerCase().trim();
+        const isAdmin = role === "admin" || role === "manager" || role === "gerente";
+
+        // Vendedor não visualiza filtro de outros vendedores
+        if (!isAdmin) {
+            filter.style.display = "none";
+            this._currentSellerFilter = "all";
+            return;
+        }
+
+        filter.style.display = "inline-block";
         const users = Store.getUsers() || [];
         const sellers = users.filter(u => {
-            const role = (u.role || "").toLowerCase();
-            return role === "seller" || role === "vendedor";
+            const r = (u.role || "").toLowerCase();
+            return r === "seller" || r === "vendedor";
         });
 
         filter.innerHTML = `
@@ -263,9 +301,14 @@ export const Clients = {
             }
         }
 
-        // Filtro por Vendedor
-        if (this._currentSellerFilter !== "all") {
-            clients = clients.filter(c => c.owner === this._currentSellerFilter);
+        // Filtro por Vendedor (Apenas para Admins)
+        const currentUser = Auth.getCurrentUser();
+        const userRole = (currentUser?.role || "").toLowerCase().trim();
+        const isAdminUser = userRole === "admin" || userRole === "manager" || userRole === "gerente";
+
+        if (isAdminUser && this._currentSellerFilter !== "all") {
+            const targetSeller = this._currentSellerFilter.toLowerCase().trim();
+            clients = clients.filter(c => (c.owner || "").toLowerCase().trim() === targetSeller);
         }
 
         if (counterEl) {
@@ -324,6 +367,7 @@ export const Clients = {
                                 <div class="client-subtext">
                                     ${client.contact}${client.role ? ` • ${client.role}` : ''}
                                     ${client.city ? ` • ${client.city}/${client.state}` : ''}
+                                    ${isAdminUser && client.ownerName ? ` • <span style="color:var(--primary); font-weight:600;" title="Vendedor cadastrado">👤 ${client.ownerName}</span>` : ''}
                                 </div>
                             </div>
                         </div>
@@ -373,6 +417,13 @@ export const Clients = {
      * Abre a Visão 360º com o Histórico Completo de Orçamentos e Propostas do Cliente
      */
     openClientHistory(clientId) {
+        const clients = this.getClientsList();
+        const client = clients.find(c => String(c.id) === String(clientId));
+        if (!client) {
+            alert("Acesso Negado: Você só pode visualizar o histórico de clientes cadastrados por você.");
+            return;
+        }
+
         this._activeClientDetailId = clientId;
         const modal = document.getElementById("modal-client-history");
         if (!modal) return;
@@ -617,9 +668,13 @@ export const Clients = {
         document.getElementById("client-form-id").value = "";
 
         if (clientId) {
-            if (titleEl) titleEl.textContent = "Editar Dados do Cliente";
             const clients = this.getClientsList();
             const client = clients.find(c => String(c.id) === String(clientId));
+            if (!client) {
+                alert("Acesso Negado: Você só pode editar clientes cadastrados por você.");
+                return;
+            }
+            if (titleEl) titleEl.textContent = "Editar Dados do Cliente";
             if (client) {
                 document.getElementById("client-form-id").value = client.id;
                 document.getElementById("client-form-company").value = client.company || "";
@@ -710,6 +765,13 @@ export const Clients = {
         }
 
         const currentUser = Auth.getCurrentUser();
+        let targetOwner = currentUser ? currentUser.email : "admin@vellia.com";
+        if (id) {
+            const existingLead = Store.getLeadById(id);
+            if (existingLead && existingLead.owner) {
+                targetOwner = existingLead.owner; // Preserva o vendedor que cadastrou o lead
+            }
+        }
         const clientData = {
             company,
             tradeName,
@@ -722,7 +784,7 @@ export const Clients = {
             city,
             state,
             segment,
-            owner: currentUser ? currentUser.email : "admin@vellia.com"
+            owner: targetOwner
         };
 
         if (id) {
@@ -748,7 +810,11 @@ export const Clients = {
     deleteClient(clientId) {
         const clients = this.getClientsList();
         const client = clients.find(c => String(c.id) === String(clientId));
-        const name = client ? client.company : "este cliente";
+        if (!client) {
+            alert("Acesso Negado: Você só pode remover clientes da sua própria carteira.");
+            return;
+        }
+        const name = client.company || "este cliente";
 
         if (confirm(`Deseja realmente remover ${name}? Todas as propostas associadas permanecerão no histórico de auditoria.`)) {
             Store.deleteLead(clientId);

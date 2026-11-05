@@ -149,9 +149,16 @@ export const Kanban = {
         let leads = Store.getLeads();
         
         const session = JSON.parse(sessionStorage.getItem("comercial_session") || localStorage.getItem("comercial_session") || "null");
-        if (session && session.role === "seller") {
+        const role = (session?.role || "").toLowerCase().trim();
+        const isAdmin = role === "admin" || role === "manager" || role === "gerente";
+
+        if (session && !isAdmin) {
             const sellerEmail = (session.email || "").toLowerCase().trim();
-            leads = leads.filter(l => (l.owner || "").toLowerCase().trim() === sellerEmail);
+            leads = leads.filter(l => {
+                const owner = (l.owner || "").toLowerCase().trim();
+                const createdBy = (l.createdBy || "").toLowerCase().trim();
+                return owner === sellerEmail || createdBy === sellerEmail;
+            });
         } else {
             const ownerSelect = document.getElementById("kanban-filter-owner");
             if (ownerSelect && ownerSelect.value && ownerSelect.value !== "all") {

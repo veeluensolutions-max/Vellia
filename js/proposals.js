@@ -317,10 +317,45 @@ export const Proposals = {
     },
 
     // ==========================================================================
+    // CONTROLE DE ACESSO A ORÇAMENTOS
+    // ==========================================================================
+    getFilteredProposalsForUser() {
+        let proposals = Store.getProposals() || [];
+        const currentUser = Auth.getCurrentUser();
+        const role = (currentUser?.role || "").toLowerCase().trim();
+        const isAdmin = role === "admin" || role === "manager" || role === "gerente";
+
+        if (!isAdmin && currentUser) {
+            const userEmail = (currentUser.email || "").toLowerCase().trim();
+            const userName = (currentUser.name || "").toLowerCase().trim();
+            const userLeads = (Store.getLeads() || []).filter(l => {
+                const owner = (l.owner || "").toLowerCase().trim();
+                const createdBy = (l.createdBy || "").toLowerCase().trim();
+                return owner === userEmail || createdBy === userEmail;
+            });
+            const allowedLeadIds = new Set(userLeads.map(l => String(l.id)));
+            const allowedCompanies = new Set(userLeads.map(l => (l.company || "").toLowerCase().trim()));
+
+            proposals = proposals.filter(p => {
+                const author = (p.authorEmail || p.createdBy || "").toLowerCase().trim();
+                const seller = (p.seller || "").toLowerCase().trim();
+                const company = (p.company || "").toLowerCase().trim();
+                const leadId = p.leadId ? String(p.leadId) : "";
+
+                return author === userEmail ||
+                       seller === userName ||
+                       (leadId && allowedLeadIds.has(leadId)) ||
+                       (company && allowedCompanies.has(company));
+            });
+        }
+        return proposals;
+    },
+
+    // ==========================================================================
     // KPI STATS
     // ==========================================================================
     renderStats() {
-        const proposals = Store.getProposals();
+        const proposals = this.getFilteredProposalsForUser();
         const total = proposals.length;
         const sent = proposals.filter(p => p.status === "Enviada").length;
         const won = proposals.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)).length;
@@ -358,7 +393,7 @@ export const Proposals = {
         const tbody = document.getElementById("proposals-table-body");
         if (!tbody) return;
 
-        const proposals = Store.getProposals();
+        const proposals = this.getFilteredProposalsForUser();
         const search = document.getElementById("proposals-search")?.value.toLowerCase().trim() || "";
         const statusFilter = document.getElementById("proposals-filter-status")?.value || "all";
 

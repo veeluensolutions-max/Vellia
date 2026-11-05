@@ -601,10 +601,17 @@ export const CRM = {
                 });
             }
         } else {
-            // Vendedor: filtra leads atribuídos a ele
-            leads = leads.filter(l => l.owner === currentUser?.email);
+            // Vendedor: filtra leads cadastrados por ele ou atribuídos a ele (case-insensitive)
+            const userEmail = (currentUser?.email || "").toLowerCase().trim();
+            leads = leads.filter(l => {
+                const owner = (l.owner || "").toLowerCase().trim();
+                const createdBy = (l.createdBy || "").toLowerCase().trim();
+                return owner === userEmail || createdBy === userEmail;
+            });
             if (btnAiDistribute) btnAiDistribute.style.display = "none";
             if (ownerFilterGroup) ownerFilterGroup.style.display = "none";
+            const colOwnerFilter = document.getElementById("lead-col-filter-owner");
+            if (colOwnerFilter) colOwnerFilter.style.display = "none";
         }
 
         // Popular dropdown de vendedores da coluna da tabela
@@ -1374,6 +1381,20 @@ export const CRM = {
     openLeadDrawer(id) {
         const lead = Store.getLeadById(id);
         if (!lead) return;
+
+        const currentUser = Auth.getCurrentUser();
+        const role = (currentUser?.role || "").toLowerCase().trim();
+        const isAdmin = role === "admin" || role === "manager" || role === "gerente";
+
+        if (!isAdmin && currentUser) {
+            const userEmail = (currentUser.email || "").toLowerCase().trim();
+            const owner = (lead.owner || "").toLowerCase().trim();
+            const createdBy = (lead.createdBy || "").toLowerCase().trim();
+            if (owner !== userEmail && createdBy !== userEmail) {
+                alert("Acesso Negado: Você só pode visualizar leads cadastrados por você.");
+                return;
+            }
+        }
 
         activeLeadId = id;
 

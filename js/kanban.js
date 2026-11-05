@@ -30,7 +30,7 @@ export const Kanban = {
 
         const ownerSelect = document.getElementById("kanban-filter-owner");
         const ownerGroup = document.getElementById("kanban-filter-owner-group");
-        const session = JSON.parse(localStorage.getItem("comercial_session"));
+        const session = JSON.parse(sessionStorage.getItem("comercial_session") || localStorage.getItem("comercial_session") || "null");
 
         if (session && session.role !== "seller" && ownerGroup && ownerSelect) {
             ownerGroup.style.display = "block";
@@ -148,7 +148,7 @@ export const Kanban = {
     renderKanban() {
         let leads = Store.getLeads();
         
-        const session = JSON.parse(localStorage.getItem("comercial_session"));
+        const session = JSON.parse(sessionStorage.getItem("comercial_session") || localStorage.getItem("comercial_session") || "null");
         if (session && session.role === "seller") {
             const sellerEmail = (session.email || "").toLowerCase().trim();
             leads = leads.filter(l => (l.owner || "").toLowerCase().trim() === sellerEmail);

@@ -256,7 +256,7 @@ function processIncomingTask(type, record, oldRecord) {
     // Obter o usuário logado atualmente para decidir se notifica
     let currentUser = null;
     try {
-        currentUser = JSON.parse(localStorage.getItem("comercial_session"));
+        currentUser = JSON.parse(sessionStorage.getItem("comercial_session") || localStorage.getItem("comercial_session") || "null");
     } catch (e) {}
 
     // Notificar visualmente o vendedor se for uma nova tarefa atribuída por outra pessoa

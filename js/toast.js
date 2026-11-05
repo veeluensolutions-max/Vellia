@@ -16,7 +16,15 @@ export const Toast = {
         }
     },
 
-    show({ type = "info", title = "", message = "", duration = 4000 }) {
+    show(options = {}, legacyType = "info") {
+        if (typeof options === "string") {
+            options = {
+                message: options,
+                type: legacyType,
+                title: legacyType === "success" ? "Sucesso" : legacyType === "warning" ? "Aviso" : legacyType === "error" ? "Erro" : "Informação"
+            };
+        }
+        const { type = "info", title = "", message = "", duration = 4000 } = options;
         this.init();
 
         // Tocar Chime Áudio correspondente

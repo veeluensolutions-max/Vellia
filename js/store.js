@@ -864,7 +864,8 @@ export const Store = {
 
     getLeadById(id) {
         // Busca em TODOS os leads (ativos + lixeira) para operações de restauração
-        return this.getAllLeadsRaw().find(l => l.id === id);
+        if (id == null) return null;
+        return this.getAllLeadsRaw().find(l => String(l.id) === String(id)) || null;
     },
 
     moveToTrash(leadId, userEmail = "sistema@vellia.com") {
@@ -998,10 +999,10 @@ export const Store = {
         }
 
         const leads = this.getAllLeadsRaw();
-        const index = leads.findIndex(l => l.id === leadId);
+        const index = leads.findIndex(l => String(l.id) === String(leadId));
         if (index !== -1) {
             const newInteraction = {
-                id: `int_${Date.now()}`,
+                id: `int_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
                 type: interaction?.type || "WhatsApp", // Ligação, WhatsApp, Reunião, etc.
                 description: interaction?.description || "",
                 timestamp: new Date().toISOString(),
@@ -1013,7 +1014,7 @@ export const Store = {
             upsertSupabase("comercial_leads", encodeLeadForSupabase(leads[index]));
             window.dispatchEvent(new CustomEvent("vellia:leadUpdated", { detail: leads[index] }));
             window.dispatchEvent(new CustomEvent("vellia:scoreUpdated", { detail: { sellerEmail: userEmail, action: "INTERACTION_ADDED", points: 10 } }));
-            window.dispatchEvent(new CustomEvent("vellia:waSent"));
+            window.dispatchEvent(new CustomEvent("vellia:waSent", { detail: { leadId: leads[index].id, lead: leads[index], interaction: newInteraction } }));
             return newInteraction;
         }
         return null;
@@ -1463,7 +1464,7 @@ export const Store = {
         if (Array.isArray(email) && tasks === undefined) {
             tasks = email;
             try {
-                const session = JSON.parse(localStorage.getItem("comercial_session"));
+                const session = JSON.parse(sessionStorage.getItem("comercial_session") || localStorage.getItem("comercial_session") || "null");
                 email = session?.email || "gestao@vellia.com";
             } catch(e) {
                 email = "gestao@vellia.com";
@@ -1541,7 +1542,7 @@ export const Store = {
             // Obter o usuário logado atualmente para decidir se notifica de novas tarefas
             let currentUser = null;
             try {
-                currentUser = JSON.parse(localStorage.getItem("comercial_session"));
+                currentUser = JSON.parse(sessionStorage.getItem("comercial_session") || localStorage.getItem("comercial_session") || "null");
             } catch (e) {}
 
             // Notificar se novas tarefas foram atribuídas por outra pessoa

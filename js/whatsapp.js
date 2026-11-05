@@ -1,6 +1,7 @@
 import { Store } from "./store.js";
 import { Auth } from "./auth.js";
 import { Audit } from "./audit.js";
+import { Toast } from "./toast.js";
 
 export const WhatsApp = {
     activeLeadId: null,
@@ -355,21 +356,35 @@ export const WhatsApp = {
         // Fechar modal
         this.closeModal();
 
-        // Recarregar tabelas e visualizações ativas
-        const currentHash = window.location.hash.replace("#", "") || "dashboard";
-        if (currentHash === "crm") {
-            window.CRM?.renderLeadsTable();
-            if (window.CRM?.activeLeadId === lead.id) {
-                window.CRM?.openLeadDrawer(lead.id);
+        // Buscar lead atualizado com a nova interação registrada
+        const updatedLead = Store.getLeadById(lead.id) || lead;
+
+        // Atualizar imediatamente qualquer visualização aberta do lead no CRM
+        if (window.CRM) {
+            window.CRM.renderLeadsTable?.();
+            const currentDrawerLeadId = window.CRM.activeLeadId;
+            const isDrawerOpen = document.getElementById("lead-drawer")?.classList.contains("open");
+            
+            if (isDrawerOpen && (!currentDrawerLeadId || String(currentDrawerLeadId) === String(lead.id))) {
+                window.CRM.renderTimeline?.(updatedLead);
+                window.CRM.renderWhatsAppChat?.(updatedLead);
+                window.CRM.renderFollowups?.(updatedLead);
             }
-        } else if (currentHash === "kanban") {
-            window.Kanban?.init();
-        } else if (currentHash === "proposals") {
-            window.Proposals?.renderTable();
         }
 
-        // Disparar evento para atualizar outros componentes (ex: ranking)
-        window.dispatchEvent(new CustomEvent("vellia:waSent"));
+        // Atualizar outras abas se ativas
+        if (window.Kanban && typeof window.Kanban.init === "function") {
+            window.Kanban.init();
+        }
+        if (window.Proposals && typeof window.Proposals.renderTable === "function") {
+            window.Proposals.renderTable();
+        }
+
+        // Notificação de sucesso visual
+        Toast.success("WhatsApp Registrado", `A mensagem de WhatsApp foi gravada na Linha do Tempo de ${lead.company}!`);
+
+        // Disparar evento para atualizar outros componentes (ex: ranking, contadores)
+        window.dispatchEvent(new CustomEvent("vellia:waSent", { detail: { leadId: lead.id, lead: updatedLead } }));
     },
 
     async generateMessageAI() {

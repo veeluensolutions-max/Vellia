@@ -96,7 +96,7 @@ export const Dashboard = {
                 if (viewDashboard && viewDashboard.style.display !== "none") {
                     let proposals = Store.getProposals();
                     let leads = Store.getLeads();
-                    const session = JSON.parse(localStorage.getItem("comercial_session"));
+                    const session = JSON.parse(sessionStorage.getItem("comercial_session") || localStorage.getItem("comercial_session") || "null");
                     if (session && session.role === "seller") {
                         leads = leads.filter(l => l.owner === session.email);
                         proposals = proposals.filter(p => p.authorEmail === session.email);
@@ -124,7 +124,7 @@ export const Dashboard = {
             if (viewDashboard && viewDashboard.style.display !== "none") {
                 let currentLeads = Store.getLeads();
                 let currentProposals = Store.getProposals();
-                const session = JSON.parse(localStorage.getItem("comercial_session"));
+                const session = JSON.parse(sessionStorage.getItem("comercial_session") || localStorage.getItem("comercial_session") || "null");
                 
                 if (session && session.role === "seller") {
                     currentLeads = currentLeads.filter(l => l.owner === session.email);
@@ -193,7 +193,7 @@ export const Dashboard = {
         if (!user) return;
 
         let leads = Store.getLeads();
-        const session = JSON.parse(localStorage.getItem("comercial_session"));
+        const session = JSON.parse(sessionStorage.getItem("comercial_session") || localStorage.getItem("comercial_session") || "null");
         if (session && session.role === "seller") {
             leads = leads.filter(l => l.owner === session.email);
         }
@@ -1566,7 +1566,7 @@ export const Dashboard = {
         const pctLabel  = document.getElementById("task-pct-value");
         if (!weekCanvas) return;
 
-        const session = JSON.parse(localStorage.getItem("comercial_session"));
+        const session = JSON.parse(sessionStorage.getItem("comercial_session") || localStorage.getItem("comercial_session") || "null");
         if (!session) return;
 
         const userEmail = session.email;

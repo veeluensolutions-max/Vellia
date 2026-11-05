@@ -75,19 +75,28 @@ const INACTIVITY_WARN_TIME = 9 * 60 * 1000; // 9 minutos de inatividade antes do
 const COUNTDOWN_DURATION = 60; // 60 segundos de contagem regressiva
 
 function checkLockout() {
-    // Limpeza de bloqueios residuais
-    try {
-        Object.keys(localStorage).forEach(k => {
-            if (k.startsWith("lockout_") || k.startsWith("attempts_")) {
-                localStorage.removeItem(k);
-            }
-        });
-    } catch(e) {}
+    const email = elements.loginEmail ? elements.loginEmail.value.trim().toLowerCase() : "";
+    if (!email) return false;
 
+    const lockoutUntil = localStorage.getItem(`lockout_${email}`);
+    if (lockoutUntil) {
+        const remaining = parseInt(lockoutUntil, 10) - Date.now();
+        if (remaining > 0) {
+            const minutes = Math.ceil(remaining / 60000);
+            if (elements.loginError && elements.loginErrorText) {
+                elements.loginError.style.display = "flex";
+                elements.loginErrorText.textContent = `Acesso temporariamente bloqueado. Tente novamente em ${minutes} minuto(s).`;
+            }
+            const btnSubmit = document.getElementById("btn-login-submit");
+            if (btnSubmit) btnSubmit.disabled = true;
+            return true;
+        } else {
+            localStorage.removeItem(`lockout_${email}`);
+            localStorage.removeItem(`attempts_${email}`);
+        }
+    }
     const btnSubmit = document.getElementById("btn-login-submit");
     if (btnSubmit) btnSubmit.disabled = false;
-    if (elements.loginEmail) elements.loginEmail.disabled = false;
-    if (elements.loginPassword) elements.loginPassword.disabled = false;
     return false;
 }
 
@@ -178,24 +187,19 @@ function stopPresenceHeartbeat() {
 // INICIALIZAÇÃO E CONTROLE DE SESSÃO
 // ==========================================================================
 
+let _appModulesInitialized = false;
+
 function initApp() {
+    // Limpeza de segurança: remove qualquer sessão permanente legada do localStorage
+    try {
+        localStorage.removeItem("comercial_session");
+    } catch(e) {}
+
     setupEventListeners();
     setupTheme();
-    window.WhatsApp = WhatsApp;
-    window.Copilot = Copilot;
-    window.CRM = CRM;
-    window.Proposals = Proposals;
-    WhatsApp.init();
-    Copilot.init();
-    Intervention.init();
-    ChurnAutopilot.init();
-    Leaderboard.init();
     ThemeManager.init();
     
-    // Inicializar Workspace
-    const savedCompany = localStorage.getItem("activeCompany") || "Veeluen Solutions";
-    window.switchCompany(savedCompany);
-    
+    // Verifica a sessão temporária ativa antes de qualquer renderização
     checkSession();
 }
 
@@ -249,18 +253,40 @@ function checkSession() {
 }
 
 function showLoginScreen() {
-    elements.appShell.style.display = "none";
-    elements.loginScreen.style.display = "flex";
-    elements.loginError.style.display = "none";
-    elements.loginForm.reset();
+    if (elements.appShell) elements.appShell.style.display = "none";
+    if (elements.loginScreen) elements.loginScreen.style.display = "flex";
+    if (elements.loginError) elements.loginError.style.display = "none";
+    if (elements.loginForm) elements.loginForm.reset();
     
     stopInactivityTracking();
     stopPresenceHeartbeat();
+    try {
+        disconnectRealtime();
+    } catch(e) {}
 }
 
 function showAppShell(user) {
+    if (!Auth.isAuthenticated() || !user) {
+        showLoginScreen();
+        return;
+    }
+
     elements.loginScreen.style.display = "none";
     elements.appShell.style.display = "flex";
+
+    // Inicializar módulos de negócio sob demanda apenas quando logado
+    if (!_appModulesInitialized) {
+        _appModulesInitialized = true;
+        window.WhatsApp = WhatsApp;
+        window.Copilot = Copilot;
+        window.CRM = CRM;
+        window.Proposals = Proposals;
+        try { WhatsApp.init(); } catch(e) { console.error("WhatsApp init error:", e); }
+        try { Copilot.init(); } catch(e) { console.error("Copilot init error:", e); }
+        try { Intervention.init(); } catch(e) { console.error("Intervention init error:", e); }
+        try { ChurnAutopilot.init(); } catch(e) { console.error("Churn init error:", e); }
+        try { Leaderboard.init(); } catch(e) { console.error("Leaderboard init error:", e); }
+    }
     
     // Atualizar Perfil no Rodapé da Sidebar
     elements.userDisplayName.textContent = user.name;
@@ -346,6 +372,10 @@ function configureSidebarMenu(role) {
 // ==========================================================================
 
 function navigateTo(viewName) {
+    if (!Auth.isAuthenticated()) {
+        showLoginScreen();
+        return;
+    }
     const user = Auth.getCurrentUser();
     if (!user) return showLoginScreen();
 
@@ -1453,11 +1483,19 @@ function setupSellerQuickActions() {
 function setupEventListeners() {
     // Form de Login
     const executeLogin = async () => {
-        checkLockout();
+        if (checkLockout()) return;
 
         const email = elements.loginEmail ? elements.loginEmail.value.trim() : "";
         const password = elements.loginPassword ? elements.loginPassword.value : "";
         
+        if (!email || !password) {
+            if (elements.loginErrorText && elements.loginError) {
+                elements.loginErrorText.textContent = "Por favor, preencha o e-mail e a senha.";
+                elements.loginError.style.display = "flex";
+            }
+            return;
+        }
+
         const btnSubmit = document.getElementById("btn-login-submit");
         if (btnSubmit) {
             btnSubmit.disabled = true;
@@ -1468,15 +1506,32 @@ function setupEventListeners() {
             const result = await Auth.login(email, password);
             if (result.success) {
                 showAppShell(result.user);
-            } else if (elements.loginErrorText && elements.loginError) {
-                elements.loginErrorText.textContent = result.error;
-                elements.loginError.style.display = "flex";
-                elements.loginError.classList.add("animate-fade-in");
+            } else {
+                const emailLower = email.toLowerCase().trim();
+                let attempts = parseInt(localStorage.getItem(`attempts_${emailLower}`) || "0", 10) + 1;
+                localStorage.setItem(`attempts_${emailLower}`, attempts.toString());
+
+                if (attempts >= 5) {
+                    const lockoutTime = Date.now() + (3 * 60 * 1000); // Bloqueio temporário de 3 minutos
+                    localStorage.setItem(`lockout_${emailLower}`, lockoutTime.toString());
+                    if (elements.loginErrorText && elements.loginError) {
+                        elements.loginErrorText.textContent = "Muitas tentativas incorretas. Acesso bloqueado por 3 minutos.";
+                        elements.loginError.style.display = "flex";
+                    }
+                    if (btnSubmit) btnSubmit.disabled = true;
+                    return;
+                }
+
+                if (elements.loginErrorText && elements.loginError) {
+                    elements.loginErrorText.textContent = result.error || "Usuário ou senha inválidos.";
+                    elements.loginError.style.display = "flex";
+                    elements.loginError.classList.add("animate-fade-in");
+                }
             }
         } catch(e) {
             console.error("Login error:", e);
         } finally {
-            if (btnSubmit) {
+            if (btnSubmit && !checkLockout()) {
                 btnSubmit.disabled = false;
                 btnSubmit.innerHTML = `<span>Acessar Plataforma</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`;
             }
@@ -1603,6 +1658,10 @@ function setupEventListeners() {
 
     // Escutar mudança de Hash do Navegador para Roteamento SPA
     window.addEventListener("hashchange", () => {
+        if (!Auth.isAuthenticated()) {
+            showLoginScreen();
+            return;
+        }
         const viewId = window.location.hash.replace("#", "") || "dashboard";
         navigateTo(viewId);
     });

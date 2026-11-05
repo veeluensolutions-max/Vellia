@@ -55,7 +55,9 @@ export const Auth = {
             companyAccess: user.companyAccess || (isMika ? "Excelência Ambiental" : "Ambas")
         };
 
-        localStorage.setItem("comercial_session", JSON.stringify(sessionUser));
+        // Sessão temporária via sessionStorage (fecha a aba/navegador = exige login novamente)
+        sessionStorage.setItem("comercial_session", JSON.stringify(sessionUser));
+        localStorage.removeItem("comercial_session");
         Store.addLog(user.email, "USER_LOGIN", `Usuário ${user.name} efetuou login como ${this.getRoleLabel(user.role)}.`, "SUCCESS");
 
         return { success: true, user: sessionUser };
@@ -66,13 +68,23 @@ export const Auth = {
         if (user) {
             Store.addLog(user.email, "USER_LOGOUT", `Usuário ${user.name} saiu do sistema.`, "SUCCESS");
         }
+        sessionStorage.removeItem("comercial_session");
         localStorage.removeItem("comercial_session");
         window.location.reload();
     },
 
     getCurrentUser() {
         try {
-            return JSON.parse(localStorage.getItem("comercial_session")) || null;
+            // Sessão temporária ativa apenas enquanto a aba/navegador estiver aberto
+            const session = sessionStorage.getItem("comercial_session");
+            if (session) {
+                return JSON.parse(session);
+            }
+            // Limpa resíduos legados do localStorage para impedir acesso sem login
+            if (localStorage.getItem("comercial_session")) {
+                localStorage.removeItem("comercial_session");
+            }
+            return null;
         } catch (e) {
             return null;
         }

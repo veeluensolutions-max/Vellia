@@ -15,6 +15,12 @@ let pendingStageChange = null;
 export const CRM = {
     _eventsBound: false,
     _realtimeListenersBound: false,
+    get activeLeadId() {
+        return activeLeadId;
+    },
+    set activeLeadId(id) {
+        activeLeadId = id;
+    },
     init() {
         if (!this._eventsBound) {
             this.bindEvents();
@@ -25,7 +31,27 @@ export const CRM = {
         if (!this._realtimeListenersBound) {
             // Atualização em tempo real ao receber leads via Meta Ads / Facebook / WhatsApp
             window.addEventListener("vellia:metaLeadReceived", () => this.renderLeadsTable());
-            window.addEventListener("vellia:waSent", () => this.renderLeadsTable());
+            window.addEventListener("vellia:waSent", (e) => {
+                this.renderLeadsTable();
+                const targetId = e?.detail?.leadId || activeLeadId;
+                if (targetId && activeLeadId && String(targetId) === String(activeLeadId)) {
+                    const l = Store.getLeadById(activeLeadId);
+                    if (l) {
+                        this.renderTimeline(l);
+                        this.renderWhatsAppChat(l);
+                        this.renderFollowups(l);
+                    }
+                }
+            });
+            window.addEventListener("vellia:leadUpdated", (e) => {
+                this.renderLeadsTable();
+                const updatedLead = e?.detail;
+                if (activeLeadId && updatedLead && String(updatedLead.id) === String(activeLeadId)) {
+                    this.renderTimeline(updatedLead);
+                    this.renderWhatsAppChat(updatedLead);
+                    this.renderFollowups(updatedLead);
+                }
+            });
             window.addEventListener("vellia:leadDeleted", () => this.renderLeadsTable());
             window.addEventListener("vellia:leadRestored", () => this.renderLeadsTable());
             this._realtimeListenersBound = true;
@@ -245,7 +271,19 @@ export const CRM = {
         const btnQuickWa = document.getElementById("btn-drawer-quick-wa");
         if (btnQuickWa) {
             btnQuickWa.addEventListener("click", () => {
-                if (activeLeadId) window.WhatsApp?.openModalForLead(activeLeadId);
+                if (!activeLeadId) return;
+                const lead = Store.getLeadById(activeLeadId);
+                if (!lead) return;
+                const phone = lead.whatsapp || lead.phone;
+                if (!phone) {
+                    if (typeof Toast !== "undefined" && Toast?.warning) {
+                        Toast.warning("Sem WhatsApp", `O lead "${lead.company}" não possui telefone ou WhatsApp cadastrado.`);
+                    } else {
+                        alert(`O lead "${lead.company}" não possui telefone ou WhatsApp cadastrado.`);
+                    }
+                    return;
+                }
+                window.WhatsApp?.openModalForLead(activeLeadId);
             });
         }
         const btnQuickProp = document.getElementById("btn-drawer-quick-prop");
@@ -1826,7 +1864,7 @@ export const CRM = {
         } catch(e) {}
         if (!currentUser) {
             try {
-                currentUser = JSON.parse(localStorage.getItem("comercial_session"));
+                currentUser = JSON.parse(sessionStorage.getItem("comercial_session") || localStorage.getItem("comercial_session") || "null");
             } catch(e) {}
         }
         if (!currentUser) {

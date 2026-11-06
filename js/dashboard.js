@@ -2,13 +2,15 @@ import { Store } from "./store.js";
 import { Auth } from "./auth.js";
 import { PostSales } from "./post-sales.js";
 import { Toast } from "./toast.js";
+import { formatTimeAgo } from "./utils.js";
 
 const charts = {};
 
 export const Dashboard = {
     currentTimeframe: "all",
+    _activityFilter: "all",
 
-    setTimeframe(period) {
+        setTimeframe(period) {
         this.currentTimeframe = period;
         const group = document.getElementById("dashboard-timeframe-selector");
         if (group) {
@@ -17,6 +19,27 @@ export const Dashboard = {
             });
         }
         this.renderAll();
+    },
+
+    setActivityFilter(filter) {
+        this._activityFilter = filter;
+        const group = document.getElementById("dash-activity-filter-group");
+        if (group) {
+            group.querySelectorAll(".dash-feed-filter-btn").forEach(btn => {
+                const isActive = btn.dataset.filter === filter;
+                btn.style.background = isActive ? "var(--primary)" : "transparent";
+                btn.style.color = isActive ? "#fff" : "var(--text-muted)";
+                btn.style.borderColor = isActive ? "var(--primary)" : "var(--border-color)";
+            });
+        }
+        let currentLeads = Store.getLeads();
+        let currentProposals = Store.getProposals();
+        const session = JSON.parse(sessionStorage.getItem("comercial_session") || localStorage.getItem("comercial_session") || "null");
+        if (session && session.role === "seller") {
+            currentLeads = currentLeads.filter(l => l.owner === session.email);
+            currentProposals = currentProposals.filter(p => p.authorEmail === session.email);
+        }
+        this.renderRecentActivity(currentLeads, currentProposals);
     },
 
     filterByTimeframe(items, dateField = "createdAt") {
@@ -114,6 +137,18 @@ export const Dashboard = {
             window.addEventListener("vellia:leadUpdated", refreshDashboardData);
             window.addEventListener("vellia:proposalUpdated", refreshDashboardData);
             window.addEventListener("vellia:waSent", refreshDashboardData);
+            window.addEventListener("vellia:userUpdated", () => {
+                const viewDashboard = document.getElementById("view-dashboard");
+                if (viewDashboard && viewDashboard.style.display !== "none") {
+                    this.renderRecentActivity(Store.getLeads(), Store.getProposals());
+                }
+            });
+            window.addEventListener("vellia:userActivity", () => {
+                const viewDashboard = document.getElementById("view-dashboard");
+                if (viewDashboard && viewDashboard.style.display !== "none") {
+                    this.renderRecentActivity(Store.getLeads(), Store.getProposals());
+                }
+            });
         }
 
         // Atualização suave do painel de Atividades Recentes com limpeza de intervalo anterior
@@ -135,7 +170,7 @@ export const Dashboard = {
                 const filteredProposals = this.filterByTimeframe(currentProposals, "createdAt");
                 this.renderRecentActivity(filteredLeads, filteredProposals);
             }
-        }, 12000);
+        }, 4000);
     },
 
     bindEvents() {
@@ -1486,73 +1521,138 @@ export const Dashboard = {
         if (!container) return;
 
         const events = [];
+        const users = Store.getUsers() || [];
+        const userMap = new Map();
+        users.forEach(u => {
+            if (u.email) userMap.set(u.email.toLowerCase().trim(), u);
+        });
 
-        // Mudanças de estágio dos leads
+        // 1. ACESSOS DE USUÁRIOS AO SISTEMA (Login & Atividade Recente nos últimos minutos)
+        const now = new Date();
+        users.forEach(u => {
+            if (!u.lastLoginAt) return;
+            const loginDate = new Date(u.lastLoginAt);
+            if (isNaN(loginDate.getTime())) return;
+
+            const diffMinutes = Math.floor((now - loginDate) / (1000 * 60));
+            // Destaca acessos recentes (últimos 60 min têm selo especial, mas lista os últimos logins de todos)
+            const isOnlineNow = diffMinutes <= 2;
+            const isRecent = diffMinutes <= 15;
+
+            const roleBadge = u.role === "admin" ? "Administrador" : (u.role === "manager" || u.role === "gerente" ? "Gerente" : "Vendedor");
+
+            let statusTag = "";
+            if (isOnlineNow) {
+                statusTag = `<span style="display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 800; background: rgba(16, 185, 129, 0.15); color: #059669; padding: 2px 7px; border-radius: 99px; margin-left: 6px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #10b981; animation: pulse 1.5s infinite;"></span> ONLINE AGORA</span>`;
+            } else if (isRecent) {
+                statusTag = `<span style="display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; background: rgba(59, 130, 246, 0.12); color: #2563eb; padding: 2px 7px; border-radius: 99px; margin-left: 6px;">Ativo há ${diffMinutes} min</span>`;
+            }
+
+            events.push({
+                type: "access",
+                timestamp: loginDate,
+                icon: "👤",
+                avatar: u.avatar || (u.name ? u.name.substring(0, 2).toUpperCase() : "US"),
+                text: `<strong>${u.name || u.email}</strong> acessou o sistema ${statusTag}`,
+                sub: `${roleBadge} • ${u.email}`,
+                color: isOnlineNow ? "#10b981" : (isRecent ? "#3b82f6" : "var(--text-muted)"),
+                isOnline: isOnlineNow
+            });
+        });
+
+        // 2. MUDANÇAS DE ESTÁGIO DOS LEADS
         leads.forEach(lead => {
             if (lead.stageHistory && lead.stageHistory.length > 0) {
                 const last = [...lead.stageHistory].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
+                const author = userMap.get((last.userEmail || "").toLowerCase().trim())?.name || last.userEmail;
                 events.push({
+                    type: "lead",
                     timestamp: new Date(last.timestamp),
                     leadId: lead.id,
                     icon: "🔄",
                     text: `<strong>${lead.company}</strong> movido para <strong>${lead.stage}</strong>`,
-                    sub: last.userEmail,
+                    sub: author ? `Por ${author}` : last.userEmail,
                     color: "var(--primary)"
                 });
             }
         });
 
-        // Propostas criadas/fechadas
+        // 3. PROPOSTAS CRIADAS / FECHADAS / PERDIDAS
         proposals.forEach(p => {
             const lead = leads.find(l => l.company === p.company);
             const leadId = lead ? lead.id : null;
+            const seller = p.seller || p.createdBy || (p.authorEmail ? (userMap.get(p.authorEmail.toLowerCase())?.name || p.authorEmail) : "Comercial");
+
             events.push({
+                type: "proposal",
                 timestamp: new Date(p.createdAt),
                 leadId,
                 icon: "📝",
                 text: `Proposta enviada para <strong>${p.company}</strong>`,
-                sub: `${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(p.value)}`,
+                sub: `${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(p.value)} • ${seller}`,
                 color: "var(--primary)"
             });
-            if (p.closedAt && ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)) {
+
+            if (p.closedAt && ["Ganho", "Aguardando Agendamento", "Agendada", "fechado"].includes(p.status)) {
                 events.push({
+                    type: "proposal",
                     timestamp: new Date(p.closedAt),
                     leadId,
                     icon: "✅",
                     text: `Venda fechada com <strong>${p.company}</strong>`,
-                    sub: `+${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(p.value)}`,
+                    sub: `+${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(p.value)} • ${seller}`,
                     color: "var(--success)"
                 });
             }
-            if (p.closedAt && p.status === "Perdido") {
+
+            if (p.closedAt && (p.status === "Perdido" || p.status === "perdida")) {
                 events.push({
+                    type: "proposal",
                     timestamp: new Date(p.closedAt),
                     leadId,
                     icon: "❌",
                     text: `Perda registrada — <strong>${p.company}</strong>`,
-                    sub: p.lossReason || "Motivo não informado",
+                    sub: `${p.lossReason || "Sem motivo informado"} • ${seller}`,
                     color: "var(--danger)"
                 });
             }
         });
 
-        const sorted = events.sort((a, b) => b.timestamp - a.timestamp).slice(0, 8);
+        // Filtragem por Pílula (Todos / Acessos / Vendas & Leads)
+        const activeFilter = this._activityFilter || "all";
+        let filteredEvents = events;
+        if (activeFilter === "access") {
+            filteredEvents = events.filter(e => e.type === "access");
+        } else if (activeFilter === "commercial") {
+            filteredEvents = events.filter(e => e.type === "lead" || e.type === "proposal");
+        }
+
+        const sorted = filteredEvents.sort((a, b) => b.timestamp - a.timestamp).slice(0, 10);
 
         if (sorted.length === 0) {
-            container.innerHTML = `<p style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px 0;">Nenhuma atividade registrada ainda.</p>`;
+            container.innerHTML = `<p style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 24px 0;">Nenhuma atividade recente encontrada com o filtro selecionado.</p>`;
             return;
         }
 
-        const fmtDate = d => d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+        const fmtDate = d => {
+            const timeAgoStr = typeof formatTimeAgo === "function" ? formatTimeAgo(d) : "";
+            const exactTime = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+            const dayMonth = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+            return `${timeAgoStr ? `<span style="color:var(--text-primary); font-weight:700;">${timeAgoStr}</span><br>` : ''}${dayMonth}, ${exactTime}`;
+        };
 
         container.innerHTML = sorted.map(ev => `
-            <div ${ev.leadId ? `onclick="window.location.hash = '#crm'; setTimeout(() => import('./crm.js').then(m => m.CRM.openLeadDrawer('${ev.leadId}')), 100);"` : ''} style="display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border-color); ${ev.leadId ? 'cursor: pointer; transition: transform var(--transition-fast);' : ''}" ${ev.leadId ? 'onmouseover="this.style.transform=\'translateX(4px)\'" onmouseout="this.style.transform=\'none\'"' : ''}>
-                <div style="font-size: 18px; flex-shrink: 0; margin-top: 1px;">${ev.icon}</div>
+            <div ${ev.leadId ? `onclick="window.location.hash = '#crm'; setTimeout(() => import('./crm.js').then(m => m.CRM.openLeadDrawer('${ev.leadId}')), 100);"` : ''} style="display: flex; align-items: flex-start; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border-color); ${ev.leadId ? 'cursor: pointer; transition: transform var(--transition-fast);' : ''}" ${ev.leadId ? 'onmouseover="this.style.transform=\'translateX(4px)\'" onmouseout="this.style.transform=\'none\'"' : ''}>
+                <div style="font-size: 18px; flex-shrink: 0; width: 36px; height: 36px; border-radius: 10px; background: ${ev.type === 'access' ? 'rgba(99,102,241,0.08)' : 'rgba(0,0,0,0.04)'}; display: flex; align-items: center; justify-content: center;">
+                    ${ev.avatar ? `<span style="font-size: 12px; font-weight: 800; color: ${ev.isOnline ? '#059669' : 'var(--primary)'};">${ev.avatar}</span>` : ev.icon}
+                </div>
                 <div style="flex-grow: 1; min-width: 0;">
-                    <div style="font-size: 13px; color: var(--text-primary); line-height: 1.4;">${ev.text}</div>
+                    <div style="font-size: 13px; color: var(--text-primary); line-height: 1.45;">${ev.text}</div>
                     <div style="font-size: 11px; color: ${ev.color}; font-weight: 600; margin-top: 2px;">${ev.sub}</div>
                 </div>
-                <div style="font-size: 10px; color: var(--text-muted); flex-shrink: 0; text-align: right; margin-top: 2px;">${fmtDate(ev.timestamp)}</div>
+                <div style="font-size: 10.5px; color: var(--text-muted); flex-shrink: 0; text-align: right; line-height: 1.3; margin-top: 2px;">
+                    ${fmtDate(ev.timestamp)}
+                </div>
             </div>
         `).join("");
     },

@@ -635,12 +635,26 @@
                             </div>
 
                             <div class="dashboard-card">
-                                <div class="dashboard-card-header">
-                                    <h4 class="dashboard-card-title">
+                                <div class="dashboard-card-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                                    <h4 class="dashboard-card-title" style="margin: 0;">
                                         <span class="title-icon-badge">⚡</span>
                                         <span>Atividade Recente em Tempo Real</span>
                                     </h4>
-                                    <span class="badge badge-success" style="font-size: 10px; padding: 2px 8px;">● Live Feed</span>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <!-- Filtro de Visualização: Todos / Acessos / Vendas -->
+                                        <div id="dash-activity-filter-group" style="display: inline-flex; background: var(--bg-app); border: 1px solid var(--border-color); border-radius: 8px; padding: 2px;">
+                                            <button type="button" class="dash-feed-filter-btn" data-filter="all" onclick="window.Dashboard.setActivityFilter('all')" style="padding: 3px 9px; font-size: 10.5px; font-weight: 700; border: 1px solid var(--primary); border-radius: 6px; background: var(--primary); color: #fff; cursor: pointer; transition: all 0.2s;">
+                                                Todos
+                                            </button>
+                                            <button type="button" class="dash-feed-filter-btn" data-filter="access" onclick="window.Dashboard.setActivityFilter('access')" style="padding: 3px 9px; font-size: 10.5px; font-weight: 700; border: 1px solid var(--border-color); border-radius: 6px; background: transparent; color: var(--text-muted); cursor: pointer; transition: all 0.2s;">
+                                                👤 Acessos
+                                            </button>
+                                            <button type="button" class="dash-feed-filter-btn" data-filter="commercial" onclick="window.Dashboard.setActivityFilter('commercial')" style="padding: 3px 9px; font-size: 10.5px; font-weight: 700; border: 1px solid var(--border-color); border-radius: 6px; background: transparent; color: var(--text-muted); cursor: pointer; transition: all 0.2s;">
+                                                💼 Vendas & Leads
+                                            </button>
+                                        </div>
+                                        <span class="badge badge-success" style="font-size: 10px; padding: 3px 8px; display: inline-flex; align-items: center; gap: 4px;">● Live Feed</span>
+                                    </div>
                                 </div>
                                 <div id="dash-activity-feed"><!-- Carregado via JS --></div>
                             </div>

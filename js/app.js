@@ -157,6 +157,10 @@ function startPresenceHeartbeat(userEmail) {
                 users[idx].lastLoginAt = nowIso;
                 localStorage.setItem("comercial_users", JSON.stringify(users));
 
+                // Disparar evento para atualização imediata do feed e ranking
+                window.dispatchEvent(new CustomEvent("vellia:userUpdated", { detail: users[idx] }));
+                window.dispatchEvent(new CustomEvent("vellia:userActivity", { detail: { email: userEmail, timestamp: nowIso } }));
+
                 // Atualizar silenciosamente no Supabase
                 const SUPABASE_URL = "https://ogrbsonpkiamoytxjshg.supabase.co";
                 const SUPABASE_KEY = "sb_publishable_Wi3eKJi5uyEzqihEDF6Eaw_-i0zcHe7";
@@ -174,7 +178,7 @@ function startPresenceHeartbeat(userEmail) {
     };
 
     ping();
-    presenceHeartbeatTimer = setInterval(ping, 45000); // Heartbeat a cada 45 segundos
+    presenceHeartbeatTimer = setInterval(ping, 25000); // Heartbeat a cada 25 segundos para maior precisão em tempo real
 }
 
 function stopPresenceHeartbeat() {

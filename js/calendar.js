@@ -41,7 +41,7 @@ export const Calendar = {
     },
 
     // ─── Obter todos os eventos compilados do sistema ────────────────────────────
-    getEvents() {
+        getEvents() {
         const events = [];
         let allLeads = [];
         try {
@@ -74,8 +74,15 @@ export const Calendar = {
                                 type: "inspecao",
                                 status: "concluido",
                                 notes: item.meta?.notes || item.description || "",
-                                contact: lead.contact,
-                                phone: lead.whatsapp || lead.phone
+                                contact: lead.contact || lead.name || "",
+                                phone: lead.whatsapp || lead.phone || "",
+                                email: lead.email || "",
+                                cnpj: lead.cnpj || "",
+                                city: lead.city || "",
+                                state: lead.state || "",
+                                address: lead.address || "",
+                                value: lead.value || 0,
+                                pipelineStatus: lead.status || ""
                             });
                         }
 
@@ -93,8 +100,15 @@ export const Calendar = {
                                 type: "vencimento",
                                 status: "agendado",
                                 notes: `Vencimento do laudo técnico de ${lead.company}`,
-                                contact: lead.contact,
-                                phone: lead.whatsapp || lead.phone
+                                contact: lead.contact || lead.name || "",
+                                phone: lead.whatsapp || lead.phone || "",
+                                email: lead.email || "",
+                                cnpj: lead.cnpj || "",
+                                city: lead.city || "",
+                                state: lead.state || "",
+                                address: lead.address || "",
+                                value: lead.value || 0,
+                                pipelineStatus: lead.status || ""
                             });
                         }
                     }
@@ -117,8 +131,15 @@ export const Calendar = {
                             type: "followup",
                             status: f.done ? "concluido" : "agendado",
                             notes: f.note || "",
-                            contact: lead.contact,
-                            phone: lead.whatsapp || lead.phone
+                            contact: lead.contact || lead.name || "",
+                            phone: lead.whatsapp || lead.phone || "",
+                            email: lead.email || "",
+                            cnpj: lead.cnpj || "",
+                            city: lead.city || "",
+                            state: lead.state || "",
+                            address: lead.address || "",
+                            value: lead.value || 0,
+                            pipelineStatus: lead.status || ""
                         });
                     }
                 });
@@ -130,12 +151,25 @@ export const Calendar = {
             const customEvents = Store.getCalendarEvents();
             customEvents.forEach(e => {
                 let ws = e.workspace;
+                const matchedLead = allLeads.find(l => 
+                    (e.leadId && String(l.id) === String(e.leadId)) || 
+                    (l.company && e.company && l.company.toLowerCase().trim() === e.company.toLowerCase().trim())
+                );
                 if (!ws) {
-                    const matchedLead = allLeads.find(l => l.company && e.company && l.company.toLowerCase().trim() === e.company.toLowerCase().trim());
                     ws = matchedLead ? matchedLead.workspace : "Veeluen Solutions";
                 }
                 events.push({
                     ...e,
+                    leadId: e.leadId || (matchedLead ? matchedLead.id : null),
+                    contact: e.contact || (matchedLead ? (matchedLead.contact || matchedLead.name) : ""),
+                    phone: e.phone || (matchedLead ? (matchedLead.whatsapp || matchedLead.phone) : ""),
+                    email: e.email || (matchedLead ? matchedLead.email : ""),
+                    cnpj: e.cnpj || (matchedLead ? matchedLead.cnpj : ""),
+                    city: e.city || (matchedLead ? matchedLead.city : ""),
+                    state: e.state || (matchedLead ? matchedLead.state : ""),
+                    address: e.address || (matchedLead ? matchedLead.address : ""),
+                    value: e.value || (matchedLead ? matchedLead.value : 0),
+                    pipelineStatus: matchedLead ? matchedLead.status : "",
                     workspace: this.normalizeCompany(ws)
                 });
             });
@@ -144,7 +178,7 @@ export const Calendar = {
         return events;
     },
 
-    // ─── Renderizar Interface da Agenda ──────────────────────────────────────────
+// ─── Renderizar Interface da Agenda ──────────────────────────────────────────
     render() {
         const container = document.getElementById("calendar-view-container");
         if (!container) return;
@@ -205,7 +239,7 @@ export const Calendar = {
             const isSelected = dateKey === this.selectedDateStr;
             const dayEvents = eventsByDate[dateKey] || [];
 
-            let badgesHtml = dayEvents.slice(0, 3).map(ev => {
+                        let badgesHtml = dayEvents.slice(0, 3).map(ev => {
                 let badgeBg = "#1877F2";
                 if (ev.type === "inspecao") badgeBg = "#10b981";
                 if (ev.type === "vencimento") badgeBg = "#ef4444";
@@ -218,7 +252,12 @@ export const Calendar = {
                 const companyDot = `<span style="font-size:9.5px; opacity:0.95;">${isExcelencia ? '🌿' : '🏢'}</span>`;
 
                 return `
-                    <div class="calendar-event-pill" style="background:${badgeBg}; color:#fff;" title="[${ev.workspace || 'Geral'}] ${ev.title}">
+                    <div class="calendar-event-pill" 
+                         onclick="event.stopPropagation(); window.Calendar.showEventDetails('${ev.id}')" 
+                         style="background:${badgeBg}; color:#fff; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;" 
+                         onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 2px 6px rgba(0,0,0,0.25)';"
+                         onmouseout="this.style.transform='none'; this.style.boxShadow='none';"
+                         title="Clique para ver os dados do cliente agendado (${ev.company})">
                         ${companyDot} ${ev.title}
                     </div>
                 `;
@@ -333,22 +372,34 @@ export const Calendar = {
                 <button class="calendar-pill-filter ${this.filterType === 'reuniao' ? 'active' : ''}" data-type="reuniao">💼 Reuniões</button>
             </div>
 
-            <!-- Cards KPI Rápidos -->
+                        <!-- Cards KPI Rápidos Clicáveis -->
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:16px; margin-bottom:22px;">
-                <div class="vellia-card stat-card" style="padding:16px 20px;">
-                    <span class="stat-label">Compromissos no Mês</span>
+                <div class="vellia-card stat-card" onclick="window.Calendar.setFilterType('all'); window.Calendar.setFilterStatus('all');" title="Clique para exibir todos os compromissos" style="padding:16px 20px; cursor: pointer; transition: all 0.2s ease;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span class="stat-label">Compromissos no Mês</span>
+                        <span style="font-size:10px; color:var(--text-muted);">↗</span>
+                    </div>
                     <span class="stat-value" style="font-size:24px; font-weight:800; color:var(--text-primary); margin-top:4px;">${totalCount}</span>
                 </div>
-                <div class="vellia-card stat-card" style="padding:16px 20px;">
-                    <span class="stat-label">Vistorias Técnicas</span>
+                <div class="vellia-card stat-card" onclick="window.Calendar.setFilterType('inspecao'); window.Calendar.setFilterStatus('all');" title="Clique para filtrar vistorias técnicas" style="padding:16px 20px; cursor: pointer; transition: all 0.2s ease;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span class="stat-label" style="color:#059669;">Vistorias Técnicas</span>
+                        <span style="font-size:10px; color:#059669;">↗</span>
+                    </div>
                     <span class="stat-value" style="font-size:24px; font-weight:800; color:#059669; margin-top:4px;">${inspecaoCount}</span>
                 </div>
-                <div class="vellia-card stat-card" style="padding:16px 20px;">
-                    <span class="stat-label">Pendentes</span>
+                <div class="vellia-card stat-card" onclick="window.Calendar.setFilterStatus('agendado');" title="Clique para filtrar compromissos pendentes" style="padding:16px 20px; cursor: pointer; transition: all 0.2s ease;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span class="stat-label" style="color:#D97706;">Pendentes</span>
+                        <span style="font-size:10px; color:#D97706;">↗</span>
+                    </div>
                     <span class="stat-value" style="font-size:24px; font-weight:800; color:#D97706; margin-top:4px;">${pendingCount}</span>
                 </div>
-                <div class="vellia-card stat-card" style="padding:16px 20px;">
-                    <span class="stat-label">Concluídos</span>
+                <div class="vellia-card stat-card" onclick="window.Calendar.setFilterStatus('concluido');" title="Clique para filtrar compromissos concluídos" style="padding:16px 20px; cursor: pointer; transition: all 0.2s ease;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span class="stat-label" style="color:var(--primary);">Concluídos</span>
+                        <span style="font-size:10px; color:var(--primary);">↗</span>
+                    </div>
                     <span class="stat-value" style="font-size:24px; font-weight:800; color:var(--primary); margin-top:4px;">${doneCount}</span>
                 </div>
             </div>
@@ -398,7 +449,7 @@ export const Calendar = {
                 : `<span style="background: rgba(37, 99, 235, 0.12); color: #2563eb; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(37, 99, 235, 0.3);">🏢 Veeluen Solutions</span>`;
 
             return `
-            <div class="calendar-event-card-rich" style="background:var(--bg-body); border:1px solid var(--border-color); border-left:4px solid ${borderColor}; border-radius:var(--radius-md); padding:14px 18px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; transition:all var(--transition-fast);">
+            <div class="calendar-event-card-rich" onclick="window.Calendar.showEventDetails('${ev.id}')" title="Clique para ver os dados deste cliente" style="background:var(--bg-body); border:1px solid var(--border-color); border-left:4px solid ${borderColor}; border-radius:var(--radius-md); padding:14px 18px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; transition:all var(--transition-fast); cursor:pointer;">
                 <div>
                     <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                         ${companyBadge}
@@ -419,6 +470,7 @@ export const Calendar = {
                         <button onclick="window.Calendar.unlockDate('${ev.id}')" class="btn btn-sm" style="background:#ef4444; color:#fff; font-size:11px; padding:6px 10px; font-weight:700; border:none; border-radius:6px; cursor:pointer;">🔓 Destravar</button>
                     ` : ''}
                     ${ev.phone ? `<a href="https://wa.me/${ev.phone.replace(/\D/g,'')}" target="_blank" class="btn btn-sm" style="background:#25d366; color:#fff; font-size:11.5px; padding:6px 12px; font-weight:700; border:none; text-decoration:none; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">💬 WhatsApp</a>` : ''}
+                    <button type="button" class="btn btn-primary btn-sm" onclick="event.stopPropagation(); window.Calendar.showEventDetails('${ev.id}')" style="font-size:11.5px; padding:6px 12px; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><span>👤 Ver Cliente</span></button>
                     ${ev.leadId ? `<button onclick="window.location.hash='#crm'; setTimeout(()=>window.openLeadDrawerFromExt ? window.openLeadDrawerFromExt('${ev.leadId}') : null,300)" class="btn btn-outline btn-sm" style="font-size:11.5px; padding:6px 10px; border-radius:6px;">🔍 Ver Lead</button>` : ''}
                 </div>
             </div>
@@ -513,6 +565,20 @@ export const Calendar = {
                 if (overlay) overlay.style.display = "none";
             }, 300);
         };
+
+        
+        const calDetailOverlay = document.getElementById("calendar-event-detail-overlay");
+        if (calDetailOverlay) {
+            calDetailOverlay.onclick = () => this.closeEventDetailsModal();
+        }
+        window.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+                const modal = document.getElementById("modal-calendar-event-detail");
+                if (modal && modal.style.display !== "none") {
+                    this.closeEventDetailsModal();
+                }
+            }
+        });
 
         const btnClose = document.getElementById("btn-close-calendar-event-modal");
         if (btnClose) btnClose.onclick = closeCalModal;
@@ -730,6 +796,260 @@ export const Calendar = {
         }
     },
 
+    
+    setFilterType(type) {
+        this.filterType = type;
+        this.render();
+    },
+
+    setFilterStatus(status) {
+        this.filterStatus = status;
+        this.render();
+    },
+
+    selectDateAndShow(dateStr) {
+        this.selectedDateStr = dateStr;
+        this.render();
+        const panel = document.getElementById("calendar-day-detail-panel");
+        if (panel) {
+            panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    },
+
+    showEventDetails(eventId) {
+        const events = this.getEvents();
+        const ev = events.find(e => String(e.id) === String(eventId));
+        if (!ev) {
+            console.warn("Evento não encontrado:", eventId);
+            return;
+        }
+
+        const modal = document.getElementById("modal-calendar-event-detail");
+        const overlay = document.getElementById("calendar-event-detail-overlay");
+        const body = document.getElementById("cal-event-detail-body");
+        const footer = document.getElementById("cal-event-detail-footer");
+        const headerTitle = document.getElementById("cal-modal-header-title");
+        const headerSub = document.getElementById("cal-modal-header-sub");
+        const headerIcon = document.getElementById("cal-modal-header-icon");
+
+        if (!modal || !overlay || !body) return;
+
+        // Ícone e cabeçalho
+        const isExcelencia = this.normalizeCompany(ev.workspace) === "Excelência Ambiental";
+        let icon = "📅";
+        if (ev.type === "inspecao") icon = "📋";
+        else if (ev.type === "vencimento") icon = "⚠️";
+        else if (ev.type === "followup") icon = "⏰";
+        else if (ev.type === "reuniao") icon = "💼";
+
+        if (headerIcon) headerIcon.textContent = icon;
+        if (headerTitle) headerTitle.textContent = ev.company || "Cliente Agendado";
+        if (headerSub) headerSub.textContent = `${ev.title} • ${ev.workspace || 'Geral'}`;
+
+        // Formatação de data
+        let formattedDate = ev.date;
+        if (ev.date) {
+            const parts = ev.date.split("-");
+            if (parts.length === 3) {
+                const dObj = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+                formattedDate = dObj.toLocaleDateString("pt-BR", { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                formattedDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+            }
+        }
+
+        const timeStr = ev.time || "Horário comercial";
+
+        // Badges
+        const companyBadge = isExcelencia
+            ? `<span style="background: rgba(16, 185, 129, 0.12); color: #059669; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.3); display: inline-flex; align-items: center; gap: 4px;">🌿 Excelência Ambiental</span>`
+            : `<span style="background: rgba(37, 99, 235, 0.12); color: #2563eb; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(37, 99, 235, 0.3); display: inline-flex; align-items: center; gap: 4px;">🏢 Veeluen Solutions</span>`;
+
+        let typeBadge = `<span class="badge" style="background: #6366f118; color: #6366f1; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; border: 1px solid #6366f133;">💼 Reunião Comercial</span>`;
+        if (ev.type === "inspecao") {
+            typeBadge = `<span class="badge" style="background: #10b98118; color: #059669; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; border: 1px solid #10b98133;">📋 Vistoria Técnica</span>`;
+        } else if (ev.type === "vencimento") {
+            typeBadge = `<span class="badge" style="background: #ef444418; color: #dc2626; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; border: 1px solid #ef444433;">⚠️ Vencimento de Laudo</span>`;
+        } else if (ev.type === "followup") {
+            typeBadge = `<span class="badge" style="background: #f59e0b18; color: #d97706; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; border: 1px solid #f59e0b33;">⏰ Follow-up</span>`;
+        }
+
+        let statusBadge = `<span class="status-pill status-risk" style="font-size: 11px; font-weight: 700;">🟡 Pendente / Agendado</span>`;
+        if (ev.status === "concluido") {
+            statusBadge = `<span class="status-pill status-active" style="font-size: 11px; font-weight: 700;">🟢 Concluído</span>`;
+        } else if (ev.status === "bloqueado") {
+            statusBadge = `<span class="status-pill status-inactive" style="font-size: 11px; font-weight: 700;">🔒 Data Bloqueada</span>`;
+        }
+
+        const cleanPhone = (ev.phone || "").replace(/\D/g, "");
+        const waLink = cleanPhone ? `https://wa.me/55${cleanPhone}` : null;
+        const mailLink = ev.email ? `mailto:${ev.email}` : null;
+        const formattedValue = ev.value ? `R$ ${Number(ev.value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : null;
+
+        body.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <!-- Tags de Status e Unidade -->
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        ${companyBadge}
+                        ${typeBadge}
+                    </div>
+                    <div>${statusBadge}</div>
+                </div>
+
+                <!-- CARD 1: FICHA DO CLIENTE -->
+                <div style="background: var(--bg-app, #f8fafc); border: 1px solid var(--border-color); border-radius: 14px; padding: 18px;">
+                    <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                        <span>👤</span> Dados do Cliente & Contato
+                    </div>
+                    
+                    <div style="font-size: 18px; font-weight: 800; color: var(--text-primary); margin-bottom: 8px;">
+                        ${ev.company}
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 12px;">
+                        <div>
+                            <span style="font-size: 11px; color: var(--text-muted); display: block;">Responsável / Contato:</span>
+                            <strong style="font-size: 13px; color: var(--text-primary);">${ev.contact || 'Responsável não informado'}</strong>
+                        </div>
+                        <div>
+                            <span style="font-size: 11px; color: var(--text-muted); display: block;">Telefone / WhatsApp:</span>
+                            ${waLink 
+                                ? `<a href="${waLink}" target="_blank" style="font-size: 13px; color: #16a34a; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">💬 ${ev.phone} ↗</a>`
+                                : `<span style="font-size: 13px; color: var(--text-secondary);">${ev.phone || 'Não informado'}</span>`}
+                        </div>
+                        <div>
+                            <span style="font-size: 11px; color: var(--text-muted); display: block;">E-mail:</span>
+                            ${mailLink
+                                ? `<a href="${mailLink}" style="font-size: 13px; color: var(--primary); font-weight: 600; text-decoration: none;">✉️ ${ev.email}</a>`
+                                : `<span style="font-size: 13px; color: var(--text-secondary);">${ev.email || 'Não informado'}</span>`}
+                        </div>
+                        ${ev.cnpj ? `
+                        <div>
+                            <span style="font-size: 11px; color: var(--text-muted); display: block;">CNPJ:</span>
+                            <span style="font-size: 12.5px; font-family: monospace; color: var(--text-secondary);">${ev.cnpj}</span>
+                        </div>` : ''}
+                        ${ev.address || ev.city ? `
+                        <div>
+                            <span style="font-size: 11px; color: var(--text-muted); display: block;">Localização:</span>
+                            <span style="font-size: 12.5px; color: var(--text-secondary);">📍 ${ev.address || (ev.city + (ev.state ? '/' + ev.state : ''))}</span>
+                        </div>` : ''}
+                        ${formattedValue ? `
+                        <div>
+                            <span style="font-size: 11px; color: var(--text-muted); display: block;">Valor da Oportunidade:</span>
+                            <strong style="font-size: 13.5px; color: #059669;">💰 ${formattedValue}</strong>
+                        </div>` : ''}
+                        ${ev.pipelineStatus ? `
+                        <div>
+                            <span style="font-size: 11px; color: var(--text-muted); display: block;">Etapa no Funil:</span>
+                            <span class="status-pill status-formalizing" style="font-size: 11px;">${ev.pipelineStatus}</span>
+                        </div>` : ''}
+                    </div>
+                </div>
+
+                <!-- CARD 2: DADOS DO AGENDAMENTO -->
+                <div style="background: var(--bg-surface, #ffffff); border: 1px solid var(--border-color); border-radius: 14px; padding: 18px;">
+                    <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                        <span>📋</span> Detalhes do Compromisso
+                    </div>
+
+                    <div style="font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 10px;">
+                        ${ev.title}
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 14px;">
+                        <div style="background: var(--bg-app, #f8fafc); padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border-color);">
+                            <span style="font-size: 11px; color: var(--text-muted); display: block;">Data Marcada:</span>
+                            <strong style="font-size: 13px; color: var(--text-primary);">${formattedDate}</strong>
+                        </div>
+                        <div style="background: var(--bg-app, #f8fafc); padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border-color);">
+                            <span style="font-size: 11px; color: var(--text-muted); display: block;">Horário:</span>
+                            <strong style="font-size: 13px; color: var(--text-primary);">⏰ ${timeStr}</strong>
+                        </div>
+                    </div>
+
+                    ${ev.notes ? `
+                    <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 10px; padding: 12px 14px; font-size: 13px; color: #92400E; line-height: 1.5;">
+                        <strong style="display: block; margin-bottom: 2px;">📝 Observações e Escopo Técnico:</strong>
+                        ${ev.notes}
+                    </div>` : ''}
+                </div>
+            </div>
+        `;
+
+        // Rodapé de Ações
+        footer.innerHTML = `
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                ${cleanPhone ? `
+                    <button type="button" class="btn" onclick="window.Calendar.sendWhatsAppReminder('${ev.id}')" style="background: #25D366; color: #fff; font-size: 12.5px; font-weight: 700; padding: 7px 14px; border: none; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                        💬 WhatsApp
+                    </button>
+                ` : ''}
+                ${ev.leadId ? `
+                    <button type="button" class="btn btn-outline" onclick="window.Calendar.closeEventDetailsModal(); window.location.hash='#crm'; setTimeout(()=>import('./crm.js').then(m => m.CRM.openLeadDrawer('${ev.leadId}')), 150);" style="font-size: 12.5px; padding: 7px 14px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                        🔍 Ver no CRM
+                    </button>
+                ` : ''}
+                ${(ev.type === 'inspecao' || ev.type === 'vencimento') ? `
+                    <button type="button" class="btn btn-outline" onclick="window.Calendar.closeEventDetailsModal(); window.location.hash='#inspections';" style="font-size: 12.5px; padding: 7px 14px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                        🔬 Ver Inspeções
+                    </button>
+                ` : ''}
+                ${ev.status === 'agendado' ? `
+                    <button type="button" class="btn btn-outline" onclick="window.Calendar.markEventDone('${ev.id}')" style="font-size: 12.5px; padding: 7px 14px; border-radius: 8px; color: #059669; border-color: #059669; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                        ✓ Marcar Concluído
+                    </button>
+                ` : ''}
+            </div>
+            <button type="button" class="btn btn-secondary" onclick="window.Calendar.closeEventDetailsModal()" style="font-size: 12.5px; padding: 7px 18px; border-radius: 8px; cursor: pointer;">
+                Fechar
+            </button>
+        `;
+
+        modal.style.display = "flex";
+        overlay.style.display = "block";
+    },
+
+    closeEventDetailsModal() {
+        const modal = document.getElementById("modal-calendar-event-detail");
+        const overlay = document.getElementById("calendar-event-detail-overlay");
+        if (modal) modal.style.display = "none";
+        if (overlay) overlay.style.display = "none";
+    },
+
+    markEventDone(eventId) {
+        // Tentar atualizar evento personalizado
+        const customEvents = Store.getCalendarEvents();
+        const ev = customEvents.find(e => String(e.id) === String(eventId));
+        if (ev) {
+            ev.status = "concluido";
+            Store.saveCalendarEvents(customEvents);
+        } else {
+            // Tentar em followups de leads
+            const allLeads = Store.getLeads();
+            let found = false;
+            allLeads.forEach(lead => {
+                if (lead.followups && Array.isArray(lead.followups)) {
+                    const f = lead.followups.find(x => String(x.id) === String(eventId));
+                    if (f) {
+                        f.done = true;
+                        found = true;
+                    }
+                }
+            });
+            if (found) {
+                Store.saveLeads(allLeads);
+            }
+        }
+
+        if (typeof Toast !== "undefined") {
+            Toast.success("Agendamento Concluído", "Status do compromisso atualizado com sucesso!");
+        }
+
+        this.closeEventDetailsModal();
+        this.render();
+        this.renderRemindersWidget();
+    },
+
     renderRemindersWidget() {
         const container = document.getElementById("calendar-reminders-widget");
         if (!container) return;
@@ -801,7 +1121,10 @@ export const Calendar = {
                                             <div style="font-size: 11px; color: var(--text-muted);">${ev.company} • ${ev.contact || 'Cliente'} (${ev.time || '09:00'})</div>
                                         </div>
                                     </div>
-                                    <div>
+                                    <div style="display: flex; gap: 8px; align-items: center;">
+                                        <button type="button" class="btn btn-outline btn-sm" onclick="window.Calendar.showEventDetails('${ev.id}')" style="font-size: 11.5px; padding: 4px 10px; border-radius: 6px; font-weight: 600;">
+                                            👤 Detalhes
+                                        </button>
                                         <button type="button" class="btn btn-outline btn-sm" onclick="window.Calendar.sendWhatsAppReminder('${ev.id}')" style="font-size: 11.5px; padding: 4px 12px; border-color: #25d366; color: #15803d; font-weight: 700; background: rgba(37, 211, 102, 0.08);">
                                             ${isSent ? "✓ Confirmado via WA" : "💬 Enviar Lembrete WA"}
                                         </button>

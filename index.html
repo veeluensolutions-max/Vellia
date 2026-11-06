@@ -6694,6 +6694,30 @@ Condições de pagamento:
         </form>
     </div>
 
+    
+    <!-- Modal: Detalhes do Cliente e Agendamento da Agenda -->
+    <div id="calendar-event-detail-overlay" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(5px); z-index: 99950;"></div>
+    <div id="modal-calendar-event-detail" class="modal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 94%; max-width: 660px; max-height: 88vh; background: var(--bg-surface, #ffffff); border-radius: 18px; box-shadow: 0 25px 60px rgba(0,0,0,0.35); border: 1px solid var(--border-color); flex-direction: column; overflow: hidden; z-index: 99955;">
+        <div style="padding: 18px 24px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; background: var(--bg-surface);">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div id="cal-modal-header-icon-box" style="width: 42px; height: 42px; border-radius: 12px; background: rgba(99, 102, 241, 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 22px;">
+                    <span id="cal-modal-header-icon">📅</span>
+                </div>
+                <div>
+                    <h3 id="cal-modal-header-title" style="margin: 0; font-size: 16px; font-weight: 800; color: var(--text-primary);">Informações do Cliente Agendado</h3>
+                    <span id="cal-modal-header-sub" style="font-size: 12px; color: var(--text-muted);">Agenda & Ficha Cadastral no CRM</span>
+                </div>
+            </div>
+            <button type="button" id="btn-close-cal-detail-modal" onclick="window.Calendar.closeEventDetailsModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-muted); padding: 4px 8px; border-radius: 8px; line-height: 1;">&times;</button>
+        </div>
+        <div id="cal-event-detail-body" style="padding: 22px 24px; overflow-y: auto; flex: 1;">
+            <!-- Preenchido dinamicamente via Calendar.showEventDetails() -->
+        </div>
+        <div id="cal-event-detail-footer" style="padding: 14px 24px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; background: var(--bg-app, #f8fafc);">
+            <!-- Ações dinâmicas -->
+        </div>
+    </div>
+
     <!-- Modal: Checklist de Inspeção Técnica -->
     <div id="inspection-checklist-modal-overlay" class="modal-overlay" onclick="window.closeChecklistModal ? window.closeChecklistModal() : null" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); z-index: 99990; cursor: pointer;"></div>
     <div id="inspection-checklist-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-inspection-title" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 95%; max-width: 680px; max-height: 90vh; height: 88vh; z-index: 99999 !important; background: #ffffff !important; border: 1px solid var(--border-color, #cbd5e1); border-radius: 20px; box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0,0,0,0.1); overflow: hidden; opacity: 1;">

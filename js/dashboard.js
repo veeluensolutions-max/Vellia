@@ -266,7 +266,7 @@ export const Dashboard = {
             this.renderRecentActivity(filteredLeads, filteredProposals);
             this.renderTasksWeekChart();
             this.renderLiveTasksMonitor();
-            this.renderChannelRoiMatrix(filteredLeads, filteredProposals);
+            // this.renderChannelRoiMatrix(filteredLeads, filteredProposals);
             this.renderGoalsCommissionPanel();
         }
     },
@@ -3149,6 +3149,7 @@ export const Dashboard = {
     // MATRIZ DE PERFORMANCE E ROI POR CANAL DE ANÚNCIOS
     // ===========================================================================
     renderChannelRoiMatrix(leads, proposals) {
+        return; // Painel removido
         const container = document.getElementById("channel-roi-matrix-container");
         if (!container) return;
 

@@ -74,6 +74,8 @@ export const Calendar = {
                                 type: "inspecao",
                                 status: "concluido",
                                 notes: item.meta?.notes || item.description || "",
+                                executionDate: item.meta?.executionDate || dateStr,
+                                expiryDate: item.meta?.expiryDate || "",
                                 contact: lead.contact || lead.name || "",
                                 phone: lead.whatsapp || lead.phone || "",
                                 email: lead.email || "",
@@ -100,6 +102,8 @@ export const Calendar = {
                                 type: "vencimento",
                                 status: "agendado",
                                 notes: `Vencimento do laudo técnico de ${lead.company}`,
+                                executionDate: item.meta?.executionDate || "",
+                                expiryDate: expiryStr,
                                 contact: lead.contact || lead.name || "",
                                 phone: lead.whatsapp || lead.phone || "",
                                 email: lead.email || "",
@@ -609,24 +613,16 @@ export const Calendar = {
                     statusVal = "pendente"; // Vendedor agenda como pendente
                 }
 
-                // Validação de Duplicidade / Bloqueio na mesma empresa
+                // Validação apenas se a data estiver explicitamente bloqueada pelo administrador
                 const customEventsCheck = Store.getCalendarEvents();
-                const conflict = customEventsCheck.find(ev => 
+                const isBlocked = customEventsCheck.some(ev => 
                     ev.date === dateVal && 
                     this.normalizeCompany(ev.workspace) === this.normalizeCompany(workspaceVal) &&
-                    (ev.status === "bloqueado" || ev.status === "agendado")
+                    ev.status === "bloqueado"
                 );
-                if (conflict) {
-                    if (conflict.status === "bloqueado") {
-                        alert(`❌ Esta data está bloqueada para ${workspaceVal}. Escolha outra data.`);
-                        return;
-                    } else if (conflict.status === "agendado" && statusVal !== "pendente") {
-                        alert(`⚠️ Já existe um compromisso confirmado para esta data na empresa ${workspaceVal}. Por favor, escolha outra data.`);
-                        return;
-                    } else if (conflict.status === "agendado" && statusVal === "pendente") {
-                        alert(`⚠️ Ops! Já existe um compromisso aprovado para esta data em ${workspaceVal}. Fale com a equipe operacional.`);
-                        return;
-                    }
+                if (isBlocked) {
+                    alert(`❌ Esta data está bloqueada para ${workspaceVal}. Por favor, escolha outra data.`);
+                    return;
                 }
                 
                 const emojiMap = {
@@ -666,6 +662,15 @@ export const Calendar = {
                     
                     closeCalModal();
                     this.selectedDateStr = dateVal;
+                    if (dateVal) {
+                        const [y, m] = dateVal.split("-");
+                        if (y && m) {
+                            this.currentDate = new Date(parseInt(y, 10), parseInt(m, 10) - 1, 1);
+                        }
+                    }
+                    if (typeof Toast !== "undefined") {
+                        Toast.success("Agendamento Salvo", `Compromisso registrado com sucesso para a data ${dateVal.split('-').reverse().join('/')}!`);
+                    }
                     this.render();
                     this.renderRemindersWidget();
                 } catch (err) {
@@ -958,8 +963,40 @@ export const Calendar = {
 
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 14px;">
                         <div style="background: var(--bg-app, #f8fafc); padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border-color);">
-                            <span style="font-size: 11px; color: var(--text-muted); display: block;">Data Marcada:</span>
-                            <strong style="font-size: 13px; color: var(--text-primary);">${formattedDate}</strong>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <span style="font-size: 11px; color: var(--text-muted); display: block;">Data Marcada / Agendamento:</span>
+                                    <strong id="cal-modal-display-date" style="font-size: 13px; color: var(--text-primary); font-family: monospace;">${formattedDate}</strong>
+                                </div>
+                                <button type="button" class="btn btn-outline" onclick="window.Calendar.toggleReschedulePanel()" style="font-size: 11px; padding: 3px 8px; border-radius: 6px; color: var(--primary); display: inline-flex; align-items: center; gap: 4px;">
+                                    📅 Alterar Data
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Painel Retrátil de Remarcação / Alteração de Data -->
+                        <div id="cal-reschedule-box" style="display: none; background: #EEF2FF; border: 1px solid #C7D2FE; border-radius: 10px; padding: 12px 14px; margin-top: 10px;">
+                            <span style="font-size: 12px; font-weight: 700; color: #3730A3; display: block; margin-bottom: 8px;">
+                                📅 Remarcar ou Atualizar Data deste Compromisso:
+                            </span>
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                                <div style="flex: 1; min-width: 150px;">
+                                    <label style="font-size: 11px; color: #4338CA; display: block; margin-bottom: 2px;">Nova Data:</label>
+                                    <input type="date" id="cal-new-date-input" value="${ev.date || ''}" class="form-control" style="height: 36px; font-size: 13px; background: #ffffff; border: 1px solid #A5B4FC;">
+                                </div>
+                                <div style="flex: 1; min-width: 120px;">
+                                    <label style="font-size: 11px; color: #4338CA; display: block; margin-bottom: 2px;">Novo Horário:</label>
+                                    <input type="time" id="cal-new-time-input" value="${ev.time || '10:00'}" class="form-control" style="height: 36px; font-size: 13px; background: #ffffff; border: 1px solid #A5B4FC;">
+                                </div>
+                                <div style="display: flex; gap: 6px; align-items: flex-end; padding-top: 16px;">
+                                    <button type="button" class="btn btn-primary" onclick="window.Calendar.saveRescheduledDate('${ev.id}')" style="font-size: 12px; padding: 7px 14px; background: #4F46E5; border: none; font-weight: 700; border-radius: 6px;">
+                                        💾 Salvar Nova Data
+                                    </button>
+                                    <button type="button" class="btn btn-outline" onclick="window.Calendar.toggleReschedulePanel()" style="font-size: 12px; padding: 7px 10px; border-radius: 6px;">
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                         <div style="background: var(--bg-app, #f8fafc); padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border-color);">
                             <span style="font-size: 11px; color: var(--text-muted); display: block;">Horário:</span>
@@ -1014,6 +1051,107 @@ export const Calendar = {
         const overlay = document.getElementById("calendar-event-detail-overlay");
         if (modal) modal.style.display = "none";
         if (overlay) overlay.style.display = "none";
+    },
+
+    
+    toggleReschedulePanel() {
+        const box = document.getElementById("cal-reschedule-box");
+        if (box) {
+            box.style.display = box.style.display === "none" ? "block" : "none";
+        }
+    },
+
+    saveRescheduledDate(eventId) {
+        const dateInput = document.getElementById("cal-new-date-input");
+        const timeInput = document.getElementById("cal-new-time-input");
+        if (!dateInput || !dateInput.value) {
+            alert("Por favor, selecione uma data válida.");
+            return;
+        }
+
+        const newDate = dateInput.value;
+        const newTime = timeInput ? timeInput.value : "10:00";
+
+        let wasUpdated = false;
+
+        // 1. Verificar em customEvents
+        const customEvents = Store.getCalendarEvents();
+        const customEv = customEvents.find(e => String(e.id) === String(eventId));
+        if (customEv) {
+            customEv.date = newDate;
+            customEv.time = newTime;
+            Store.saveCalendarEvents(customEvents);
+            wasUpdated = true;
+        }
+
+        // 2. Verificar em leads (interactions ou followups)
+        const allLeads = (typeof Store.getAllLeadsRaw === "function" ? Store.getAllLeadsRaw() : Store.getLeads()) || [];
+        
+        // Tratar ID com prefixo expiry_ ou id direto
+        let cleanInteractionId = eventId;
+        let isExpiry = false;
+        if (String(eventId).startsWith("expiry_")) {
+            cleanInteractionId = String(eventId).replace("expiry_", "");
+            isExpiry = true;
+        }
+
+        allLeads.forEach(lead => {
+            let leadModified = false;
+
+            // Follow-ups
+            if (lead.followups && Array.isArray(lead.followups)) {
+                const f = lead.followups.find(x => String(x.id) === String(eventId));
+                if (f) {
+                    f.scheduledAt = `${newDate}T${newTime}:00`;
+                    leadModified = true;
+                    wasUpdated = true;
+                }
+            }
+
+            // Interações / Inspeções
+            if (lead.interactions && Array.isArray(lead.interactions)) {
+                const item = lead.interactions.find(i => String(i.id) === String(cleanInteractionId) || String(i.id) === String(eventId));
+                if (item) {
+                    if (!item.meta) item.meta = {};
+                    if (isExpiry) {
+                        item.meta.expiryDate = newDate;
+                    } else {
+                        item.meta.executionDate = newDate;
+                    }
+                    leadModified = true;
+                    wasUpdated = true;
+                }
+            }
+
+            if (leadModified) {
+                const currentUser = Auth.getCurrentUser();
+                if (typeof Store.updateLead === "function") {
+                    Store.updateLead(lead.id, { 
+                        interactions: lead.interactions, 
+                        followups: lead.followups 
+                    }, currentUser?.email || "sistema@vellia.com");
+                }
+            }
+        });
+
+        // 3. Feedback e sincronização visual
+        const formattedNewDate = newDate.split('-').reverse().join('/');
+        if (typeof Toast !== "undefined") {
+            Toast.success("Data Atualizada!", `A nova data (${formattedNewDate}) foi salva com sucesso no sistema e no cadastro do cliente.`);
+        } else {
+            alert(`✅ Data atualizada com sucesso para ${formattedNewDate}!`);
+        }
+
+        // Navegar para o mês da nova data caso diferente
+        const [y, m] = newDate.split("-");
+        if (y && m) {
+            this.currentDate = new Date(parseInt(y, 10), parseInt(m, 10) - 1, 1);
+        }
+        this.selectedDateStr = newDate;
+
+        this.closeEventDetailsModal();
+        this.render();
+        this.renderRemindersWidget();
     },
 
     markEventDone(eventId) {

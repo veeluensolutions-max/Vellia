@@ -728,7 +728,9 @@ export const Store = {
     },
     saveCalendarEvents(events) {
         MemoryCache.set("vellia_calendar_events", events);
+        try { localStorage.setItem("vellia_calendar_events", JSON.stringify(events)); } catch(e){}
         upsertSupabase("comercial_calendar_events", events);
+        try { window.dispatchEvent(new CustomEvent("vellia:calendarEventsUpdated", { detail: events })); } catch(e){}
     },
 
     DEFAULT_USERS,
@@ -1711,7 +1713,9 @@ export const Store = {
     },
     saveCalendarEvents(events) {
         MemoryCache.set("vellia_calendar_events", events);
+        try { localStorage.setItem("vellia_calendar_events", JSON.stringify(events)); } catch(e){}
         upsertSupabase("comercial_calendar_events", events);
+        try { window.dispatchEvent(new CustomEvent("vellia:calendarEventsUpdated", { detail: events })); } catch(e){}
     },
 
     // Métodos utilitários para resetar banco se necessário

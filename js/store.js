@@ -1344,6 +1344,10 @@ export const Store = {
         logs.unshift(newLog);
         MemoryCache.set("comercial_logs", logs);
         upsertSupabase("comercial_logs", newLog);
+        try {
+            window.dispatchEvent(new CustomEvent("vellia:logAdded", { detail: newLog }));
+            window.dispatchEvent(new CustomEvent("vellia:logsUpdated", { detail: logs }));
+        } catch(evErr) {}
         return newLog;
     },
 

@@ -714,6 +714,7 @@ function renderLogsDashboard(allLogs) {
     }
 }
 
+window.renderLogs = function() { renderLogs(); };
 function renderLogs() {
     if (!elements.logsTableBody) return;
     
@@ -1714,6 +1715,21 @@ function setupEventListeners() {
             }
         });
     }
+
+    // Ouvir eventos de logs em tempo real para re-renderizar a tela de auditoria instantaneamente
+    const handleLogsRealtimeUpdate = () => {
+        const currentHash = window.location.hash.replace("#", "") || "dashboard";
+        if (currentHash === "logs") {
+            renderLogs();
+        }
+    };
+    window.addEventListener("vellia:logAdded", handleLogsRealtimeUpdate);
+    window.addEventListener("vellia:logsUpdated", handleLogsRealtimeUpdate);
+    window.addEventListener("storage", (e) => {
+        if (e.key === "comercial_logs") {
+            handleLogsRealtimeUpdate();
+        }
+    });
 
     // Ouvir disparos do simulador de WhatsApp para atualizar visões ativas
     window.addEventListener("vellia:waSent", () => {

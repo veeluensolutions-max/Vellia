@@ -396,6 +396,34 @@ function processIncomingUserChange(type, record, oldRecord) {
 }
 
 // ─── Conectar ao canal Realtime ───────────────────────────────────────
+// ─── Processar novo log recebido via WS (INSERT em comercial_logs) ──────
+function processIncomingLog(log) {
+    if (!log || !log.id) return;
+
+    let localLogs = [];
+    try {
+        localLogs = JSON.parse(localStorage.getItem("comercial_logs")) || [];
+    } catch(e) {
+        localLogs = [];
+    }
+
+    // Evitar duplicidade caso já esteja no histórico local
+    if (localLogs.some(l => l.id === log.id)) return;
+
+    localLogs.unshift(log);
+    // Manter tamanho razoável no storage (últimos 300 logs)
+    if (localLogs.length > 300) localLogs = localLogs.slice(0, 300);
+
+    localStorage.setItem("comercial_logs", JSON.stringify(localLogs));
+    console.log("⚡ [Realtime] Novo log de auditoria recebido em tempo real:", log.action, log.userEmail);
+
+    try {
+        window.dispatchEvent(new CustomEvent("vellia:logAdded", { detail: log }));
+        window.dispatchEvent(new CustomEvent("vellia:logsUpdated", { detail: localLogs }));
+        window.dispatchEvent(new Event("storage"));
+    } catch(evErr) {}
+}
+
 export function connectRealtime() {
     if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
 
@@ -469,6 +497,15 @@ export function connectRealtime() {
             ref: String(joinRef++),
             join_ref: String(joinRef)
         }));
+
+        // Entrar no canal da tabela comercial_logs
+        ws.send(JSON.stringify({
+            topic: "realtime:public:comercial_logs",
+            event: "phx_join",
+            payload: { config: { broadcast: { self: false }, presence: { key: "" } } },
+            ref: String(joinRef++),
+            join_ref: String(joinRef)
+        }));
     };
 
     ws.onmessage = (event) => {
@@ -524,6 +561,12 @@ export function connectRealtime() {
                 processIncomingUserChange(type, record, oldRecord);
             }
 
+            // Evento na tabela comercial_logs
+            if (msg.topic === "realtime:public:comercial_logs") {
+                const log = msg.payload?.record || msg.payload?.new_record || msg.payload?.data?.record;
+                if (log) processIncomingLog(log);
+            }
+
             // Supabase Realtime v2: eventos aninhados em postgres_changes ou broadcast
             if (msg.event === "broadcast" || msg.event === "postgres_changes") {
                 const changes = msg.payload?.data || msg.payload;
@@ -551,6 +594,9 @@ export function connectRealtime() {
                         const record = changes.record || changes.new_record;
                         const oldRecord = changes.old_record;
                         processIncomingUserChange(type, record, oldRecord);
+                    } else if (changes.table === "comercial_logs") {
+                        const log = changes.record || changes.new_record;
+                        if (log) processIncomingLog(log);
                     }
                 }
             }

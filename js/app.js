@@ -714,6 +714,55 @@ function renderLogsDashboard(allLogs) {
     }
 }
 
+
+window.applyLogFilter = function(filterType) {
+    window.activeLogFilter = filterType;
+    
+    // Atualizar botões de filtro
+    document.querySelectorAll(".log-filter-btn").forEach(b => {
+        if (b.dataset.type === filterType) {
+            b.classList.add("active");
+            b.style.border = "1px solid var(--primary)";
+            b.style.background = "var(--primary-glow)";
+            b.style.color = "var(--primary)";
+        } else {
+            b.classList.remove("active");
+            b.style.border = "1px solid var(--border-color)";
+            b.style.background = "var(--bg-surface)";
+            b.style.color = "var(--text-secondary)";
+        }
+    });
+
+    // Destacar visualmente o card clicado no topo
+    document.querySelectorAll(".log-clickable-card").forEach(card => {
+        card.style.borderColor = "var(--border-color)";
+        card.style.boxShadow = "none";
+        card.style.background = "var(--bg-surface)";
+    });
+
+    if (filterType === 'alerts') {
+        const el = document.getElementById("log-stat-alerts")?.closest(".log-clickable-card");
+        if (el) {
+            el.style.borderColor = "#D97706";
+            el.style.boxShadow = "0 0 0 2px rgba(217, 119, 6, 0.25)";
+        }
+    } else if (filterType === 'critical') {
+        const el = document.getElementById("log-stat-critical")?.closest(".log-clickable-card");
+        if (el) {
+            el.style.borderColor = "#DC2626";
+            el.style.boxShadow = "0 0 0 2px rgba(220, 38, 38, 0.25)";
+        }
+    } else if (filterType === 'all') {
+        const el = document.getElementById("log-stat-total")?.closest(".log-clickable-card");
+        if (el) {
+            el.style.borderColor = "var(--primary)";
+            el.style.boxShadow = "0 0 0 2px rgba(98, 87, 245, 0.25)";
+        }
+    }
+
+    renderLogs();
+};
+
 window.renderLogs = function() { renderLogs(); };
 function renderLogs() {
     if (!elements.logsTableBody) return;
@@ -723,36 +772,43 @@ function renderLogs() {
     // Renderizar métricas e gráficos do dashboard
     renderLogsDashboard(logs);
     
-    const searchQuery = elements.logSearch.value.toLowerCase().trim();
+    const searchQuery = elements.logSearch ? elements.logSearch.value.toLowerCase().trim() : "";
     const filter = window.activeLogFilter || "all";
     
-    // Filtragem
+    // Filtragem com suporte a SDR, Vendas, Segurança, Alertas e Críticas
     const filteredLogs = logs.filter(log => {
+        const act = (log.action || "").toLowerCase();
+        const stat = (log.status || "").toUpperCase();
+
         if (filter === "sdr") {
-            const act = log.action.toLowerCase();
             if (!act.includes("sdr") && !act.includes("whatsapp")) return false;
         } else if (filter === "sales") {
-            const act = log.action.toLowerCase();
-            if (!act.includes("sale") && !act.includes("proposal")) return false;
+            if (!act.includes("sale") && !act.includes("proposal") && !act.includes("lead")) return false;
         } else if (filter === "security") {
-            const act = log.action.toLowerCase();
-            if (!act.includes("access") && !act.includes("login") && !act.includes("config") && !act.includes("user_created") && !act.includes("sdr_ai_toggle")) return false;
+            if (!act.includes("access") && !act.includes("login") && !act.includes("logout") && !act.includes("config") && !act.includes("user_") && !act.includes("sdr_ai_toggle")) return false;
+        } else if (filter === "alerts") {
+            if (stat !== "WARN" && stat !== "ERROR") return false;
+        } else if (filter === "critical") {
+            const isCritical = act.includes("ACCESS_DENIED") || act.includes("SECURITY") || act.includes("LOCKOUT") || act.includes("PURGE") || act.includes("CLEAR") || act.includes("DELETE") || stat === "ERROR";
+            if (!isCritical) return false;
         }
 
         if (!searchQuery) return true;
         return (
-            log.action.toLowerCase().includes(searchQuery) ||
-            log.userEmail.toLowerCase().includes(searchQuery) ||
-            log.details.toLowerCase().includes(searchQuery) ||
-            log.status.toLowerCase().includes(searchQuery)
+            act.includes(searchQuery) ||
+            (log.userEmail || "").toLowerCase().includes(searchQuery) ||
+            (log.details || "").toLowerCase().includes(searchQuery) ||
+            stat.toLowerCase().includes(searchQuery)
         );
     });
 
     if (filteredLogs.length === 0) {
         elements.logsTableBody.innerHTML = `
             <tr>
-                <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 30px;">
-                    Nenhum log encontrado para a busca.
+                <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 36px 20px;">
+                    <div style="font-size: 28px; margin-bottom: 8px;">🔍</div>
+                    <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Nenhum registro encontrado</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">Tente alterar o filtro ou o termo digitado na busca.</div>
                 </td>
             </tr>
         `;
@@ -764,11 +820,11 @@ function renderLogs() {
         
         let statusBadge = "";
         if (log.status === "SUCCESS") {
-            statusBadge = '<span class="status-pill status-active">Sucesso</span>';
+            statusBadge = '<span class="status-pill status-active" style="display: inline-flex; align-items: center; gap: 4px;">✓ Sucesso</span>';
         } else if (log.status === "WARN") {
-            statusBadge = '<span class="status-pill status-risk">Aviso</span>';
+            statusBadge = '<span class="status-pill status-risk" style="display: inline-flex; align-items: center; gap: 4px;">⚠️ Aviso</span>';
         } else if (log.status === "ERROR") {
-            statusBadge = '<span class="status-pill status-inactive">Erro</span>';
+            statusBadge = '<span class="status-pill status-inactive" style="display: inline-flex; align-items: center; gap: 4px;">✕ Erro</span>';
         }
 
         // Custom action badges
@@ -786,16 +842,148 @@ function renderLogs() {
         }
 
         return `
-            <tr style="transition: background 0.15s ease; border-bottom: 1px solid var(--border-color);" onmouseover="this.style.background='var(--bg-surface-hover)'" onmouseout="this.style.background='transparent'">
-                <td style="font-weight: 500; font-family: monospace; font-size: 12px; color: var(--text-muted);">${formattedDate}</td>
+            <tr onclick="window.openLogDetailModal('${log.id}')" title="Clique para inspecionar os detalhes deste registro" style="cursor: pointer; transition: all 0.15s ease; border-bottom: 1px solid var(--border-color);" onmouseover="this.style.background='var(--bg-surface-hover)'" onmouseout="this.style.background='transparent'">
+                <td style="font-weight: 500; font-family: monospace; font-size: 12px; color: var(--text-muted); white-space: nowrap;">${formattedDate}</td>
                 <td><strong style="color: var(--text-primary); font-size: 12.5px; font-weight: 600;">${log.userEmail}</strong></td>
                 <td>${actionBadge}</td>
-                <td style="color: var(--text-secondary); max-width: 400px; word-break: break-word; font-size: 12.5px;">${log.details}</td>
-                <td>${statusBadge}</td>
+                <td style="color: var(--text-secondary); max-width: 440px; font-size: 12.5px;">
+                    <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 420px;">${log.details}</div>
+                </td>
+                <td style="white-space: nowrap;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        ${statusBadge}
+                        <button type="button" class="btn btn-outline" onclick="event.stopPropagation(); window.openLogDetailModal('${log.id}')" style="padding: 3px 8px; font-size: 11px; border-radius: 6px; display: inline-flex; align-items: center; gap: 3px; border-color: var(--border-color); color: var(--primary); background: var(--bg-surface);">
+                            <span>🔍 Ver</span>
+                        </button>
+                    </div>
+                </td>
             </tr>
         `;
     }).join("");
 }
+
+// ==========================================================================
+// MODAL DE DETALHES 360º DO LOG DE AUDITORIA
+// ==========================================================================
+
+window.openLogDetailModal = function(logId) {
+    const logs = Store.getLogs();
+    const log = logs.find(l => String(l.id) === String(logId));
+    if (!log) {
+        console.warn("Log não encontrado para id:", logId);
+        return;
+    }
+
+    const modal = document.getElementById("modal-log-detail");
+    const overlay = document.getElementById("log-detail-modal-overlay");
+    const body = document.getElementById("log-modal-body");
+    const headerTitle = document.getElementById("log-modal-header-title");
+    const headerIcon = document.getElementById("log-modal-header-icon");
+    if (!modal || !overlay || !body) return;
+
+    // Ajustar ícone e título conforme a ação
+    let icon = "📝";
+    if (log.action.includes("LOGIN") || log.action.includes("ACCESS")) icon = "🔐";
+    else if (log.action.includes("SDR") || log.action.includes("WHATSAPP")) icon = "🤖";
+    else if (log.action.includes("SALE") || log.action.includes("PROPOSAL")) icon = "💼";
+    else if (log.status === "ERROR" || log.action.includes("DENIED")) icon = "🚨";
+    else if (log.status === "WARN") icon = "⚠️";
+
+    if (headerIcon) headerIcon.textContent = icon;
+    if (headerTitle) headerTitle.textContent = `Registro: ${log.action}`;
+
+    const formattedDate = new Date(log.timestamp).toLocaleString("pt-BR", { dateStyle: "full", timeStyle: "medium" });
+
+    let statusHtml = '<span class="status-pill status-active">✓ Sucesso</span>';
+    if (log.status === "WARN") statusHtml = '<span class="status-pill status-risk">⚠️ Atenção / Aviso</span>';
+    if (log.status === "ERROR") statusHtml = '<span class="status-pill status-inactive">✕ Falha / Erro</span>';
+
+    body.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            <!-- Grid de Metadados -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; background: var(--bg-app); padding: 16px; border-radius: 12px; border: 1px solid var(--border-color);">
+                <div>
+                    <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px;">Data & Horário</span>
+                    <span style="font-size: 13px; font-weight: 600; color: var(--text-primary); font-family: monospace;">${formattedDate}</span>
+                </div>
+                <div>
+                    <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px;">Responsável</span>
+                    <span style="font-size: 13px; font-weight: 600; color: var(--primary);">${log.userEmail}</span>
+                </div>
+                <div>
+                    <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px;">Status da Ação</span>
+                    <div>${statusHtml}</div>
+                </div>
+                <div>
+                    <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px;">Evento / Tag</span>
+                    <span class="status-pill" style="font-family: monospace; font-size: 11.5px; font-weight: 700;">${log.action}</span>
+                </div>
+            </div>
+
+            <!-- Caixa de Detalhes Completa -->
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">Mensagem & Rastro do Evento</span>
+                    <button type="button" class="btn btn-outline" onclick="window.copyLogText('${encodeURIComponent(log.details)}', this)" style="padding: 3px 10px; font-size: 11px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
+                        📋 Copiar Detalhes
+                    </button>
+                </div>
+                <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px 16px; font-size: 13.5px; line-height: 1.6; color: var(--text-primary); word-break: break-word;">
+                    ${log.details}
+                </div>
+            </div>
+
+            <!-- Payload Técnico & Identificador -->
+            <div style="background: #0F172A; border-radius: 10px; padding: 14px 16px; color: #E2E8F0; font-family: monospace; font-size: 11.5px; overflow-x: auto;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #94A3B8; font-size: 11px;">
+                    <span>JSON PAYLOAD DO REGISTRO</span>
+                    <span>ID: ${log.id}</span>
+                </div>
+                <pre style="margin: 0; white-space: pre-wrap;">${JSON.stringify(log, null, 2)}</pre>
+            </div>
+
+            <!-- Ações Rápidas -->
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button type="button" class="btn btn-outline" onclick="window.filterLogsByUser('${log.userEmail}')" style="font-size: 12px; padding: 6px 14px;">
+                    🔍 Ver todos os registros deste usuário
+                </button>
+            </div>
+        </div>
+    `;
+
+    modal.style.display = "flex";
+    overlay.style.display = "block";
+};
+
+window.closeLogDetailModal = function() {
+    const modal = document.getElementById("modal-log-detail");
+    const overlay = document.getElementById("log-detail-modal-overlay");
+    if (modal) modal.style.display = "none";
+    if (overlay) overlay.style.display = "none";
+};
+
+window.copyLogText = function(encodedText, btnEl) {
+    try {
+        const text = decodeURIComponent(encodedText);
+        navigator.clipboard.writeText(text);
+        if (btnEl) {
+            const originalText = btnEl.innerHTML;
+            btnEl.innerHTML = "✓ Copiado!";
+            setTimeout(() => { btnEl.innerHTML = originalText; }, 2000);
+        }
+    } catch(e) {
+        console.error("Erro ao copiar texto:", e);
+    }
+};
+
+window.filterLogsByUser = function(userEmail) {
+    window.closeLogDetailModal();
+    if (elements.logSearch) {
+        elements.logSearch.value = userEmail;
+        renderLogs();
+    }
+};
+
 
 // ==========================================================================
 // VIEW: DASHBOARD METRICS
@@ -1698,23 +1886,27 @@ function setupEventListeners() {
     if (logFiltersContainer) {
         logFiltersContainer.addEventListener("click", (e) => {
             const btn = e.target.closest(".log-filter-btn");
-            if (btn) {
-                document.querySelectorAll(".log-filter-btn").forEach(b => {
-                    b.classList.remove("active");
-                    b.style.border = "1px solid var(--border-color)";
-                    b.style.background = "var(--bg-surface)";
-                    b.style.color = "var(--text-secondary)";
-                });
-                btn.classList.add("active");
-                btn.style.border = "1px solid var(--primary)";
-                btn.style.background = "var(--primary-glow)";
-                btn.style.color = "var(--primary)";
-                
-                window.activeLogFilter = btn.dataset.type;
-                renderLogs();
+            if (btn && window.applyLogFilter) {
+                window.applyLogFilter(btn.dataset.type);
             }
         });
     }
+
+    // Fechar modal de log com clique no overlay ou tecla ESC
+    const logOverlay = document.getElementById("log-detail-modal-overlay");
+    if (logOverlay) {
+        logOverlay.addEventListener("click", () => {
+            if (window.closeLogDetailModal) window.closeLogDetailModal();
+        });
+    }
+    window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+            const modal = document.getElementById("modal-log-detail");
+            if (modal && modal.style.display !== "none") {
+                if (window.closeLogDetailModal) window.closeLogDetailModal();
+            }
+        }
+    });
 
     // Ouvir eventos de logs em tempo real para re-renderizar a tela de auditoria instantaneamente
     const handleLogsRealtimeUpdate = () => {

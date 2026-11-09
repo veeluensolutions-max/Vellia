@@ -98,7 +98,14 @@ async function supabaseFetch(table) {
 // =========================================================================
 function sanitizeIsoDate(dateVal, fallback = null) {
     if (!dateVal) return fallback;
-    if (typeof dateVal === "string" && dateVal.trim() === "") return fallback;
+    if (typeof dateVal === "string") {
+        const trimmed = dateVal.trim();
+        if (trimmed === "") return fallback;
+        // Se for string YYYY-MM-DD pura, fixar às 12:00:00 UTC para evitar recuo de fuso horário (-3h no Brasil)
+        if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+            return `${trimmed}T12:00:00.000Z`;
+        }
+    }
     const d = new Date(dateVal);
     if (isNaN(d.getTime())) return fallback;
     return d.toISOString();

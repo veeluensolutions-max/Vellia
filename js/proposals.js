@@ -3,6 +3,48 @@ import { Auth } from "./auth.js";
 import { Audit } from "./audit.js";
 import { parseCurrency } from "./utils.js";
 
+
+// Funções auxiliares à prova de fuso horário (evitam recuo de dia no Brasil GMT-3)
+export function formatProposalDate(dateStr, options = null) {
+    if (!dateStr) return "—";
+    if (typeof dateStr === "string") {
+        const clean = dateStr.trim();
+        const match = clean.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (match) {
+            const [_, y, m, d] = match;
+            if (!options) {
+                return `${d}/${m}/${y}`;
+            }
+            const monthNames = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+            const mIdx = parseInt(m, 10) - 1;
+            return `${d} de ${monthNames[mIdx] || m} de ${y}`;
+        }
+    }
+    try {
+        const d = new Date(dateStr);
+        return isNaN(d.getTime()) ? "—" : d.toLocaleDateString("pt-BR", options || undefined);
+    } catch (e) {
+        return "—";
+    }
+}
+
+export function getIsoDateInput(dateVal) {
+    if (!dateVal) return new Date().toISOString().split('T')[0];
+    if (typeof dateVal === "string") {
+        const match = dateVal.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (match) return `${match[1]}-${match[2]}-${match[3]}`;
+    }
+    try {
+        const d = new Date(dateVal);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    } catch(e) {
+        return new Date().toISOString().split('T')[0];
+    }
+}
+
 let activeProposalId = null;
 let isSaving = false;
 let currentEditingBudgetId = null;
@@ -10,6 +52,8 @@ let currentEditingLeadId = null;
 let currentBudgetAttachments = [];
 
 export const Proposals = {
+    formatProposalDate,
+    getIsoDateInput,
     _eventsBound: false,
     init() {
         this.renderStats();
@@ -452,7 +496,7 @@ export const Proposals = {
 
             // 5. Coluna Enviada em
             if (colSent) {
-                const sentStr = p.sentAt ? new Date(p.sentAt).toLocaleDateString("pt-BR") : "";
+                const sentStr = p.sentAt ? formatProposalDate(p.sentAt) : "";
                 const rawSent = (p.sentAt || "").toLowerCase();
                 if (!sentStr.toLowerCase().includes(colSent) && !rawSent.includes(colSent)) {
                     return false;
@@ -550,8 +594,8 @@ export const Proposals = {
         }
 
         tbody.innerHTML = filtered.map(p => {
-            const sentDate = p.sentAt ? new Date(p.sentAt).toLocaleDateString("pt-BR") : "—";
-            const validDate = p.validUntil ? new Date(p.validUntil).toLocaleDateString("pt-BR") : "—";
+            const sentDate = p.sentAt ? formatProposalDate(p.sentAt) : "—";
+            const validDate = p.validUntil ? formatProposalDate(p.validUntil) : "—";
             const isExpired = p.validUntil && new Date(p.validUntil) < new Date() && p.status === "Enviada";
 
             const statusBadge = this.getStatusBadge(p.status);
@@ -862,8 +906,8 @@ export const Proposals = {
             setVal("gc-budget-number", proposal.budgetNumber || proposal.id.slice(-4));
             setVal("gc-budget-client", proposal.company || "");
             setVal("gc-budget-seller", proposal.seller || proposal.createdBy || Auth.getCurrentUser()?.name || "San Charles");
-            setVal("gc-budget-date", proposal.sentAt ? new Date(proposal.sentAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
-            setVal("gc-budget-delivery-date", proposal.deliveryDate || (proposal.sentAt ? new Date(proposal.sentAt).toISOString().split('T')[0] : ""));
+            setVal("gc-budget-date", getIsoDateInput(proposal.sentAt));
+            setVal("gc-budget-delivery-date", getIsoDateInput(proposal.deliveryDate || proposal.sentAt));
             setVal("gc-budget-attention", proposal.contact || "");
             setVal("gc-budget-validity", proposal.validityText || "10 dias");
             setVal("gc-budget-channel", proposal.channel || "Presencial");
@@ -1368,6 +1412,28 @@ export const Proposals = {
                 : leads.find(l => l.company && company && l.company.toLowerCase().trim() === company.toLowerCase().trim());
 
             if (currentEditingBudgetId) {
+                // Obter proposta existente para preservar campos e atualizar datas corretamente
+                const existingProp = Store.getProposalById(currentEditingBudgetId) || {};
+
+                // Tratar data de emissão/envio (sentAt) fixando às 12:00 UTC para evitar desvio de fuso horário (-3h no Brasil)
+                let finalSentAt = existingProp.sentAt || new Date().toISOString();
+                if (date) {
+                    finalSentAt = `${date}T12:00:00.000Z`;
+                }
+
+                // Tratar validade (validUntil) com base no prazo de validade (ex: 10 dias)
+                let finalValidUntil = existingProp.validUntil;
+                if (date) {
+                    const daysMatch = (validityText || "10 dias").match(/\d+/);
+                    const days = daysMatch ? parseInt(daysMatch[0], 10) : 10;
+                    const parts = date.split("-");
+                    if (parts.length === 3) {
+                        const baseDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10), 12, 0, 0);
+                        baseDate.setDate(baseDate.getDate() + days);
+                        finalValidUntil = baseDate.toISOString();
+                    }
+                }
+
                 // Edição
                 const updatedProposal = {
                     company,
@@ -1375,6 +1441,8 @@ export const Proposals = {
                     title,
                     service: mainService,
                     value: finalValue,
+                    sentAt: finalSentAt,
+                    validUntil: finalValidUntil,
                     budgetNumber,
                     seller,
                     deliveryDate,
@@ -1395,6 +1463,9 @@ export const Proposals = {
                     internalNotes
                 };
 
+                if (existingProp.workspace) {
+                    updatedProposal.workspace = existingProp.workspace;
+                }
                 if (targetLead && targetLead.workspace) {
                     updatedProposal.workspace = targetLead.workspace;
                 }
@@ -1413,8 +1484,20 @@ export const Proposals = {
                     service: mainService,
                     value: finalValue,
                     status: "Enviada",
-                    sentAt: date ? new Date(date).toISOString() : new Date().toISOString(),
-                    validUntil: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+                    sentAt: date ? `${date}T12:00:00.000Z` : new Date().toISOString(),
+                    validUntil: (() => {
+                        const daysMatch = (validityText || "10 dias").match(/\d+/);
+                        const days = daysMatch ? parseInt(daysMatch[0], 10) : 10;
+                        if (date) {
+                            const parts = date.split("-");
+                            if (parts.length === 3) {
+                                const baseDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10), 12, 0, 0);
+                                baseDate.setDate(baseDate.getDate() + days);
+                                return baseDate.toISOString();
+                            }
+                        }
+                        return new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+                    })(),
                     budgetNumber,
                     seller,
                     deliveryDate,
@@ -1475,7 +1558,7 @@ export const Proposals = {
         activeProposalId = id;
 
         const fmt = (v) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
-        const fmtDate = (d) => d ? new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" }) : "—";
+        const fmtDate = (d) => d ? formatProposalDate(d, { day: "2-digit", month: "long", year: "numeric" }) : "—";
         const isExpired = proposal.validUntil && new Date(proposal.validUntil) < new Date() && proposal.status === "Enviada";
 
         this.setEl("detail-company", proposal.company);
@@ -1616,7 +1699,7 @@ export const Proposals = {
             title: document.getElementById("edit-prop-title").value.trim(),
             service: document.getElementById("edit-prop-service").value,
             value: parseCurrency(document.getElementById("edit-prop-value").value),
-            validUntil: validUntil ? new Date(validUntil).toISOString() : null,
+            validUntil: validUntil ? `${validUntil}T12:00:00.000Z` : null,
             notes: document.getElementById("edit-prop-notes").value.trim()
         };
 
@@ -1921,8 +2004,8 @@ Seja profissional, direto e use uma linguagem persuasiva focada em fechamento co
         doc.setFont("helvetica", "normal");
         doc.setFontSize(8.5);
         doc.setTextColor(...GRAY_COLOR);
-        doc.text(`Data de Emissão: ${proposal.sentAt ? new Date(proposal.sentAt).toLocaleDateString("pt-BR") : "—"}`, 115, y + 16);
-        doc.text(`Válida até: ${proposal.validUntil ? new Date(proposal.validUntil).toLocaleDateString("pt-BR") : "A combinar"}`, 115, y + 22);
+        doc.text(`Data de Emissão: ${formatProposalDate(proposal.sentAt)}`, 115, y + 16);
+        doc.text(`Válida até: ${proposal.validUntil ? formatProposalDate(proposal.validUntil) : "A combinar"}`, 115, y + 22);
         doc.text(`Serviço: ${proposal.service || "Serviço Técnico"}`, 115, y + 28);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(11);

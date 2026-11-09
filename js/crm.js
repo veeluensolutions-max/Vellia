@@ -492,6 +492,116 @@ export const CRM = {
         if (btnGenDocs) {
             btnGenDocs.addEventListener("click", () => this.generateDocsProposal());
         }
+
+        // Abas do Lead Drawer (Tabs Clean)
+        document.querySelectorAll(".lead-drawer-tab-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const tab = btn.getAttribute("data-tab");
+                if (tab) this.switchDrawerTab(tab);
+            });
+        });
+
+        // Pipeline Stepper (Mudança Visual de Estágio do Lead)
+        document.querySelectorAll(".lead-stage-step").forEach(stepBtn => {
+            stepBtn.addEventListener("click", () => {
+                const stage = stepBtn.getAttribute("data-stage");
+                if (stage) this.handleStageChangeRequest(stage);
+            });
+        });
+
+        const btnMarkLost = document.getElementById("btn-drawer-mark-lost");
+        if (btnMarkLost) {
+            btnMarkLost.addEventListener("click", () => {
+                const lead = Store.getLeadById(activeLeadId);
+                if (lead?.stage === "Cliente Perdido") {
+                    this.handleStageChangeRequest("Lead Qualificado");
+                } else {
+                    this.handleStageChangeRequest("Cliente Perdido");
+                }
+            });
+        }
+
+        // Ações de Copiar no Drawer com Toast
+        const bindCopyBtn = (id, getValue, label) => {
+            const btn = document.getElementById(id);
+            if (btn) {
+                btn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    const val = getValue();
+                    if (!val || val === "-" || val === "Não informado") return;
+                    navigator.clipboard.writeText(val);
+                    if (window.Toast) Toast.info("Copiado!", `${label} copiado para a área de transferência.`);
+                });
+            }
+        };
+
+        bindCopyBtn("btn-copy-wa", () => Store.getLeadById(activeLeadId)?.whatsapp, "WhatsApp");
+        bindCopyBtn("btn-copy-phone2", () => Store.getLeadById(activeLeadId)?.phone2, "Telefone Secundário");
+        bindCopyBtn("btn-copy-email", () => Store.getLeadById(activeLeadId)?.email, "E-mail");
+        bindCopyBtn("btn-copy-email2", () => Store.getLeadById(activeLeadId)?.email2, "E-mail Secundário");
+        bindCopyBtn("btn-copy-cnpj", () => Store.getLeadById(activeLeadId)?.cnpj, "CNPJ");
+
+        const btnOpenWa = document.getElementById("btn-open-wa-direct");
+        if (btnOpenWa) {
+            btnOpenWa.addEventListener("click", (e) => {
+                e.stopPropagation();
+                if (!activeLeadId) return;
+                const lead = Store.getLeadById(activeLeadId);
+                const rawNum = lead?.whatsapp || lead?.phone;
+                if (!rawNum) return;
+                const clean = rawNum.replace(/\D/g, "");
+                const num = clean.startsWith("55") ? clean : `55${clean}`;
+                window.open(`https://wa.me/${num}`, "_blank");
+            });
+        }
+    },
+
+    switchDrawerTab(tabName) {
+        document.querySelectorAll(".lead-drawer-tab-btn").forEach(btn => {
+            btn.classList.toggle("active", btn.getAttribute("data-tab") === tabName);
+        });
+        document.querySelectorAll(".lead-tab-pane").forEach(pane => {
+            const isActive = pane.id === `tab-pane-${tabName}`;
+            pane.classList.toggle("active", isActive);
+            pane.style.display = isActive ? "flex" : "none";
+        });
+    },
+
+    updatePipelineStepper(currentStage) {
+        const stages = [
+            "Contato",
+            "Lead Gerado",
+            "Lead Qualificado",
+            "Proposta Enviada",
+            "Negociação",
+            "Cliente Fechado"
+        ];
+
+        const isLost = currentStage === "Cliente Perdido";
+        const currentIndex = stages.indexOf(currentStage);
+
+        document.querySelectorAll(".lead-stage-step").forEach((btn, idx) => {
+            const stepStage = btn.getAttribute("data-stage");
+            btn.classList.remove("active", "completed", "lost");
+
+            if (isLost) {
+                btn.innerHTML = `${idx + 1}. ${stepStage.replace("Lead ", "")}`;
+            } else if (idx < currentIndex) {
+                btn.classList.add("completed");
+                btn.innerHTML = `✓ ${stepStage.replace("Lead ", "")}`;
+            } else if (idx === currentIndex) {
+                btn.classList.add("active");
+                btn.innerHTML = `● ${stepStage.replace("Lead ", "")}`;
+            } else {
+                btn.innerHTML = `${idx + 1}. ${stepStage.replace("Lead ", "")}`;
+            }
+        });
+
+        const btnLost = document.getElementById("btn-drawer-mark-lost");
+        if (btnLost) {
+            btnLost.textContent = isLost ? "● Reativar Lead" : "Marcar Perdido";
+            btnLost.style.color = isLost ? "var(--primary)" : "#ef4444";
+        }
     },
 
     async generateDocsProposal() {
@@ -1457,10 +1567,104 @@ export const CRM = {
                 : "Não informado";
         }
 
-        // Configurar select de estágios
+        // Configurar select de estágios e Stepper Visual
         const stageSelect = document.getElementById("drawer-change-stage");
         if (stageSelect) {
             stageSelect.value = lead.stage;
+        }
+        this.updatePipelineStepper(lead.stage);
+        this.switchDrawerTab("followup");
+
+        // Parsear dados estruturados da Receita Federal se existirem em notes
+        const rfContainer = document.getElementById("drawer-rf-structured-data");
+        const rfBadge = document.getElementById("drawer-rf-status-badge");
+        const notesEl = document.getElementById("drawer-lead-notes");
+
+        if (lead.notes && lead.notes.includes("[Dados Cadastrais Receita Federal]")) {
+            const lines = lead.notes.split("\n");
+            let razaoSocial = "";
+            let situacao = "ATIVA";
+            let endereco = "";
+            let cnae = "";
+            let porte = "";
+            let manualNotes = [];
+
+            let inRfBlock = false;
+            lines.forEach(line => {
+                const trimmed = line.trim();
+                if (trimmed.includes("[Dados Cadastrais Receita Federal]")) {
+                    inRfBlock = true;
+                    return;
+                }
+                if (inRfBlock) {
+                    if (trimmed.startsWith("Razão Social:")) razaoSocial = trimmed.replace("Razão Social:", "").trim();
+                    else if (trimmed.startsWith("Situação:")) situacao = trimmed.replace("Situação:", "").trim();
+                    else if (trimmed.startsWith("Endereço:")) endereco = trimmed.replace("Endereço:", "").trim();
+                    else if (trimmed.startsWith("CNAE:")) cnae = trimmed.replace("CNAE:", "").trim();
+                    else if (trimmed.startsWith("Porte:")) porte = trimmed.replace("Porte:", "").trim();
+                    else if (trimmed.length > 0 && !trimmed.includes(":")) {
+                        inRfBlock = false;
+                        manualNotes.push(line);
+                    }
+                } else if (trimmed.length > 0) {
+                    manualNotes.push(line);
+                }
+            });
+
+            if (rfBadge) {
+                const isAtiva = situacao.toUpperCase().includes("ATIVA");
+                rfBadge.textContent = situacao || "ATIVA";
+                rfBadge.style.background = isAtiva ? "rgba(16, 185, 129, 0.12)" : "rgba(239, 68, 68, 0.12)";
+                rfBadge.style.color = isAtiva ? "#10b981" : "#ef4444";
+            }
+
+            if (rfContainer) {
+                rfContainer.innerHTML = `
+                    ${razaoSocial ? `
+                    <div style="background: var(--bg-app); padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <span style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; display: block;">Razão Social</span>
+                        <span style="font-size: 13px; font-weight: 700; color: var(--text-primary);">${razaoSocial}</span>
+                    </div>` : ''}
+                    ${cnae ? `
+                    <div style="background: var(--bg-app); padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <span style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; display: block;">CNAE / Atividade</span>
+                        <span style="font-size: 12.5px; font-weight: 600; color: var(--text-secondary);">${cnae}</span>
+                    </div>` : ''}
+                    ${endereco ? `
+                    <div style="background: var(--bg-app); padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <span style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; display: block;">Endereço Cadastrado</span>
+                        <span style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">${endereco}</span>
+                    </div>` : ''}
+                `;
+            }
+
+            if (notesEl) {
+                const cleanedNotes = manualNotes.join("\n").trim();
+                notesEl.textContent = cleanedNotes || "Nenhuma observação manual.";
+            }
+        } else {
+            if (rfContainer) {
+                rfContainer.innerHTML = `
+                    <div style="font-size: 12px; color: var(--text-muted); padding: 8px; text-align: center;">
+                        Consulte o CNPJ na edição do lead para carregar dados oficiais da Receita Federal.
+                    </div>
+                `;
+            }
+            if (notesEl) {
+                notesEl.textContent = lead.notes || "Sem observações.";
+            }
+        }
+
+        // Visibilidade de telefone 2 e email 2
+        const rowPhone2 = document.getElementById("row-phone2-container");
+        if (rowPhone2) rowPhone2.style.display = lead.phone2 ? "flex" : "none";
+
+        const rowEmail2 = document.getElementById("row-email2-container");
+        if (rowEmail2) rowEmail2.style.display = lead.email2 ? "flex" : "none";
+
+        const mailLink = document.getElementById("btn-mail-link");
+        if (mailLink && lead.email) {
+            mailLink.href = `mailto:${lead.email}`;
         }
 
         // Renderizar Linha do Tempo
@@ -1921,6 +2125,7 @@ export const CRM = {
 
         if (activeLeadId === leadId) {
             this.renderTimeline(updatedLead);
+            this.updatePipelineStepper(updatedLead.stage);
         }
         this.renderLeadsTable();
 
@@ -2050,6 +2255,7 @@ export const CRM = {
         if (stageSelect) stageSelect.value = updatedLead.stage;
 
         this.renderTimeline(updatedLead);
+        this.updatePipelineStepper(updatedLead.stage);
         this.renderLeadsTable();
         pendingStageChange = null;
         window.dispatchEvent(new CustomEvent("vellia:stageChanged"));

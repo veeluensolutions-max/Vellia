@@ -878,7 +878,7 @@ export const Proposals = {
         datalist.innerHTML = Array.from(names).map(name => `<option value="${name}"></option>`).join("");
     },
 
-    openBudgetScreen(proposalId = null, leadData = null, suggestedService = null, suggestedPrice = 0) {
+    openBudgetScreen(proposalId = null, leadData = null, suggestedService = null, suggestedPrice = 0, initialPayload = null) {
         currentEditingBudgetId = proposalId;
         currentBudgetAttachments = [];
 
@@ -1029,19 +1029,19 @@ export const Proposals = {
 
             const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ""; };
             setVal("gc-budget-number", nextNumber);
-            setVal("gc-budget-client", leadData?.company || "");
+            setVal("gc-budget-client", leadData?.company || initialPayload?.company || "");
             setVal("gc-budget-seller", sellerName);
             setVal("gc-budget-date", todayStr);
             setVal("gc-budget-delivery-date", todayStr);
-            setVal("gc-budget-attention", leadData?.contact || "");
-            setVal("gc-budget-validity", "10 dias");
+            setVal("gc-budget-attention", leadData?.contact || initialPayload?.contact || "");
+            setVal("gc-budget-validity", initialPayload?.validityText || "10 dias");
             setVal("gc-budget-channel", defaultChannel);
             setVal("gc-budget-cost-center", "");
-            setVal("gc-budget-intro", `A VEELUEN Solutions é uma empresa com mais de 12 anos no mercado que atua nas áreas de engenharia e meio ambiente.\n• Ampla atuação em indústrias e construção civil.\n• Está presente em Pernambuco com operação em regiões do Brasil.\n• Seus profissionais possuem 20 anos de mercado nacional, além de amplo conhecimento em diversos ramos da engenharia.`);
-            setVal("gc-budget-tech-desc", "");
+            setVal("gc-budget-intro", initialPayload?.intro || `A VEELUEN Solutions é uma empresa com mais de 12 anos no mercado que atua nas áreas de engenharia e meio ambiente.\n• Ampla atuação em indústrias e construção civil.\n• Está presente em Pernambuco com operação em regiões do Brasil.\n• Seus profissionais possuem 20 anos de mercado nacional, além de amplo conhecimento em diversos ramos da engenharia.`);
+            setVal("gc-budget-tech-desc", initialPayload?.techDescription || "");
             setVal("gc-budget-freight", "0.00");
             setVal("gc-budget-carrier", "");
-            setVal("gc-budget-notes", `Previsão de entrega:\nA combinar.\nCondições de pagamento:\n50% + 50%.`);
+            setVal("gc-budget-notes", initialPayload?.notes || `Previsão de entrega:\nA combinar.\nCondições de pagamento:\n50% + 50%.`);
             setVal("gc-budget-internal-notes", leadInternalNotes);
 
             // Serviços
@@ -1049,7 +1049,7 @@ export const Proposals = {
             if (servicesTbody) servicesTbody.innerHTML = "";
             this.addServiceRow({
                 service: suggestedService || (leadData?.service || "Licenciamento Ambiental"),
-                details: leadData?.company ? `Atendimento especializado para ${leadData.company}` : "",
+                details: initialPayload?.serviceDetails || (leadData?.company ? `Atendimento especializado para ${leadData.company}` : "Atendimento técnico e operacional"),
                 qty: 1,
                 price: (suggestedPrice !== null && suggestedPrice !== undefined && suggestedPrice > 0) ? suggestedPrice : 0
             });

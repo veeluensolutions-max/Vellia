@@ -125,6 +125,7 @@ export const Calculators = {
     },
 
     openCalculator(type) {
+        this.injectModal();
         this.activeCalculator = type;
         const config = this.getCalculatorConfig(type);
         if (!config) return;
@@ -256,8 +257,13 @@ export const Calculators = {
         this.closeModal();
         Toast.show(`Proposta comercial criada com sucesso! (R$ ${this.currentResult.suggestedPrice.toLocaleString('pt-BR')})`, "success");
 
-        // Redirecionar para visualização de propostas
+        // Redirecionar para visualização de propostas e abrir o orçamento no GestãoClick para revisão e emissão
         window.location.hash = "#proposals";
+        setTimeout(() => {
+            if (window.Proposals && window.Proposals.openBudgetScreen) {
+                window.Proposals.openBudgetScreen(created.id);
+            }
+        }, 350);
     },
 
     formatCurrency(val) {
@@ -829,3 +835,5 @@ export const Calculators = {
         return configs[type] || null;
     }
 };
+
+window.Calculators = Calculators;

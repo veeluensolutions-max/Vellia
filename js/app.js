@@ -286,6 +286,8 @@ function showAppShell(user) {
         window.Copilot = Copilot;
         window.CRM = CRM;
         window.Proposals = Proposals;
+        window.Calculators = Calculators;
+        window.Learning = Learning;
         try { WhatsApp.init(); } catch(e) { console.error("WhatsApp init error:", e); }
         try { Copilot.init(); } catch(e) { console.error("Copilot init error:", e); }
         try { Intervention.init(); } catch(e) { console.error("Intervention init error:", e); }
@@ -1968,6 +1970,8 @@ window.VisionOCR = VisionOCR;
 window.Inspections = Inspections;
 window.Proposals = Proposals;
 window.Clients = Clients;
+window.Calculators = Calculators;
+window.Learning = Learning;
 
 // ==========================================================================
 // WORKSPACE / COMPANY SWITCHER

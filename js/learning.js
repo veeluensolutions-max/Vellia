@@ -6,6 +6,7 @@
 
 import { Auth } from "./auth.js";
 import { Toast } from "./toast.js";
+import { Calculators } from "./calculators.js";
 
 export const Learning = {
     _eventsBound: false,
@@ -1032,6 +1033,8 @@ export const Learning = {
             const isExcelencia = s.company === "Excelência Ambiental";
             const companyColor = isExcelencia ? "#10b981" : "#3b82f6";
             const companyBg = isExcelencia ? "rgba(16, 185, 129, 0.12)" : "rgba(59, 130, 246, 0.12)";
+            const hasCalc = ["srv_isocinetica", "srv_solar", "srv_ete", "srv_licenciamento", "srv_residuos", "srv_nr13"].includes(s.id);
+            const calcBtnText = s.id === "srv_isocinetica" ? "🧮 Calculadora" : (hasCalc ? "🧮 Calcular" : "📄 Orçar");
 
             return `
                 <div class="learning-service-card" onclick="window.Learning.openServiceDetail('${s.id}')" style="cursor: pointer; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 16px; padding: 22px; transition: all 0.25s ease; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
@@ -1081,13 +1084,13 @@ export const Learning = {
                         </div>
                     </div>
 
-                    <!-- Footer do Card -->
+                    <!-- Footer do Card com Ações Rápidas -->
                     <div style="border-top: 1px solid var(--border-color); padding-top: 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                        <button type="button" class="btn btn-outline btn-sm" onclick="event.stopPropagation(); window.Learning.openCalculatorForService('${s.id}')" style="font-size: 11px; padding: 4px 10px; height: 28px; font-weight: 700; border-color: ${s.color}60; color: ${s.color}; background: ${s.bgLight}; border-radius: 7px; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s;" title="${hasCalc ? 'Abrir calculadora técnica do serviço' : 'Gerar proposta pré-configurada'}">
+                            <span>${calcBtnText}</span>
+                        </button>
                         <span style="font-size: 11.5px; font-weight: 700; color: ${s.color}; display: flex; align-items: center; gap: 4px;">
-                            📖 Ver Guia & Pitch de Vendas &rarr;
-                        </span>
-                        <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">
-                            3 min leitura
+                            📖 Guia &rarr;
                         </span>
                     </div>
                 </div>
@@ -1109,6 +1112,7 @@ export const Learning = {
         const isExcelencia = s.company === "Excelência Ambiental";
         const companyColor = isExcelencia ? "#10b981" : "#3b82f6";
         const companyBg = isExcelencia ? "rgba(16, 185, 129, 0.12)" : "rgba(59, 130, 246, 0.12)";
+        const hasCalc = ["srv_isocinetica", "srv_solar", "srv_ete", "srv_licenciamento", "srv_residuos", "srv_nr13"].includes(s.id);
 
         bodyEl.innerHTML = `
             <!-- Topo com Ícone e Cabeçalho -->
@@ -1272,11 +1276,16 @@ export const Learning = {
                             ${s.pricingReference}
                         </div>
                     </div>
-                    <div style="display: flex; gap: 10px;">
-                        <button type="button" class="btn btn-outline" onclick="window.Learning.openLeadForService('${s.id}')" style="font-size: 12px; padding: 8px 14px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-outline" onclick="window.Learning.openLeadForService('${s.id}')" style="font-size: 11.5px; padding: 7px 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;">
                             <span>🎯</span> Cadastrar Lead
                         </button>
-                        <button type="button" class="btn btn-primary" onclick="window.Learning.openProposalForService('${s.id}')" style="font-size: 12px; padding: 8px 16px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                        ${hasCalc ? `
+                            <button type="button" class="btn btn-outline" onclick="window.Learning.openCalculatorForService('${s.id}')" style="font-size: 11.5px; padding: 7px 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; border-color: ${s.color}; color: ${s.color}; background: ${s.bgLight};">
+                                <span>🧮</span> Abrir Calculadora
+                            </button>
+                        ` : ''}
+                        <button type="button" class="btn btn-primary" onclick="window.Learning.openProposalForService('${s.id}')" style="font-size: 11.5px; padding: 7px 14px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; background: ${s.color}; border-color: ${s.color};">
                             <span>📄</span> Gerar Proposta Direta
                         </button>
                     </div>
@@ -1369,35 +1378,99 @@ export const Learning = {
         }, 300);
     },
 
+    openCalculatorForService(serviceId) {
+        const s = this.services.find(srv => srv.id === serviceId);
+        if (!s) return;
+
+        this.closeDetailModal();
+
+        // 1. Isocinética
+        if (s.id === "srv_isocinetica" || s.calculatorRoute === "#isocinetica") {
+            window.location.hash = "#isocinetica";
+            if (window.Toast) Toast.info("Calculadora Isocinética", "Dimensionamento técnico de chaminés pronto para uso.");
+            return;
+        }
+
+        // 2. Calculadoras modais integradas (Solar, ETE, Licenciamento, Resíduos, NR-13)
+        const calcKeyMap = {
+            "srv_solar": "solar",
+            "srv_ete": "ete",
+            "srv_licenciamento": "licensing",
+            "srv_residuos": "waste",
+            "srv_nr13": "nr13"
+        };
+
+        const calcKey = calcKeyMap[s.id];
+        if (calcKey) {
+            window.location.hash = "#calculators";
+            setTimeout(() => {
+                const calcObj = window.Calculators || Calculators;
+                if (calcObj && calcObj.openCalculator) {
+                    calcObj.openCalculator(calcKey);
+                    if (window.Toast) Toast.info("Calculadora Técnica", `Calculadora de ${s.title} aberta para dimensionamento.`);
+                }
+            }, 150);
+            return;
+        }
+
+        // Se não possuir calculadora matemática dedicada, direciona diretamente para o orçamento completo pré-configurado
+        this.openProposalForService(serviceId);
+    },
+
     openProposalForService(serviceId) {
         const s = this.services.find(srv => srv.id === serviceId);
         if (!s) return;
 
         this.closeDetailModal();
 
-        // Se tiver calculadora específica (ex: isocinética)
-        if (s.calculatorRoute === "#isocinetica") {
-            window.location.hash = "#isocinetica";
-            if (window.Toast) Toast.info("Calculadora Aberta", `Dimensionamento de ${s.title} pronto para uso.`);
-            return;
+        // Alinhar empresa/workspace
+        if (s.company) {
+            localStorage.setItem("activeCompany", s.company);
+            if (window.Store && typeof window.Store.setActiveCompany === "function") {
+                window.Store.setActiveCompany(s.company);
+            }
         }
 
         const suggestedPrice = this.extractReferencePrice(s.pricingReference);
+        const resText = (s.resolutions || []).join(", ");
+        const isExcelencia = s.company === "Excelência Ambiental";
+
+        const introText = isExcelencia 
+            ? `A EXCELÊNCIA AMBIENTAL é uma empresa de engenharia e consultoria especializada em soluções ambientais, laudos técnicos laboratoriais, amostragem isocinética de emissões atmosféricas, gestão de efluentes e licenciamento ambiental com registro no CREA e CRQ.`
+            : `A VEELUEN Solutions é uma empresa com mais de 12 anos de mercado especializada em engenharia mecânica, segurança do trabalho (NR-13, NR-10, AVCB), energia solar fotovoltaica e obras industriais com registro no CREA.`;
+
+        // Construir descrição técnica robusta com as Resoluções
+        let techDescription = `SERVIÇO TÉCNICO ESPECIALIZADO: ${s.title.toUpperCase()}\n\n` +
+            `1. EMBASAMENTO TÉCNICO & RESOLUÇÕES OFICIAIS:\n` +
+            (s.resolutionsDetails || []).map(r => `• ${r.number} (${r.organ}): ${r.summary}\n  Exigência legal: ${r.requirement}`).join("\n") +
+            `\n\n2. ESCOPO DOS TRABALHOS:\n${s.fullDescription}\n\n` +
+            `3. RESPONSABILIDADE TÉCNICA:\nEmissão de Anotação de Responsabilidade Técnica (ART/AFT) junto ao conselho de classe competente (CREA/CRQ), garantindo 100% de conformidade legal perante os órgãos de fiscalização.`;
+
+        let serviceNotes = `Previsão de execução: ${s.pricingReference.includes("Prazo") ? s.pricingReference.split("Prazo")[1].replace(/^[:\s-]+/, "") : "Conforme cronograma técnico alinhado com o cliente."}\nCondições de pagamento: 50% de entrada + 50% na conclusão e entrega da ART homologada.`;
+
+        const initialPayload = {
+            company: "",
+            workspace: s.company,
+            techDescription,
+            intro: introText,
+            notes: serviceNotes,
+            serviceDetails: `Atendimento técnico especializado conforme ${resText || s.legislation}`
+        };
 
         window.location.hash = "#proposals";
         setTimeout(() => {
             if (window.Proposals && window.Proposals.openBudgetScreen) {
-                window.Proposals.openBudgetScreen(null, null, s.title, suggestedPrice);
+                window.Proposals.openBudgetScreen(null, null, s.title, suggestedPrice, initialPayload);
                 
-                const techDesc = document.getElementById("gc-budget-tech-desc");
-                if (techDesc) {
-                    const resText = (s.resolutions || []).join(", ");
-                    techDesc.value = `Serviço Técnico Especializado: ${s.title}\n\n` +
-                        `Resoluções e Legislação Aplicável: ${resText || s.legislation}\n\n` +
-                        `Escopo Resumido:\n${s.fullDescription}`;
-                }
+                // Garantir preenchimento dos campos no DOM
+                const techEl = document.getElementById("gc-budget-tech-desc");
+                if (techEl) techEl.value = techDescription;
+                const introEl = document.getElementById("gc-budget-intro");
+                if (introEl) introEl.value = introText;
+                const notesEl = document.getElementById("gc-budget-notes");
+                if (notesEl) notesEl.value = serviceNotes;
 
-                if (window.Toast) Toast.success("Orçamento Inicializado!", `Serviço "${s.title}" pré-configurado com sucesso.`);
+                if (window.Toast) Toast.success("Orçamento Inicializado!", `Serviço "${s.title}" pré-configurado com as resoluções aplicáveis.`);
             }
         }, 350);
     }

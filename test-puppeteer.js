@@ -15,7 +15,7 @@ const puppeteer = require('puppeteer');
     }
   });
 
-  await page.goto('https://velliacrm.vercel.app/#integrations', {waitUntil: 'networkidle0'});
+  await page.goto('https://vellia.vercel.app/#integrations', {waitUntil: 'networkidle0'});
   
   // click preset admin login
   await page.evaluate(() => {

@@ -696,6 +696,11 @@ export const Users = {
                     return;
                 }
 
+                let hashedPassword = null;
+                if (password && password.trim()) {
+                    hashedPassword = await hashPassword(password.trim());
+                }
+
                 const users = Store.getUsers();
 
                 if (userId) {
@@ -1210,4 +1215,5 @@ export const Users = {
 };
 
 window.UsersModuleOpenDetails = (id) => Users.openUserDetailsModal(id);
+window.Users = Users;
 

@@ -1,11 +1,11 @@
 import "./lazy-loader.js";
 import { Store } from "./store.js";
-import { Auth } from "./auth.js";
+import { Auth } from "./auth.js?v=20261117";
 import { Audit } from "./audit.js";
-import { CRM } from "./crm.js";
+import { CRM } from "./crm.js?v=20261117";
 import { Kanban } from "./kanban.js";
-import { Proposals } from "./proposals.js";
-import { Dashboard } from "./dashboard.js?v=10";
+import { Proposals } from "./proposals.js?v=20261117";
+import { Dashboard } from "./dashboard.js?v=20261117";
 import { Goals } from "./goals.js";
 import { Services } from "./services.js";
 import { analyzeContext } from "./ai.js";

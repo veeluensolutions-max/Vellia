@@ -9,6 +9,8 @@ const charts = {};
 export const Dashboard = {
     currentTimeframe: "all",
     _activityFilter: "all",
+    _dailyProdPeriod: "today",
+    _dailyProdCustomDate: "",
 
         setTimeframe(period) {
         this.currentTimeframe = period;
@@ -126,8 +128,10 @@ export const Dashboard = {
                     }
                     const filteredLeads = this.filterByTimeframe(leads, "createdAt");
                     const filteredProposals = this.filterByTimeframe(proposals, "createdAt");
+                    this.renderManagerDailyProductivity();
                     this.renderVendorRanking(filteredProposals);
-                    this.renderKPIs(filteredLeads, filteredProposals);
+                    this.renderManagerDailyProductivity();
+            this.renderKPIs(filteredLeads, filteredProposals);
                     this.renderRecentActivity(filteredLeads, filteredProposals);
                 }
             };
@@ -169,6 +173,7 @@ export const Dashboard = {
                 const filteredLeads = this.filterByTimeframe(currentLeads, "createdAt");
                 const filteredProposals = this.filterByTimeframe(currentProposals, "createdAt");
                 this.renderRecentActivity(filteredLeads, filteredProposals);
+                this.renderManagerDailyProductivity();
             }
         }, 4000);
     },
@@ -189,7 +194,8 @@ export const Dashboard = {
         const btnLogCall = document.getElementById("btn-quick-log-call");
         if (btnLogCall) {
             btnLogCall.addEventListener("click", () => {
-                window.location.hash = "#crm";
+                const cur = Auth.getCurrentUser();
+                this.openQuickCallModal(cur?.email || "");
             });
         }
 
@@ -3507,7 +3513,789 @@ export const Dashboard = {
                 this.renderGoalsCommissionPanel();
             });
         }
-    }
+    },
+
+    // ===========================================================================
+    // 🎯 PAINEL DE PRIORIDADE MÁXIMA DO GERENTE: PRODUTIVIDADE DIÁRIA POR VENDEDOR
+    // Leads Adicionados no Dia | Ligações Feitas no Dia | Propostas Preenchidas
+    // ===========================================================================
+    setDailyProdPeriod(period, customDate = "") {
+        this._dailyProdPeriod = period;
+        if (period === "custom" && customDate) {
+            this._dailyProdCustomDate = customDate;
+        } else if (period === "today") {
+            const now = new Date();
+            this._dailyProdCustomDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+        } else if (period === "yesterday") {
+            const yest = new Date(Date.now() - 86400000);
+            this._dailyProdCustomDate = `${yest.getFullYear()}-${String(yest.getMonth() + 1).padStart(2, "0")}-${String(yest.getDate()).padStart(2, "0")}`;
+        }
+        this.renderManagerDailyProductivity();
+    },
+
+    getLocalDateKey(rawDate) {
+        if (!rawDate) return null;
+        if (typeof rawDate === "number") {
+            const d = new Date(rawDate);
+            if (isNaN(d.getTime())) return null;
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        }
+        const str = String(rawDate).trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+        if (/^\d{4}-\d{2}-\d{2}T(00:00|12:00)/.test(str)) return str.substring(0, 10);
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(str)) {
+            const [dd, mm, yyyy] = str.split("/");
+            return `${yyyy}-${mm}-${dd}`;
+        }
+        const d = new Date(str);
+        if (isNaN(d.getTime())) return null;
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    },
+
+    matchesDailyProdFilter(rawDateOrTs) {
+        const period = this._dailyProdPeriod || "today";
+        if (period === "all") return true;
+
+        const key = this.getLocalDateKey(rawDateOrTs);
+        if (!key) return false;
+
+        const now = new Date();
+        const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
+        if (period === "today") {
+            return key === todayKey;
+        }
+        if (period === "yesterday") {
+            const yest = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+            const yestKey = `${yest.getFullYear()}-${String(yest.getMonth() + 1).padStart(2, "0")}-${String(yest.getDate()).padStart(2, "0")}`;
+            return key === yestKey;
+        }
+        if (period === "custom" && this._dailyProdCustomDate) {
+            return key === this._dailyProdCustomDate;
+        }
+        if (period === "7d") {
+            const limit = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+            const limitKey = `${limit.getFullYear()}-${String(limit.getMonth() + 1).padStart(2, "0")}-${String(limit.getDate()).padStart(2, "0")}`;
+            return key >= limitKey && key <= todayKey;
+        }
+        if (period === "month") {
+            const monthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+            return key.startsWith(monthPrefix);
+        }
+        return true;
+    },
+
+    computeSellerDailyStats() {
+        const activeCompany = localStorage.getItem("activeCompany") || "Veeluen Solutions";
+        const allUsers = Store.getUsers ? Store.getUsers() : [];
+
+        // Filtrar vendedores e gestores comerciais ativos
+        const sellers = allUsers.filter(u => {
+            if (!u || !u.email) return false;
+            const role = (u.role || "").toLowerCase().trim();
+            if (role !== "seller" && role !== "manager" && role !== "admin") return false;
+            if (u.status === "inactive" || u.status === "Inativo") return false;
+            if (u.companyAccess && u.companyAccess !== "Ambas" && u.companyAccess !== activeCompany) return false;
+            return true;
+        });
+
+        const statsMap = new Map();
+        sellers.forEach(s => {
+            const emailKey = s.email.toLowerCase().trim();
+            statsMap.set(emailKey, {
+                user: s,
+                email: emailKey,
+                name: s.name || s.email.split("@")[0],
+                role: s.role || "seller",
+                avatar: (s.avatar || (s.name || s.email).substring(0, 2)).toUpperCase(),
+                companyAccess: s.companyAccess || "Ambas",
+                leads: [],
+                calls: [],
+                proposals: [],
+                totalProposalValue: 0,
+                lastActivityTs: 0,
+                lastActivityText: ""
+            });
+        });
+
+        // Helper para encontrar o vendedor responsável por um registro
+        const resolveSellerKey = (emailHint, nameHint, fallbackEmail) => {
+            const e1 = (emailHint || "").toLowerCase().trim();
+            const n1 = (nameHint || "").toLowerCase().trim();
+            const f1 = (fallbackEmail || "").toLowerCase().trim();
+
+            // 1. Se houver nome explícito do vendedor (ex: campo seller da proposta) e corresponder a um vendedor
+            if (n1) {
+                for (const [k, st] of statsMap.entries()) {
+                    const uName = st.name.toLowerCase().trim();
+                    const uFirst = uName.split(" ")[0];
+                    if (uName === n1 || (uFirst.length >= 3 && n1.split(" ")[0] === uFirst)) {
+                        return k;
+                    }
+                }
+            }
+            // 2. Correspondência exata por e-mail principal
+            if (e1 && statsMap.has(e1)) return e1;
+            // 3. Correspondência por e-mail fallback (ex: owner do lead)
+            if (f1 && statsMap.has(f1)) return f1;
+            // 4. Tentar correspondência caso owner tenha sido salvo como nome
+            if (f1) {
+                for (const [k, st] of statsMap.entries()) {
+                    const uName = st.name.toLowerCase().trim();
+                    if (uName === f1 || (uName.split(" ")[0].length >= 3 && f1.includes(uName.split(" ")[0]))) {
+                        return k;
+                    }
+                }
+            }
+            return null;
+        };
+
+        const registerActivity = (st, ts, label) => {
+            const numTs = typeof ts === "number" ? ts : new Date(ts).getTime();
+            if (!isNaN(numTs) && numTs > st.lastActivityTs) {
+                st.lastActivityTs = numTs;
+                st.lastActivityText = label;
+            }
+        };
+
+        // 1. CONTABILIZAR LEADS ADICIONADOS E LIGAÇÕES NAS INTERAÇÕES DOS LEADS
+        const activeLeads = Store.getLeads ? Store.getLeads() : [];
+        const leadById = new Map();
+
+        activeLeads.forEach(lead => {
+            if (!lead) return;
+            leadById.set(String(lead.id), lead);
+
+            const leadTs = Store.getLeadTimestamp ? Store.getLeadTimestamp(lead) : (lead.createdAt ? new Date(lead.createdAt).getTime() : 0);
+            if (leadTs > 0 && this.matchesDailyProdFilter(leadTs)) {
+                const creatorHint = (lead.createdBy && lead.createdBy !== "sistema@vellia.com") ? lead.createdBy : (lead.owner || lead.stageHistory?.[0]?.userEmail || "");
+                const sellerKey = resolveSellerKey(creatorHint, "", lead.owner);
+                if (sellerKey && statsMap.has(sellerKey)) {
+                    const st = statsMap.get(sellerKey);
+                    st.leads.push({
+                        id: lead.id,
+                        company: lead.company || "Empresa sem nome",
+                        contact: lead.contact || "—",
+                        phone: lead.whatsapp || lead.phone || "—",
+                        stage: lead.stage || "Contato",
+                        timestamp: leadTs
+                    });
+                    registerActivity(st, leadTs, `Novo Lead: ${lead.company || "Cliente"}`);
+                }
+            }
+
+            // Verificar interações do lead para contabilizar LIGAÇÕES
+            const interactions = Array.isArray(lead.interactions) ? lead.interactions : [];
+            interactions.forEach(int => {
+                if (!int) return;
+                const typeStr = (int.type || "").toLowerCase();
+                const isCall = typeStr === "ligação" || typeStr === "ligacao" || typeStr.includes("liga") || typeStr.includes("telefone") || typeStr.includes("call");
+                if (!isCall) return;
+
+                let intTs = int.timestamp ? new Date(int.timestamp).getTime() : 0;
+                if ((!intTs || isNaN(intTs)) && typeof int.id === "string" && int.id.startsWith("int_")) {
+                    const parsed = parseInt(int.id.split("_")[1], 10);
+                    if (!isNaN(parsed)) intTs = parsed;
+                }
+                if (intTs > 0 && this.matchesDailyProdFilter(intTs)) {
+                    const userHint = (int.userEmail && int.userEmail !== "sistema@vellia.com") ? int.userEmail : (int.user || lead.owner || "");
+                    const sellerKey = resolveSellerKey(userHint, int.user || "", lead.owner);
+                    if (sellerKey && statsMap.has(sellerKey)) {
+                        const st = statsMap.get(sellerKey);
+                        st.calls.push({
+                            id: int.id || `call_${intTs}`,
+                            leadId: lead.id,
+                            company: lead.company || "Cliente",
+                            contact: lead.contact || "—",
+                            phone: lead.whatsapp || lead.phone || "—",
+                            description: int.description || "Ligação comercial registrada",
+                            timestamp: intTs
+                        });
+                        registerActivity(st, intTs, `Ligação: ${lead.company || "Cliente"}`);
+                    }
+                }
+            });
+        });
+
+        // Contabilizar também atividades ao vivo de ligação caso não estejam duplicadas
+        const liveActs = this.getLiveActivities ? this.getLiveActivities() : [];
+        liveActs.forEach(act => {
+            if (!act || !act.activity) return;
+            const matchesComp = !act.workspace || act.workspace === activeCompany;
+            if (!matchesComp) return;
+            const actText = act.activity.toLowerCase();
+            if (!actText.includes("liga") && !actText.includes("📞") && !actText.includes("telefon")) return;
+
+            const actTs = act.startedAt ? new Date(act.startedAt).getTime() : 0;
+            if (actTs > 0 && this.matchesDailyProdFilter(actTs)) {
+                const sellerKey = resolveSellerKey(act.sellerEmail, act.sellerName, "");
+                if (sellerKey && statsMap.has(sellerKey)) {
+                    const st = statsMap.get(sellerKey);
+                    st.calls.push({
+                        id: act.id || `live_${actTs}`,
+                        leadId: "",
+                        company: "Bloco de Ligações / Prospecção",
+                        contact: act.sellerName || st.name,
+                        phone: "—",
+                        description: `${act.activity} (${act.actualMinutes || act.durationMinutes || 0} min)`,
+                        timestamp: actTs
+                    });
+                    registerActivity(st, actTs, `Atividade: ${act.activity}`);
+                }
+            }
+        });
+
+        // 2. CONTABILIZAR PROPOSTAS PREENCHIDAS NO PERÍODO
+        const allProposals = Store.getProposals ? Store.getProposals() : [];
+        allProposals.forEach(prop => {
+            if (!prop) return;
+            let propTs = 0;
+            if (prop.createdAt) {
+                const t = new Date(prop.createdAt).getTime();
+                if (!isNaN(t) && t > 0) propTs = t;
+            }
+            if (!propTs && typeof prop.id === "string" && prop.id.startsWith("prop_")) {
+                const parsed = parseInt(prop.id.split("_")[1], 10);
+                if (!isNaN(parsed) && parsed > 1000000000000) propTs = parsed;
+            }
+            const matchesCreated = propTs > 0 && this.matchesDailyProdFilter(propTs);
+            const matchesSent = prop.sentAt && this.matchesDailyProdFilter(prop.sentAt);
+
+            if (matchesCreated || matchesSent) {
+                const effectiveTs = propTs || (prop.sentAt ? new Date(prop.sentAt).getTime() : Date.now());
+                const assocLead = prop.leadId ? leadById.get(String(prop.leadId)) : null;
+                const authorHint = (prop.createdBy && prop.createdBy !== "sistema@vellia.com") ? prop.createdBy : (prop.authorEmail || prop.ownerEmail || "");
+                const sellerKey = resolveSellerKey(authorHint, prop.seller || "", assocLead?.owner || "");
+
+                if (sellerKey && statsMap.has(sellerKey)) {
+                    const st = statsMap.get(sellerKey);
+                    const val = parseFloat(prop.value) || 0;
+                    st.proposals.push({
+                        id: prop.id,
+                        budgetNumber: prop.budgetNumber || prop.id.substring(0, 6),
+                        company: prop.company || assocLead?.company || "Cliente",
+                        title: prop.title || prop.service || "Orçamento Comercial",
+                        value: val,
+                        status: prop.status || "Enviada",
+                        timestamp: effectiveTs
+                    });
+                    st.totalProposalValue += val;
+                    registerActivity(st, effectiveTs, `Proposta: ${prop.company || "Cliente"}`);
+                }
+            }
+        });
+
+        // Converter em lista: exibir todos os vendedores (role=seller) + gestores/admins que tiveram atividade no período
+        const allStats = Array.from(statsMap.values());
+        const sellerList = allStats.filter(st => {
+            if ((st.role || "").toLowerCase() === "seller") return true;
+            return st.leads.length > 0 || st.calls.length > 0 || st.proposals.length > 0;
+        }).sort((a, b) => {
+            const scoreA = (a.leads.length * 3) + (a.calls.length * 2) + (a.proposals.length * 4) + (a.role === "seller" ? 0.5 : 0);
+            const scoreB = (b.leads.length * 3) + (b.calls.length * 2) + (b.proposals.length * 4) + (b.role === "seller" ? 0.5 : 0);
+            if (scoreB !== scoreA) return scoreB - scoreA;
+            return a.name.localeCompare(b.name);
+        });
+
+        // Ordenar itens internos por horário mais recente
+        sellerList.forEach(st => {
+            st.leads.sort((a, b) => b.timestamp - a.timestamp);
+            st.calls.sort((a, b) => b.timestamp - a.timestamp);
+            st.proposals.sort((a, b) => b.timestamp - a.timestamp);
+        });
+
+        const totals = sellerList.reduce((acc, st) => {
+            acc.leads += st.leads.length;
+            acc.calls += st.calls.length;
+            acc.proposals += st.proposals.length;
+            acc.proposalsValue += st.totalProposalValue;
+            if (st.leads.length > 0 || st.calls.length > 0 || st.proposals.length > 0) {
+                acc.activeSellers += 1;
+            }
+            return acc;
+        }, { leads: 0, calls: 0, proposals: 0, proposalsValue: 0, activeSellers: 0 });
+
+        return { sellerList, totals };
+    },
+
+    renderManagerDailyProductivity() {
+        const container = document.getElementById("manager-daily-productivity-panel");
+        if (!container) return;
+
+        const { sellerList, totals } = this.computeSellerDailyStats();
+        this._lastSellerDailyStats = sellerList;
+
+        const period = this._dailyProdPeriod || "today";
+        const now = new Date();
+        const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+        const todayBr = now.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+
+        const periodLabels = {
+            today: `Hoje (${todayBr})`,
+            yesterday: "Ontem",
+            "7d": "Últimos 7 Dias",
+            month: "Este Mês",
+            all: "Todo o Histórico",
+            custom: this._dailyProdCustomDate ? this._dailyProdCustomDate.split("-").reverse().join("/") : todayBr
+        };
+        const currentPeriodLabel = periodLabels[period] || periodLabels.today;
+
+        const fmtCurrency = (v) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
+
+        const roleLabels = {
+            seller: { label: "Vendedor(a)", color: "#10b981", bg: "rgba(16, 185, 129, 0.1)" },
+            manager: { label: "Gerente Comercial", color: "#6366f1", bg: "rgba(99, 102, 241, 0.1)" },
+            admin: { label: "Administrador", color: "#8b5cf6", bg: "rgba(139, 92, 246, 0.1)" }
+        };
+
+        container.innerHTML = `
+            <!-- Barra Superior Gradiente de Prioridade Máxima -->
+            <div style="height: 4px; width: 100%; background: linear-gradient(90deg, #6366f1 0%, #10b981 50%, #8b5cf6 100%);"></div>
+
+            <div style="padding: 22px 24px;">
+                <!-- Cabeçalho & Filtros de Dia -->
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #4f46e5, #6366f1); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3); flex-shrink: 0;">
+                            📊
+                        </div>
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.01em;">
+                                    Produtividade Diária por Vendedor
+                                </h3>
+                                <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; padding: 3px 9px; border-radius: 99px; background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25);">
+                                    🔥 Prioridade Máxima
+                                </span>
+                                <span style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: rgba(16, 185, 129, 0.12); color: #059669;">
+                                    📅 ${currentPeriodLabel}
+                                </span>
+                            </div>
+                            <p style="margin: 3px 0 0 0; font-size: 12.5px; color: var(--text-secondary);">
+                                Acompanhamento direto de <strong>Leads Adicionados</strong>, <strong>Ligações Realizadas</strong> e <strong>Propostas Preenchidas</strong> por cada vendedor.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Controles Rápidos de Filtro de Dia + Botão Registrar Ligação -->
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <div style="display: inline-flex; background: var(--bg-app); border: 1px solid var(--border-color); border-radius: 10px; padding: 3px; gap: 2px;">
+                            <button type="button" onclick="window.Dashboard.setDailyProdPeriod('today')" style="padding: 5px 11px; font-size: 11.5px; font-weight: 700; border-radius: 7px; border: none; cursor: pointer; transition: all 0.15s; background: ${period === 'today' ? 'var(--primary)' : 'transparent'}; color: ${period === 'today' ? '#fff' : 'var(--text-secondary)'};">
+                                Hoje
+                            </button>
+                            <button type="button" onclick="window.Dashboard.setDailyProdPeriod('yesterday')" style="padding: 5px 11px; font-size: 11.5px; font-weight: 700; border-radius: 7px; border: none; cursor: pointer; transition: all 0.15s; background: ${period === 'yesterday' ? 'var(--primary)' : 'transparent'}; color: ${period === 'yesterday' ? '#fff' : 'var(--text-secondary)'};">
+                                Ontem
+                            </button>
+                            <button type="button" onclick="window.Dashboard.setDailyProdPeriod('7d')" style="padding: 5px 11px; font-size: 11.5px; font-weight: 700; border-radius: 7px; border: none; cursor: pointer; transition: all 0.15s; background: ${period === '7d' ? 'var(--primary)' : 'transparent'}; color: ${period === '7d' ? '#fff' : 'var(--text-secondary)'};">
+                                7 Dias
+                            </button>
+                            <button type="button" onclick="window.Dashboard.setDailyProdPeriod('month')" style="padding: 5px 11px; font-size: 11.5px; font-weight: 700; border-radius: 7px; border: none; cursor: pointer; transition: all 0.15s; background: ${period === 'month' ? 'var(--primary)' : 'transparent'}; color: ${period === 'month' ? '#fff' : 'var(--text-secondary)'};">
+                                Mês
+                            </button>
+                            <button type="button" onclick="window.Dashboard.setDailyProdPeriod('all')" style="padding: 5px 11px; font-size: 11.5px; font-weight: 700; border-radius: 7px; border: none; cursor: pointer; transition: all 0.15s; background: ${period === 'all' ? 'var(--primary)' : 'transparent'}; color: ${period === 'all' ? '#fff' : 'var(--text-secondary)'};">
+                                Tudo
+                            </button>
+                        </div>
+
+                        <input type="date" id="manager-daily-date-picker" value="${this._dailyProdCustomDate || todayIso}" onchange="window.Dashboard.setDailyProdPeriod('custom', this.value)" title="Escolher uma data específica" style="height: 34px; padding: 0 10px; font-size: 12px; font-weight: 600; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); cursor: pointer;">
+
+                        <button type="button" onclick="window.Dashboard.openQuickCallModal()" class="btn btn-primary" style="height: 34px; padding: 0 13px; font-size: 12px; font-weight: 700; border-radius: 8px; background: #10b981; border-color: #10b981; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 3px 10px rgba(16, 185, 129, 0.25);">
+                            <span>📞</span> + Registrar Ligação
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 3 GRANDES CARDS DE TOTAIS DA EQUIPE NO DIA -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-bottom: 20px;">
+                    <!-- Card 1: Leads Adicionados -->
+                    <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(59, 130, 246, 0.03) 100%); border: 1.5px solid rgba(99, 102, 241, 0.25); border-radius: 14px; padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                        <div>
+                            <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #4f46e5; display: block; margin-bottom: 4px;">
+                                ➕ Leads Adicionados (${period === 'today' ? 'Hoje' : currentPeriodLabel})
+                            </span>
+                            <div style="font-size: 30px; font-weight: 900; color: var(--text-primary); line-height: 1.1; font-variant-numeric: tabular-nums;" id="mgr-total-leads-today">
+                                ${totals.leads}
+                            </div>
+                            <span style="font-size: 11.5px; color: var(--text-muted); font-weight: 500;">
+                                Novos clientes prospectados pela equipe
+                            </span>
+                        </div>
+                        <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(99, 102, 241, 0.14); color: #4f46e5; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+                            👥
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Ligações Feitas -->
+                    <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.03) 100%); border: 1.5px solid rgba(16, 185, 129, 0.28); border-radius: 14px; padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                        <div>
+                            <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #059669; display: block; margin-bottom: 4px;">
+                                📞 Ligações Realizadas (${period === 'today' ? 'Hoje' : currentPeriodLabel})
+                            </span>
+                            <div style="font-size: 30px; font-weight: 900; color: var(--text-primary); line-height: 1.1; font-variant-numeric: tabular-nums;" id="mgr-total-calls-today">
+                                ${totals.calls}
+                            </div>
+                            <span style="font-size: 11.5px; color: var(--text-muted); font-weight: 500;">
+                                Contatos telefônicos registrados no CRM
+                            </span>
+                        </div>
+                        <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(16, 185, 129, 0.15); color: #059669; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+                            📞
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Propostas Preenchidas -->
+                    <div style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(168, 85, 247, 0.03) 100%); border: 1.5px solid rgba(139, 92, 246, 0.28); border-radius: 14px; padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                        <div>
+                            <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #7c3aed; display: block; margin-bottom: 4px;">
+                                📝 Propostas Preenchidas (${period === 'today' ? 'Hoje' : currentPeriodLabel})
+                            </span>
+                            <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
+                                <span style="font-size: 30px; font-weight: 900; color: var(--text-primary); line-height: 1.1; font-variant-numeric: tabular-nums;" id="mgr-total-proposals-today">
+                                    ${totals.proposals}
+                                </span>
+                                <span style="font-size: 12.5px; font-weight: 800; color: #7c3aed; background: rgba(139, 92, 246, 0.12); padding: 2px 8px; border-radius: 6px;">
+                                    ${fmtCurrency(totals.proposalsValue)}
+                                </span>
+                            </div>
+                            <span style="font-size: 11.5px; color: var(--text-muted); font-weight: 500;">
+                                Orçamentos elaborados e emitidos
+                            </span>
+                        </div>
+                        <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(139, 92, 246, 0.15); color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+                            📄
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LISTA SIMPLES E DIRETA POR VENDEDOR (GRID RESPONSIVO SEM CORTE) -->
+                <div style="border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; background: var(--bg-surface);">
+                    <!-- Cabeçalho do Grid -->
+                    <div style="display: grid; grid-template-columns: 1.55fr 1fr 1.15fr 1.15fr 1.25fr; align-items: center; background: var(--bg-app); border-bottom: 1.5px solid var(--border-color); padding: 11px 16px; font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; gap: 10px;">
+                        <div>Vendedor / Responsável</div>
+                        <div style="text-align: center;">➕ Leads no Dia</div>
+                        <div style="text-align: center;">📞 Ligações Feitas</div>
+                        <div style="text-align: center;">📝 Propostas Preenchidas</div>
+                        <div style="text-align: right;">Última Ação & Detalhes</div>
+                    </div>
+
+                    <!-- Linhas dos Vendedores -->
+                    <div>
+                        ${sellerList.length === 0 ? `
+                            <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 13px;">
+                                Nenhum vendedor encontrado para esta empresa.
+                            </div>
+                        ` : sellerList.map((st, idx) => {
+                            const rStyle = roleLabels[st.role] || roleLabels.seller;
+                            const hasAny = st.leads.length > 0 || st.calls.length > 0 || st.proposals.length > 0;
+                            const lastTimeStr = st.lastActivityTs > 0
+                                ? new Date(st.lastActivityTs).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+                                : null;
+
+                            return `
+                            <div style="display: grid; grid-template-columns: 1.55fr 1fr 1.15fr 1.15fr 1.25fr; align-items: center; padding: 12px 16px; gap: 10px; border-bottom: ${idx === sellerList.length - 1 ? 'none' : '1px solid var(--border-color)'}; transition: background 0.15s;" onmouseover="this.style.background='var(--bg-app)'" onmouseout="this.style.background='transparent'">
+                                <!-- Vendedor -->
+                                <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                                    <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12.5px; flex-shrink: 0;">
+                                        ${st.avatar}
+                                    </div>
+                                    <div style="min-width: 0;">
+                                        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                            <span style="font-size: 13.5px; font-weight: 800; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${st.name}</span>
+                                            <span style="font-size: 9.5px; font-weight: 700; padding: 1.5px 6px; border-radius: 99px; background: ${rStyle.bg}; color: ${rStyle.color};">
+                                                ${rStyle.label}
+                                            </span>
+                                        </div>
+                                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                            ${st.email}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Coluna 1: Leads Adicionados -->
+                                <div style="text-align: center;">
+                                    <button type="button" onclick="window.Dashboard.openSellerDailyDetailModal('${st.email}', 'leads')" title="Clique para ver os leads adicionados por ${st.name}" style="display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 102px; padding: 6px 12px; border-radius: 10px; border: 1.5px solid ${st.leads.length > 0 ? 'rgba(99, 102, 241, 0.45)' : 'var(--border-color)'}; background: ${st.leads.length > 0 ? 'rgba(99, 102, 241, 0.1)' : 'var(--bg-app)'}; color: ${st.leads.length > 0 ? '#4f46e5' : 'var(--text-muted)'}; font-weight: 800; font-size: 13.5px; cursor: pointer; transition: all 0.15s;">
+                                        <span>👥</span>
+                                        <span style="font-size: 15.5px;">${st.leads.length}</span>
+                                        <span style="font-size: 11px; font-weight: 700;">${st.leads.length === 1 ? 'Lead' : 'Leads'}</span>
+                                    </button>
+                                </div>
+
+                                <!-- Coluna 2: Ligações Feitas -->
+                                <div style="text-align: center;">
+                                    <div style="display: inline-flex; align-items: center; gap: 5px;">
+                                        <button type="button" onclick="window.Dashboard.openSellerDailyDetailModal('${st.email}', 'calls')" title="Clique para ver as ligações feitas por ${st.name}" style="display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 108px; padding: 6px 12px; border-radius: 10px; border: 1.5px solid ${st.calls.length > 0 ? 'rgba(16, 185, 129, 0.45)' : 'var(--border-color)'}; background: ${st.calls.length > 0 ? 'rgba(16, 185, 129, 0.12)' : 'var(--bg-app)'}; color: ${st.calls.length > 0 ? '#059669' : 'var(--text-muted)'}; font-weight: 800; font-size: 13.5px; cursor: pointer; transition: all 0.15s;">
+                                            <span>📞</span>
+                                            <span style="font-size: 15.5px;">${st.calls.length}</span>
+                                            <span style="font-size: 11px; font-weight: 700;">${st.calls.length === 1 ? 'Ligação' : 'Ligações'}</span>
+                                        </button>
+                                        <button type="button" onclick="window.Dashboard.openQuickCallModal('${st.email}')" title="Registrar nova ligação para ${st.name}" style="width: 30px; height: 32px; border-radius: 8px; border: 1px dashed rgba(16, 185, 129, 0.5); background: rgba(16, 185, 129, 0.06); color: #059669; font-weight: 800; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                            +1
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Coluna 3: Propostas Preenchidas -->
+                                <div style="text-align: center;">
+                                    <button type="button" onclick="window.Dashboard.openSellerDailyDetailModal('${st.email}', 'proposals')" title="Clique para ver as propostas preenchidas por ${st.name}" style="display: inline-flex; flex-direction: column; align-items: center; justify-content: center; min-width: 118px; padding: 5px 12px; border-radius: 10px; border: 1.5px solid ${st.proposals.length > 0 ? 'rgba(139, 92, 246, 0.45)' : 'var(--border-color)'}; background: ${st.proposals.length > 0 ? 'rgba(139, 92, 246, 0.12)' : 'var(--bg-app)'}; color: ${st.proposals.length > 0 ? '#7c3aed' : 'var(--text-muted)'}; cursor: pointer; transition: all 0.15s;">
+                                        <div style="display: flex; align-items: center; gap: 4px; font-weight: 800; font-size: 13.5px;">
+                                            <span>📄</span>
+                                            <span style="font-size: 15.5px;">${st.proposals.length}</span>
+                                            <span style="font-size: 11px; font-weight: 700;">${st.proposals.length === 1 ? 'Proposta' : 'Propostas'}</span>
+                                        </div>
+                                        ${st.totalProposalValue > 0 ? `
+                                            <span style="font-size: 10px; font-weight: 700; color: #6d28d9; margin-top: 1px;">
+                                                ${fmtCurrency(st.totalProposalValue)}
+                                            </span>
+                                        ` : ''}
+                                    </button>
+                                </div>
+
+                                <!-- Coluna 4: Última Ação & Botão Detalhes -->
+                                <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 0;">
+                                    <div style="text-align: right; min-width: 0; flex: 1;">
+                                        ${hasAny ? `
+                                            <span style="font-size: 10.5px; font-weight: 700; color: #10b981; display: block; white-space: nowrap;">
+                                                🟢 Ativo (${lastTimeStr || 'hoje'})
+                                            </span>
+                                            <span style="font-size: 10.5px; color: var(--text-muted); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                                ${st.lastActivityText}
+                                            </span>
+                                        ` : `
+                                            <span style="font-size: 11px; color: var(--text-muted); font-weight: 500; white-space: nowrap;">
+                                                ⏳ Sem registros
+                                            </span>
+                                        `}
+                                    </div>
+                                    <button type="button" onclick="window.Dashboard.openSellerDailyDetailModal('${st.email}', 'all')" class="btn btn-outline btn-sm" style="height: 30px; padding: 0 10px; font-size: 11px; font-weight: 700; border-radius: 7px; white-space: nowrap; flex-shrink: 0;">
+                                        🔍 Detalhes
+                                    </button>
+                                </div>
+                            </div>
+                            `;
+                        }).join("")}
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    openSellerDailyDetailModal(sellerEmail, focusSection = "all") {
+        const stats = (this._lastSellerDailyStats || this.computeSellerDailyStats().sellerList)
+            .find(s => s.email === (sellerEmail || "").toLowerCase().trim());
+        if (!stats) return;
+
+        let modal = document.getElementById("seller-daily-detail-modal");
+        if (!modal) {
+            modal = document.createElement("div");
+            modal.id = "seller-daily-detail-modal";
+            modal.style.cssText = "position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); z-index: 3000; display: flex; align-items: center; justify-content: center; padding: 16px;";
+            document.body.appendChild(modal);
+        }
+
+        const fmtCurrency = (v) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
+        const fmtDt = (ts) => ts ? new Date(ts).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—";
+
+        modal.style.display = "flex";
+        modal.innerHTML = `
+            <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 18px; width: 100%; max-width: 720px; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 25px 60px rgba(0,0,0,0.35); overflow: hidden;">
+                <!-- Header -->
+                <div style="padding: 18px 24px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; background: var(--bg-app);">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 42px; height: 42px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px;">
+                            ${stats.avatar}
+                        </div>
+                        <div>
+                            <h3 style="margin: 0; font-size: 16.5px; font-weight: 800; color: var(--text-primary);">
+                                Relatório Diário — ${stats.name}
+                            </h3>
+                            <span style="font-size: 12px; color: var(--text-muted);">
+                                👥 ${stats.leads.length} Leads • 📞 ${stats.calls.length} Ligações • 📄 ${stats.proposals.length} Propostas (${fmtCurrency(stats.totalProposalValue)})
+                            </span>
+                        </div>
+                    </div>
+                    <button type="button" onclick="document.getElementById('seller-daily-detail-modal').style.display='none'" style="width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-secondary); cursor: pointer; font-size: 18px;">&times;</button>
+                </div>
+
+                <!-- Body -->
+                <div style="padding: 20px 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px;">
+                    <!-- 1. Leads Adicionados -->
+                    <div style="border: 1px solid ${focusSection === 'leads' ? '#6366f1' : 'var(--border-color)'}; border-radius: 12px; padding: 14px 16px; background: var(--bg-surface);">
+                        <div style="font-size: 12.5px; font-weight: 800; color: #4f46e5; text-transform: uppercase; margin-bottom: 10px; display: flex; justify-content: space-between;">
+                            <span>➕ Leads Adicionados (${stats.leads.length})</span>
+                        </div>
+                        ${stats.leads.length === 0 ? `
+                            <div style="font-size: 12.5px; color: var(--text-muted); padding: 8px 0;">Nenhum lead adicionado neste período.</div>
+                        ` : `
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                ${stats.leads.map(l => `
+                                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg-app); border-radius: 8px; border: 1px solid var(--border-color);">
+                                        <div>
+                                            <div style="font-weight: 700; font-size: 13px; color: var(--text-primary);">${l.company}</div>
+                                            <div style="font-size: 11.5px; color: var(--text-muted);">Contato: ${l.contact} • Tel: ${l.phone} • Etapa: ${l.stage}</div>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <span style="font-size: 11px; color: var(--text-muted);">${fmtDt(l.timestamp)}</span>
+                                            <button type="button" onclick="document.getElementById('seller-daily-detail-modal').style.display='none'; window.location.hash='#crm'; setTimeout(() => window.CRM?.openLeadDrawer('${l.id}'), 250);" class="btn btn-outline btn-sm" style="font-size: 11px; height: 28px; padding: 0 10px;">
+                                                Abrir Lead
+                                            </button>
+                                        </div>
+                                    </div>
+                                `).join("")}
+                            </div>
+                        `}
+                    </div>
+
+                    <!-- 2. Ligações Realizadas -->
+                    <div style="border: 1px solid ${focusSection === 'calls' ? '#10b981' : 'var(--border-color)'}; border-radius: 12px; padding: 14px 16px; background: var(--bg-surface);">
+                        <div style="font-size: 12.5px; font-weight: 800; color: #059669; text-transform: uppercase; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                            <span>📞 Ligações Realizadas (${stats.calls.length})</span>
+                            <button type="button" onclick="document.getElementById('seller-daily-detail-modal').style.display='none'; window.Dashboard.openQuickCallModal('${stats.email}');" style="font-size: 11px; font-weight: 700; color: #059669; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); border-radius: 6px; padding: 3px 9px; cursor: pointer;">
+                                + Registrar Ligação
+                            </button>
+                        </div>
+                        ${stats.calls.length === 0 ? `
+                            <div style="font-size: 12.5px; color: var(--text-muted); padding: 8px 0;">Nenhuma ligação registrada neste período.</div>
+                        ` : `
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                ${stats.calls.map(c => `
+                                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg-app); border-radius: 8px; border: 1px solid var(--border-color); gap: 10px;">
+                                        <div style="min-width: 0; flex: 1;">
+                                            <div style="font-weight: 700; font-size: 13px; color: var(--text-primary);">${c.company} <span style="font-weight: 500; color: var(--text-muted); font-size: 11.5px;">(${c.contact})</span></div>
+                                            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">${c.description}</div>
+                                        </div>
+                                        <span style="font-size: 11px; color: var(--text-muted); white-space: nowrap;">${fmtDt(c.timestamp)}</span>
+                                    </div>
+                                `).join("")}
+                            </div>
+                        `}
+                    </div>
+
+                    <!-- 3. Propostas Preenchidas -->
+                    <div style="border: 1px solid ${focusSection === 'proposals' ? '#8b5cf6' : 'var(--border-color)'}; border-radius: 12px; padding: 14px 16px; background: var(--bg-surface);">
+                        <div style="font-size: 12.5px; font-weight: 800; color: #7c3aed; text-transform: uppercase; margin-bottom: 10px; display: flex; justify-content: space-between;">
+                            <span>📝 Propostas Preenchidas (${stats.proposals.length})</span>
+                            <span>Total: ${fmtCurrency(stats.totalProposalValue)}</span>
+                        </div>
+                        ${stats.proposals.length === 0 ? `
+                            <div style="font-size: 12.5px; color: var(--text-muted); padding: 8px 0;">Nenhuma proposta preenchida neste período.</div>
+                        ` : `
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                ${stats.proposals.map(p => `
+                                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg-app); border-radius: 8px; border: 1px solid var(--border-color); gap: 10px;">
+                                        <div>
+                                            <div style="font-weight: 700; font-size: 13px; color: var(--text-primary);">Orçamento #${p.budgetNumber} — ${p.company}</div>
+                                            <div style="font-size: 11.5px; color: var(--text-muted);">${p.title} • Status: <strong>${p.status}</strong></div>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <span style="font-weight: 800; font-size: 13px; color: #10b981;">${fmtCurrency(p.value)}</span>
+                                            <button type="button" onclick="document.getElementById('seller-daily-detail-modal').style.display='none'; window.location.hash='#proposals'; setTimeout(() => window.Proposals?.openBudgetScreen('${p.id}'), 250);" class="btn btn-outline btn-sm" style="font-size: 11px; height: 28px; padding: 0 10px;">
+                                                Abrir
+                                            </button>
+                                        </div>
+                                    </div>
+                                `).join("")}
+                            </div>
+                        `}
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    openQuickCallModal(preselectedSellerEmail = "", preselectedLeadId = "") {
+        const curUser = Auth.getCurrentUser();
+        const sellerEmail = preselectedSellerEmail || curUser?.email || "admin@vellia.com";
+        const leads = Store.getLeads ? Store.getLeads() : [];
+        const sellers = (Store.getUsers ? Store.getUsers() : []).filter(u => u && (u.role === "seller" || u.role === "manager" || u.role === "admin"));
+
+        let modal = document.getElementById("quick-call-log-modal");
+        if (!modal) {
+            modal = document.createElement("div");
+            modal.id = "quick-call-log-modal";
+            modal.style.cssText = "position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); z-index: 3100; display: flex; align-items: center; justify-content: center; padding: 16px;";
+            document.body.appendChild(modal);
+        }
+
+        modal.style.display = "flex";
+        modal.innerHTML = `
+            <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 18px; width: 100%; max-width: 500px; box-shadow: 0 25px 60px rgba(0,0,0,0.35); overflow: hidden;">
+                <div style="padding: 16px 22px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; background: var(--bg-app);">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(16, 185, 129, 0.15); color: #059669; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                            📞
+                        </div>
+                        <div>
+                            <h3 style="margin: 0; font-size: 15.5px; font-weight: 800; color: var(--text-primary);">Registrar Ligação Realizada</h3>
+                            <span style="font-size: 11.5px; color: var(--text-muted);">Soma automaticamente na produtividade diária do vendedor</span>
+                        </div>
+                    </div>
+                    <button type="button" onclick="document.getElementById('quick-call-log-modal').style.display='none'" style="background: none; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer;">&times;</button>
+                </div>
+
+                <div style="padding: 20px 22px; display: flex; flex-direction: column; gap: 14px;">
+                    <div>
+                        <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 5px;">Vendedor Responsável *</label>
+                        <select id="quick-call-seller" class="form-control" style="width: 100%; height: 40px; font-size: 13px;">
+                            ${sellers.map(s => `<option value="${s.email}" ${s.email.toLowerCase() === sellerEmail.toLowerCase() ? 'selected' : ''}>${s.name} (${s.email})</option>`).join("")}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 5px;">Cliente / Lead Contatado *</label>
+                        <select id="quick-call-lead" class="form-control" style="width: 100%; height: 40px; font-size: 13px;">
+                            ${leads.map(l => `<option value="${l.id}" ${String(l.id) === String(preselectedLeadId) ? 'selected' : ''}>${l.company} — ${l.contact || 'Sem contato'} (${l.whatsapp || l.phone || 'S/ tel'})</option>`).join("")}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 5px;">Resumo Rápido da Ligação *</label>
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;">
+                            <button type="button" class="quick-call-preset" data-text="Cliente atendeu — solicitou envio de proposta comercial" style="font-size: 11px; padding: 4px 9px; border-radius: 99px; border: 1px solid var(--border-color); background: var(--bg-app); color: var(--text-secondary); cursor: pointer;">✅ Solicita Proposta</button>
+                            <button type="button" class="quick-call-preset" data-text="Follow-up de proposta enviada — em análise pela diretoria" style="font-size: 11px; padding: 4px 9px; border-radius: 99px; border: 1px solid var(--border-color); background: var(--bg-app); color: var(--text-secondary); cursor: pointer;">📄 Follow-up Proposta</button>
+                            <button type="button" class="quick-call-preset" data-text="Agendada reunião / vistoria técnica com o responsável" style="font-size: 11px; padding: 4px 9px; border-radius: 99px; border: 1px solid var(--border-color); background: var(--bg-app); color: var(--text-secondary); cursor: pointer;">📅 Reunião Agendada</button>
+                            <button type="button" class="quick-call-preset" data-text="Tentativa de contato — caixa postal / retornar mais tarde" style="font-size: 11px; padding: 4px 9px; border-radius: 99px; border: 1px solid var(--border-color); background: var(--bg-app); color: var(--text-secondary); cursor: pointer;">📵 Caixa Postal</button>
+                        </div>
+                        <textarea id="quick-call-desc" class="form-control" placeholder="Descreva o resultado da ligação..." style="width: 100%; min-height: 70px; padding: 10px; font-size: 13px; border-radius: 8px;"></textarea>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px;">
+                        <button type="button" onclick="document.getElementById('quick-call-log-modal').style.display='none'" class="btn btn-outline" style="height: 38px; padding: 0 16px; font-size: 12.5px;">Cancelar</button>
+                        <button type="button" id="btn-confirm-quick-call" class="btn btn-primary" style="height: 38px; padding: 0 20px; font-size: 12.5px; font-weight: 700; background: #10b981; border-color: #10b981;">
+                            ✓ Salvar Ligação
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        modal.querySelectorAll(".quick-call-preset").forEach(chip => {
+            chip.onclick = () => {
+                const descEl = document.getElementById("quick-call-desc");
+                if (descEl) descEl.value = chip.getAttribute("data-text");
+            };
+        });
+
+        const btnConfirm = document.getElementById("btn-confirm-quick-call");
+        if (btnConfirm) {
+            btnConfirm.onclick = () => {
+                const sEmail = document.getElementById("quick-call-seller")?.value;
+                const lId = document.getElementById("quick-call-lead")?.value;
+                const desc = document.getElementById("quick-call-desc")?.value.trim() || "Ligação comercial realizada";
+                if (!lId) {
+                    alert("Selecione um cliente/lead para registrar a ligação.");
+                    return;
+                }
+                Store.addLeadInteraction(lId, sEmail, {
+                    type: "Ligação",
+                    description: desc
+                });
+                modal.style.display = "none";
+                this.renderManagerDailyProductivity();
+                if (window.Toast) Toast.success("Ligação Registrada!", "O contador diário de ligações foi atualizado.");
+            };
+        }
+    },
+
 };
 
 // Expor globalmente para os botões no HTML

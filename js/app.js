@@ -5,7 +5,7 @@ import { Audit } from "./audit.js";
 import { CRM } from "./crm.js";
 import { Kanban } from "./kanban.js";
 import { Proposals } from "./proposals.js";
-import { Dashboard } from "./dashboard.js?v=9";
+import { Dashboard } from "./dashboard.js?v=10";
 import { Goals } from "./goals.js";
 import { Services } from "./services.js";
 import { analyzeContext } from "./ai.js";
@@ -1150,7 +1150,10 @@ function updateDashboardCounters() {
             const execConvCounter = document.getElementById("exec-conversion");
             if (execConvCounter) execConvCounter.textContent = `${conversion}%`;
 
-            // Renderizar Monitor de Atividades da Equipe para o ADM
+            // Renderizar Monitor de Atividades da Equipe e Produtividade Diária para o Gestor/ADM
+            if (window.Dashboard && typeof window.Dashboard.renderManagerDailyProductivity === "function") {
+                window.Dashboard.renderManagerDailyProductivity();
+            }
             if (window.Dashboard && typeof window.Dashboard.renderLiveTasksMonitor === "function") {
                 window.Dashboard.renderLiveTasksMonitor();
             }

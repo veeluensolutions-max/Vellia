@@ -3818,9 +3818,208 @@ export const Dashboard = {
         return { sellerList, totals };
     },
 
+    injectDailyPanelStyles() {
+        if (document.getElementById("mdp-harmonic-styles")) return;
+        const style = document.createElement("style");
+        style.id = "mdp-harmonic-styles";
+        style.textContent = `
+            #manager-daily-productivity-panel,
+            #seller-daily-detail-modal,
+            #quick-call-log-modal {
+                --mdp-font-display: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                --mdp-font-sans: 'Inter', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                font-family: var(--mdp-font-sans);
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+                font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+            }
+            #manager-daily-productivity-panel button,
+            #manager-daily-productivity-panel input,
+            #manager-daily-productivity-panel select,
+            #seller-daily-detail-modal button,
+            #seller-daily-detail-modal select,
+            #quick-call-log-modal button,
+            #quick-call-log-modal select,
+            #quick-call-log-modal textarea {
+                font-family: var(--mdp-font-sans);
+                letter-spacing: -0.01em;
+            }
+            .mdp-segmented-group {
+                display: inline-flex;
+                background: var(--bg-app, #F1F5F9);
+                border: 1px solid var(--border-color, #E2E8F0);
+                border-radius: 10px;
+                padding: 3px;
+                gap: 2px;
+            }
+            .mdp-seg-btn {
+                padding: 6px 13px;
+                font-size: 12px;
+                font-weight: 600;
+                border-radius: 7px;
+                border: none;
+                cursor: pointer;
+                transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+                background: transparent;
+                color: var(--text-secondary, #64748B);
+            }
+            .mdp-seg-btn:hover {
+                color: var(--text-primary, #0F172A);
+            }
+            .mdp-seg-btn.active {
+                background: var(--bg-surface, #FFFFFF);
+                color: var(--primary, #4F46E5);
+                font-weight: 700;
+                box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+            }
+            .mdp-kpi-card {
+                position: relative;
+                background: var(--bg-surface, #FFFFFF);
+                border: 1px solid var(--border-color, #E2E8F0);
+                border-radius: 14px;
+                padding: 18px 20px;
+                cursor: pointer;
+                transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                gap: 12px;
+                overflow: hidden;
+                box-shadow: 0 1px 3px rgba(15, 23, 42, 0.02);
+            }
+            .mdp-kpi-card::before {
+                content: '';
+                position: absolute;
+                top: 0; left: 0; right: 0;
+                height: 3px;
+                background: var(--card-accent, #4F46E5);
+                opacity: 0.85;
+                transition: height 0.2s ease;
+            }
+            .mdp-kpi-card:hover {
+                transform: translateY(-2px);
+                border-color: var(--card-border-hover, #C7D2FE);
+                box-shadow: 0 12px 24px -6px rgba(15, 23, 42, 0.07);
+            }
+            .mdp-kpi-card:hover .mdp-kpi-arrow {
+                transform: translateX(3px);
+            }
+            .mdp-kpi-arrow {
+                transition: transform 0.2s ease;
+                display: inline-flex;
+            }
+            .mdp-seller-row {
+                display: grid;
+                grid-template-columns: 1.55fr 0.95fr 1.1fr 1.1fr 1.3fr;
+                align-items: center;
+                padding: 13px 18px;
+                gap: 12px;
+                border-bottom: 1px solid var(--border-color, #F1F5F9);
+                transition: background 0.15s ease;
+            }
+            .mdp-seller-row:last-child {
+                border-bottom: none;
+            }
+            .mdp-seller-row:hover {
+                background: var(--bg-app, #F8FAFC);
+            }
+            .mdp-metric-pill {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 7px;
+                min-width: 112px;
+                height: 36px;
+                padding: 0 13px;
+                border-radius: 9px;
+                font-size: 12.5px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+                border: 1px solid var(--border-color, #E2E8F0);
+                background: var(--bg-app, #F8FAFC);
+                color: var(--text-muted, #94A3B8);
+            }
+            .mdp-metric-pill:hover {
+                transform: translateY(-1px);
+                border-color: #CBD5E1;
+                color: var(--text-primary, #0F172A);
+                box-shadow: 0 3px 8px rgba(15, 23, 42, 0.05);
+            }
+            .mdp-metric-pill.has-leads {
+                background: rgba(79, 70, 229, 0.07);
+                border-color: rgba(79, 70, 229, 0.28);
+                color: #4338CA;
+            }
+            .mdp-metric-pill.has-leads:hover {
+                background: rgba(79, 70, 229, 0.12);
+                border-color: #4F46E5;
+                box-shadow: 0 4px 12px rgba(79, 70, 229, 0.14);
+            }
+            .mdp-metric-pill.has-calls {
+                background: rgba(16, 185, 129, 0.08);
+                border-color: rgba(16, 185, 129, 0.3);
+                color: #047857;
+            }
+            .mdp-metric-pill.has-calls:hover {
+                background: rgba(16, 185, 129, 0.14);
+                border-color: #10B981;
+                box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+            }
+            .mdp-metric-pill.has-proposals {
+                background: rgba(124, 58, 237, 0.07);
+                border-color: rgba(124, 58, 237, 0.28);
+                color: #6D28D9;
+                height: auto;
+                min-height: 36px;
+                padding: 5px 13px;
+                flex-direction: column;
+                gap: 1px;
+            }
+            .mdp-metric-pill.has-proposals:hover {
+                background: rgba(124, 58, 237, 0.13);
+                border-color: #7C3AED;
+                box-shadow: 0 4px 12px rgba(124, 58, 237, 0.14);
+            }
+            .mdp-pill-num {
+                font-family: var(--mdp-font-display);
+                font-size: 14.5px;
+                font-weight: 700;
+                font-variant-numeric: tabular-nums;
+                letter-spacing: -0.02em;
+            }
+            .mdp-quick-add-call {
+                width: 32px;
+                height: 36px;
+                border-radius: 9px;
+                border: 1px dashed rgba(16, 185, 129, 0.45);
+                background: rgba(16, 185, 129, 0.04);
+                color: #059669;
+                font-weight: 700;
+                font-size: 11.5px;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.15s ease;
+                flex-shrink: 0;
+            }
+            .mdp-quick-add-call:hover {
+                background: #10B981;
+                color: #FFFFFF;
+                border-style: solid;
+                border-color: #10B981;
+                box-shadow: 0 3px 8px rgba(16, 185, 129, 0.25);
+            }
+        `;
+        document.head.appendChild(style);
+    },
+
     renderManagerDailyProductivity(skipIfUnchanged = false) {
         const container = document.getElementById("manager-daily-productivity-panel");
         if (!container) return;
+
+        this.injectDailyPanelStyles();
 
         const { sellerList, totals } = this.computeSellerDailyStats();
         this._lastSellerDailyStats = sellerList;
@@ -3838,11 +4037,11 @@ export const Dashboard = {
         const todayBr = now.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
 
         const periodLabels = {
-            today: `Hoje (${todayBr})`,
+            today: `Hoje, ${todayBr}`,
             yesterday: "Ontem",
             "7d": "Últimos 7 Dias",
             month: "Este Mês",
-            all: "Todo o Histórico",
+            all: "Histórico Completo",
             custom: this._dailyProdCustomDate ? this._dailyProdCustomDate.split("-").reverse().join("/") : todayBr
         };
         const currentPeriodLabel = periodLabels[period] || periodLabels.today;
@@ -3850,145 +4049,160 @@ export const Dashboard = {
         const fmtCurrency = (v) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
 
         const roleLabels = {
-            seller: { label: "Vendedor(a)", color: "#10b981", bg: "rgba(16, 185, 129, 0.1)" },
-            manager: { label: "Gerente Comercial", color: "#6366f1", bg: "rgba(99, 102, 241, 0.1)" },
-            admin: { label: "Administrador", color: "#8b5cf6", bg: "rgba(139, 92, 246, 0.1)" }
+            seller: { label: "Consultor(a)", color: "#059669", bg: "rgba(16, 185, 129, 0.08)" },
+            manager: { label: "Gestão Comercial", color: "#4F46E5", bg: "rgba(79, 70, 229, 0.08)" },
+            admin: { label: "Diretoria", color: "#7C3AED", bg: "rgba(124, 58, 237, 0.08)" }
         };
 
-        container.innerHTML = `
-            <!-- Barra Superior Gradiente de Prioridade Máxima -->
-            <div style="height: 4px; width: 100%; background: linear-gradient(90deg, #6366f1 0%, #10b981 50%, #8b5cf6 100%);"></div>
+        // Paleta harmônica e sofisticada de avatares para diferenciar visualmente cada vendedor
+        const avatarPalettes = [
+            "linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)",
+            "linear-gradient(135deg, #059669 0%, #10B981 100%)",
+            "linear-gradient(135deg, #7C3AED 0%, #8B5CF6 100%)",
+            "linear-gradient(135deg, #0284C7 0%, #38BDF8 100%)",
+            "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)",
+            "linear-gradient(135deg, #E11D48 0%, #F43F5E 100%)"
+        ];
 
-            <div style="padding: 22px 24px;">
-                <!-- Cabeçalho & Filtros de Dia -->
-                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 20px;">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <div style="width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #4f46e5, #6366f1); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3); flex-shrink: 0;">
-                            📊
+        // Ícones SVG Vetoriais Limpos (Feather / Lucide)
+        const svgUsers = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>`;
+        const svgPhone = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
+        const svgFile = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`;
+        const svgArrowRight = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`;
+
+        container.innerHTML = `
+            <div style="padding: 24px 26px;">
+                <!-- Cabeçalho Executivo & Controles Harmônicos -->
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 22px;">
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <div style="width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%); color: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.22); flex-shrink: 0;">
+                            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
                         </div>
                         <div>
-                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                                <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.01em;">
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <h3 style="margin: 0; font-family: var(--mdp-font-display); font-size: 18px; font-weight: 700; color: var(--text-primary, #0F172A); letter-spacing: -0.025em;">
                                     Produtividade Diária por Vendedor
                                 </h3>
-                                <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; padding: 3px 9px; border-radius: 99px; background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25);">
-                                    🔥 Prioridade Máxima
+                                <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 99px; background: rgba(225, 29, 72, 0.08); color: #E11D48; border: 1px solid rgba(225, 29, 72, 0.18);">
+                                    <span style="width: 6px; height: 6px; border-radius: 50%; background: #E11D48; display: inline-block;"></span>
+                                    Prioridade Máxima
                                 </span>
-                                <span style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: rgba(16, 185, 129, 0.12); color: #059669;">
-                                    📅 ${currentPeriodLabel}
+                                <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; padding: 3px 10px; border-radius: 99px; background: var(--bg-app, #F1F5F9); color: var(--text-secondary, #475569); border: 1px solid var(--border-color, #E2E8F0);">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                    ${currentPeriodLabel}
                                 </span>
                             </div>
-                            <p style="margin: 3px 0 0 0; font-size: 12.5px; color: var(--text-secondary);">
-                                Clique em qualquer card ou botão abaixo para exibir os <strong>Leads Adicionados</strong>, <strong>Ligações Realizadas</strong> e <strong>Propostas Preenchidas</strong>.
+                            <p style="margin: 4px 0 0 0; font-size: 13px; font-weight: 400; color: var(--text-secondary, #64748B); letter-spacing: -0.005em;">
+                                Acompanhamento em tempo real de <strong style="font-weight: 600; color: var(--text-primary, #1E293B);">Leads Adicionados</strong>, <strong style="font-weight: 600; color: var(--text-primary, #1E293B);">Ligações Realizadas</strong> e <strong style="font-weight: 600; color: var(--text-primary, #1E293B);">Propostas Preenchidas</strong>.
                             </p>
                         </div>
                     </div>
 
-                    <!-- Controles Rápidos de Filtro de Dia + Botão Registrar Ligação -->
-                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        <div style="display: inline-flex; background: var(--bg-app); border: 1px solid var(--border-color); border-radius: 10px; padding: 3px; gap: 2px;">
-                            <button type="button" onclick="window.Dashboard.setDailyProdPeriod('today')" style="padding: 5px 11px; font-size: 11.5px; font-weight: 700; border-radius: 7px; border: none; cursor: pointer; transition: all 0.15s; background: ${period === 'today' ? 'var(--primary)' : 'transparent'}; color: ${period === 'today' ? '#fff' : 'var(--text-secondary)'};">
-                                Hoje
-                            </button>
-                            <button type="button" onclick="window.Dashboard.setDailyProdPeriod('yesterday')" style="padding: 5px 11px; font-size: 11.5px; font-weight: 700; border-radius: 7px; border: none; cursor: pointer; transition: all 0.15s; background: ${period === 'yesterday' ? 'var(--primary)' : 'transparent'}; color: ${period === 'yesterday' ? '#fff' : 'var(--text-secondary)'};">
-                                Ontem
-                            </button>
-                            <button type="button" onclick="window.Dashboard.setDailyProdPeriod('7d')" style="padding: 5px 11px; font-size: 11.5px; font-weight: 700; border-radius: 7px; border: none; cursor: pointer; transition: all 0.15s; background: ${period === '7d' ? 'var(--primary)' : 'transparent'}; color: ${period === '7d' ? '#fff' : 'var(--text-secondary)'};">
-                                7 Dias
-                            </button>
-                            <button type="button" onclick="window.Dashboard.setDailyProdPeriod('month')" style="padding: 5px 11px; font-size: 11.5px; font-weight: 700; border-radius: 7px; border: none; cursor: pointer; transition: all 0.15s; background: ${period === 'month' ? 'var(--primary)' : 'transparent'}; color: ${period === 'month' ? '#fff' : 'var(--text-secondary)'};">
-                                Mês
-                            </button>
-                            <button type="button" onclick="window.Dashboard.setDailyProdPeriod('all')" style="padding: 5px 11px; font-size: 11.5px; font-weight: 700; border-radius: 7px; border: none; cursor: pointer; transition: all 0.15s; background: ${period === 'all' ? 'var(--primary)' : 'transparent'}; color: ${period === 'all' ? '#fff' : 'var(--text-secondary)'};">
-                                Tudo
-                            </button>
+                    <!-- Controles Segmentados de Dia + Botão Registrar Ligação -->
+                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <div class="mdp-segmented-group">
+                            <button type="button" class="mdp-seg-btn ${period === 'today' ? 'active' : ''}" onclick="window.Dashboard.setDailyProdPeriod('today')">Hoje</button>
+                            <button type="button" class="mdp-seg-btn ${period === 'yesterday' ? 'active' : ''}" onclick="window.Dashboard.setDailyProdPeriod('yesterday')">Ontem</button>
+                            <button type="button" class="mdp-seg-btn ${period === '7d' ? 'active' : ''}" onclick="window.Dashboard.setDailyProdPeriod('7d')">7 Dias</button>
+                            <button type="button" class="mdp-seg-btn ${period === 'month' ? 'active' : ''}" onclick="window.Dashboard.setDailyProdPeriod('month')">Mês</button>
+                            <button type="button" class="mdp-seg-btn ${period === 'all' ? 'active' : ''}" onclick="window.Dashboard.setDailyProdPeriod('all')">Tudo</button>
                         </div>
 
-                        <input type="date" id="manager-daily-date-picker" value="${this._dailyProdCustomDate || todayIso}" onchange="window.Dashboard.setDailyProdPeriod('custom', this.value)" title="Escolher uma data específica" style="height: 34px; padding: 0 10px; font-size: 12px; font-weight: 600; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); cursor: pointer;">
+                        <input type="date" id="manager-daily-date-picker" value="${this._dailyProdCustomDate || todayIso}" onchange="window.Dashboard.setDailyProdPeriod('custom', this.value)" title="Selecionar data específica" style="height: 36px; padding: 0 11px; font-size: 12.5px; font-weight: 600; border-radius: 10px; border: 1px solid var(--border-color, #E2E8F0); background: var(--bg-surface, #FFFFFF); color: var(--text-primary, #0F172A); cursor: pointer; outline: none;">
 
-                        <button type="button" onclick="window.Dashboard.openQuickCallModal()" class="btn btn-primary" style="height: 34px; padding: 0 13px; font-size: 12px; font-weight: 700; border-radius: 8px; background: #10b981; border-color: #10b981; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 3px 10px rgba(16, 185, 129, 0.25);">
-                            <span>📞</span> + Registrar Ligação
+                        <button type="button" onclick="window.Dashboard.openQuickCallModal()" style="height: 36px; padding: 0 15px; font-size: 12.5px; font-weight: 600; border-radius: 10px; background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: #FFFFFF; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.22); transition: all 0.2s ease;" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
+                            ${svgPhone}
+                            <span>Registrar Ligação</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- 3 GRANDES CARDS CLICÁVEIS DE TOTAIS DA EQUIPE NO DIA -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 20px;">
-                    <!-- Card 1: Leads Adicionados (CLICÁVEL) -->
-                    <div id="card-daily-total-leads" role="button" tabindex="0" onclick="window.Dashboard.openSellerDailyDetailModal('all', 'leads')" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(99,102,241,0.16)';" onmouseout="this.style.transform='none'; this.style.boxShadow='none';" style="cursor: pointer; transition: all 0.2s ease; background: linear-gradient(135deg, rgba(99, 102, 241, 0.09) 0%, rgba(59, 130, 246, 0.03) 100%); border: 1.5px solid rgba(99, 102, 241, 0.32); border-radius: 14px; padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                        <div>
-                            <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #4f46e5; display: block; margin-bottom: 4px;">
-                                ➕ Leads Adicionados (${period === 'today' ? 'Hoje' : currentPeriodLabel})
-                            </span>
-                            <div style="font-size: 30px; font-weight: 900; color: var(--text-primary); line-height: 1.1; font-variant-numeric: tabular-nums;" id="mgr-total-leads-today">
-                                ${totals.leads}
+                <!-- 3 GRANDES CARDS EXECUTIVOS CLICÁVEIS -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 22px;">
+                    <!-- Card 1: Leads Adicionados -->
+                    <div id="card-daily-total-leads" class="mdp-kpi-card" style="--card-accent: #4F46E5; --card-border-hover: #A5B4FC;" role="button" tabindex="0" onclick="window.Dashboard.openSellerDailyDetailModal('all', 'leads')">
+                        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+                            <div>
+                                <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary, #64748B); display: block; margin-bottom: 6px;">
+                                    Leads Adicionados (${period === 'today' ? 'Hoje' : currentPeriodLabel})
+                                </span>
+                                <div style="font-family: var(--mdp-font-display); font-size: 34px; font-weight: 700; color: var(--text-primary, #0F172A); line-height: 1.05; letter-spacing: -0.03em; font-variant-numeric: tabular-nums;" id="mgr-total-leads-today">
+                                    ${totals.leads}
+                                </div>
                             </div>
-                            <span style="font-size: 11.5px; color: #4f46e5; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px;">
-                                👆 Clique para ver os leads adicionados &rarr;
-                            </span>
+                            <div style="width: 42px; height: 42px; border-radius: 11px; background: rgba(79, 70, 229, 0.09); color: #4F46E5; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                            </div>
                         </div>
-                        <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(99, 102, 241, 0.16); color: #4f46e5; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
-                            👥
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 10px; border-top: 1px solid var(--border-color, #F1F5F9); font-size: 12px; font-weight: 600; color: #4F46E5;">
+                            <span>Ver leads cadastrados</span>
+                            <span class="mdp-kpi-arrow">${svgArrowRight}</span>
                         </div>
                     </div>
 
-                    <!-- Card 2: Ligações Feitas (CLICÁVEL) -->
-                    <div id="card-daily-total-calls" role="button" tabindex="0" onclick="window.Dashboard.openSellerDailyDetailModal('all', 'calls')" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(16,185,129,0.16)';" onmouseout="this.style.transform='none'; this.style.boxShadow='none';" style="cursor: pointer; transition: all 0.2s ease; background: linear-gradient(135deg, rgba(16, 185, 129, 0.09) 0%, rgba(5, 150, 105, 0.03) 100%); border: 1.5px solid rgba(16, 185, 129, 0.34); border-radius: 14px; padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                        <div>
-                            <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #059669; display: block; margin-bottom: 4px;">
-                                📞 Ligações Realizadas (${period === 'today' ? 'Hoje' : currentPeriodLabel})
-                            </span>
-                            <div style="font-size: 30px; font-weight: 900; color: var(--text-primary); line-height: 1.1; font-variant-numeric: tabular-nums;" id="mgr-total-calls-today">
-                                ${totals.calls}
+                    <!-- Card 2: Ligações Realizadas -->
+                    <div id="card-daily-total-calls" class="mdp-kpi-card" style="--card-accent: #10B981; --card-border-hover: #6EE7B7;" role="button" tabindex="0" onclick="window.Dashboard.openSellerDailyDetailModal('all', 'calls')">
+                        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+                            <div>
+                                <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary, #64748B); display: block; margin-bottom: 6px;">
+                                    Ligações Realizadas (${period === 'today' ? 'Hoje' : currentPeriodLabel})
+                                </span>
+                                <div style="font-family: var(--mdp-font-display); font-size: 34px; font-weight: 700; color: var(--text-primary, #0F172A); line-height: 1.05; letter-spacing: -0.03em; font-variant-numeric: tabular-nums;" id="mgr-total-calls-today">
+                                    ${totals.calls}
+                                </div>
                             </div>
-                            <span style="font-size: 11.5px; color: #059669; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px;">
-                                👆 Clique para ver as ligações feitas &rarr;
-                            </span>
+                            <div style="width: 42px; height: 42px; border-radius: 11px; background: rgba(16, 185, 129, 0.1); color: #059669; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                            </div>
                         </div>
-                        <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(16, 185, 129, 0.16); color: #059669; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
-                            📞
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 10px; border-top: 1px solid var(--border-color, #F1F5F9); font-size: 12px; font-weight: 600; color: #059669;">
+                            <span>Ver histórico de ligações</span>
+                            <span class="mdp-kpi-arrow">${svgArrowRight}</span>
                         </div>
                     </div>
 
-                    <!-- Card 3: Propostas Preenchidas (CLICÁVEL) -->
-                    <div id="card-daily-total-proposals" role="button" tabindex="0" onclick="window.Dashboard.openSellerDailyDetailModal('all', 'proposals')" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(139,92,246,0.16)';" onmouseout="this.style.transform='none'; this.style.boxShadow='none';" style="cursor: pointer; transition: all 0.2s ease; background: linear-gradient(135deg, rgba(139, 92, 246, 0.09) 0%, rgba(168, 85, 247, 0.03) 100%); border: 1.5px solid rgba(139, 92, 246, 0.34); border-radius: 14px; padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                        <div>
-                            <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #7c3aed; display: block; margin-bottom: 4px;">
-                                📝 Propostas Preenchidas (${period === 'today' ? 'Hoje' : currentPeriodLabel})
-                            </span>
-                            <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
-                                <span style="font-size: 30px; font-weight: 900; color: var(--text-primary); line-height: 1.1; font-variant-numeric: tabular-nums;" id="mgr-total-proposals-today">
-                                    ${totals.proposals}
+                    <!-- Card 3: Propostas Preenchidas -->
+                    <div id="card-daily-total-proposals" class="mdp-kpi-card" style="--card-accent: #7C3AED; --card-border-hover: #C4B5FD;" role="button" tabindex="0" onclick="window.Dashboard.openSellerDailyDetailModal('all', 'proposals')">
+                        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+                            <div>
+                                <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary, #64748B); display: block; margin-bottom: 6px;">
+                                    Propostas Preenchidas (${period === 'today' ? 'Hoje' : currentPeriodLabel})
                                 </span>
-                                <span style="font-size: 12.5px; font-weight: 800; color: #7c3aed; background: rgba(139, 92, 246, 0.12); padding: 2px 8px; border-radius: 6px;">
-                                    ${fmtCurrency(totals.proposalsValue)}
-                                </span>
+                                <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
+                                    <span style="font-family: var(--mdp-font-display); font-size: 34px; font-weight: 700; color: var(--text-primary, #0F172A); line-height: 1.05; letter-spacing: -0.03em; font-variant-numeric: tabular-nums;" id="mgr-total-proposals-today">
+                                        ${totals.proposals}
+                                    </span>
+                                    <span style="font-family: var(--mdp-font-display); font-size: 13px; font-weight: 700; color: #6D28D9; background: rgba(124, 58, 237, 0.1); padding: 3px 9px; border-radius: 7px;">
+                                        ${fmtCurrency(totals.proposalsValue)}
+                                    </span>
+                                </div>
                             </div>
-                            <span style="font-size: 11.5px; color: #7c3aed; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px;">
-                                👆 Clique para ver as propostas preenchidas &rarr;
-                            </span>
+                            <div style="width: 42px; height: 42px; border-radius: 11px; background: rgba(124, 58, 237, 0.1); color: #7C3AED; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                            </div>
                         </div>
-                        <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(139, 92, 246, 0.16); color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
-                            📄
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 10px; border-top: 1px solid var(--border-color, #F1F5F9); font-size: 12px; font-weight: 600; color: #7C3AED;">
+                            <span>Ver orçamentos emitidos</span>
+                            <span class="mdp-kpi-arrow">${svgArrowRight}</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- LISTA SIMPLES E DIRETA POR VENDEDOR (GRID RESPONSIVO SEM CORTE) -->
-                <div style="border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; background: var(--bg-surface);">
-                    <!-- Cabeçalho do Grid -->
-                    <div style="display: grid; grid-template-columns: 1.55fr 1fr 1.15fr 1.15fr 1.25fr; align-items: center; background: var(--bg-app); border-bottom: 1.5px solid var(--border-color); padding: 11px 16px; font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; gap: 10px;">
+                <!-- TABELA / GRID EXECUTIVO POR VENDEDOR -->
+                <div style="border: 1px solid var(--border-color, #E2E8F0); border-radius: 14px; overflow: hidden; background: var(--bg-surface, #FFFFFF);">
+                    <!-- Cabeçalho da Grade -->
+                    <div style="display: grid; grid-template-columns: 1.55fr 0.95fr 1.1fr 1.1fr 1.3fr; align-items: center; background: var(--bg-app, #F8FAFC); border-bottom: 1px solid var(--border-color, #E2E8F0); padding: 11px 18px; font-size: 11px; font-weight: 600; color: var(--text-secondary, #64748B); text-transform: uppercase; letter-spacing: 0.05em; gap: 12px;">
                         <div>Vendedor / Responsável</div>
-                        <div style="text-align: center;">➕ Leads no Dia</div>
-                        <div style="text-align: center;">📞 Ligações Feitas</div>
-                        <div style="text-align: center;">📝 Propostas Preenchidas</div>
-                        <div style="text-align: right;">Última Ação & Detalhes</div>
+                        <div style="text-align: center;">Leads no Dia</div>
+                        <div style="text-align: center;">Ligações Feitas</div>
+                        <div style="text-align: center;">Propostas Preenchidas</div>
+                        <div style="text-align: right;">Status & Ações</div>
                     </div>
 
-                    <!-- Linhas dos Vendedores -->
+                    <!-- Linhas de Vendedores -->
                     <div>
                         ${sellerList.length === 0 ? `
-                            <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 13px;">
+                            <div style="padding: 28px; text-align: center; color: var(--text-muted); font-size: 13px;">
                                 Nenhum vendedor encontrado para esta empresa.
                             </div>
                         ` : sellerList.map((st, idx) => {
@@ -3997,22 +4211,24 @@ export const Dashboard = {
                             const lastTimeStr = st.lastActivityTs > 0
                                 ? new Date(st.lastActivityTs).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
                                 : null;
+                            const avatarBg = avatarPalettes[idx % avatarPalettes.length];
 
                             return `
-                            <div style="display: grid; grid-template-columns: 1.55fr 1fr 1.15fr 1.15fr 1.25fr; align-items: center; padding: 12px 16px; gap: 10px; border-bottom: ${idx === sellerList.length - 1 ? 'none' : '1px solid var(--border-color)'}; transition: background 0.15s;" onmouseover="this.style.background='var(--bg-app)'" onmouseout="this.style.background='transparent'">
-                                <!-- Vendedor (Clicável) -->
-                                <div onclick="window.Dashboard.openSellerDailyDetailModal('${st.email}', 'all')" style="display: flex; align-items: center; gap: 10px; min-width: 0; cursor: pointer;" title="Clique para ver o relatório completo de ${st.name}">
-                                    <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12.5px; flex-shrink: 0;">
+                            <div class="mdp-seller-row">
+                                <!-- Coluna 0: Vendedor -->
+                                <div onclick="window.Dashboard.openSellerDailyDetailModal('${st.email}', 'all')" style="display: flex; align-items: center; gap: 12px; min-width: 0; cursor: pointer;" title="Ver relatório completo de ${st.name}">
+                                    <div style="position: relative; width: 38px; height: 38px; border-radius: 10px; background: ${avatarBg}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: var(--mdp-font-display); font-weight: 700; font-size: 13px; flex-shrink: 0; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.1);">
                                         ${st.avatar}
+                                        ${hasAny ? `<span style="position: absolute; bottom: -2px; right: -2px; width: 10px; height: 10px; border-radius: 50%; background: #10B981; border: 2px solid var(--bg-surface, #FFFFFF);"></span>` : ''}
                                     </div>
                                     <div style="min-width: 0;">
-                                        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                                            <span style="font-size: 13.5px; font-weight: 800; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: underline; text-decoration-color: transparent; transition: all 0.15s;" onmouseover="this.style.color='var(--primary)'; this.style.textDecorationColor='var(--primary)';" onmouseout="this.style.color='var(--text-primary)'; this.style.textDecorationColor='transparent';">${st.name}</span>
-                                            <span style="font-size: 9.5px; font-weight: 700; padding: 1.5px 6px; border-radius: 99px; background: ${rStyle.bg}; color: ${rStyle.color};">
+                                        <div style="display: flex; align-items: center; gap: 7px; flex-wrap: wrap;">
+                                            <span style="font-family: var(--mdp-font-display); font-size: 14px; font-weight: 600; color: var(--text-primary, #0F172A); letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${st.name}</span>
+                                            <span style="font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 6px; background: ${rStyle.bg}; color: ${rStyle.color};">
                                                 ${rStyle.label}
                                             </span>
                                         </div>
-                                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                        <div style="font-size: 12px; font-weight: 400; color: var(--text-secondary, #64748B); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                                             ${st.email}
                                         </div>
                                     </div>
@@ -4020,22 +4236,22 @@ export const Dashboard = {
 
                                 <!-- Coluna 1: Leads Adicionados -->
                                 <div style="text-align: center;">
-                                    <button type="button" class="btn-daily-seller-leads" data-seller="${st.email}" onclick="window.Dashboard.openSellerDailyDetailModal('${st.email}', 'leads')" onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='none'" title="Clique para ver os leads adicionados por ${st.name}" style="display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 106px; padding: 6px 12px; border-radius: 10px; border: 1.5px solid ${st.leads.length > 0 ? 'rgba(99, 102, 241, 0.5)' : 'var(--border-color)'}; background: ${st.leads.length > 0 ? 'rgba(99, 102, 241, 0.12)' : 'var(--bg-app)'}; color: ${st.leads.length > 0 ? '#4f46e5' : 'var(--text-secondary)'}; font-weight: 800; font-size: 13.5px; cursor: pointer; transition: all 0.15s;">
-                                        <span>👥</span>
-                                        <span style="font-size: 15.5px;">${st.leads.length}</span>
-                                        <span style="font-size: 11px; font-weight: 700;">${st.leads.length === 1 ? 'Lead' : 'Leads'}</span>
+                                    <button type="button" class="mdp-metric-pill btn-daily-seller-leads ${st.leads.length > 0 ? 'has-leads' : ''}" data-seller="${st.email}" onclick="window.Dashboard.openSellerDailyDetailModal('${st.email}', 'leads')" title="Ver leads adicionados por ${st.name}">
+                                        ${svgUsers}
+                                        <span class="mdp-pill-num">${st.leads.length}</span>
+                                        <span>${st.leads.length === 1 ? 'Lead' : 'Leads'}</span>
                                     </button>
                                 </div>
 
                                 <!-- Coluna 2: Ligações Feitas -->
                                 <div style="text-align: center;">
-                                    <div style="display: inline-flex; align-items: center; gap: 5px;">
-                                        <button type="button" class="btn-daily-seller-calls" data-seller="${st.email}" onclick="window.Dashboard.openSellerDailyDetailModal('${st.email}', 'calls')" onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='none'" title="Clique para ver as ligações feitas por ${st.name}" style="display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 110px; padding: 6px 12px; border-radius: 10px; border: 1.5px solid ${st.calls.length > 0 ? 'rgba(16, 185, 129, 0.5)' : 'var(--border-color)'}; background: ${st.calls.length > 0 ? 'rgba(16, 185, 129, 0.14)' : 'var(--bg-app)'}; color: ${st.calls.length > 0 ? '#059669' : 'var(--text-secondary)'}; font-weight: 800; font-size: 13.5px; cursor: pointer; transition: all 0.15s;">
-                                            <span>📞</span>
-                                            <span style="font-size: 15.5px;">${st.calls.length}</span>
-                                            <span style="font-size: 11px; font-weight: 700;">${st.calls.length === 1 ? 'Ligação' : 'Ligações'}</span>
+                                    <div style="display: inline-flex; align-items: center; gap: 6px;">
+                                        <button type="button" class="mdp-metric-pill btn-daily-seller-calls ${st.calls.length > 0 ? 'has-calls' : ''}" data-seller="${st.email}" onclick="window.Dashboard.openSellerDailyDetailModal('${st.email}', 'calls')" title="Ver ligações feitas por ${st.name}">
+                                            ${svgPhone}
+                                            <span class="mdp-pill-num">${st.calls.length}</span>
+                                            <span>${st.calls.length === 1 ? 'Ligação' : 'Ligações'}</span>
                                         </button>
-                                        <button type="button" onclick="window.Dashboard.openQuickCallModal('${st.email}')" title="Registrar nova ligação para ${st.name}" style="width: 30px; height: 32px; border-radius: 8px; border: 1px dashed rgba(16, 185, 129, 0.5); background: rgba(16, 185, 129, 0.06); color: #059669; font-weight: 800; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                        <button type="button" class="mdp-quick-add-call" onclick="window.Dashboard.openQuickCallModal('${st.email}')" title="Registrar nova ligação para ${st.name}">
                                             +1
                                         </button>
                                     </div>
@@ -4043,38 +4259,40 @@ export const Dashboard = {
 
                                 <!-- Coluna 3: Propostas Preenchidas -->
                                 <div style="text-align: center;">
-                                    <button type="button" class="btn-daily-seller-proposals" data-seller="${st.email}" onclick="window.Dashboard.openSellerDailyDetailModal('${st.email}', 'proposals')" onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='none'" title="Clique para ver as propostas preenchidas por ${st.name}" style="display: inline-flex; flex-direction: column; align-items: center; justify-content: center; min-width: 120px; padding: 5px 12px; border-radius: 10px; border: 1.5px solid ${st.proposals.length > 0 ? 'rgba(139, 92, 246, 0.5)' : 'var(--border-color)'}; background: ${st.proposals.length > 0 ? 'rgba(139, 92, 246, 0.14)' : 'var(--bg-app)'}; color: ${st.proposals.length > 0 ? '#7c3aed' : 'var(--text-secondary)'}; cursor: pointer; transition: all 0.15s;">
-                                        <div style="display: flex; align-items: center; gap: 4px; font-weight: 800; font-size: 13.5px;">
-                                            <span>📄</span>
-                                            <span style="font-size: 15.5px;">${st.proposals.length}</span>
-                                            <span style="font-size: 11px; font-weight: 700;">${st.proposals.length === 1 ? 'Proposta' : 'Propostas'}</span>
+                                    <button type="button" class="mdp-metric-pill btn-daily-seller-proposals ${st.proposals.length > 0 ? 'has-proposals' : ''}" data-seller="${st.email}" onclick="window.Dashboard.openSellerDailyDetailModal('${st.email}', 'proposals')" title="Ver propostas preenchidas por ${st.name}">
+                                        <div style="display: flex; align-items: center; gap: 6px;">
+                                            ${svgFile}
+                                            <span class="mdp-pill-num">${st.proposals.length}</span>
+                                            <span>${st.proposals.length === 1 ? 'Proposta' : 'Propostas'}</span>
                                         </div>
                                         ${st.totalProposalValue > 0 ? `
-                                            <span style="font-size: 10px; font-weight: 700; color: #6d28d9; margin-top: 1px;">
+                                            <span style="font-size: 10.5px; font-weight: 700; color: #5B21B6; letter-spacing: -0.01em;">
                                                 ${fmtCurrency(st.totalProposalValue)}
                                             </span>
                                         ` : ''}
                                     </button>
                                 </div>
 
-                                <!-- Coluna 4: Última Ação & Botão Detalhes -->
-                                <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 0;">
+                                <!-- Coluna 4: Status & Detalhes -->
+                                <div style="display: flex; align-items: center; justify-content: flex-end; gap: 10px; min-width: 0;">
                                     <div style="text-align: right; min-width: 0; flex: 1;">
                                         ${hasAny ? `
-                                            <span style="font-size: 10.5px; font-weight: 700; color: #10b981; display: block; white-space: nowrap;">
-                                                🟢 Ativo (${lastTimeStr || 'hoje'})
-                                            </span>
-                                            <span style="font-size: 10.5px; color: var(--text-muted); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                            <div style="display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; color: #059669; white-space: nowrap;">
+                                                <span style="width: 6px; height: 6px; border-radius: 50%; background: #10B981;"></span>
+                                                Ativo às ${lastTimeStr || 'hoje'}
+                                            </div>
+                                            <span style="font-size: 11px; color: var(--text-secondary, #64748B); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px;">
                                                 ${st.lastActivityText}
                                             </span>
                                         ` : `
-                                            <span style="font-size: 11px; color: var(--text-muted); font-weight: 500; white-space: nowrap;">
-                                                ⏳ Sem registros
+                                            <span style="font-size: 11.5px; color: var(--text-muted, #94A3B8); font-weight: 500; white-space: nowrap;">
+                                                Sem registros
                                             </span>
                                         `}
                                     </div>
-                                    <button type="button" onclick="window.Dashboard.openSellerDailyDetailModal('${st.email}', 'all')" class="btn btn-outline btn-sm" style="height: 30px; padding: 0 10px; font-size: 11px; font-weight: 700; border-radius: 7px; white-space: nowrap; flex-shrink: 0; cursor: pointer;">
-                                        🔍 Detalhes
+                                    <button type="button" onclick="window.Dashboard.openSellerDailyDetailModal('${st.email}', 'all')" style="height: 32px; padding: 0 12px; font-size: 12px; font-weight: 600; border-radius: 8px; border: 1px solid var(--border-color, #E2E8F0); background: var(--bg-surface, #FFFFFF); color: var(--text-primary, #1E293B); white-space: nowrap; flex-shrink: 0; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s ease;" onmouseover="this.style.borderColor='#CBD5E1'; this.style.background='var(--bg-app)'" onmouseout="this.style.borderColor='var(--border-color)'; this.style.background='var(--bg-surface)'">
+                                        <span>Detalhes</span>
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                                     </button>
                                 </div>
                             </div>
@@ -4087,6 +4305,7 @@ export const Dashboard = {
     },
 
     openSellerDailyDetailModal(sellerEmailOrAll = "all", focusSection = "all") {
+        this.injectDailyPanelStyles();
         const computed = this.computeSellerDailyStats();
         const sellerList = computed.sellerList;
         const isAllTeam = !sellerEmailOrAll || sellerEmailOrAll === "all";
@@ -4112,7 +4331,7 @@ export const Dashboard = {
             targetStats = {
                 email: "all",
                 name: "Toda a Equipe Comercial",
-                avatar: "👥",
+                avatar: "EQ",
                 leads: allLeads,
                 calls: allCalls,
                 proposals: allProposals,
@@ -4133,7 +4352,7 @@ export const Dashboard = {
         if (!modal) {
             modal = document.createElement("div");
             modal.id = "seller-daily-detail-modal";
-            modal.style.cssText = "position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); z-index: 3000; display: flex; align-items: center; justify-content: center; padding: 16px;";
+            modal.style.cssText = "position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(5px); z-index: 3000; display: flex; align-items: center; justify-content: center; padding: 16px;";
             modal.addEventListener("click", (e) => {
                 if (e.target === modal) modal.style.display = "none";
             });
@@ -4148,53 +4367,53 @@ export const Dashboard = {
         const showProposals = focusSection === "all" || focusSection === "proposals";
 
         const sectionTitles = {
-            leads: `➕ Leads Adicionados — ${targetStats.name}`,
-            calls: `📞 Ligações Realizadas — ${targetStats.name}`,
-            proposals: `📝 Propostas Preenchidas — ${targetStats.name}`,
-            all: `📊 Relatório Diário Completo — ${targetStats.name}`
+            leads: `Leads Adicionados — ${targetStats.name}`,
+            calls: `Ligações Realizadas — ${targetStats.name}`,
+            proposals: `Propostas Preenchidas — ${targetStats.name}`,
+            all: `Relatório de Produtividade — ${targetStats.name}`
         };
 
         modal.style.display = "flex";
         modal.innerHTML = `
-            <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 18px; width: 100%; max-width: 780px; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 25px 60px rgba(0,0,0,0.35); overflow: hidden;">
+            <div style="background: var(--bg-surface, #FFFFFF); border: 1px solid var(--border-color, #E2E8F0); border-radius: 18px; width: 100%; max-width: 780px; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.35); overflow: hidden;">
                 <!-- Header -->
-                <div style="padding: 18px 24px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; background: var(--bg-app); gap: 12px; flex-wrap: wrap;">
+                <div style="padding: 18px 24px; border-bottom: 1px solid var(--border-color, #E2E8F0); display: flex; align-items: center; justify-content: space-between; background: var(--bg-app, #F8FAFC); gap: 12px; flex-wrap: wrap;">
                     <div style="display: flex; align-items: center; gap: 12px;">
-                        <div style="width: 42px; height: 42px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px;">
+                        <div style="width: 42px; height: 42px; border-radius: 11px; background: linear-gradient(135deg, #4F46E5, #6366F1); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: var(--mdp-font-display); font-weight: 700; font-size: 14px;">
                             ${targetStats.avatar}
                         </div>
                         <div>
-                            <h3 style="margin: 0; font-size: 16.5px; font-weight: 800; color: var(--text-primary);">
+                            <h3 style="margin: 0; font-family: var(--mdp-font-display); font-size: 17px; font-weight: 700; color: var(--text-primary, #0F172A); letter-spacing: -0.02em;">
                                 ${sectionTitles[focusSection] || sectionTitles.all}
                             </h3>
-                            <span style="font-size: 12px; color: var(--text-muted);">
-                                👥 ${targetStats.leads.length} Leads • 📞 ${targetStats.calls.length} Ligações • 📄 ${targetStats.proposals.length} Propostas (${fmtCurrency(targetStats.totalProposalValue)})
+                            <span style="font-size: 12.5px; color: var(--text-secondary, #64748B); font-weight: 500;">
+                                ${targetStats.leads.length} Leads &bull; ${targetStats.calls.length} Ligações &bull; ${targetStats.proposals.length} Propostas (${fmtCurrency(targetStats.totalProposalValue)})
                             </span>
                         </div>
                     </div>
 
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <select onchange="window.Dashboard.openSellerDailyDetailModal(this.value, '${focusSection}')" style="height: 34px; padding: 0 10px; font-size: 12px; font-weight: 700; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); cursor: pointer;">
-                            <option value="all" ${isAllTeam ? 'selected' : ''}>👥 Todos os Vendedores</option>
-                            ${sellerList.map(s => `<option value="${s.email}" ${!isAllTeam && s.email === targetStats.email ? 'selected' : ''}>👤 ${s.name}</option>`).join("")}
+                        <select onchange="window.Dashboard.openSellerDailyDetailModal(this.value, '${focusSection}')" style="height: 36px; padding: 0 12px; font-size: 12.5px; font-weight: 600; border-radius: 9px; border: 1px solid var(--border-color, #E2E8F0); background: var(--bg-surface, #FFFFFF); color: var(--text-primary, #0F172A); cursor: pointer; outline: none;">
+                            <option value="all" ${isAllTeam ? 'selected' : ''}>Todos os Vendedores</option>
+                            ${sellerList.map(s => `<option value="${s.email}" ${!isAllTeam && s.email === targetStats.email ? 'selected' : ''}>${s.name}</option>`).join("")}
                         </select>
-                        <button type="button" onclick="document.getElementById('seller-daily-detail-modal').style.display='none'" style="width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-secondary); cursor: pointer; font-size: 18px;">&times;</button>
+                        <button type="button" onclick="document.getElementById('seller-daily-detail-modal').style.display='none'" style="width: 36px; height: 36px; border-radius: 9px; border: 1px solid var(--border-color, #E2E8F0); background: var(--bg-surface, #FFFFFF); color: var(--text-secondary, #64748B); cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center;">&times;</button>
                     </div>
                 </div>
 
-                <!-- Abas de Filtro Rápido Dentro do Modal -->
-                <div style="display: flex; gap: 8px; padding: 12px 24px; background: var(--bg-surface); border-bottom: 1px solid var(--border-color); flex-wrap: wrap;">
-                    <button type="button" onclick="window.Dashboard.openSellerDailyDetailModal('${targetStats.email}', 'leads')" style="padding: 6px 14px; border-radius: 99px; font-size: 12px; font-weight: 800; cursor: pointer; border: 1.5px solid ${focusSection === 'leads' ? '#4f46e5' : 'var(--border-color)'}; background: ${focusSection === 'leads' ? '#4f46e5' : 'var(--bg-app)'}; color: ${focusSection === 'leads' ? '#fff' : 'var(--text-secondary)'};">
-                        ➕ Leads Adicionados (${targetStats.leads.length})
+                <!-- Abas Segmentadas no Topo do Modal -->
+                <div style="display: flex; gap: 8px; padding: 12px 24px; background: var(--bg-surface, #FFFFFF); border-bottom: 1px solid var(--border-color, #E2E8F0); flex-wrap: wrap;">
+                    <button type="button" onclick="window.Dashboard.openSellerDailyDetailModal('${targetStats.email}', 'leads')" style="padding: 7px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 600; cursor: pointer; transition: all 0.15s; border: 1px solid ${focusSection === 'leads' ? '#4F46E5' : 'var(--border-color)'}; background: ${focusSection === 'leads' ? '#4F46E5' : 'var(--bg-app)'}; color: ${focusSection === 'leads' ? '#FFFFFF' : 'var(--text-secondary)'};">
+                        Leads Adicionados (${targetStats.leads.length})
                     </button>
-                    <button type="button" onclick="window.Dashboard.openSellerDailyDetailModal('${targetStats.email}', 'calls')" style="padding: 6px 14px; border-radius: 99px; font-size: 12px; font-weight: 800; cursor: pointer; border: 1.5px solid ${focusSection === 'calls' ? '#059669' : 'var(--border-color)'}; background: ${focusSection === 'calls' ? '#059669' : 'var(--bg-app)'}; color: ${focusSection === 'calls' ? '#fff' : 'var(--text-secondary)'};">
-                        📞 Ligações Feitas (${targetStats.calls.length})
+                    <button type="button" onclick="window.Dashboard.openSellerDailyDetailModal('${targetStats.email}', 'calls')" style="padding: 7px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 600; cursor: pointer; transition: all 0.15s; border: 1px solid ${focusSection === 'calls' ? '#059669' : 'var(--border-color)'}; background: ${focusSection === 'calls' ? '#059669' : 'var(--bg-app)'}; color: ${focusSection === 'calls' ? '#FFFFFF' : 'var(--text-secondary)'};">
+                        Ligações Feitas (${targetStats.calls.length})
                     </button>
-                    <button type="button" onclick="window.Dashboard.openSellerDailyDetailModal('${targetStats.email}', 'proposals')" style="padding: 6px 14px; border-radius: 99px; font-size: 12px; font-weight: 800; cursor: pointer; border: 1.5px solid ${focusSection === 'proposals' ? '#7c3aed' : 'var(--border-color)'}; background: ${focusSection === 'proposals' ? '#7c3aed' : 'var(--bg-app)'}; color: ${focusSection === 'proposals' ? '#fff' : 'var(--text-secondary)'};">
-                        📝 Propostas Preenchidas (${targetStats.proposals.length})
+                    <button type="button" onclick="window.Dashboard.openSellerDailyDetailModal('${targetStats.email}', 'proposals')" style="padding: 7px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 600; cursor: pointer; transition: all 0.15s; border: 1px solid ${focusSection === 'proposals' ? '#7C3AED' : 'var(--border-color)'}; background: ${focusSection === 'proposals' ? '#7C3AED' : 'var(--bg-app)'}; color: ${focusSection === 'proposals' ? '#FFFFFF' : 'var(--text-secondary)'};">
+                        Propostas Preenchidas (${targetStats.proposals.length})
                     </button>
-                    <button type="button" onclick="window.Dashboard.openSellerDailyDetailModal('${targetStats.email}', 'all')" style="padding: 6px 14px; border-radius: 99px; font-size: 12px; font-weight: 800; cursor: pointer; border: 1.5px solid ${focusSection === 'all' ? 'var(--primary)' : 'var(--border-color)'}; background: ${focusSection === 'all' ? 'rgba(99,102,241,0.12)' : 'var(--bg-app)'}; color: ${focusSection === 'all' ? 'var(--primary)' : 'var(--text-secondary)'};">
-                        📋 Ver Todas Juntas
+                    <button type="button" onclick="window.Dashboard.openSellerDailyDetailModal('${targetStats.email}', 'all')" style="padding: 7px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 600; cursor: pointer; transition: all 0.15s; border: 1px solid ${focusSection === 'all' ? '#0F172A' : 'var(--border-color)'}; background: ${focusSection === 'all' ? '#0F172A' : 'var(--bg-app)'}; color: ${focusSection === 'all' ? '#FFFFFF' : 'var(--text-secondary)'};">
+                        Visão Completa
                     </button>
                 </div>
 
@@ -4202,29 +4421,29 @@ export const Dashboard = {
                 <div style="padding: 20px 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px;">
                     ${showLeads ? `
                     <!-- 1. Leads Adicionados -->
-                    <div style="border: 1.5px solid rgba(99, 102, 241, 0.35); border-radius: 12px; padding: 14px 16px; background: var(--bg-surface);">
-                        <div style="font-size: 12.5px; font-weight: 800; color: #4f46e5; text-transform: uppercase; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-                            <span>➕ Leads Adicionados (${targetStats.leads.length})</span>
-                            <span style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: none;">Clique em qualquer lead para abrir a ficha completa</span>
+                    <div style="border: 1px solid var(--border-color, #E2E8F0); border-radius: 12px; padding: 16px; background: var(--bg-surface, #FFFFFF);">
+                        <div style="font-size: 12px; font-weight: 700; color: #4F46E5; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                            <span>Leads Adicionados (${targetStats.leads.length})</span>
+                            <span style="font-size: 11.5px; color: var(--text-muted); font-weight: 500; text-transform: none;">Clique sobre o cliente para abrir a ficha</span>
                         </div>
                         ${targetStats.leads.length === 0 ? `
-                            <div style="font-size: 13px; color: var(--text-muted); padding: 14px; text-align: center; background: var(--bg-app); border-radius: 8px;">Nenhum lead adicionado neste período.</div>
+                            <div style="font-size: 13px; color: var(--text-muted); padding: 16px; text-align: center; background: var(--bg-app); border-radius: 8px;">Nenhum lead adicionado neste período.</div>
                         ` : `
                             <div style="display: flex; flex-direction: column; gap: 8px;">
                                 ${targetStats.leads.map(l => `
-                                    <div onclick="document.getElementById('seller-daily-detail-modal').style.display='none'; window.CRM?.openLeadDrawer('${l.id}');" onmouseover="this.style.borderColor='#6366f1'" onmouseout="this.style.borderColor='var(--border-color)'" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-app); border-radius: 10px; border: 1px solid var(--border-color); gap: 10px; transition: all 0.15s;">
+                                    <div onclick="document.getElementById('seller-daily-detail-modal').style.display='none'; window.CRM?.openLeadDrawer('${l.id}');" onmouseover="this.style.borderColor='#6366F1'" onmouseout="this.style.borderColor='var(--border-color)'" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 11px 14px; background: var(--bg-app, #F8FAFC); border-radius: 10px; border: 1px solid var(--border-color, #E2E8F0); gap: 10px; transition: all 0.15s;">
                                         <div>
                                             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                                                <span style="font-weight: 800; font-size: 13.5px; color: var(--text-primary);">${l.company}</span>
-                                                <span style="font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: rgba(99,102,241,0.12); color: #4f46e5;">👤 ${l.sellerName}</span>
-                                                <span style="font-size: 10.5px; font-weight: 600; padding: 2px 7px; border-radius: 6px; background: var(--bg-surface); border: 1px solid var(--border-color); color: var(--text-secondary);">${l.stage}</span>
+                                                <span style="font-family: var(--mdp-font-display); font-weight: 700; font-size: 13.5px; color: var(--text-primary);">${l.company}</span>
+                                                <span style="font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 6px; background: rgba(79,70,229,0.09); color: #4F46E5;">${l.sellerName}</span>
+                                                <span style="font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 6px; background: var(--bg-surface); border: 1px solid var(--border-color); color: var(--text-secondary);">${l.stage}</span>
                                             </div>
-                                            <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">Contato: <strong>${l.contact}</strong> • WhatsApp/Tel: <strong>${l.phone}</strong></div>
+                                            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 3px;">Contato: <strong style="font-weight: 600;">${l.contact}</strong> &bull; Tel: <strong style="font-weight: 600;">${l.phone}</strong></div>
                                         </div>
                                         <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
-                                            <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;">${fmtDt(l.timestamp)}</span>
-                                            <button type="button" class="btn btn-outline btn-sm" style="font-size: 11px; height: 28px; padding: 0 10px; font-weight: 700; color: #4f46e5; border-color: rgba(99,102,241,0.35);">
-                                                Abrir Lead &rarr;
+                                            <span style="font-size: 11.5px; color: var(--text-muted); font-weight: 500;">${fmtDt(l.timestamp)}</span>
+                                            <button type="button" class="btn btn-outline btn-sm" style="font-size: 11.5px; height: 30px; padding: 0 11px; font-weight: 600; color: #4F46E5; border-color: rgba(79,70,229,0.3); border-radius: 7px;">
+                                                Abrir Ficha &rarr;
                                             </button>
                                         </div>
                                     </div>
@@ -4236,31 +4455,31 @@ export const Dashboard = {
 
                     ${showCalls ? `
                     <!-- 2. Ligações Realizadas -->
-                    <div style="border: 1.5px solid rgba(16, 185, 129, 0.35); border-radius: 12px; padding: 14px 16px; background: var(--bg-surface);">
-                        <div style="font-size: 12.5px; font-weight: 800; color: #059669; text-transform: uppercase; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-                            <span>📞 Ligações Realizadas (${targetStats.calls.length})</span>
-                            <button type="button" onclick="document.getElementById('seller-daily-detail-modal').style.display='none'; window.Dashboard.openQuickCallModal('${isAllTeam ? '' : targetStats.email}');" style="font-size: 11px; font-weight: 700; color: #059669; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); border-radius: 6px; padding: 4px 10px; cursor: pointer;">
-                                + Registrar Nova Ligação
+                    <div style="border: 1px solid var(--border-color, #E2E8F0); border-radius: 12px; padding: 16px; background: var(--bg-surface, #FFFFFF);">
+                        <div style="font-size: 12px; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                            <span>Ligações Realizadas (${targetStats.calls.length})</span>
+                            <button type="button" onclick="document.getElementById('seller-daily-detail-modal').style.display='none'; window.Dashboard.openQuickCallModal('${isAllTeam ? '' : targetStats.email}');" style="font-size: 11.5px; font-weight: 600; color: #059669; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.28); border-radius: 7px; padding: 4px 11px; cursor: pointer;">
+                                + Registrar Ligação
                             </button>
                         </div>
                         ${targetStats.calls.length === 0 ? `
-                            <div style="font-size: 13px; color: var(--text-muted); padding: 14px; text-align: center; background: var(--bg-app); border-radius: 8px;">Nenhuma ligação registrada neste período.</div>
+                            <div style="font-size: 13px; color: var(--text-muted); padding: 16px; text-align: center; background: var(--bg-app); border-radius: 8px;">Nenhuma ligação registrada neste período.</div>
                         ` : `
                             <div style="display: flex; flex-direction: column; gap: 8px;">
                                 ${targetStats.calls.map(c => `
-                                    <div onclick="${c.leadId ? `document.getElementById('seller-daily-detail-modal').style.display='none'; window.CRM?.openLeadDrawer('${c.leadId}');` : ''}" style="${c.leadId ? 'cursor: pointer;' : ''} display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-app); border-radius: 10px; border: 1px solid var(--border-color); gap: 10px; transition: all 0.15s;">
+                                    <div onclick="${c.leadId ? `document.getElementById('seller-daily-detail-modal').style.display='none'; window.CRM?.openLeadDrawer('${c.leadId}');` : ''}" style="${c.leadId ? 'cursor: pointer;' : ''} display: flex; align-items: center; justify-content: space-between; padding: 11px 14px; background: var(--bg-app, #F8FAFC); border-radius: 10px; border: 1px solid var(--border-color, #E2E8F0); gap: 10px; transition: all 0.15s;">
                                         <div style="min-width: 0; flex: 1;">
                                             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                                                <span style="font-weight: 800; font-size: 13.5px; color: var(--text-primary);">${c.company}</span>
-                                                <span style="font-size: 11.5px; color: var(--text-muted);">(${c.contact} • ${c.phone})</span>
-                                                <span style="font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: rgba(16,185,129,0.12); color: #059669;">📞 ${c.sellerName}</span>
+                                                <span style="font-family: var(--mdp-font-display); font-weight: 700; font-size: 13.5px; color: var(--text-primary);">${c.company}</span>
+                                                <span style="font-size: 12px; color: var(--text-secondary);">(${c.contact} &bull; ${c.phone})</span>
+                                                <span style="font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 6px; background: rgba(16,185,129,0.1); color: #059669;">${c.sellerName}</span>
                                             </div>
-                                            <div style="font-size: 12.5px; color: var(--text-secondary); margin-top: 4px; line-height: 1.4;">💬 ${c.description}</div>
+                                            <div style="font-size: 12.5px; color: var(--text-secondary); margin-top: 4px; line-height: 1.45;">${c.description}</div>
                                         </div>
-                                        <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-                                            <span style="font-size: 11px; color: var(--text-muted); white-space: nowrap; font-weight: 600;">${fmtDt(c.timestamp)}</span>
+                                        <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+                                            <span style="font-size: 11.5px; color: var(--text-muted); white-space: nowrap; font-weight: 500;">${fmtDt(c.timestamp)}</span>
                                             ${c.leadId ? `
-                                                <button type="button" class="btn btn-outline btn-sm" style="font-size: 11px; height: 28px; padding: 0 10px; font-weight: 700; color: #059669; border-color: rgba(16,185,129,0.35);">
+                                                <button type="button" class="btn btn-outline btn-sm" style="font-size: 11.5px; height: 30px; padding: 0 11px; font-weight: 600; color: #059669; border-color: rgba(16,185,129,0.3); border-radius: 7px;">
                                                     Ver Cliente &rarr;
                                                 </button>
                                             ` : ''}
@@ -4274,27 +4493,27 @@ export const Dashboard = {
 
                     ${showProposals ? `
                     <!-- 3. Propostas Preenchidas -->
-                    <div style="border: 1.5px solid rgba(139, 92, 246, 0.35); border-radius: 12px; padding: 14px 16px; background: var(--bg-surface);">
-                        <div style="font-size: 12.5px; font-weight: 800; color: #7c3aed; text-transform: uppercase; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-                            <span>📝 Propostas Preenchidas (${targetStats.proposals.length})</span>
-                            <span style="background: rgba(139,92,246,0.12); padding: 3px 9px; border-radius: 6px;">Total: ${fmtCurrency(targetStats.totalProposalValue)}</span>
+                    <div style="border: 1px solid var(--border-color, #E2E8F0); border-radius: 12px; padding: 16px; background: var(--bg-surface, #FFFFFF);">
+                        <div style="font-size: 12px; font-weight: 700; color: #7C3AED; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                            <span>Propostas Preenchidas (${targetStats.proposals.length})</span>
+                            <span style="background: rgba(124,58,237,0.1); padding: 3px 10px; border-radius: 6px; font-family: var(--mdp-font-display);">Total: ${fmtCurrency(targetStats.totalProposalValue)}</span>
                         </div>
                         ${targetStats.proposals.length === 0 ? `
-                            <div style="font-size: 13px; color: var(--text-muted); padding: 14px; text-align: center; background: var(--bg-app); border-radius: 8px;">Nenhuma proposta preenchida neste período.</div>
+                            <div style="font-size: 13px; color: var(--text-muted); padding: 16px; text-align: center; background: var(--bg-app); border-radius: 8px;">Nenhuma proposta preenchida neste período.</div>
                         ` : `
                             <div style="display: flex; flex-direction: column; gap: 8px;">
                                 ${targetStats.proposals.map(p => `
-                                    <div onclick="document.getElementById('seller-daily-detail-modal').style.display='none'; window.location.hash='#proposals'; setTimeout(() => window.Proposals?.openBudgetScreen('${p.id}'), 250);" onmouseover="this.style.borderColor='#8b5cf6'" onmouseout="this.style.borderColor='var(--border-color)'" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-app); border-radius: 10px; border: 1px solid var(--border-color); gap: 10px; transition: all 0.15s;">
+                                    <div onclick="document.getElementById('seller-daily-detail-modal').style.display='none'; window.location.hash='#proposals'; setTimeout(() => window.Proposals?.openBudgetScreen('${p.id}'), 250);" onmouseover="this.style.borderColor='#7C3AED'" onmouseout="this.style.borderColor='var(--border-color)'" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 11px 14px; background: var(--bg-app, #F8FAFC); border-radius: 10px; border: 1px solid var(--border-color, #E2E8F0); gap: 10px; transition: all 0.15s;">
                                         <div>
                                             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                                                <span style="font-weight: 800; font-size: 13.5px; color: var(--text-primary);">Orçamento #${p.budgetNumber} — ${p.company}</span>
-                                                <span style="font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: rgba(139,92,246,0.12); color: #7c3aed;">📄 ${p.sellerName}</span>
+                                                <span style="font-family: var(--mdp-font-display); font-weight: 700; font-size: 13.5px; color: var(--text-primary);">Orçamento #${p.budgetNumber} — ${p.company}</span>
+                                                <span style="font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 6px; background: rgba(124,58,237,0.1); color: #7C3AED;">${p.sellerName}</span>
                                             </div>
-                                            <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">${p.title} • Status: <strong>${p.status}</strong> • ${fmtDt(p.timestamp)}</div>
+                                            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 3px;">${p.title} &bull; Status: <strong style="font-weight: 600;">${p.status}</strong> &bull; ${fmtDt(p.timestamp)}</div>
                                         </div>
-                                        <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
-                                            <span style="font-weight: 800; font-size: 13.5px; color: #10b981;">${fmtCurrency(p.value)}</span>
-                                            <button type="button" class="btn btn-outline btn-sm" style="font-size: 11px; height: 28px; padding: 0 10px; font-weight: 700; color: #7c3aed; border-color: rgba(139,92,246,0.35);">
+                                        <div style="display: flex; align-items: center; gap: 12px; flex-shrink: 0;">
+                                            <span style="font-family: var(--mdp-font-display); font-weight: 700; font-size: 14px; color: #059669; font-variant-numeric: tabular-nums;">${fmtCurrency(p.value)}</span>
+                                            <button type="button" class="btn btn-outline btn-sm" style="font-size: 11.5px; height: 30px; padding: 0 11px; font-weight: 600; color: #7C3AED; border-color: rgba(124,58,237,0.3); border-radius: 7px;">
                                                 Abrir Proposta &rarr;
                                             </button>
                                         </div>

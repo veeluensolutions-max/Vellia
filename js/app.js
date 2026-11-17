@@ -337,8 +337,10 @@ function showAppShell(user) {
     // Iniciar Supabase Realtime (WebSocket)
     connectRealtime();
 
-    // Ativar verificacao automatica de inspecoes vencendo
-    InspectionScheduler.schedulePeriodicCheck();
+    // Ativar verificacao automatica de inspecoes vencendo (apenas para perfis não-vendedor)
+    if (!["seller", "vendedor"].includes((user.role || "").toLowerCase())) {
+        InspectionScheduler.schedulePeriodicCheck();
+    }
     
     // Iniciar monitoramento de inatividade e presença viva
     startInactivityTracking();
@@ -360,13 +362,14 @@ function configureSidebarMenu(role) {
         } else if (roleLower === "manager" || roleLower === "gerente") {
             isVisible = !["logs", "users", "integrations"].includes(viewName);
         } else if (roleLower === "seller" || roleLower === "vendedor") {
-            isVisible = !["logs", "team", "services", "integrations", "users"].includes(viewName);
+            isVisible = !["logs", "team", "services", "integrations", "users", "inspections"].includes(viewName);
         } else if (["operacional", "operacoes", "operacao"].includes(roleLower)) {
             isVisible = ["calendar", "dashboard", "inspections"].includes(viewName);
         } else {
             isVisible = true;
         }
 
+        item.style.display = isVisible ? "block" : "none";
         const el = document.getElementById(`menu-${viewName}`);
         if (el) {
             el.style.display = isVisible ? "block" : "none";

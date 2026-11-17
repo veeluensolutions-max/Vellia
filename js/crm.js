@@ -1716,9 +1716,14 @@ export const CRM = {
         if (ffContainer) ffContainer.style.display = "none";
         if (ffToggle) ffToggle.textContent = "+ Novo";
 
-        // Inicializar e Renderizar Inspeções do Cliente
+        // Inicializar e Renderizar Inspeções do Cliente (oculto para vendedores)
+        const drawerInspectionsSec = document.getElementById("drawer-inspections-section");
+        const isSellerRole = role === "seller" || role === "vendedor";
+        if (drawerInspectionsSec) {
+            drawerInspectionsSec.style.display = isSellerRole ? "none" : "flex";
+        }
         const serviceSelect = document.getElementById("inspection-service-select");
-        if (serviceSelect) {
+        if (serviceSelect && !isSellerRole) {
             const services = Store.getServices();
             serviceSelect.innerHTML = services.map(s => `<option value="${s.name}">${s.name}</option>`).join("") || `<option value="Vistoria Geral">Vistoria Geral</option>`;
         }
@@ -1727,7 +1732,9 @@ export const CRM = {
         if (btnToggleInspection) btnToggleInspection.textContent = "+ Registrar Nova";
         if (inspectionFormContainer) inspectionFormContainer.style.display = "none";
         
-        this.renderDrawerInspections(lead);
+        if (!isSellerRole) {
+            this.renderDrawerInspections(lead);
+        }
 
         // Avaliar sugestões de Cross-Selling
         CrossSelling.evaluateLead(id);

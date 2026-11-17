@@ -173,7 +173,7 @@ export const Dashboard = {
                 const filteredLeads = this.filterByTimeframe(currentLeads, "createdAt");
                 const filteredProposals = this.filterByTimeframe(currentProposals, "createdAt");
                 this.renderRecentActivity(filteredLeads, filteredProposals);
-                this.renderManagerDailyProductivity();
+                this.renderManagerDailyProductivity(true);
             }
         }, 4000);
     },
@@ -3818,14 +3818,21 @@ export const Dashboard = {
         return { sellerList, totals };
     },
 
-    renderManagerDailyProductivity() {
+    renderManagerDailyProductivity(skipIfUnchanged = false) {
         const container = document.getElementById("manager-daily-productivity-panel");
         if (!container) return;
 
         const { sellerList, totals } = this.computeSellerDailyStats();
         this._lastSellerDailyStats = sellerList;
+        this._lastDailyTotals = totals;
 
         const period = this._dailyProdPeriod || "today";
+        const sig = `${period}|${this._dailyProdCustomDate}|${totals.leads}|${totals.calls}|${totals.proposals}|${totals.proposalsValue}|${sellerList.map(s => `${s.email}:${s.leads.length}:${s.calls.length}:${s.proposals.length}:${s.lastActivityTs}`).join(",")}`;
+        if (skipIfUnchanged && this._lastDailyProdSig === sig && container.innerHTML.trim().length > 0) {
+            return;
+        }
+        this._lastDailyProdSig = sig;
+
         const now = new Date();
         const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
         const todayBr = now.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -3872,7 +3879,7 @@ export const Dashboard = {
                                 </span>
                             </div>
                             <p style="margin: 3px 0 0 0; font-size: 12.5px; color: var(--text-secondary);">
-                                Acompanhamento direto de <strong>Leads Adicionados</strong>, <strong>Ligações Realizadas</strong> e <strong>Propostas Preenchidas</strong> por cada vendedor.
+                                Clique em qualquer card ou botão abaixo para exibir os <strong>Leads Adicionados</strong>, <strong>Ligações Realizadas</strong> e <strong>Propostas Preenchidas</strong>.
                             </p>
                         </div>
                     </div>
@@ -3905,10 +3912,10 @@ export const Dashboard = {
                     </div>
                 </div>
 
-                <!-- 3 GRANDES CARDS DE TOTAIS DA EQUIPE NO DIA -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-bottom: 20px;">
-                    <!-- Card 1: Leads Adicionados -->
-                    <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(59, 130, 246, 0.03) 100%); border: 1.5px solid rgba(99, 102, 241, 0.25); border-radius: 14px; padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                <!-- 3 GRANDES CARDS CLICÁVEIS DE TOTAIS DA EQUIPE NO DIA -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 20px;">
+                    <!-- Card 1: Leads Adicionados (CLICÁVEL) -->
+                    <div id="card-daily-total-leads" role="button" tabindex="0" onclick="window.Dashboard.openSellerDailyDetailModal('all', 'leads')" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(99,102,241,0.16)';" onmouseout="this.style.transform='none'; this.style.boxShadow='none';" style="cursor: pointer; transition: all 0.2s ease; background: linear-gradient(135deg, rgba(99, 102, 241, 0.09) 0%, rgba(59, 130, 246, 0.03) 100%); border: 1.5px solid rgba(99, 102, 241, 0.32); border-radius: 14px; padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
                         <div>
                             <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #4f46e5; display: block; margin-bottom: 4px;">
                                 ➕ Leads Adicionados (${period === 'today' ? 'Hoje' : currentPeriodLabel})
@@ -3916,17 +3923,17 @@ export const Dashboard = {
                             <div style="font-size: 30px; font-weight: 900; color: var(--text-primary); line-height: 1.1; font-variant-numeric: tabular-nums;" id="mgr-total-leads-today">
                                 ${totals.leads}
                             </div>
-                            <span style="font-size: 11.5px; color: var(--text-muted); font-weight: 500;">
-                                Novos clientes prospectados pela equipe
+                            <span style="font-size: 11.5px; color: #4f46e5; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px;">
+                                👆 Clique para ver os leads adicionados &rarr;
                             </span>
                         </div>
-                        <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(99, 102, 241, 0.14); color: #4f46e5; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+                        <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(99, 102, 241, 0.16); color: #4f46e5; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
                             👥
                         </div>
                     </div>
 
-                    <!-- Card 2: Ligações Feitas -->
-                    <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.03) 100%); border: 1.5px solid rgba(16, 185, 129, 0.28); border-radius: 14px; padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                    <!-- Card 2: Ligações Feitas (CLICÁVEL) -->
+                    <div id="card-daily-total-calls" role="button" tabindex="0" onclick="window.Dashboard.openSellerDailyDetailModal('all', 'calls')" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(16,185,129,0.16)';" onmouseout="this.style.transform='none'; this.style.boxShadow='none';" style="cursor: pointer; transition: all 0.2s ease; background: linear-gradient(135deg, rgba(16, 185, 129, 0.09) 0%, rgba(5, 150, 105, 0.03) 100%); border: 1.5px solid rgba(16, 185, 129, 0.34); border-radius: 14px; padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
                         <div>
                             <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #059669; display: block; margin-bottom: 4px;">
                                 📞 Ligações Realizadas (${period === 'today' ? 'Hoje' : currentPeriodLabel})
@@ -3934,17 +3941,17 @@ export const Dashboard = {
                             <div style="font-size: 30px; font-weight: 900; color: var(--text-primary); line-height: 1.1; font-variant-numeric: tabular-nums;" id="mgr-total-calls-today">
                                 ${totals.calls}
                             </div>
-                            <span style="font-size: 11.5px; color: var(--text-muted); font-weight: 500;">
-                                Contatos telefônicos registrados no CRM
+                            <span style="font-size: 11.5px; color: #059669; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px;">
+                                👆 Clique para ver as ligações feitas &rarr;
                             </span>
                         </div>
-                        <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(16, 185, 129, 0.15); color: #059669; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+                        <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(16, 185, 129, 0.16); color: #059669; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
                             📞
                         </div>
                     </div>
 
-                    <!-- Card 3: Propostas Preenchidas -->
-                    <div style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(168, 85, 247, 0.03) 100%); border: 1.5px solid rgba(139, 92, 246, 0.28); border-radius: 14px; padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                    <!-- Card 3: Propostas Preenchidas (CLICÁVEL) -->
+                    <div id="card-daily-total-proposals" role="button" tabindex="0" onclick="window.Dashboard.openSellerDailyDetailModal('all', 'proposals')" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(139,92,246,0.16)';" onmouseout="this.style.transform='none'; this.style.boxShadow='none';" style="cursor: pointer; transition: all 0.2s ease; background: linear-gradient(135deg, rgba(139, 92, 246, 0.09) 0%, rgba(168, 85, 247, 0.03) 100%); border: 1.5px solid rgba(139, 92, 246, 0.34); border-radius: 14px; padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
                         <div>
                             <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #7c3aed; display: block; margin-bottom: 4px;">
                                 📝 Propostas Preenchidas (${period === 'today' ? 'Hoje' : currentPeriodLabel})
@@ -3957,11 +3964,11 @@ export const Dashboard = {
                                     ${fmtCurrency(totals.proposalsValue)}
                                 </span>
                             </div>
-                            <span style="font-size: 11.5px; color: var(--text-muted); font-weight: 500;">
-                                Orçamentos elaborados e emitidos
+                            <span style="font-size: 11.5px; color: #7c3aed; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px;">
+                                👆 Clique para ver as propostas preenchidas &rarr;
                             </span>
                         </div>
-                        <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(139, 92, 246, 0.15); color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+                        <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(139, 92, 246, 0.16); color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
                             📄
                         </div>
                     </div>
@@ -3993,14 +4000,14 @@ export const Dashboard = {
 
                             return `
                             <div style="display: grid; grid-template-columns: 1.55fr 1fr 1.15fr 1.15fr 1.25fr; align-items: center; padding: 12px 16px; gap: 10px; border-bottom: ${idx === sellerList.length - 1 ? 'none' : '1px solid var(--border-color)'}; transition: background 0.15s;" onmouseover="this.style.background='var(--bg-app)'" onmouseout="this.style.background='transparent'">
-                                <!-- Vendedor -->
-                                <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                                <!-- Vendedor (Clicável) -->
+                                <div onclick="window.Dashboard.openSellerDailyDetailModal('${st.email}', 'all')" style="display: flex; align-items: center; gap: 10px; min-width: 0; cursor: pointer;" title="Clique para ver o relatório completo de ${st.name}">
                                     <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12.5px; flex-shrink: 0;">
                                         ${st.avatar}
                                     </div>
                                     <div style="min-width: 0;">
                                         <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                                            <span style="font-size: 13.5px; font-weight: 800; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${st.name}</span>
+                                            <span style="font-size: 13.5px; font-weight: 800; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: underline; text-decoration-color: transparent; transition: all 0.15s;" onmouseover="this.style.color='var(--primary)'; this.style.textDecorationColor='var(--primary)';" onmouseout="this.style.color='var(--text-primary)'; this.style.textDecorationColor='transparent';">${st.name}</span>
                                             <span style="font-size: 9.5px; font-weight: 700; padding: 1.5px 6px; border-radius: 99px; background: ${rStyle.bg}; color: ${rStyle.color};">
                                                 ${rStyle.label}
                                             </span>
@@ -4013,7 +4020,7 @@ export const Dashboard = {
 
                                 <!-- Coluna 1: Leads Adicionados -->
                                 <div style="text-align: center;">
-                                    <button type="button" onclick="window.Dashboard.openSellerDailyDetailModal('${st.email}', 'leads')" title="Clique para ver os leads adicionados por ${st.name}" style="display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 102px; padding: 6px 12px; border-radius: 10px; border: 1.5px solid ${st.leads.length > 0 ? 'rgba(99, 102, 241, 0.45)' : 'var(--border-color)'}; background: ${st.leads.length > 0 ? 'rgba(99, 102, 241, 0.1)' : 'var(--bg-app)'}; color: ${st.leads.length > 0 ? '#4f46e5' : 'var(--text-muted)'}; font-weight: 800; font-size: 13.5px; cursor: pointer; transition: all 0.15s;">
+                                    <button type="button" class="btn-daily-seller-leads" data-seller="${st.email}" onclick="window.Dashboard.openSellerDailyDetailModal('${st.email}', 'leads')" onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='none'" title="Clique para ver os leads adicionados por ${st.name}" style="display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 106px; padding: 6px 12px; border-radius: 10px; border: 1.5px solid ${st.leads.length > 0 ? 'rgba(99, 102, 241, 0.5)' : 'var(--border-color)'}; background: ${st.leads.length > 0 ? 'rgba(99, 102, 241, 0.12)' : 'var(--bg-app)'}; color: ${st.leads.length > 0 ? '#4f46e5' : 'var(--text-secondary)'}; font-weight: 800; font-size: 13.5px; cursor: pointer; transition: all 0.15s;">
                                         <span>👥</span>
                                         <span style="font-size: 15.5px;">${st.leads.length}</span>
                                         <span style="font-size: 11px; font-weight: 700;">${st.leads.length === 1 ? 'Lead' : 'Leads'}</span>
@@ -4023,7 +4030,7 @@ export const Dashboard = {
                                 <!-- Coluna 2: Ligações Feitas -->
                                 <div style="text-align: center;">
                                     <div style="display: inline-flex; align-items: center; gap: 5px;">
-                                        <button type="button" onclick="window.Dashboard.openSellerDailyDetailModal('${st.email}', 'calls')" title="Clique para ver as ligações feitas por ${st.name}" style="display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 108px; padding: 6px 12px; border-radius: 10px; border: 1.5px solid ${st.calls.length > 0 ? 'rgba(16, 185, 129, 0.45)' : 'var(--border-color)'}; background: ${st.calls.length > 0 ? 'rgba(16, 185, 129, 0.12)' : 'var(--bg-app)'}; color: ${st.calls.length > 0 ? '#059669' : 'var(--text-muted)'}; font-weight: 800; font-size: 13.5px; cursor: pointer; transition: all 0.15s;">
+                                        <button type="button" class="btn-daily-seller-calls" data-seller="${st.email}" onclick="window.Dashboard.openSellerDailyDetailModal('${st.email}', 'calls')" onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='none'" title="Clique para ver as ligações feitas por ${st.name}" style="display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 110px; padding: 6px 12px; border-radius: 10px; border: 1.5px solid ${st.calls.length > 0 ? 'rgba(16, 185, 129, 0.5)' : 'var(--border-color)'}; background: ${st.calls.length > 0 ? 'rgba(16, 185, 129, 0.14)' : 'var(--bg-app)'}; color: ${st.calls.length > 0 ? '#059669' : 'var(--text-secondary)'}; font-weight: 800; font-size: 13.5px; cursor: pointer; transition: all 0.15s;">
                                             <span>📞</span>
                                             <span style="font-size: 15.5px;">${st.calls.length}</span>
                                             <span style="font-size: 11px; font-weight: 700;">${st.calls.length === 1 ? 'Ligação' : 'Ligações'}</span>
@@ -4036,7 +4043,7 @@ export const Dashboard = {
 
                                 <!-- Coluna 3: Propostas Preenchidas -->
                                 <div style="text-align: center;">
-                                    <button type="button" onclick="window.Dashboard.openSellerDailyDetailModal('${st.email}', 'proposals')" title="Clique para ver as propostas preenchidas por ${st.name}" style="display: inline-flex; flex-direction: column; align-items: center; justify-content: center; min-width: 118px; padding: 5px 12px; border-radius: 10px; border: 1.5px solid ${st.proposals.length > 0 ? 'rgba(139, 92, 246, 0.45)' : 'var(--border-color)'}; background: ${st.proposals.length > 0 ? 'rgba(139, 92, 246, 0.12)' : 'var(--bg-app)'}; color: ${st.proposals.length > 0 ? '#7c3aed' : 'var(--text-muted)'}; cursor: pointer; transition: all 0.15s;">
+                                    <button type="button" class="btn-daily-seller-proposals" data-seller="${st.email}" onclick="window.Dashboard.openSellerDailyDetailModal('${st.email}', 'proposals')" onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='none'" title="Clique para ver as propostas preenchidas por ${st.name}" style="display: inline-flex; flex-direction: column; align-items: center; justify-content: center; min-width: 120px; padding: 5px 12px; border-radius: 10px; border: 1.5px solid ${st.proposals.length > 0 ? 'rgba(139, 92, 246, 0.5)' : 'var(--border-color)'}; background: ${st.proposals.length > 0 ? 'rgba(139, 92, 246, 0.14)' : 'var(--bg-app)'}; color: ${st.proposals.length > 0 ? '#7c3aed' : 'var(--text-secondary)'}; cursor: pointer; transition: all 0.15s;">
                                         <div style="display: flex; align-items: center; gap: 4px; font-weight: 800; font-size: 13.5px;">
                                             <span>📄</span>
                                             <span style="font-size: 15.5px;">${st.proposals.length}</span>
@@ -4066,7 +4073,7 @@ export const Dashboard = {
                                             </span>
                                         `}
                                     </div>
-                                    <button type="button" onclick="window.Dashboard.openSellerDailyDetailModal('${st.email}', 'all')" class="btn btn-outline btn-sm" style="height: 30px; padding: 0 10px; font-size: 11px; font-weight: 700; border-radius: 7px; white-space: nowrap; flex-shrink: 0;">
+                                    <button type="button" onclick="window.Dashboard.openSellerDailyDetailModal('${st.email}', 'all')" class="btn btn-outline btn-sm" style="height: 30px; padding: 0 10px; font-size: 11px; font-weight: 700; border-radius: 7px; white-space: nowrap; flex-shrink: 0; cursor: pointer;">
                                         🔍 Detalhes
                                     </button>
                                 </div>
@@ -4079,64 +4086,145 @@ export const Dashboard = {
         `;
     },
 
-    openSellerDailyDetailModal(sellerEmail, focusSection = "all") {
-        const stats = (this._lastSellerDailyStats || this.computeSellerDailyStats().sellerList)
-            .find(s => s.email === (sellerEmail || "").toLowerCase().trim());
-        if (!stats) return;
+    openSellerDailyDetailModal(sellerEmailOrAll = "all", focusSection = "all") {
+        const computed = this.computeSellerDailyStats();
+        const sellerList = computed.sellerList;
+        const isAllTeam = !sellerEmailOrAll || sellerEmailOrAll === "all";
+
+        let targetStats = null;
+        if (isAllTeam) {
+            const allLeads = [];
+            const allCalls = [];
+            const allProposals = [];
+            let totalVal = 0;
+
+            sellerList.forEach(st => {
+                st.leads.forEach(l => allLeads.push({ ...l, sellerName: st.name, sellerEmail: st.email }));
+                st.calls.forEach(c => allCalls.push({ ...c, sellerName: st.name, sellerEmail: st.email }));
+                st.proposals.forEach(p => allProposals.push({ ...p, sellerName: st.name, sellerEmail: st.email }));
+                totalVal += st.totalProposalValue;
+            });
+
+            allLeads.sort((a, b) => b.timestamp - a.timestamp);
+            allCalls.sort((a, b) => b.timestamp - a.timestamp);
+            allProposals.sort((a, b) => b.timestamp - a.timestamp);
+
+            targetStats = {
+                email: "all",
+                name: "Toda a Equipe Comercial",
+                avatar: "👥",
+                leads: allLeads,
+                calls: allCalls,
+                proposals: allProposals,
+                totalProposalValue: totalVal
+            };
+        } else {
+            const found = sellerList.find(s => s.email === sellerEmailOrAll.toLowerCase().trim());
+            if (!found) return;
+            targetStats = {
+                ...found,
+                leads: found.leads.map(l => ({ ...l, sellerName: found.name, sellerEmail: found.email })),
+                calls: found.calls.map(c => ({ ...c, sellerName: found.name, sellerEmail: found.email })),
+                proposals: found.proposals.map(p => ({ ...p, sellerName: found.name, sellerEmail: found.email }))
+            };
+        }
 
         let modal = document.getElementById("seller-daily-detail-modal");
         if (!modal) {
             modal = document.createElement("div");
             modal.id = "seller-daily-detail-modal";
             modal.style.cssText = "position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); z-index: 3000; display: flex; align-items: center; justify-content: center; padding: 16px;";
+            modal.addEventListener("click", (e) => {
+                if (e.target === modal) modal.style.display = "none";
+            });
             document.body.appendChild(modal);
         }
 
         const fmtCurrency = (v) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
         const fmtDt = (ts) => ts ? new Date(ts).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—";
 
+        const showLeads = focusSection === "all" || focusSection === "leads";
+        const showCalls = focusSection === "all" || focusSection === "calls";
+        const showProposals = focusSection === "all" || focusSection === "proposals";
+
+        const sectionTitles = {
+            leads: `➕ Leads Adicionados — ${targetStats.name}`,
+            calls: `📞 Ligações Realizadas — ${targetStats.name}`,
+            proposals: `📝 Propostas Preenchidas — ${targetStats.name}`,
+            all: `📊 Relatório Diário Completo — ${targetStats.name}`
+        };
+
         modal.style.display = "flex";
         modal.innerHTML = `
-            <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 18px; width: 100%; max-width: 720px; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 25px 60px rgba(0,0,0,0.35); overflow: hidden;">
+            <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 18px; width: 100%; max-width: 780px; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 25px 60px rgba(0,0,0,0.35); overflow: hidden;">
                 <!-- Header -->
-                <div style="padding: 18px 24px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; background: var(--bg-app);">
+                <div style="padding: 18px 24px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; background: var(--bg-app); gap: 12px; flex-wrap: wrap;">
                     <div style="display: flex; align-items: center; gap: 12px;">
-                        <div style="width: 42px; height: 42px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px;">
-                            ${stats.avatar}
+                        <div style="width: 42px; height: 42px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px;">
+                            ${targetStats.avatar}
                         </div>
                         <div>
                             <h3 style="margin: 0; font-size: 16.5px; font-weight: 800; color: var(--text-primary);">
-                                Relatório Diário — ${stats.name}
+                                ${sectionTitles[focusSection] || sectionTitles.all}
                             </h3>
                             <span style="font-size: 12px; color: var(--text-muted);">
-                                👥 ${stats.leads.length} Leads • 📞 ${stats.calls.length} Ligações • 📄 ${stats.proposals.length} Propostas (${fmtCurrency(stats.totalProposalValue)})
+                                👥 ${targetStats.leads.length} Leads • 📞 ${targetStats.calls.length} Ligações • 📄 ${targetStats.proposals.length} Propostas (${fmtCurrency(targetStats.totalProposalValue)})
                             </span>
                         </div>
                     </div>
-                    <button type="button" onclick="document.getElementById('seller-daily-detail-modal').style.display='none'" style="width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-secondary); cursor: pointer; font-size: 18px;">&times;</button>
+
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <select onchange="window.Dashboard.openSellerDailyDetailModal(this.value, '${focusSection}')" style="height: 34px; padding: 0 10px; font-size: 12px; font-weight: 700; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); cursor: pointer;">
+                            <option value="all" ${isAllTeam ? 'selected' : ''}>👥 Todos os Vendedores</option>
+                            ${sellerList.map(s => `<option value="${s.email}" ${!isAllTeam && s.email === targetStats.email ? 'selected' : ''}>👤 ${s.name}</option>`).join("")}
+                        </select>
+                        <button type="button" onclick="document.getElementById('seller-daily-detail-modal').style.display='none'" style="width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-secondary); cursor: pointer; font-size: 18px;">&times;</button>
+                    </div>
+                </div>
+
+                <!-- Abas de Filtro Rápido Dentro do Modal -->
+                <div style="display: flex; gap: 8px; padding: 12px 24px; background: var(--bg-surface); border-bottom: 1px solid var(--border-color); flex-wrap: wrap;">
+                    <button type="button" onclick="window.Dashboard.openSellerDailyDetailModal('${targetStats.email}', 'leads')" style="padding: 6px 14px; border-radius: 99px; font-size: 12px; font-weight: 800; cursor: pointer; border: 1.5px solid ${focusSection === 'leads' ? '#4f46e5' : 'var(--border-color)'}; background: ${focusSection === 'leads' ? '#4f46e5' : 'var(--bg-app)'}; color: ${focusSection === 'leads' ? '#fff' : 'var(--text-secondary)'};">
+                        ➕ Leads Adicionados (${targetStats.leads.length})
+                    </button>
+                    <button type="button" onclick="window.Dashboard.openSellerDailyDetailModal('${targetStats.email}', 'calls')" style="padding: 6px 14px; border-radius: 99px; font-size: 12px; font-weight: 800; cursor: pointer; border: 1.5px solid ${focusSection === 'calls' ? '#059669' : 'var(--border-color)'}; background: ${focusSection === 'calls' ? '#059669' : 'var(--bg-app)'}; color: ${focusSection === 'calls' ? '#fff' : 'var(--text-secondary)'};">
+                        📞 Ligações Feitas (${targetStats.calls.length})
+                    </button>
+                    <button type="button" onclick="window.Dashboard.openSellerDailyDetailModal('${targetStats.email}', 'proposals')" style="padding: 6px 14px; border-radius: 99px; font-size: 12px; font-weight: 800; cursor: pointer; border: 1.5px solid ${focusSection === 'proposals' ? '#7c3aed' : 'var(--border-color)'}; background: ${focusSection === 'proposals' ? '#7c3aed' : 'var(--bg-app)'}; color: ${focusSection === 'proposals' ? '#fff' : 'var(--text-secondary)'};">
+                        📝 Propostas Preenchidas (${targetStats.proposals.length})
+                    </button>
+                    <button type="button" onclick="window.Dashboard.openSellerDailyDetailModal('${targetStats.email}', 'all')" style="padding: 6px 14px; border-radius: 99px; font-size: 12px; font-weight: 800; cursor: pointer; border: 1.5px solid ${focusSection === 'all' ? 'var(--primary)' : 'var(--border-color)'}; background: ${focusSection === 'all' ? 'rgba(99,102,241,0.12)' : 'var(--bg-app)'}; color: ${focusSection === 'all' ? 'var(--primary)' : 'var(--text-secondary)'};">
+                        📋 Ver Todas Juntas
+                    </button>
                 </div>
 
                 <!-- Body -->
                 <div style="padding: 20px 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px;">
+                    ${showLeads ? `
                     <!-- 1. Leads Adicionados -->
-                    <div style="border: 1px solid ${focusSection === 'leads' ? '#6366f1' : 'var(--border-color)'}; border-radius: 12px; padding: 14px 16px; background: var(--bg-surface);">
-                        <div style="font-size: 12.5px; font-weight: 800; color: #4f46e5; text-transform: uppercase; margin-bottom: 10px; display: flex; justify-content: space-between;">
-                            <span>➕ Leads Adicionados (${stats.leads.length})</span>
+                    <div style="border: 1.5px solid rgba(99, 102, 241, 0.35); border-radius: 12px; padding: 14px 16px; background: var(--bg-surface);">
+                        <div style="font-size: 12.5px; font-weight: 800; color: #4f46e5; text-transform: uppercase; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                            <span>➕ Leads Adicionados (${targetStats.leads.length})</span>
+                            <span style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: none;">Clique em qualquer lead para abrir a ficha completa</span>
                         </div>
-                        ${stats.leads.length === 0 ? `
-                            <div style="font-size: 12.5px; color: var(--text-muted); padding: 8px 0;">Nenhum lead adicionado neste período.</div>
+                        ${targetStats.leads.length === 0 ? `
+                            <div style="font-size: 13px; color: var(--text-muted); padding: 14px; text-align: center; background: var(--bg-app); border-radius: 8px;">Nenhum lead adicionado neste período.</div>
                         ` : `
                             <div style="display: flex; flex-direction: column; gap: 8px;">
-                                ${stats.leads.map(l => `
-                                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg-app); border-radius: 8px; border: 1px solid var(--border-color);">
+                                ${targetStats.leads.map(l => `
+                                    <div onclick="document.getElementById('seller-daily-detail-modal').style.display='none'; window.CRM?.openLeadDrawer('${l.id}');" onmouseover="this.style.borderColor='#6366f1'" onmouseout="this.style.borderColor='var(--border-color)'" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-app); border-radius: 10px; border: 1px solid var(--border-color); gap: 10px; transition: all 0.15s;">
                                         <div>
-                                            <div style="font-weight: 700; font-size: 13px; color: var(--text-primary);">${l.company}</div>
-                                            <div style="font-size: 11.5px; color: var(--text-muted);">Contato: ${l.contact} • Tel: ${l.phone} • Etapa: ${l.stage}</div>
+                                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                                <span style="font-weight: 800; font-size: 13.5px; color: var(--text-primary);">${l.company}</span>
+                                                <span style="font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: rgba(99,102,241,0.12); color: #4f46e5;">👤 ${l.sellerName}</span>
+                                                <span style="font-size: 10.5px; font-weight: 600; padding: 2px 7px; border-radius: 6px; background: var(--bg-surface); border: 1px solid var(--border-color); color: var(--text-secondary);">${l.stage}</span>
+                                            </div>
+                                            <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">Contato: <strong>${l.contact}</strong> • WhatsApp/Tel: <strong>${l.phone}</strong></div>
                                         </div>
-                                        <div style="display: flex; align-items: center; gap: 8px;">
-                                            <span style="font-size: 11px; color: var(--text-muted);">${fmtDt(l.timestamp)}</span>
-                                            <button type="button" onclick="document.getElementById('seller-daily-detail-modal').style.display='none'; window.location.hash='#crm'; setTimeout(() => window.CRM?.openLeadDrawer('${l.id}'), 250);" class="btn btn-outline btn-sm" style="font-size: 11px; height: 28px; padding: 0 10px;">
-                                                Abrir Lead
+                                        <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+                                            <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;">${fmtDt(l.timestamp)}</span>
+                                            <button type="button" class="btn btn-outline btn-sm" style="font-size: 11px; height: 28px; padding: 0 10px; font-weight: 700; color: #4f46e5; border-color: rgba(99,102,241,0.35);">
+                                                Abrir Lead &rarr;
                                             </button>
                                         </div>
                                     </div>
@@ -4144,52 +4232,70 @@ export const Dashboard = {
                             </div>
                         `}
                     </div>
+                    ` : ''}
 
+                    ${showCalls ? `
                     <!-- 2. Ligações Realizadas -->
-                    <div style="border: 1px solid ${focusSection === 'calls' ? '#10b981' : 'var(--border-color)'}; border-radius: 12px; padding: 14px 16px; background: var(--bg-surface);">
+                    <div style="border: 1.5px solid rgba(16, 185, 129, 0.35); border-radius: 12px; padding: 14px 16px; background: var(--bg-surface);">
                         <div style="font-size: 12.5px; font-weight: 800; color: #059669; text-transform: uppercase; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-                            <span>📞 Ligações Realizadas (${stats.calls.length})</span>
-                            <button type="button" onclick="document.getElementById('seller-daily-detail-modal').style.display='none'; window.Dashboard.openQuickCallModal('${stats.email}');" style="font-size: 11px; font-weight: 700; color: #059669; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); border-radius: 6px; padding: 3px 9px; cursor: pointer;">
-                                + Registrar Ligação
+                            <span>📞 Ligações Realizadas (${targetStats.calls.length})</span>
+                            <button type="button" onclick="document.getElementById('seller-daily-detail-modal').style.display='none'; window.Dashboard.openQuickCallModal('${isAllTeam ? '' : targetStats.email}');" style="font-size: 11px; font-weight: 700; color: #059669; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); border-radius: 6px; padding: 4px 10px; cursor: pointer;">
+                                + Registrar Nova Ligação
                             </button>
                         </div>
-                        ${stats.calls.length === 0 ? `
-                            <div style="font-size: 12.5px; color: var(--text-muted); padding: 8px 0;">Nenhuma ligação registrada neste período.</div>
+                        ${targetStats.calls.length === 0 ? `
+                            <div style="font-size: 13px; color: var(--text-muted); padding: 14px; text-align: center; background: var(--bg-app); border-radius: 8px;">Nenhuma ligação registrada neste período.</div>
                         ` : `
                             <div style="display: flex; flex-direction: column; gap: 8px;">
-                                ${stats.calls.map(c => `
-                                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg-app); border-radius: 8px; border: 1px solid var(--border-color); gap: 10px;">
+                                ${targetStats.calls.map(c => `
+                                    <div onclick="${c.leadId ? `document.getElementById('seller-daily-detail-modal').style.display='none'; window.CRM?.openLeadDrawer('${c.leadId}');` : ''}" style="${c.leadId ? 'cursor: pointer;' : ''} display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-app); border-radius: 10px; border: 1px solid var(--border-color); gap: 10px; transition: all 0.15s;">
                                         <div style="min-width: 0; flex: 1;">
-                                            <div style="font-weight: 700; font-size: 13px; color: var(--text-primary);">${c.company} <span style="font-weight: 500; color: var(--text-muted); font-size: 11.5px;">(${c.contact})</span></div>
-                                            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">${c.description}</div>
+                                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                                <span style="font-weight: 800; font-size: 13.5px; color: var(--text-primary);">${c.company}</span>
+                                                <span style="font-size: 11.5px; color: var(--text-muted);">(${c.contact} • ${c.phone})</span>
+                                                <span style="font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: rgba(16,185,129,0.12); color: #059669;">📞 ${c.sellerName}</span>
+                                            </div>
+                                            <div style="font-size: 12.5px; color: var(--text-secondary); margin-top: 4px; line-height: 1.4;">💬 ${c.description}</div>
                                         </div>
-                                        <span style="font-size: 11px; color: var(--text-muted); white-space: nowrap;">${fmtDt(c.timestamp)}</span>
+                                        <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                                            <span style="font-size: 11px; color: var(--text-muted); white-space: nowrap; font-weight: 600;">${fmtDt(c.timestamp)}</span>
+                                            ${c.leadId ? `
+                                                <button type="button" class="btn btn-outline btn-sm" style="font-size: 11px; height: 28px; padding: 0 10px; font-weight: 700; color: #059669; border-color: rgba(16,185,129,0.35);">
+                                                    Ver Cliente &rarr;
+                                                </button>
+                                            ` : ''}
+                                        </div>
                                     </div>
                                 `).join("")}
                             </div>
                         `}
                     </div>
+                    ` : ''}
 
+                    ${showProposals ? `
                     <!-- 3. Propostas Preenchidas -->
-                    <div style="border: 1px solid ${focusSection === 'proposals' ? '#8b5cf6' : 'var(--border-color)'}; border-radius: 12px; padding: 14px 16px; background: var(--bg-surface);">
-                        <div style="font-size: 12.5px; font-weight: 800; color: #7c3aed; text-transform: uppercase; margin-bottom: 10px; display: flex; justify-content: space-between;">
-                            <span>📝 Propostas Preenchidas (${stats.proposals.length})</span>
-                            <span>Total: ${fmtCurrency(stats.totalProposalValue)}</span>
+                    <div style="border: 1.5px solid rgba(139, 92, 246, 0.35); border-radius: 12px; padding: 14px 16px; background: var(--bg-surface);">
+                        <div style="font-size: 12.5px; font-weight: 800; color: #7c3aed; text-transform: uppercase; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                            <span>📝 Propostas Preenchidas (${targetStats.proposals.length})</span>
+                            <span style="background: rgba(139,92,246,0.12); padding: 3px 9px; border-radius: 6px;">Total: ${fmtCurrency(targetStats.totalProposalValue)}</span>
                         </div>
-                        ${stats.proposals.length === 0 ? `
-                            <div style="font-size: 12.5px; color: var(--text-muted); padding: 8px 0;">Nenhuma proposta preenchida neste período.</div>
+                        ${targetStats.proposals.length === 0 ? `
+                            <div style="font-size: 13px; color: var(--text-muted); padding: 14px; text-align: center; background: var(--bg-app); border-radius: 8px;">Nenhuma proposta preenchida neste período.</div>
                         ` : `
                             <div style="display: flex; flex-direction: column; gap: 8px;">
-                                ${stats.proposals.map(p => `
-                                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg-app); border-radius: 8px; border: 1px solid var(--border-color); gap: 10px;">
+                                ${targetStats.proposals.map(p => `
+                                    <div onclick="document.getElementById('seller-daily-detail-modal').style.display='none'; window.location.hash='#proposals'; setTimeout(() => window.Proposals?.openBudgetScreen('${p.id}'), 250);" onmouseover="this.style.borderColor='#8b5cf6'" onmouseout="this.style.borderColor='var(--border-color)'" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-app); border-radius: 10px; border: 1px solid var(--border-color); gap: 10px; transition: all 0.15s;">
                                         <div>
-                                            <div style="font-weight: 700; font-size: 13px; color: var(--text-primary);">Orçamento #${p.budgetNumber} — ${p.company}</div>
-                                            <div style="font-size: 11.5px; color: var(--text-muted);">${p.title} • Status: <strong>${p.status}</strong></div>
+                                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                                <span style="font-weight: 800; font-size: 13.5px; color: var(--text-primary);">Orçamento #${p.budgetNumber} — ${p.company}</span>
+                                                <span style="font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: rgba(139,92,246,0.12); color: #7c3aed;">📄 ${p.sellerName}</span>
+                                            </div>
+                                            <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">${p.title} • Status: <strong>${p.status}</strong> • ${fmtDt(p.timestamp)}</div>
                                         </div>
-                                        <div style="display: flex; align-items: center; gap: 10px;">
-                                            <span style="font-weight: 800; font-size: 13px; color: #10b981;">${fmtCurrency(p.value)}</span>
-                                            <button type="button" onclick="document.getElementById('seller-daily-detail-modal').style.display='none'; window.location.hash='#proposals'; setTimeout(() => window.Proposals?.openBudgetScreen('${p.id}'), 250);" class="btn btn-outline btn-sm" style="font-size: 11px; height: 28px; padding: 0 10px;">
-                                                Abrir
+                                        <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+                                            <span style="font-weight: 800; font-size: 13.5px; color: #10b981;">${fmtCurrency(p.value)}</span>
+                                            <button type="button" class="btn btn-outline btn-sm" style="font-size: 11px; height: 28px; padding: 0 10px; font-weight: 700; color: #7c3aed; border-color: rgba(139,92,246,0.35);">
+                                                Abrir Proposta &rarr;
                                             </button>
                                         </div>
                                     </div>
@@ -4197,6 +4303,7 @@ export const Dashboard = {
                             </div>
                         `}
                     </div>
+                    ` : ''}
                 </div>
             </div>
         `;

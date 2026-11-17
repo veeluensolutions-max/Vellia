@@ -388,6 +388,12 @@ window.addEventListener("storage", (e) => {
     }
 });
 
+function isTestArtifactRecord(item) {
+    if (!item) return false;
+    const comp = String(item.company || item.details || "").toUpperCase();
+    return comp.includes("INDÚSTRIA METALÚRGICA NORDESTE") || comp.includes("INDUSTRIA METALURGICA NORDESTE");
+}
+
 // Sincronização em background no início da aplicação (Execução paralela ultrarrápida)
 async function syncFromSupabase() {
     try {
@@ -445,88 +451,105 @@ async function syncFromSupabase() {
         // 3. Calendário
         if (eventsRes.status === "fulfilled" && Array.isArray(eventsRes.value)) {
             const remoteEvents = eventsRes.value;
-            const localEvents = MemoryCache.get("vellia_calendar_events", () => []) || [];
             const eventMap = new Map();
-            localEvents.forEach(e => eventMap.set(e.id, e));
-            remoteEvents.forEach(e => eventMap.set(e.id, e));
+            remoteEvents.forEach(e => { if (e && e.id) eventMap.set(e.id, e); });
             MemoryCache.set("vellia_calendar_events", Array.from(eventMap.values()));
         }
 
-        // 4. Leads
+        // 4. Leads (Supabase é a fonte da verdade)
         if (leadsRes.status === "fulfilled" && Array.isArray(leadsRes.value)) {
             const remoteLeads = leadsRes.value;
-            const decodedLeads = remoteLeads.map(l => decodeLeadFromSupabase(l));
-            const localLeads = MemoryCache.get("comercial_leads", () => []) || [];
+            const localLeads = (MemoryCache.get("comercial_leads", () => []) || []).filter(l => !isTestArtifactRecord(l));
+            const localMap = new Map();
+            localLeads.forEach(l => { if (l && l.id) localMap.set(l.id, l); });
+
             const leadMap = new Map();
-            localLeads.forEach(l => { if (l && l.id) leadMap.set(l.id, l); });
-            decodedLeads.forEach(remote => {
-                if (remote && remote.id) {
-                    const local = leadMap.get(remote.id);
-                    if (!local) {
-                        leadMap.set(remote.id, remote);
+            remoteLeads.forEach(rawRemote => {
+                if (!rawRemote || !rawRemote.id) return;
+                if (isTestArtifactRecord(rawRemote)) {
+                    deleteSupabase("comercial_leads", `?id=eq.${encodeURIComponent(rawRemote.id)}`);
+                    return;
+                }
+                const remote = decodeLeadFromSupabase(rawRemote);
+                const local = localMap.get(remote.id);
+                if (!local) {
+                    leadMap.set(remote.id, remote);
+                } else {
+                    const isRecentLocal = local._lastModified && (Date.now() - local._lastModified < 12000);
+                    if (isRecentLocal) {
+                        leadMap.set(remote.id, {
+                            ...remote,
+                            ...local,
+                            stage: local.stage || remote.stage,
+                            stageHistory: local.stageHistory || remote.stageHistory,
+                            interactions: (Array.isArray(local.interactions) && local.interactions.length >= (remote.interactions || []).length)
+                                ? local.interactions
+                                : (remote.interactions || [])
+                        });
                     } else {
-                        // Preservar alterações locais recentes de estágio se forem mais novas que o remoto
-                        const localHist = Array.isArray(local.stageHistory) && local.stageHistory.length > 0 ? local.stageHistory[local.stageHistory.length - 1] : null;
-                        const remoteHist = Array.isArray(remote.stageHistory) && remote.stageHistory.length > 0 ? remote.stageHistory[remote.stageHistory.length - 1] : null;
-
-                        const localTime = localHist?.timestamp ? new Date(localHist.timestamp).getTime() : (local._lastModified || 0);
-                        const remoteTime = remoteHist?.timestamp ? new Date(remoteHist.timestamp).getTime() : 0;
-
-                        if (localTime > remoteTime && local.stage && local.stage !== remote.stage) {
-                            leadMap.set(remote.id, { ...remote, ...local, stage: local.stage, stageHistory: local.stageHistory });
-                            // Sincronizar o Supabase em background
-                            fetch(`${SUPABASE_URL}/rest/v1/comercial_leads?id=eq.${encodeURIComponent(remote.id)}`, {
-                                method: "PATCH",
-                                headers: {
-                                    "apikey": SUPABASE_KEY,
-                                    "Authorization": `Bearer ${SUPABASE_KEY}`,
-                                    "Content-Type": "application/json",
-                                    "Prefer": "return=minimal"
-                                },
-                                body: JSON.stringify({ stage: local.stage, stageHistory: local.stageHistory })
-                            }).catch(() => {});
-                        } else {
-                            leadMap.set(remote.id, { ...local, ...remote });
-                        }
+                        leadMap.set(remote.id, remote);
                     }
                 }
             });
-            const mergedLeads = Array.from(leadMap.values()).sort((a, b) => getLeadTimestamp(b) - getLeadTimestamp(a));
-            MemoryCache.set("comercial_leads", mergedLeads);
 
-            // Sincronizar em lote único os leads locais que não estão no remoto
-            const missingLeads = localLeads.filter(ll => !remoteLeads.some(rl => rl.id === ll.id));
-            if (missingLeads.length > 0) {
-                upsertSupabase("comercial_leads", missingLeads.map(ml => encodeLeadForSupabase(ml)));
-            }
-        }
-
-        // 5. Propostas
-        if (proposalsRes.status === "fulfilled" && Array.isArray(proposalsRes.value)) {
-            const remoteProposals = proposalsRes.value;
-            const decodedProposals = remoteProposals.map(p => decodeProposalFromSupabase(p));
-            const localProposals = MemoryCache.get("comercial_proposals", () => []) || [];
-            const propMap = new Map();
-            localProposals.forEach(p => { if (p && p.id) propMap.set(p.id, p); });
-            decodedProposals.forEach(p => {
-                if (p && p.id) {
-                    const existing = propMap.get(p.id) || {};
-                    propMap.set(p.id, { ...existing, ...p });
+            // Preservar apenas leads recém-criados nesta aba nos últimos 12s cujo POST ainda esteja em trânsito
+            localLeads.forEach(ll => {
+                if (ll && ll.id && !leadMap.has(ll.id) && !isTestArtifactRecord(ll)) {
+                    const ageMs = Date.now() - (ll._lastModified || getLeadTimestamp(ll) || 0);
+                    if (ageMs >= 0 && ageMs < 12000) {
+                        leadMap.set(ll.id, ll);
+                        upsertSupabase("comercial_leads", encodeLeadForSupabase(ll));
+                    }
                 }
             });
+
+            const mergedLeads = Array.from(leadMap.values()).sort((a, b) => getLeadTimestamp(b) - getLeadTimestamp(a));
+            MemoryCache.set("comercial_leads", mergedLeads);
+        }
+
+        // 5. Propostas (Supabase é a fonte da verdade)
+        if (proposalsRes.status === "fulfilled" && Array.isArray(proposalsRes.value)) {
+            const remoteProposals = proposalsRes.value;
+            const localProposals = (MemoryCache.get("comercial_proposals", () => []) || []).filter(p => !isTestArtifactRecord(p));
+            const localPropMap = new Map();
+            localProposals.forEach(p => { if (p && p.id) localPropMap.set(p.id, p); });
+
+            const propMap = new Map();
+            remoteProposals.forEach(rawProp => {
+                if (!rawProp || !rawProp.id) return;
+                if (isTestArtifactRecord(rawProp)) {
+                    deleteSupabase("comercial_proposals", `?id=eq.${encodeURIComponent(rawProp.id)}`);
+                    return;
+                }
+                const p = decodeProposalFromSupabase(rawProp);
+                const localP = localPropMap.get(p.id);
+                if (localP && localP._lastModified && (Date.now() - localP._lastModified < 12000)) {
+                    propMap.set(p.id, { ...p, ...localP });
+                } else {
+                    propMap.set(p.id, p);
+                }
+            });
+
+            // Preservar apenas propostas recém-criadas nos últimos 12s cujo POST ainda esteja em trânsito
+            localProposals.forEach(lp => {
+                if (lp && lp.id && !propMap.has(lp.id) && !isTestArtifactRecord(lp)) {
+                    const createdTs = lp._lastModified || (lp.createdAt ? new Date(lp.createdAt).getTime() : 0);
+                    const ageMs = Date.now() - createdTs;
+                    if (ageMs >= 0 && ageMs < 12000) {
+                        propMap.set(lp.id, lp);
+                        upsertSupabase("comercial_proposals", encodeProposalForSupabase(lp));
+                    }
+                }
+            });
+
             const mergedProps = Array.from(propMap.values());
             MemoryCache.set("comercial_proposals", mergedProps);
-
-            // Sincronizar em lote único as propostas locais que não estão no remoto
-            const missingProps = localProposals.filter(lp => !remoteProposals.some(rp => rp.id === lp.id));
-            if (missingProps.length > 0) {
-                upsertSupabase("comercial_proposals", missingProps.map(mp => encodeProposalForSupabase(mp)));
-            }
         }
 
         // 6. Logs de Auditoria (Últimos 100)
         if (logsRes.status === "fulfilled" && Array.isArray(logsRes.value)) {
-            const sortedLogs = logsRes.value.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            const cleanLogs = logsRes.value.filter(lg => !isTestArtifactRecord(lg));
+            const sortedLogs = cleanLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
             MemoryCache.set("comercial_logs", sortedLogs);
         }
 
@@ -577,7 +600,10 @@ async function syncFromSupabase() {
             }
         }
 
-        // Disparar evento de storage para atualizar componentes
+        // Disparar eventos para atualizar todos os componentes em tempo real
+        window.dispatchEvent(new CustomEvent("vellia:leadUpdated"));
+        window.dispatchEvent(new CustomEvent("vellia:proposalUpdated"));
+        window.dispatchEvent(new CustomEvent("vellia:cloudSynced", { detail: { timestamp: Date.now() } }));
         window.dispatchEvent(new Event("storage"));
     } catch (e) {
         console.warn("syncFromSupabase error:", e);
@@ -600,13 +626,18 @@ function initStorage() {
     }
     if (!localStorage.getItem("comercial_logs")) {
         MemoryCache.set("comercial_logs", INITIAL_LOGS);
+    } else {
+        try {
+            const existingLogs = (JSON.parse(localStorage.getItem("comercial_logs")) || []).filter(lg => !isTestArtifactRecord(lg));
+            MemoryCache.set("comercial_logs", existingLogs);
+        } catch(e) {}
     }
     if (!localStorage.getItem("comercial_leads")) {
         MemoryCache.set("comercial_leads", []);
     } else {
         try {
-            const existingLeads = JSON.parse(localStorage.getItem("comercial_leads"));
-            if (Array.isArray(existingLeads) && existingLeads.length > 1) {
+            const existingLeads = (JSON.parse(localStorage.getItem("comercial_leads")) || []).filter(l => !isTestArtifactRecord(l));
+            if (Array.isArray(existingLeads)) {
                 existingLeads.sort((a, b) => getLeadTimestamp(b) - getLeadTimestamp(a));
                 MemoryCache.set("comercial_leads", existingLeads);
             }
@@ -614,6 +645,11 @@ function initStorage() {
     }
     if (!localStorage.getItem("comercial_proposals")) {
         MemoryCache.set("comercial_proposals", []);
+    } else {
+        try {
+            const existingProps = (JSON.parse(localStorage.getItem("comercial_proposals")) || []).filter(p => !isTestArtifactRecord(p));
+            MemoryCache.set("comercial_proposals", existingProps);
+        } catch(e) {}
     }
     if (!localStorage.getItem("comercial_goals")) {
         MemoryCache.set("comercial_goals", []);
@@ -630,65 +666,85 @@ function startSyncPolling() {
     setInterval(async () => {
         if (document.hidden) return;
         try {
-            const rawRemoteLeads = await supabaseFetch("comercial_leads");
-            if (Array.isArray(rawRemoteLeads)) {
+            const [leadsRes, propsRes, logsRes] = await Promise.allSettled([
+                supabaseFetch("comercial_leads"),
+                supabaseFetch("comercial_proposals"),
+                supabaseFetch("comercial_logs?order=timestamp.desc&limit=100")
+            ]);
+
+            let anySyncedChange = false;
+
+            if (leadsRes.status === "fulfilled" && Array.isArray(leadsRes.value)) {
+                const rawRemoteLeads = leadsRes.value.filter(rl => {
+                    if (isTestArtifactRecord(rl)) {
+                        if (rl && rl.id) deleteSupabase("comercial_leads", `?id=eq.${encodeURIComponent(rl.id)}`);
+                        return false;
+                    }
+                    return true;
+                });
                 const decodedRemoteLeads = rawRemoteLeads.map(l => decodeLeadFromSupabase(l));
-                const localLeads = MemoryCache.get("comercial_leads", () => []) || [];
-                const leadMap = new Map();
-                localLeads.forEach(l => { if (l && l.id) leadMap.set(l.id, l); });
-                
-                let hasChanges = false;
+                const localLeads = (MemoryCache.get("comercial_leads", () => []) || []).filter(l => !isTestArtifactRecord(l));
+                const localMap = new Map();
+                localLeads.forEach(l => { if (l && l.id) localMap.set(l.id, l); });
+
+                const nextLeadMap = new Map();
+                let hasChanges = decodedRemoteLeads.length !== localLeads.length;
                 const newLeads = [];
 
                 decodedRemoteLeads.forEach(remote => {
-                    if (remote && remote.id) {
-                        const local = leadMap.get(remote.id);
-                        if (!local) {
-                            leadMap.set(remote.id, remote);
-                            newLeads.push(remote);
-                            hasChanges = true;
+                    if (!remote || !remote.id) return;
+                    const local = localMap.get(remote.id);
+                    if (!local) {
+                        nextLeadMap.set(remote.id, remote);
+                        newLeads.push(remote);
+                        hasChanges = true;
+                    } else {
+                        const isRecentLocal = local._lastModified && (Date.now() - local._lastModified < 12000);
+                        if (isRecentLocal) {
+                            nextLeadMap.set(remote.id, {
+                                ...remote,
+                                ...local,
+                                stage: local.stage || remote.stage,
+                                stageHistory: local.stageHistory || remote.stageHistory,
+                                interactions: (Array.isArray(local.interactions) && local.interactions.length >= (remote.interactions || []).length)
+                                    ? local.interactions
+                                    : (remote.interactions || [])
+                            });
                         } else {
-                            const localHist = Array.isArray(local.stageHistory) && local.stageHistory.length > 0 ? local.stageHistory[local.stageHistory.length - 1] : null;
-                            const remoteHist = Array.isArray(remote.stageHistory) && remote.stageHistory.length > 0 ? remote.stageHistory[remote.stageHistory.length - 1] : null;
-
-                            const localTime = localHist?.timestamp ? new Date(localHist.timestamp).getTime() : (local._lastModified || 0);
-                            const remoteTime = remoteHist?.timestamp ? new Date(remoteHist.timestamp).getTime() : 0;
-
-                            if (localTime > remoteTime && local.stage && local.stage !== remote.stage) {
-                                // Local é mais recente! Manter o stage local e enviar PATCH para o Supabase
-                                leadMap.set(remote.id, { ...remote, ...local, stage: local.stage, stageHistory: local.stageHistory });
-                                fetch(`${SUPABASE_URL}/rest/v1/comercial_leads?id=eq.${encodeURIComponent(remote.id)}`, {
-                                    method: "PATCH",
-                                    headers: {
-                                        "apikey": SUPABASE_KEY,
-                                        "Authorization": `Bearer ${SUPABASE_KEY}`,
-                                        "Content-Type": "application/json",
-                                        "Prefer": "return=minimal"
-                                    },
-                                    body: JSON.stringify({ stage: local.stage, stageHistory: local.stageHistory })
-                                }).catch(() => {});
-                            } else {
-                                if (local.stage !== remote.stage) {
-                                    hasChanges = true;
-                                }
-                                leadMap.set(remote.id, { ...local, ...remote });
+                            const localIntStr = JSON.stringify(local.interactions || []);
+                            const remoteIntStr = JSON.stringify(remote.interactions || []);
+                            if (
+                                local.stage !== remote.stage ||
+                                local.owner !== remote.owner ||
+                                local.company !== remote.company ||
+                                localIntStr !== remoteIntStr
+                            ) {
+                                hasChanges = true;
                             }
+                            nextLeadMap.set(remote.id, remote);
+                        }
+                    }
+                });
+
+                // Manter leads recém-criados nesta aba (< 12s) ainda em trânsito
+                localLeads.forEach(ll => {
+                    if (ll && ll.id && !nextLeadMap.has(ll.id)) {
+                        const ageMs = Date.now() - (ll._lastModified || getLeadTimestamp(ll) || 0);
+                        if (ageMs >= 0 && ageMs < 12000) {
+                            nextLeadMap.set(ll.id, ll);
+                        } else {
+                            hasChanges = true;
                         }
                     }
                 });
 
                 if (hasChanges || newLeads.length > 0) {
-                    console.log("🔄 [Fallback Polling] Detectou novos leads ou atualizações no Supabase. Sincronizando...");
-                    const mergedLeads = Array.from(leadMap.values()).sort((a, b) => getLeadTimestamp(b) - getLeadTimestamp(a));
+                    const mergedLeads = Array.from(nextLeadMap.values()).sort((a, b) => getLeadTimestamp(b) - getLeadTimestamp(a));
                     MemoryCache.set("comercial_leads", mergedLeads);
-                    
-                    const remoteLogs = await supabaseFetch("comercial_logs") || [];
-                    MemoryCache.set("comercial_logs", remoteLogs);
-                    
+                    anySyncedChange = true;
+
                     newLeads.forEach(newLead => {
-                        console.log(`📡 [Fallback Polling] Disparando vellia:leadAdded para ${newLead.company}`);
                         window.dispatchEvent(new CustomEvent("vellia:leadAdded", { detail: newLead }));
-                        
                         const waConfig = JSON.parse(localStorage.getItem("comercial_wa_api_config")) || { sdrActive: true };
                         if (newLead.source === "Meta Ads" && waConfig.sdrActive !== false) {
                             setTimeout(() => {
@@ -696,29 +752,50 @@ function startSyncPolling() {
                             }, 1500);
                         }
                     });
-                    
+
                     window.dispatchEvent(new CustomEvent("vellia:stageChanged"));
                     window.dispatchEvent(new CustomEvent("vellia:leadUpdated"));
                     window.dispatchEvent(new CustomEvent("vellia:waSent"));
-                    window.dispatchEvent(new Event("storage"));
                 }
             }
 
-            // Polling de propostas
-            const rawRemoteProps = await supabaseFetch("comercial_proposals");
-            if (Array.isArray(rawRemoteProps)) {
+            // Polling de propostas em tempo real
+            if (propsRes.status === "fulfilled" && Array.isArray(propsRes.value)) {
+                const rawRemoteProps = propsRes.value.filter(rp => {
+                    if (isTestArtifactRecord(rp)) {
+                        if (rp && rp.id) deleteSupabase("comercial_proposals", `?id=eq.${encodeURIComponent(rp.id)}`);
+                        return false;
+                    }
+                    return true;
+                });
                 const remoteProps = rawRemoteProps.map(p => decodeProposalFromSupabase(p));
-                const localProps = MemoryCache.get("comercial_proposals", () => []) || [];
+                const localProps = (MemoryCache.get("comercial_proposals", () => []) || []).filter(p => !isTestArtifactRecord(p));
                 if (JSON.stringify(remoteProps) !== JSON.stringify(localProps)) {
                     MemoryCache.set("comercial_proposals", remoteProps);
+                    anySyncedChange = true;
                     window.dispatchEvent(new CustomEvent("vellia:proposalUpdated"));
-                    window.dispatchEvent(new Event("storage"));
                 }
             }
+
+            // Polling de logs de auditoria
+            if (logsRes.status === "fulfilled" && Array.isArray(logsRes.value)) {
+                const remoteLogs = logsRes.value.filter(lg => !isTestArtifactRecord(lg));
+                const localLogs = MemoryCache.get("comercial_logs", () => []) || [];
+                if (remoteLogs.length !== localLogs.length || (remoteLogs[0]?.id !== localLogs[0]?.id)) {
+                    MemoryCache.set("comercial_logs", remoteLogs);
+                    anySyncedChange = true;
+                    window.dispatchEvent(new CustomEvent("vellia:logsUpdated", { detail: remoteLogs }));
+                }
+            }
+
+            if (anySyncedChange) {
+                window.dispatchEvent(new CustomEvent("vellia:cloudSynced", { detail: { timestamp: Date.now() } }));
+                window.dispatchEvent(new Event("storage"));
+            }
         } catch (e) {
-            console.log("Erro no polling de fallback do Supabase:", e.message);
+            console.log("Erro no polling de sincronização do Supabase:", e.message);
         }
-    }, 60000); // 60s — Realtime WebSocket é primário
+    }, 8000); // 8s — Sincronização contínua em conjunto com o Realtime WebSocket
 }
 
 // Inicializar local storage e sincronizar
@@ -955,6 +1032,7 @@ export const Store = {
             owner: lead.owner || userEmail,
             createdBy: lead.createdBy || userEmail,
             createdAt: lead.createdAt || nowIso,
+            _lastModified: Date.now(),
             interactions: lead.interactions || [],
             stageHistory: lead.stageHistory || [
                 {
@@ -987,7 +1065,7 @@ export const Store = {
         const leads = this.getAllLeadsRaw();
         const index = leads.findIndex(l => l.id === leadId);
         if (index !== -1) {
-            leads[index] = { ...leads[index], ...updatedData };
+            leads[index] = { ...leads[index], ...updatedData, _lastModified: Date.now() };
             MemoryCache.set("comercial_leads", leads);
             upsertSupabase("comercial_leads", encodeLeadForSupabase(leads[index]));
             this.addLog(userEmail, "LEAD_UPDATED", `Lead ${leads[index].company} atualizado.`);
@@ -1019,11 +1097,13 @@ export const Store = {
             };
             leads[index].interactions = leads[index].interactions || [];
             leads[index].interactions.push(newInteraction);
+            leads[index]._lastModified = Date.now();
             MemoryCache.set("comercial_leads", leads);
             upsertSupabase("comercial_leads", encodeLeadForSupabase(leads[index]));
             window.dispatchEvent(new CustomEvent("vellia:leadUpdated", { detail: leads[index] }));
             window.dispatchEvent(new CustomEvent("vellia:scoreUpdated", { detail: { sellerEmail: userEmail, action: "INTERACTION_ADDED", points: 10 } }));
             window.dispatchEvent(new CustomEvent("vellia:waSent", { detail: { leadId: leads[index].id, lead: leads[index], interaction: newInteraction } }));
+            window.dispatchEvent(new Event("storage"));
             return newInteraction;
         }
         return null;
@@ -1224,6 +1304,7 @@ export const Store = {
         if (!newProposal.id) newProposal.id = `prop_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
         if (!newProposal.workspace) newProposal.workspace = ws;
         if (!newProposal.createdAt) newProposal.createdAt = new Date().toISOString();
+        newProposal._lastModified = Date.now();
 
         proposals.push(newProposal);
         MemoryCache.set("comercial_proposals", proposals);
@@ -1232,6 +1313,7 @@ export const Store = {
         window.dispatchEvent(new CustomEvent("vellia:proposalUpdated", { detail: newProposal }));
         window.dispatchEvent(new CustomEvent("vellia:scoreUpdated", { detail: { sellerEmail: newProposal.createdBy, action: "PROPOSAL_ADDED", points: 100 } }));
         window.dispatchEvent(new CustomEvent("vellia:waSent"));
+        window.dispatchEvent(new Event("storage"));
         
         return newProposal;
     },
@@ -1240,7 +1322,7 @@ export const Store = {
         const proposals = this.getProposalsRaw();
         const index = proposals.findIndex(p => p.id === id);
         if (index !== -1) {
-            proposals[index] = { ...proposals[index], ...updates };
+            proposals[index] = { ...proposals[index], ...updates, _lastModified: Date.now() };
             MemoryCache.set("comercial_proposals", proposals);
             upsertSupabase("comercial_proposals", encodeProposalForSupabase(proposals[index]));
             this.addLog(userEmail, "PROPOSAL_UPDATED", `Proposta ${proposals[index].title || proposals[index].budgetNumber || proposals[index].id} atualizada.`);
@@ -1248,6 +1330,7 @@ export const Store = {
             window.dispatchEvent(new CustomEvent("vellia:proposalUpdated", { detail: proposals[index] }));
             window.dispatchEvent(new CustomEvent("vellia:scoreUpdated", { detail: { sellerEmail: userEmail, action: "PROPOSAL_UPDATED" } }));
             window.dispatchEvent(new CustomEvent("vellia:waSent"));
+            window.dispatchEvent(new Event("storage"));
             
             return proposals[index];
         }
@@ -1288,31 +1371,39 @@ export const Store = {
             }
 
             const remoteProposals = await res.json();
-            const decodedRemote = remoteProposals.map(p => decodeProposalFromSupabase(p));
-            const localProposals = this.getProposalsRaw();
+            const localProposals = (this.getProposalsRaw() || []).filter(p => !isTestArtifactRecord(p));
+            const localMap = new Map();
+            localProposals.forEach(p => { if (p && p.id) localMap.set(p.id, p); });
 
-            // Mapa para mesclagem inteligente
+            // Mapa autoritativo a partir da nuvem
             const propMap = new Map();
-            localProposals.forEach(p => { if (p && p.id) propMap.set(p.id, p); });
-
-            // Adicionar ou mesclar propostas da nuvem
-            decodedRemote.forEach(remoteP => {
-                if (!remoteP || !remoteP.id) return;
-                const localP = propMap.get(remoteP.id);
-                if (localP) {
+            remoteProposals.forEach(rawP => {
+                if (!rawP || !rawP.id) return;
+                if (isTestArtifactRecord(rawP)) {
+                    deleteSupabase("comercial_proposals", `?id=eq.${encodeURIComponent(rawP.id)}`);
+                    return;
+                }
+                const remoteP = decodeProposalFromSupabase(rawP);
+                const localP = localMap.get(remoteP.id);
+                if (localP && localP._lastModified && (Date.now() - localP._lastModified < 12000)) {
                     propMap.set(remoteP.id, { ...remoteP, ...localP });
                 } else {
                     propMap.set(remoteP.id, remoteP);
                 }
             });
 
-            // Identificar propostas locais que ainda não estão no Supabase
-            const missingInCloud = localProposals.filter(lp => !remoteProposals.some(rp => rp.id === lp.id));
-            if (missingInCloud.length > 0) {
-                const payloads = missingInCloud.map(p => encodeProposalForSupabase(p));
-                await upsertSupabase("comercial_proposals", payloads);
-                console.log(`☁️ [Store.syncProposalsWithSupabase] ${missingInCloud.length} propostas locais enviadas para o Supabase.`);
-            }
+            let uploadedCount = 0;
+            localProposals.forEach(lp => {
+                if (lp && lp.id && !propMap.has(lp.id) && !isTestArtifactRecord(lp)) {
+                    const createdTs = lp._lastModified || (lp.createdAt ? new Date(lp.createdAt).getTime() : 0);
+                    const ageMs = Date.now() - createdTs;
+                    if (ageMs >= 0 && ageMs < 12000) {
+                        propMap.set(lp.id, lp);
+                        upsertSupabase("comercial_proposals", encodeProposalForSupabase(lp));
+                        uploadedCount++;
+                    }
+                }
+            });
 
             const merged = Array.from(propMap.values());
             MemoryCache.set("comercial_proposals", merged);
@@ -1321,8 +1412,8 @@ export const Store = {
             return {
                 success: true,
                 total: merged.length,
-                syncedFromCloud: decodedRemote.length,
-                uploadedToCloud: missingInCloud.length
+                syncedFromCloud: propMap.size,
+                uploadedToCloud: uploadedCount
             };
         } catch (err) {
             console.error("❌ [Store.syncProposalsWithSupabase] Erro:", err);
@@ -1784,6 +1875,22 @@ export const Store = {
 
     encodeLead(l) {
         return encodeLeadForSupabase(l);
+    },
+
+    decodeProposal(p) {
+        return decodeProposalFromSupabase(p);
+    },
+
+    encodeProposal(p) {
+        return encodeProposalForSupabase(p);
+    },
+
+    getLeadTimestamp(l) {
+        return getLeadTimestamp(l);
+    },
+
+    isTestArtifactRecord(item) {
+        return isTestArtifactRecord(item);
     }
 };
 

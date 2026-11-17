@@ -119,26 +119,39 @@ function updateStatusBadge(connected) {
 }
 
 // ─── Processar novo lead recebido via WS (INSERT) ─────────────────────
-function processIncomingLead(lead) {
-    if (!lead || !lead.id) return;
+function processIncomingLead(rawLead) {
+    if (!rawLead || !rawLead.id) return;
+    if (Store && Store.isTestArtifactRecord && Store.isTestArtifactRecord(rawLead)) return;
+
+    const lead = (Store && Store.decodeLead) ? Store.decodeLead(rawLead) : rawLead;
+    if (Store && Store.isTestArtifactRecord && Store.isTestArtifactRecord(lead)) return;
 
     let localLeads = [];
     try {
-        localLeads = JSON.parse(localStorage.getItem("comercial_leads")) || [];
+        localLeads = (Store && Store.getAllLeadsRaw) ? [...Store.getAllLeadsRaw()] : (JSON.parse(localStorage.getItem("comercial_leads")) || []);
     } catch (e) {
         localLeads = [];
     }
     const existingIdx = localLeads.findIndex(l => l && l.id === lead.id);
-    if (existingIdx !== -1) return; // Lead já existe localmente — atualizações tratadas em processLeadUpdate
+    if (existingIdx !== -1) {
+        processLeadUpdate(rawLead);
+        return;
+    }
 
     console.log("⚡ [Realtime] Novo lead recebido:", lead.company, lead.id);
 
-    // Salvar localmente (no topo da lista)
+    // Salvar localmente no MemoryCache e localStorage (no topo da lista)
     localLeads.unshift(lead);
-    localStorage.setItem("comercial_leads", JSON.stringify(localLeads));
+    if (Store && Store.cache) {
+        Store.cache.set("comercial_leads", localLeads);
+    } else {
+        localStorage.setItem("comercial_leads", JSON.stringify(localLeads));
+    }
 
     // Disparar eventos de app
     window.dispatchEvent(new CustomEvent("vellia:leadAdded", { detail: lead }));
+    window.dispatchEvent(new CustomEvent("vellia:leadUpdated", { detail: lead }));
+    window.dispatchEvent(new CustomEvent("vellia:cloudSynced", { detail: { timestamp: Date.now() } }));
     window.dispatchEvent(new CustomEvent("vellia:waSent"));
     window.dispatchEvent(new Event("storage"));
 
@@ -157,12 +170,14 @@ function processIncomingLead(lead) {
 // ─── Processar atualização de lead existente via WS (UPDATE) ─────────────
 function processLeadUpdate(rawLead) {
     if (!rawLead || !rawLead.id) return;
+    if (Store && Store.isTestArtifactRecord && Store.isTestArtifactRecord(rawLead)) return;
 
     const lead = (Store && Store.decodeLead) ? Store.decodeLead(rawLead) : rawLead;
+    if (Store && Store.isTestArtifactRecord && Store.isTestArtifactRecord(lead)) return;
 
     let localLeads = [];
     try {
-        localLeads = (Store && Store.getAllLeadsRaw) ? Store.getAllLeadsRaw() : (JSON.parse(localStorage.getItem("comercial_leads")) || []);
+        localLeads = (Store && Store.getAllLeadsRaw) ? [...Store.getAllLeadsRaw()] : (JSON.parse(localStorage.getItem("comercial_leads")) || []);
     } catch (e) {
         localLeads = [];
     }
@@ -170,7 +185,7 @@ function processLeadUpdate(rawLead) {
     const existingIdx = localLeads.findIndex(l => l && l.id === lead.id);
     if (existingIdx === -1) {
         // Lead não existe localmente ainda — adicionar
-        localLeads.push(lead);
+        localLeads.unshift(lead);
     } else {
         const localLead = localLeads[existingIdx];
         const isRecentlyModifiedLocally = localLead._lastModified && (Date.now() - localLead._lastModified < 8000);
@@ -192,11 +207,91 @@ function processLeadUpdate(rawLead) {
     }
     console.log("🔄 [Realtime] Lead atualizado localmente:", lead.company, lead.id, "Stage:", localLeads[existingIdx]?.stage || lead.stage);
 
-    // Disparar sincronização geral para atualizar CRM, Kanban e Central de Inspeções
+    // Disparar sincronização geral para atualizar CRM, Kanban, Central de Inspeções e Painel do Gerente
     window.dispatchEvent(new CustomEvent("vellia:stageChanged", { detail: { leadId: lead.id, stage: localLeads[existingIdx]?.stage || lead.stage } }));
     window.dispatchEvent(new CustomEvent("vellia:leadUpdated", { detail: localLeads[existingIdx] || lead }));
+    window.dispatchEvent(new CustomEvent("vellia:cloudSynced", { detail: { timestamp: Date.now() } }));
     window.dispatchEvent(new CustomEvent("vellia:waSent"));
     window.dispatchEvent(new Event("storage"));
+}
+
+// ─── Processar exclusão de lead via WS (DELETE) ──────────────────────────
+function processLeadDelete(oldRecord) {
+    const leadId = oldRecord?.id;
+    if (!leadId) return;
+
+    let localLeads = [];
+    try {
+        localLeads = (Store && Store.getAllLeadsRaw) ? [...Store.getAllLeadsRaw()] : (JSON.parse(localStorage.getItem("comercial_leads")) || []);
+    } catch (e) {
+        localLeads = [];
+    }
+
+    const filtered = localLeads.filter(l => l && l.id !== leadId);
+    if (filtered.length === localLeads.length) return;
+
+    if (Store && Store.cache) {
+        Store.cache.set("comercial_leads", filtered);
+    } else {
+        localStorage.setItem("comercial_leads", JSON.stringify(filtered));
+    }
+    console.log("🗑️ [Realtime] Lead excluído sincronizado via WebSocket:", leadId);
+
+    window.dispatchEvent(new CustomEvent("vellia:leadUpdated"));
+    window.dispatchEvent(new CustomEvent("vellia:cloudSynced", { detail: { timestamp: Date.now() } }));
+    window.dispatchEvent(new Event("storage"));
+}
+
+// ─── Processar propostas recebidas via WS (INSERT / UPDATE / DELETE) ─────
+function processIncomingProposal(type, record, oldRecord) {
+    const rawProp = record || oldRecord;
+    if (!rawProp || !rawProp.id) return;
+    if (Store && Store.isTestArtifactRecord && Store.isTestArtifactRecord(rawProp)) return;
+
+    let localProps = [];
+    try {
+        localProps = (Store && Store.getProposalsRaw) ? [...Store.getProposalsRaw()] : (JSON.parse(localStorage.getItem("comercial_proposals")) || []);
+    } catch (e) {
+        localProps = [];
+    }
+
+    if (type === "DELETE" || type === "DELETE_ROW") {
+        const filtered = localProps.filter(p => p && p.id !== rawProp.id);
+        if (filtered.length === localProps.length) return;
+        if (Store && Store.cache) {
+            Store.cache.set("comercial_proposals", filtered);
+        } else {
+            localStorage.setItem("comercial_proposals", JSON.stringify(filtered));
+        }
+        window.dispatchEvent(new CustomEvent("vellia:proposalUpdated"));
+        window.dispatchEvent(new CustomEvent("vellia:cloudSynced", { detail: { timestamp: Date.now() } }));
+        window.dispatchEvent(new Event("storage"));
+        return;
+    }
+
+    if (type === "INSERT" || type === "UPDATE") {
+        const prop = (Store && Store.decodeProposal) ? Store.decodeProposal(rawProp) : rawProp;
+        if (Store && Store.isTestArtifactRecord && Store.isTestArtifactRecord(prop)) return;
+
+        const idx = localProps.findIndex(p => p && p.id === prop.id);
+        if (idx !== -1) {
+            localProps[idx] = { ...localProps[idx], ...prop };
+        } else {
+            localProps.push(prop);
+        }
+
+        if (Store && Store.cache) {
+            Store.cache.set("comercial_proposals", localProps);
+        } else {
+            localStorage.setItem("comercial_proposals", JSON.stringify(localProps));
+        }
+        console.log("⚡ [Realtime] Proposta sincronizada em tempo real:", prop.company, prop.id);
+
+        window.dispatchEvent(new CustomEvent("vellia:proposalUpdated", { detail: prop }));
+        window.dispatchEvent(new CustomEvent("vellia:cloudSynced", { detail: { timestamp: Date.now() } }));
+        window.dispatchEvent(new CustomEvent("vellia:waSent"));
+        window.dispatchEvent(new Event("storage"));
+    }
 }
 
 // ─── Processar nova tarefa ou alteração de tarefa recebida via WS ──────
@@ -399,10 +494,11 @@ function processIncomingUserChange(type, record, oldRecord) {
 // ─── Processar novo log recebido via WS (INSERT em comercial_logs) ──────
 function processIncomingLog(log) {
     if (!log || !log.id) return;
+    if (Store && Store.isTestArtifactRecord && Store.isTestArtifactRecord(log)) return;
 
     let localLogs = [];
     try {
-        localLogs = JSON.parse(localStorage.getItem("comercial_logs")) || [];
+        localLogs = (Store && Store.getLogs) ? [...Store.getLogs()] : (JSON.parse(localStorage.getItem("comercial_logs")) || []);
     } catch(e) {
         localLogs = [];
     }
@@ -414,12 +510,17 @@ function processIncomingLog(log) {
     // Manter tamanho razoável no storage (últimos 300 logs)
     if (localLogs.length > 300) localLogs = localLogs.slice(0, 300);
 
-    localStorage.setItem("comercial_logs", JSON.stringify(localLogs));
+    if (Store && Store.cache) {
+        Store.cache.set("comercial_logs", localLogs);
+    } else {
+        localStorage.setItem("comercial_logs", JSON.stringify(localLogs));
+    }
     console.log("⚡ [Realtime] Novo log de auditoria recebido em tempo real:", log.action, log.userEmail);
 
     try {
         window.dispatchEvent(new CustomEvent("vellia:logAdded", { detail: log }));
         window.dispatchEvent(new CustomEvent("vellia:logsUpdated", { detail: localLogs }));
+        window.dispatchEvent(new CustomEvent("vellia:cloudSynced", { detail: { timestamp: Date.now() } }));
         window.dispatchEvent(new Event("storage"));
     } catch(evErr) {}
 }
@@ -459,6 +560,20 @@ export function connectRealtime() {
         // Entrar no canal da tabela comercial_leads
         ws.send(JSON.stringify({
             topic: "realtime:public:comercial_leads",
+            event: "phx_join",
+            payload: {
+                config: {
+                    broadcast: { self: false },
+                    presence: { key: "" }
+                }
+            },
+            ref: String(joinRef++),
+            join_ref: String(joinRef)
+        }));
+
+        // Entrar no canal da tabela comercial_proposals
+        ws.send(JSON.stringify({
+            topic: "realtime:public:comercial_proposals",
             event: "phx_join",
             payload: {
                 config: {
@@ -545,6 +660,23 @@ export function connectRealtime() {
                 if (lead) processLeadUpdate(lead);
             }
 
+            // Evento de DELETE na tabela comercial_leads
+            if (
+                msg.topic === "realtime:public:comercial_leads" &&
+                (msg.event === "DELETE" || msg.event === "DELETE_ROW")
+            ) {
+                const oldRecord = msg.payload?.old_record || msg.payload?.data?.old_record;
+                if (oldRecord) processLeadDelete(oldRecord);
+            }
+
+            // Evento na tabela comercial_proposals
+            if (msg.topic === "realtime:public:comercial_proposals") {
+                const type = msg.event; // "INSERT", "UPDATE", "DELETE"
+                const record = msg.payload?.record || msg.payload?.new_record || msg.payload?.data?.record;
+                const oldRecord = msg.payload?.old_record || msg.payload?.data?.old_record;
+                processIncomingProposal(type, record, oldRecord);
+            }
+
             // Evento na tabela comercial_tasks
             if (msg.topic === "realtime:public:comercial_tasks") {
                 const type = msg.event; // "INSERT", "UPDATE", "DELETE"
@@ -580,10 +712,15 @@ export function connectRealtime() {
                         }
                     } else if (changes.table === "comercial_leads") {
                         const lead = changes.record || changes.new_record;
-                        if (lead) {
-                            if (changes.type === "INSERT") processIncomingLead(lead);
-                            else if (changes.type === "UPDATE") processLeadUpdate(lead);
-                        }
+                        const oldLead = changes.old_record;
+                        if (changes.type === "INSERT" && lead) processIncomingLead(lead);
+                        else if (changes.type === "UPDATE" && lead) processLeadUpdate(lead);
+                        else if ((changes.type === "DELETE" || changes.type === "DELETE_ROW") && oldLead) processLeadDelete(oldLead);
+                    } else if (changes.table === "comercial_proposals") {
+                        const type = changes.type;
+                        const record = changes.record || changes.new_record;
+                        const oldRecord = changes.old_record;
+                        processIncomingProposal(type, record, oldRecord);
                     } else if (changes.table === "comercial_tasks") {
                         const type = changes.type;
                         const record = changes.record || changes.new_record;

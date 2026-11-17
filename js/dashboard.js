@@ -76,6 +76,13 @@ export const Dashboard = {
         this.bindEvents();
         this.setupAdminTaskManager();
 
+        // Sincronizar imediatamente com o Supabase ao abrir a Dashboard para garantir 100% dados reais da nuvem
+        if (Store && typeof Store.syncFromSupabase === "function") {
+            Store.syncFromSupabase().then(() => {
+                this.renderManagerDailyProductivity(false);
+            }).catch(() => {});
+        }
+
         this.renderLiveTasksMonitor();
         if (this._liveTimerInterval) clearInterval(this._liveTimerInterval);
         this._liveTimerInterval = setInterval(() => {
@@ -96,6 +103,7 @@ export const Dashboard = {
                 this._liveBus.onmessage = (e) => {
                     if (e.data && e.data.type === "LIVE_ACTIVITIES_CHANGED") {
                         this.renderLiveTasksMonitor();
+                        this.renderManagerDailyProductivity(false);
                     }
                 };
             } catch (err) {}
@@ -107,12 +115,14 @@ export const Dashboard = {
 
             window.addEventListener("vellia:liveTasksChanged", () => {
                 this.renderLiveTasksMonitor();
+                this.renderManagerDailyProductivity(false);
             });
 
             window.addEventListener("storage", (e) => {
                 if (e.key === "vellia_live_activities" || (e.key && e.key.startsWith("seller_tasks_"))) {
                     this.renderLiveTasksMonitor();
                 }
+                this.renderManagerDailyProductivity(true);
             });
 
             // Atualização automática do ranking e KPIs sob eventos relevantes
@@ -128,10 +138,9 @@ export const Dashboard = {
                     }
                     const filteredLeads = this.filterByTimeframe(leads, "createdAt");
                     const filteredProposals = this.filterByTimeframe(proposals, "createdAt");
-                    this.renderManagerDailyProductivity();
+                    this.renderManagerDailyProductivity(false);
                     this.renderVendorRanking(filteredProposals);
-                    this.renderManagerDailyProductivity();
-            this.renderKPIs(filteredLeads, filteredProposals);
+                    this.renderKPIs(filteredLeads, filteredProposals);
                     this.renderRecentActivity(filteredLeads, filteredProposals);
                 }
             };
@@ -140,10 +149,13 @@ export const Dashboard = {
             window.addEventListener("vellia:leadAdded", refreshDashboardData);
             window.addEventListener("vellia:leadUpdated", refreshDashboardData);
             window.addEventListener("vellia:proposalUpdated", refreshDashboardData);
+            window.addEventListener("vellia:logAdded", refreshDashboardData);
+            window.addEventListener("vellia:cloudSynced", refreshDashboardData);
             window.addEventListener("vellia:waSent", refreshDashboardData);
             window.addEventListener("vellia:userUpdated", () => {
                 const viewDashboard = document.getElementById("view-dashboard");
                 if (viewDashboard && viewDashboard.style.display !== "none") {
+                    this.renderManagerDailyProductivity(false);
                     this.renderRecentActivity(Store.getLeads(), Store.getProposals());
                 }
             });
@@ -262,6 +274,7 @@ export const Dashboard = {
             if (execDash) execDash.style.display = "flex";
             if (opDash) opDash.style.display = "none";
 
+            this.renderManagerDailyProductivity(false);
             this.renderKPIs(filteredLeads, filteredProposals);
             this.renderCommercialSummary(filteredLeads, filteredProposals);
             this.renderHorizontalPipeline(filteredLeads, filteredProposals);
@@ -3659,7 +3672,7 @@ export const Dashboard = {
         };
 
         // 1. CONTABILIZAR LEADS ADICIONADOS E LIGAÇÕES NAS INTERAÇÕES DOS LEADS
-        const activeLeads = Store.getLeads ? Store.getLeads() : [];
+        const activeLeads = (Store.getLeads ? Store.getLeads() : []).filter(l => !(Store.isTestArtifactRecord && Store.isTestArtifactRecord(l)));
         const leadById = new Map();
 
         activeLeads.forEach(lead => {
@@ -3746,7 +3759,7 @@ export const Dashboard = {
         });
 
         // 2. CONTABILIZAR PROPOSTAS PREENCHIDAS NO PERÍODO
-        const allProposals = Store.getProposals ? Store.getProposals() : [];
+        const allProposals = (Store.getProposals ? Store.getProposals() : []).filter(p => !(Store.isTestArtifactRecord && Store.isTestArtifactRecord(p)));
         allProposals.forEach(prop => {
             if (!prop) return;
             let propTs = 0;
@@ -4091,6 +4104,10 @@ export const Dashboard = {
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                                     ${currentPeriodLabel}
                                 </span>
+                                <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 99px; background: rgba(16, 185, 129, 0.09); color: #059669; border: 1px solid rgba(16, 185, 129, 0.25);">
+                                    <span style="width: 6px; height: 6px; border-radius: 50%; background: #10B981; display: inline-block; box-shadow: 0 0 6px #10B981;"></span>
+                                    Tempo Real (Supabase)
+                                </span>
                             </div>
                             <p style="margin: 4px 0 0 0; font-size: 13px; font-weight: 400; color: var(--text-secondary, #64748B); letter-spacing: -0.005em;">
                                 Acompanhamento em tempo real de <strong style="font-weight: 600; color: var(--text-primary, #1E293B);">Leads Adicionados</strong>, <strong style="font-weight: 600; color: var(--text-primary, #1E293B);">Ligações Realizadas</strong> e <strong style="font-weight: 600; color: var(--text-primary, #1E293B);">Propostas Preenchidas</strong>.
@@ -4098,7 +4115,7 @@ export const Dashboard = {
                         </div>
                     </div>
 
-                    <!-- Controles Segmentados de Dia + Botão Registrar Ligação -->
+                    <!-- Controles Segmentados de Dia + Sincronizar + Botão Registrar Ligação -->
                     <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                         <div class="mdp-segmented-group">
                             <button type="button" class="mdp-seg-btn ${period === 'today' ? 'active' : ''}" onclick="window.Dashboard.setDailyProdPeriod('today')">Hoje</button>
@@ -4109,6 +4126,11 @@ export const Dashboard = {
                         </div>
 
                         <input type="date" id="manager-daily-date-picker" value="${this._dailyProdCustomDate || todayIso}" onchange="window.Dashboard.setDailyProdPeriod('custom', this.value)" title="Selecionar data específica" style="height: 36px; padding: 0 11px; font-size: 12.5px; font-weight: 600; border-radius: 10px; border: 1px solid var(--border-color, #E2E8F0); background: var(--bg-surface, #FFFFFF); color: var(--text-primary, #0F172A); cursor: pointer; outline: none;">
+
+                        <button type="button" id="btn-mdp-force-sync" onclick="window.Dashboard.forceCloudSync(this)" title="Sincronizar dados em tempo real com a nuvem" style="height: 36px; padding: 0 12px; font-size: 12px; font-weight: 600; border-radius: 10px; background: var(--bg-surface, #FFFFFF); color: var(--text-primary, #1E293B); border: 1px solid var(--border-color, #E2E8F0); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                            <span>Sincronizar</span>
+                        </button>
 
                         <button type="button" onclick="window.Dashboard.openQuickCallModal()" style="height: 36px; padding: 0 15px; font-size: 12.5px; font-weight: 600; border-radius: 10px; background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: #FFFFFF; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.22); transition: all 0.2s ease;" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
                             ${svgPhone}
@@ -4302,9 +4324,52 @@ export const Dashboard = {
                 </div>
             </div>
         `;
+
+        // Se o modal de detalhamento estiver aberto no momento da atualização em tempo real, atualizá-lo automaticamente
+        const openModal = document.getElementById("seller-daily-detail-modal");
+        if (openModal && openModal.style.display === "flex" && this._lastOpenModalArgs && !this._isRefreshingDetailModal) {
+            this._isRefreshingDetailModal = true;
+            try {
+                this.openSellerDailyDetailModal(this._lastOpenModalArgs.sellerEmailOrAll, this._lastOpenModalArgs.focusSection);
+            } finally {
+                this._isRefreshingDetailModal = false;
+            }
+        }
+    },
+
+    async forceCloudSync(btnEl) {
+        if (btnEl) {
+            btnEl.disabled = true;
+            btnEl.style.opacity = "0.7";
+            const span = btnEl.querySelector("span");
+            if (span) span.textContent = "Sincronizando...";
+        }
+        try {
+            if (Store && typeof Store.syncFromSupabase === "function") {
+                await Store.syncFromSupabase();
+            }
+            if (typeof this.syncLiveActivitiesFromCloud === "function") {
+                await this.syncLiveActivitiesFromCloud();
+            }
+            this._lastDailyProdSig = "";
+            this.renderManagerDailyProductivity(false);
+            if (Toast && Toast.show) {
+                Toast.show("Dados sincronizados em tempo real com a nuvem!", "success");
+            }
+        } catch (err) {
+            console.warn("Erro ao sincronizar:", err);
+        } finally {
+            if (btnEl) {
+                btnEl.disabled = false;
+                btnEl.style.opacity = "1";
+                const span = btnEl.querySelector("span");
+                if (span) span.textContent = "Sincronizar";
+            }
+        }
     },
 
     openSellerDailyDetailModal(sellerEmailOrAll = "all", focusSection = "all") {
+        this._lastOpenModalArgs = { sellerEmailOrAll, focusSection };
         this.injectDailyPanelStyles();
         const computed = this.computeSellerDailyStats();
         const sellerList = computed.sellerList;

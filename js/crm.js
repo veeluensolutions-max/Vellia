@@ -22,9 +22,10 @@ export const CRM = {
         activeLeadId = id;
     },
     init() {
-        if (!this._eventsBound) {
+        if (!this._eventsBound && !window.__velliaCrmEventsBound) {
             this.bindEvents();
             this._eventsBound = true;
+            window.__velliaCrmEventsBound = true;
         }
         this.renderLeadsTable();
 

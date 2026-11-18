@@ -994,9 +994,10 @@ export const Proposals = {
             }
             currentEditingLeadId = leadData?.id || null;
 
-            // Identificar vendedor do lead ou logado
+            // Identificar vendedor logado (prioritário se for vendedor) ou responsável pelo lead
+            const currentRole = (currentUser?.role || "").toLowerCase().trim();
             let sellerName = currentUser?.name || "San Charles";
-            if (leadData?.owner) {
+            if (currentRole !== "seller" && currentRole !== "vendedor" && leadData?.owner) {
                 const ownerUser = Store.getUsers().find(u => u.email === leadData.owner);
                 if (ownerUser) sellerName = ownerUser.name;
             }

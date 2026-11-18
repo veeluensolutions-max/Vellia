@@ -23,6 +23,28 @@ export const Dashboard = {
         this.renderAll();
     },
 
+    filterRecordsForSellerSession(leads, proposals, session) {
+        if (!session || (session.role !== "seller" && session.role !== "vendedor")) {
+            return { leads, proposals };
+        }
+        const emailLower = (session.email || "").toLowerCase().trim();
+        const nameLower = (session.name || "").toLowerCase().trim();
+        const filteredLeads = (leads || []).filter(l => {
+            if (!l) return false;
+            const o = (l.owner || "").toLowerCase().trim();
+            const c = (l.createdBy || "").toLowerCase().trim();
+            return o === emailLower || c === emailLower;
+        });
+        const filteredProposals = (proposals || []).filter(p => {
+            if (!p) return false;
+            const c = (p.createdBy || "").toLowerCase().trim();
+            const a = (p.authorEmail || "").toLowerCase().trim();
+            const s = (p.seller || "").toLowerCase().trim();
+            return c === emailLower || a === emailLower || (nameLower && s === nameLower);
+        });
+        return { leads: filteredLeads, proposals: filteredProposals };
+    },
+
     setActivityFilter(filter) {
         this._activityFilter = filter;
         const group = document.getElementById("dash-activity-filter-group");
@@ -34,13 +56,8 @@ export const Dashboard = {
                 btn.style.borderColor = isActive ? "var(--primary)" : "var(--border-color)";
             });
         }
-        let currentLeads = Store.getLeads();
-        let currentProposals = Store.getProposals();
         const session = JSON.parse(sessionStorage.getItem("comercial_session") || localStorage.getItem("comercial_session") || "null");
-        if (session && session.role === "seller") {
-            currentLeads = currentLeads.filter(l => l.owner === session.email);
-            currentProposals = currentProposals.filter(p => p.authorEmail === session.email);
-        }
+        const { leads: currentLeads, proposals: currentProposals } = this.filterRecordsForSellerSession(Store.getLeads(), Store.getProposals(), session);
         this.renderRecentActivity(currentLeads, currentProposals);
     },
 
@@ -129,13 +146,8 @@ export const Dashboard = {
             const refreshDashboardData = () => {
                 const viewDashboard = document.getElementById("view-dashboard");
                 if (viewDashboard && viewDashboard.style.display !== "none") {
-                    let proposals = Store.getProposals();
-                    let leads = Store.getLeads();
                     const session = JSON.parse(sessionStorage.getItem("comercial_session") || localStorage.getItem("comercial_session") || "null");
-                    if (session && session.role === "seller") {
-                        leads = leads.filter(l => l.owner === session.email);
-                        proposals = proposals.filter(p => p.authorEmail === session.email);
-                    }
+                    const { leads, proposals } = this.filterRecordsForSellerSession(Store.getLeads(), Store.getProposals(), session);
                     const filteredLeads = this.filterByTimeframe(leads, "createdAt");
                     const filteredProposals = this.filterByTimeframe(proposals, "createdAt");
                     this.renderManagerDailyProductivity(false);
@@ -173,14 +185,8 @@ export const Dashboard = {
             if (document.hidden) return;
             const viewDashboard = document.getElementById("view-dashboard");
             if (viewDashboard && viewDashboard.style.display !== "none") {
-                let currentLeads = Store.getLeads();
-                let currentProposals = Store.getProposals();
                 const session = JSON.parse(sessionStorage.getItem("comercial_session") || localStorage.getItem("comercial_session") || "null");
-                
-                if (session && session.role === "seller") {
-                    currentLeads = currentLeads.filter(l => l.owner === session.email);
-                    currentProposals = currentProposals.filter(p => p.authorEmail === session.email);
-                }
+                const { leads: currentLeads, proposals: currentProposals } = this.filterRecordsForSellerSession(Store.getLeads(), Store.getProposals(), session);
                 
                 const filteredLeads = this.filterByTimeframe(currentLeads, "createdAt");
                 const filteredProposals = this.filterByTimeframe(currentProposals, "createdAt");
@@ -245,16 +251,8 @@ export const Dashboard = {
         const user = Auth.getCurrentUser();
         if (!user) return;
 
-        let leads = Store.getLeads();
         const session = JSON.parse(sessionStorage.getItem("comercial_session") || localStorage.getItem("comercial_session") || "null");
-        if (session && session.role === "seller") {
-            leads = leads.filter(l => l.owner === session.email);
-        }
-        
-        let proposals = Store.getProposals();
-        if (session && session.role === "seller") {
-            proposals = proposals.filter(p => p.authorEmail === session.email);
-        }
+        const { leads, proposals } = this.filterRecordsForSellerSession(Store.getLeads(), Store.getProposals(), session);
 
         const filteredLeads = this.filterByTimeframe(leads, "createdAt");
         const filteredProposals = this.filterByTimeframe(proposals, "createdAt");
@@ -3631,27 +3629,46 @@ export const Dashboard = {
             });
         });
 
-        // Helper para encontrar o vendedor responsável por um registro
+        // Helper para encontrar o vendedor responsável por um registro (priorizando e-mail exato do vendedor que realizou a ação)
         const resolveSellerKey = (emailHint, nameHint, fallbackEmail) => {
             const e1 = (emailHint || "").toLowerCase().trim();
             const n1 = (nameHint || "").toLowerCase().trim();
             const f1 = (fallbackEmail || "").toLowerCase().trim();
 
-            // 1. Se houver nome explícito do vendedor (ex: campo seller da proposta) e corresponder a um vendedor
+            // 1. Correspondência exata pelo e-mail do vendedor que executou a ação (createdBy / userEmail)
+            if (e1 && statsMap.has(e1)) {
+                const st = statsMap.get(e1);
+                const role = (st?.role || "").toLowerCase().trim();
+                if (role === "seller" || role === "vendedor") return e1;
+            }
+
+            // 2. Se houver nome explícito do vendedor (ex: campo seller da proposta), priorizar nome completo exato antes do primeiro nome
             if (n1) {
                 for (const [k, st] of statsMap.entries()) {
                     const uName = st.name.toLowerCase().trim();
+                    if (uName === n1) return k;
+                }
+                for (const [k, st] of statsMap.entries()) {
+                    const uName = st.name.toLowerCase().trim();
                     const uFirst = uName.split(" ")[0];
-                    if (uName === n1 || (uFirst.length >= 3 && n1.split(" ")[0] === uFirst)) {
+                    if (uFirst.length >= 3 && n1.split(" ")[0] === uFirst) {
                         return k;
                     }
                 }
             }
-            // 2. Correspondência exata por e-mail principal
+
+            // 3. Correspondência por e-mail fallback se for vendedor (ex: owner do lead)
+            if (f1 && statsMap.has(f1)) {
+                const st = statsMap.get(f1);
+                const role = (st?.role || "").toLowerCase().trim();
+                if (role === "seller" || role === "vendedor") return f1;
+            }
+
+            // 4. Correspondência por e-mail principal ou fallback (gestores/admins)
             if (e1 && statsMap.has(e1)) return e1;
-            // 3. Correspondência por e-mail fallback (ex: owner do lead)
             if (f1 && statsMap.has(f1)) return f1;
-            // 4. Tentar correspondência caso owner tenha sido salvo como nome
+
+            // 5. Tentar correspondência caso owner tenha sido salvo como nome
             if (f1) {
                 for (const [k, st] of statsMap.entries()) {
                     const uName = st.name.toLowerCase().trim();

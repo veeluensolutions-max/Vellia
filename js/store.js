@@ -427,12 +427,15 @@ async function syncFromSupabase() {
             for (const u of remoteUsers) {
                 if (!u || !u.email) continue;
                 const emailNorm = u.email.toLowerCase().trim();
+                if (u.role === "system" || u.id === "usr_meta_config" || emailNorm.includes("config@")) {
+                    continue;
+                }
                 if (deletedEmails.has(emailNorm) || deletedIds.has(u.id)) {
                     deleteSupabase("comercial_users", `?id=eq.${encodeURIComponent(u.id)}`);
                     continue;
                 }
-                const isMika = emailNorm === 'mika@vellia.com' || (u.name && u.name.toLowerCase().includes('mika'));
-                const companyAccess = u.companyAccess || (isMika ? 'Excelência Ambiental' : 'Ambas');
+                const isExcelencia = emailNorm === 'mika@vellia.com' || emailNorm.includes('excelenciaambiental') || (u.name && u.name.toLowerCase().includes('mika'));
+                const companyAccess = u.companyAccess || (isExcelencia ? 'Excelência Ambiental' : 'Ambas');
                 validUsers.push({ ...u, companyAccess });
             }
 
@@ -822,7 +825,8 @@ export const Store = {
     // USUÁRIOS
     getUsers() {
         const users = MemoryCache.get("comercial_users", () => DEFAULT_USERS);
-        return (Array.isArray(users) && users.length > 0) ? users : DEFAULT_USERS;
+        const list = (Array.isArray(users) && users.length > 0) ? users : DEFAULT_USERS;
+        return list.filter(u => u && u.role !== "system" && u.id !== "usr_meta_config" && !(u.email && String(u.email).toLowerCase().includes("config@")));
     },
 
     saveUsers(users) {

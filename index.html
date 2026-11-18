@@ -6109,13 +6109,16 @@ Condições de pagamento:
             <button id="btn-proposal-generate-docs" class="btn btn-outline" style="color: #7c3aed; border-color: rgba(124,58,237,0.3); display: flex; align-items: center; gap: 8px;">
                 📄 Gerar no Vellia Docs
             </button>
-            <button id="btn-proposal-lose" class="btn btn-outline" style="color: var(--danger); border-color: rgba(239,68,68,0.3);">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                Registrar Perda
+            <button id="btn-proposal-reopen" class="btn btn-outline" style="color: #d97706; border-color: rgba(217,119,6,0.35); display: none; align-items: center; gap: 6px;">
+                🔄 Reverter para Em Negociação
             </button>
-            <button id="btn-proposal-win" class="btn btn-primary" style="background: var(--success);">
+            <button id="btn-proposal-lose" class="btn btn-outline" style="color: var(--danger); border-color: rgba(239,68,68,0.35); display: flex; align-items: center; gap: 6px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                <span id="btn-proposal-lose-label">Proposta Perdida</span>
+            </button>
+            <button id="btn-proposal-win" class="btn btn-primary" style="background: var(--success); display: flex; align-items: center; gap: 6px;">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                Marcar como Ganho
+                <span id="btn-proposal-win-label">Marcar como Ganho</span>
             </button>
         </div>
     </div>
@@ -6181,7 +6184,7 @@ Condições de pagamento:
         </div>
         <form id="win-form" class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
             <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
-                Parabéns pelo fechamento! Preencha os dados do contrato para atualizar a <strong>Receita e Pipeline</strong>.
+                Parabéns pelo fechamento! Confirme os dados da venda abaixo para atualizar a <strong>Receita e Pipeline</strong>.
             </p>
             <div class="grid-modal-2col">
                 <div class="form-group">
@@ -8272,9 +8275,9 @@ Condições de pagamento:
     <!-- Script Principal da Aplicação -->
     <script src="js/isocinetica-calculator.js?v=20260903_1010"></script>
     <script src="js/isocinetica-pdf.js?v=20260903_1010"></script>
-    <script type="module" src="js/isocinetica-ui.js?v=20261118_3"></script>
-    <script type="module" src="js/learning.js?v=20261118_3"></script>
-    <script type="module" src="js/app.js?v=20261118_3"></script>
+    <script type="module" src="js/isocinetica-ui.js?v=20261118_4"></script>
+    <script type="module" src="js/learning.js?v=20261118_4"></script>
+    <script type="module" src="js/app.js?v=20261118_4"></script>
 </body>
 </html>
 

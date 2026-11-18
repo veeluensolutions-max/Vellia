@@ -260,6 +260,9 @@ export const Proposals = {
         const btnLose = document.getElementById("btn-proposal-lose");
         if (btnLose) btnLose.addEventListener("click", () => this.openLossModal());
 
+        const btnReopen = document.getElementById("btn-proposal-reopen");
+        if (btnReopen) btnReopen.addEventListener("click", () => this.reopenProposal());
+
         const btnWa = document.getElementById("btn-proposal-wa");
         if (btnWa) {
             btnWa.addEventListener("click", () => {
@@ -599,6 +602,8 @@ export const Proposals = {
             const isExpired = p.validUntil && new Date(p.validUntil) < new Date() && p.status === "Enviada";
 
             const statusBadge = this.getStatusBadge(p.status);
+            const isWonStatus = ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status);
+            const isLostStatus = p.status === "Perdido";
 
             return `
                 <tr data-id="${p.id}" style="cursor: pointer;">
@@ -620,8 +625,24 @@ export const Proposals = {
                     <td style="font-size: 12px; color: ${isExpired ? 'var(--danger)' : 'var(--text-secondary)'};">
                         ${validDate} ${isExpired ? '⚠️' : ''}
                     </td>
-                    <td style="text-align: right;">
-                        <button class="btn btn-sm btn-outline btn-view-proposal" data-id="${p.id}" style="font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 6px;">Ver</button>
+                    <td style="text-align: right; white-space: nowrap;" onclick="event.stopPropagation();">
+                        <div style="display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end;">
+                            ${!isWonStatus ? `
+                                <button type="button" class="btn btn-sm btn-outline btn-row-win-proposal" data-id="${p.id}" style="font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 6px; color: #059669; border-color: rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.08);" title="Marcar proposta como Ganha">
+                                    ✓ Ganho
+                                </button>
+                            ` : ''}
+                            ${!isLostStatus ? `
+                                <button type="button" class="btn btn-sm btn-outline btn-row-lose-proposal" data-id="${p.id}" style="font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 6px; color: #DC2626; border-color: rgba(220, 38, 38, 0.38); background: rgba(220, 38, 38, 0.06);" title="${isWonStatus ? 'Informar que a proposta foi perdida (reverter venda caso a empresa desista)' : 'Informar que a proposta foi perdida'}">
+                                    ✕ ${isWonStatus ? 'Proposta Perdida' : 'Perdida'}
+                                </button>
+                            ` : `
+                                <button type="button" class="btn btn-sm btn-outline btn-row-reopen-proposal" data-id="${p.id}" style="font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 6px; color: #D97706; border-color: rgba(217, 119, 6, 0.38); background: rgba(217, 119, 6, 0.08);" title="Reverter proposta perdida para Em Negociação">
+                                    🔄 Reabrir
+                                </button>
+                            `}
+                            <button type="button" class="btn btn-sm btn-outline btn-view-proposal" data-id="${p.id}" style="font-size: 12px; font-weight: 600; padding: 4px 11px; border-radius: 6px;">Ver</button>
+                        </div>
                     </td>
                 </tr>
             `;
@@ -630,12 +651,30 @@ export const Proposals = {
         // Eventos de clique
         tbody.querySelectorAll("tr[data-id]").forEach(row => {
             row.addEventListener("click", (e) => {
-                if (e.target.closest(".btn-view-proposal")) return;
+                if (e.target.closest("button")) return;
                 this.openDetailModal(row.getAttribute("data-id"));
             });
         });
         tbody.querySelectorAll(".btn-view-proposal").forEach(btn => {
             btn.addEventListener("click", () => this.openDetailModal(btn.getAttribute("data-id")));
+        });
+        tbody.querySelectorAll(".btn-row-win-proposal").forEach(btn => {
+            btn.addEventListener("click", () => {
+                activeProposalId = btn.getAttribute("data-id");
+                this.openWinModal();
+            });
+        });
+        tbody.querySelectorAll(".btn-row-lose-proposal").forEach(btn => {
+            btn.addEventListener("click", () => {
+                activeProposalId = btn.getAttribute("data-id");
+                this.openLossModal(activeProposalId);
+            });
+        });
+        tbody.querySelectorAll(".btn-row-reopen-proposal").forEach(btn => {
+            btn.addEventListener("click", () => {
+                activeProposalId = btn.getAttribute("data-id");
+                this.reopenProposal(activeProposalId);
+            });
         });
     },
 
@@ -1577,13 +1616,29 @@ export const Proposals = {
         this.setEl("detail-loss-reason", proposal.lossReason || "—");
         this.setEl("detail-notes", proposal.notes || "Sem observações.");
 
-        // Mostrar/ocultar botões de ação conforme status
+        // Mostrar/ocultar botões de ação conforme status (com reversibilidade total)
         const btnWin = document.getElementById("btn-proposal-win");
+        const btnWinLabel = document.getElementById("btn-proposal-win-label");
         const btnLose = document.getElementById("btn-proposal-lose");
+        const btnLoseLabel = document.getElementById("btn-proposal-lose-label");
+        const btnReopen = document.getElementById("btn-proposal-reopen");
         const btnWa = document.getElementById("btn-proposal-wa");
+
         const isPending = proposal.status === "Enviada" || proposal.status === "Em Negociação";
-        if (btnWin) btnWin.style.display = isPending ? "flex" : "none";
-        if (btnLose) btnLose.style.display = isPending ? "flex" : "none";
+        const isWon = ["Ganho", "Aguardando Agendamento", "Agendada"].includes(proposal.status);
+        const isLost = proposal.status === "Perdido";
+
+        if (btnWin) {
+            btnWin.style.display = isWon ? "none" : "flex";
+            if (btnWinLabel) btnWinLabel.textContent = isLost ? "Reverter para Ganho" : "Marcar como Ganho";
+        }
+        if (btnLose) {
+            btnLose.style.display = isLost ? "none" : "flex";
+            if (btnLoseLabel) btnLoseLabel.textContent = isWon ? "Proposta Perdida (Reverter Venda)" : "Proposta Perdida";
+        }
+        if (btnReopen) {
+            btnReopen.style.display = !isPending ? "flex" : "none";
+        }
         if (btnWa) btnWa.style.display = isPending ? "flex" : "none";
 
         document.getElementById("proposal-detail-modal")?.classList.add("open");
@@ -1756,17 +1811,29 @@ export const Proposals = {
         const service = document.getElementById("win-service").value;
         const finalValue = parseCurrency(document.getElementById("win-value").value) || proposal.value;
         const executionDate = document.getElementById("win-execution").value;
+        const currentUser = Auth.getCurrentUser();
+        const userEmail = currentUser?.email || "sistema@vellia.com";
 
         Store.updateProposal(activeProposalId, {
             status: "Aguardando Agendamento",
             service: service,
             value: finalValue,
             executionDate: executionDate || null,
-            closedAt: document.getElementById("win-date").value || new Date().toISOString()
-        });
+            closedAt: document.getElementById("win-date").value || new Date().toISOString(),
+            lossReason: "",
+            competitor: ""
+        }, userEmail);
 
-        const currentUser = Auth.getCurrentUser();
-        Audit.logSaleWon(currentUser?.email || "sistema@vellia.com", proposal.company, `R$ ${finalValue}`);
+        // Sincronizar Lead correspondente para "Cliente Fechado"
+        const leads = Store.getLeads ? Store.getLeads() : [];
+        const targetLead = proposal.leadId
+            ? Store.getLeadById(proposal.leadId)
+            : leads.find(l => l.company && proposal.company && l.company.toLowerCase().trim() === proposal.company.toLowerCase().trim());
+        if (targetLead && targetLead.stage !== "Cliente Fechado") {
+            Store.updateLeadStage(targetLead.id, "Cliente Fechado", userEmail, `Proposta ganha: R$ ${finalValue}`);
+        }
+
+        Audit.logSaleWon(userEmail, proposal.company, `R$ ${finalValue}`);
 
         this.closeWinModal();
         this.closeDetailModal();
@@ -1774,29 +1841,30 @@ export const Proposals = {
         this.renderTable();
         this.renderLossAnalysis();
 
-        // Notificar demais módulos
+        // Notificar demais módulos (sem solicitar contrato)
         window.dispatchEvent(new CustomEvent("vellia:proposalUpdated"));
-
-        // Integração com Fase 2 - Contratos
-        if (confirm("Parabéns pelo fechamento! Deseja gerar o Contrato para este cliente agora?")) {
-            window.location.hash = "#contracts";
-            setTimeout(() => {
-                if (window.Contracts) {
-                    window.Contracts.openModal();
-                    document.getElementById("contract-lead-id").value = proposal.leadId;
-                    document.getElementById("contract-total-value").value = finalValue;
-                }
-            }, 300);
+        if (window.Toast && typeof window.Toast.show === "function") {
+            window.Toast.show("Proposta marcada como Ganha com sucesso!", "success");
         }
     },
 
     // ==========================================================================
-    // REGISTRAR PERDA
+    // REGISTRAR PERDA (INCLUSIVE REVERSÃO DE VENDA CASO A EMPRESA DESISTA)
     // ==========================================================================
-    openLossModal() {
+    openLossModal(proposalId = null) {
+        if (proposalId) activeProposalId = proposalId;
+        if (!activeProposalId) return;
+        const proposal = Store.getProposalById(activeProposalId);
+
         document.getElementById("loss-modal")?.classList.add("open");
         document.getElementById("loss-modal-overlay").style.display = "block";
         document.getElementById("loss-form")?.reset();
+
+        const wasWon = proposal && ["Ganho", "Aguardando Agendamento", "Agendada"].includes(proposal.status);
+        const reasonInput = document.getElementById("loss-reason-text");
+        if (reasonInput && wasWon && !reasonInput.value) {
+            reasonInput.value = "Desistência do cliente após fechamento";
+        }
     },
 
     closeLossModal() {
@@ -1808,21 +1876,37 @@ export const Proposals = {
         if (!activeProposalId) return;
         const lossReason = document.getElementById("loss-reason-text")?.value.trim() || "";
         const competitor = document.getElementById("loss-competitor")?.value.trim() || "";
-        const notes = document.getElementById("loss-notes")?.value.trim() || "";
+        const extraNotes = document.getElementById("loss-notes")?.value.trim() || "";
 
-        if (!lossReason) { alert("Informe o motivo da perda."); return; }
+        if (!lossReason) { alert("Informe o motivo da perda ou desistência."); return; }
 
         const proposal = Store.getProposalById(activeProposalId);
+        if (!proposal) return;
+
+        const currentUser = Auth.getCurrentUser();
+        const userEmail = currentUser?.email || "sistema@vellia.com";
+        const mergedNotes = extraNotes
+            ? `${proposal.notes ? proposal.notes + "\n\n" : ""}[Registro de Perda/Desistência]: ${extraNotes}`
+            : (proposal.notes || "");
+
         Store.updateProposal(activeProposalId, {
             status: "Perdido",
             closedAt: new Date().toISOString(),
             lossReason,
             competitor,
-            notes
-        });
+            notes: mergedNotes
+        }, userEmail);
 
-        const currentUser = Auth.getCurrentUser();
-        Audit.logSaleLost(currentUser?.email || "sistema@vellia.com", proposal.company, lossReason);
+        // Reverter Lead correspondente para "Cliente Perdido" caso estivesse fechado
+        const leads = Store.getLeads ? Store.getLeads() : [];
+        const targetLead = proposal.leadId
+            ? Store.getLeadById(proposal.leadId)
+            : leads.find(l => l.company && proposal.company && l.company.toLowerCase().trim() === proposal.company.toLowerCase().trim());
+        if (targetLead && targetLead.stage !== "Cliente Perdido") {
+            Store.updateLeadStage(targetLead.id, "Cliente Perdido", userEmail, `Proposta marcada como perdida/desistência: ${lossReason}`);
+        }
+
+        Audit.logSaleLost(userEmail, proposal.company, lossReason);
 
         this.closeLossModal();
         this.closeDetailModal();
@@ -1831,6 +1915,44 @@ export const Proposals = {
         this.renderLossAnalysis();
 
         window.dispatchEvent(new CustomEvent("vellia:proposalUpdated"));
+        if (window.Toast && typeof window.Toast.show === "function") {
+            window.Toast.show("Proposta marcada como Perdida e status revertido com sucesso.", "info");
+        }
+    },
+
+    reopenProposal(proposalId = null) {
+        const targetId = proposalId || activeProposalId;
+        if (!targetId) return;
+        const proposal = Store.getProposalById(targetId);
+        if (!proposal) return;
+
+        const currentUser = Auth.getCurrentUser();
+        const userEmail = currentUser?.email || "sistema@vellia.com";
+
+        Store.updateProposal(targetId, {
+            status: "Em Negociação",
+            closedAt: null,
+            lossReason: "",
+            competitor: ""
+        }, userEmail);
+
+        const leads = Store.getLeads ? Store.getLeads() : [];
+        const targetLead = proposal.leadId
+            ? Store.getLeadById(proposal.leadId)
+            : leads.find(l => l.company && proposal.company && l.company.toLowerCase().trim() === proposal.company.toLowerCase().trim());
+        if (targetLead && (targetLead.stage === "Cliente Fechado" || targetLead.stage === "Cliente Perdido")) {
+            Store.updateLeadStage(targetLead.id, "Negociação", userEmail, "Proposta reaberta para Em Negociação.");
+        }
+
+        this.closeDetailModal();
+        this.renderStats();
+        this.renderTable();
+        this.renderLossAnalysis();
+
+        window.dispatchEvent(new CustomEvent("vellia:proposalUpdated"));
+        if (window.Toast && typeof window.Toast.show === "function") {
+            window.Toast.show("Proposta revertida para 'Em Negociação'!", "success");
+        }
     },
 
     async generateProposalNotesAI(target) {

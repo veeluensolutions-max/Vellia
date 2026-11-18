@@ -38,6 +38,7 @@ import { VisionOCR } from "./vision-ocr.js";
 import { Clients } from "./clients.js";
 import { Users } from "./users.js";
 import { Learning } from "./learning.js";
+import { Renewals } from "./renewals.js";
 
 // Elementos Globais DOM (Getters Dinâmicos para garantia de não-nulidade)
 const elements = {
@@ -174,7 +175,7 @@ function startPresenceHeartbeat(userEmail) {
                     body: JSON.stringify({ lastLoginAt: nowIso })
                 });
             }
-        } catch (e) {}
+        } catch (e) { }
     };
 
     ping();
@@ -198,19 +199,19 @@ function initApp() {
     // Limpeza de segurança: remove qualquer sessão permanente legada do localStorage
     try {
         localStorage.removeItem("comercial_session");
-    } catch(e) {}
+    } catch (e) { }
 
     setupEventListeners();
     setupTheme();
     ThemeManager.init();
-    
+
     // Verifica a sessão temporária ativa antes de qualquer renderização
     checkSession();
 }
 
-window.switchCompany = function(companyName, shouldReload = false) {
+window.switchCompany = function (companyName, shouldReload = false) {
     localStorage.setItem("activeCompany", companyName);
-    
+
     // Atualiza todos os selects de workspace (no topo e na sidebar)
     const workspaceSelects = document.querySelectorAll("#workspace-select, #header-workspace-select, .workspace-select-el");
     workspaceSelects.forEach(sel => {
@@ -245,7 +246,7 @@ function checkSession() {
         showAppShell(user);
     } else {
         showLoginScreen();
-        
+
         // Verificar se foi deslogado por inatividade
         if (localStorage.getItem("login_reason") === "inactivity") {
             localStorage.removeItem("login_reason");
@@ -262,12 +263,12 @@ function showLoginScreen() {
     if (elements.loginScreen) elements.loginScreen.style.display = "flex";
     if (elements.loginError) elements.loginError.style.display = "none";
     if (elements.loginForm) elements.loginForm.reset();
-    
+
     stopInactivityTracking();
     stopPresenceHeartbeat();
     try {
         disconnectRealtime();
-    } catch(e) {}
+    } catch (e) { }
 }
 
 function showAppShell(user) {
@@ -288,18 +289,20 @@ function showAppShell(user) {
         window.Proposals = Proposals;
         window.Calculators = Calculators;
         window.Learning = Learning;
-        try { WhatsApp.init(); } catch(e) { console.error("WhatsApp init error:", e); }
-        try { Copilot.init(); } catch(e) { console.error("Copilot init error:", e); }
-        try { Intervention.init(); } catch(e) { console.error("Intervention init error:", e); }
-        try { ChurnAutopilot.init(); } catch(e) { console.error("Churn init error:", e); }
-        try { Leaderboard.init(); } catch(e) { console.error("Leaderboard init error:", e); }
+        window.Renewals = Renewals;
+        try { WhatsApp.init(); } catch (e) { console.error("WhatsApp init error:", e); }
+        try { Copilot.init(); } catch (e) { console.error("Copilot init error:", e); }
+        try { Intervention.init(); } catch (e) { console.error("Intervention init error:", e); }
+        try { ChurnAutopilot.init(); } catch (e) { console.error("Churn init error:", e); }
+        try { Leaderboard.init(); } catch (e) { console.error("Leaderboard init error:", e); }
+        try { Renewals.updateSidebarBadge(Renewals.getRenewalItems()); } catch (e) {}
     }
-    
+
     // Atualizar Perfil no Rodapé da Sidebar
     elements.userDisplayName.textContent = user.name;
     elements.userDisplayRole.textContent = Auth.getRoleLabel(user.role);
     elements.userAvatar.textContent = user.avatar;
-    
+
     // Configurar Itens da Sidebar conforme Permissões
     configureSidebarMenu(user.role);
 
@@ -307,7 +310,7 @@ function showAppShell(user) {
     const isMika = user.email && (user.email.toLowerCase().trim() === "mika@vellia.com" || (user.name && user.name.toLowerCase().includes("mika")));
     const companyAccess = user.companyAccess || (isMika ? "Excelência Ambiental" : "Ambas");
     const workspaceContainers = document.querySelectorAll(".company-selector-container, .workspace-switcher-card");
-    
+
     if (companyAccess !== "Ambas") {
         workspaceContainers.forEach(c => c.style.display = "none");
         window.switchCompany(companyAccess);
@@ -320,9 +323,9 @@ function showAppShell(user) {
     // Ir para a view ativa atual ou padrão (dashboard/calendar)
     let defaultView = "dashboard";
     if (["operacional", "operacoes", "operacao"].includes(user.role?.toLowerCase())) defaultView = "calendar";
-    
+
     let currentHash = window.location.hash.replace("#", "") || defaultView;
-    
+
     // Fallback de segurança caso tente acessar rota proibida no refresh
     if (!Auth.canAccessRoute(user.role, currentHash)) {
         currentHash = defaultView;
@@ -341,7 +344,7 @@ function showAppShell(user) {
     if (!["seller", "vendedor"].includes((user.role || "").toLowerCase())) {
         InspectionScheduler.schedulePeriodicCheck();
     }
-    
+
     // Iniciar monitoramento de inatividade e presença viva
     startInactivityTracking();
     startPresenceHeartbeat(user.email);
@@ -355,7 +358,7 @@ function configureSidebarMenu(role) {
     const roleLower = (role || "").toLowerCase();
     elements.menuItems.forEach(item => {
         const viewName = item.getAttribute("data-view");
-        
+
         let isVisible = false;
         if (roleLower === "admin") {
             isVisible = true;
@@ -433,7 +436,7 @@ function navigateTo(viewName) {
     const targetView = document.getElementById(`view-${viewName}`);
     if (targetView) {
         targetView.style.display = "block";
-        
+
         // Animar entrada
         targetView.classList.remove("animate-fade-in");
         void targetView.offsetWidth; // Trigger reflow
@@ -462,6 +465,7 @@ function navigateTo(viewName) {
         "crm": { section: "Contatos", page: "Leads & Oportunidades" },
         "kanban": { section: "Pipeline", page: "Funil de Vendas" },
         "proposals": { section: "Comercial", page: "Propostas & Vendas" },
+        "renewals": { section: "Comercial", page: "Renovação de Inspeções" },
         "contracts": { section: "Gestão", page: "Contratos & Renovações" },
         "post-sales": { section: "Clientes", page: "Pós-Venda & Retenção" },
         "calculators": { section: "Ferramentas", page: "Calculadoras de Serviços" },
@@ -517,6 +521,8 @@ function navigateTo(viewName) {
         Services.init();
     } else if (viewName === "inspections") {
         Inspections.init();
+    } else if (viewName === "renewals") {
+        Renewals.init();
     } else if (viewName === "calendar") {
         Calendar.init();
     } else if (viewName === "pricing") {
@@ -556,10 +562,10 @@ function setupTheme() {
 function toggleTheme() {
     const currentTheme = document.documentElement.getAttribute("data-theme");
     const newTheme = currentTheme === "dark" ? "light" : "dark";
-    
+
     document.documentElement.setAttribute("data-theme", newTheme);
     localStorage.setItem("comercial_theme", newTheme);
-    
+
     const user = Auth.getCurrentUser();
     if (user) {
         Audit.logConfigChange(user.email, "THEME_TOGGLE", `Tema alterado para ${newTheme === 'dark' ? 'Escuro' : 'Claro'}.`);
@@ -590,7 +596,7 @@ function renderLogsDashboard(allLogs) {
     const total = allLogs.length;
     const alerts = allLogs.filter(l => l.status === "WARN" || l.status === "ERROR").length;
     const critical = allLogs.filter(l => [
-        "PASSWORD_CHANGE", "USER_DELETED", "USER_CREATED", "ACCESS_DENIED", 
+        "PASSWORD_CHANGE", "USER_DELETED", "USER_CREATED", "ACCESS_DENIED",
         "LOGIN_LOCKOUT", "USER_LOGIN"
     ].includes(l.action) || l.action.toUpperCase().includes("DELETE") || l.action.toUpperCase().includes("DENIED")).length;
 
@@ -661,20 +667,20 @@ function renderLogsDashboard(allLogs) {
     // 3. Agrupar por data para o gráfico de linha (últimos 7 dias)
     const timelineData = [];
     const timelineLabels = [];
-    
+
     for (let i = 6; i >= 0; i--) {
         const d = new Date();
         d.setDate(d.getDate() - i);
         const label = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
         timelineLabels.push(label);
-        
+
         const count = allLogs.filter(log => {
             const logDate = new Date(log.timestamp);
             return logDate.getDate() === d.getDate() &&
-                   logDate.getMonth() === d.getMonth() &&
-                   logDate.getFullYear() === d.getFullYear();
+                logDate.getMonth() === d.getMonth() &&
+                logDate.getFullYear() === d.getFullYear();
         }).length;
-        
+
         timelineData.push(count);
     }
 
@@ -720,9 +726,9 @@ function renderLogsDashboard(allLogs) {
 }
 
 
-window.applyLogFilter = function(filterType) {
+window.applyLogFilter = function (filterType) {
     window.activeLogFilter = filterType;
-    
+
     // Atualizar botões de filtro
     document.querySelectorAll(".log-filter-btn").forEach(b => {
         if (b.dataset.type === filterType) {
@@ -768,18 +774,18 @@ window.applyLogFilter = function(filterType) {
     renderLogs();
 };
 
-window.renderLogs = function() { renderLogs(); };
+window.renderLogs = function () { renderLogs(); };
 function renderLogs() {
     if (!elements.logsTableBody) return;
-    
+
     const logs = Store.getLogs();
-    
+
     // Renderizar métricas e gráficos do dashboard
     renderLogsDashboard(logs);
-    
+
     const searchQuery = elements.logSearch ? elements.logSearch.value.toLowerCase().trim() : "";
     const filter = window.activeLogFilter || "all";
-    
+
     // Filtragem com suporte a SDR, Vendas, Segurança, Alertas e Críticas
     const filteredLogs = logs.filter(log => {
         const act = (log.action || "").toLowerCase();
@@ -822,7 +828,7 @@ function renderLogs() {
 
     elements.logsTableBody.innerHTML = filteredLogs.map(log => {
         const formattedDate = new Date(log.timestamp).toLocaleString("pt-BR");
-        
+
         let statusBadge = "";
         if (log.status === "SUCCESS") {
             statusBadge = '<span class="status-pill status-active" style="display: inline-flex; align-items: center; gap: 4px;">✓ Sucesso</span>';
@@ -871,7 +877,7 @@ function renderLogs() {
 // MODAL DE DETALHES 360º DO LOG DE AUDITORIA
 // ==========================================================================
 
-window.openLogDetailModal = function(logId) {
+window.openLogDetailModal = function (logId) {
     const logs = Store.getLogs();
     const log = logs.find(l => String(l.id) === String(logId));
     if (!log) {
@@ -960,14 +966,14 @@ window.openLogDetailModal = function(logId) {
     overlay.style.display = "block";
 };
 
-window.closeLogDetailModal = function() {
+window.closeLogDetailModal = function () {
     const modal = document.getElementById("modal-log-detail");
     const overlay = document.getElementById("log-detail-modal-overlay");
     if (modal) modal.style.display = "none";
     if (overlay) overlay.style.display = "none";
 };
 
-window.copyLogText = function(encodedText, btnEl) {
+window.copyLogText = function (encodedText, btnEl) {
     try {
         const text = decodeURIComponent(encodedText);
         navigator.clipboard.writeText(text);
@@ -976,12 +982,12 @@ window.copyLogText = function(encodedText, btnEl) {
             btnEl.innerHTML = "✓ Copiado!";
             setTimeout(() => { btnEl.innerHTML = originalText; }, 2000);
         }
-    } catch(e) {
+    } catch (e) {
         console.error("Erro ao copiar texto:", e);
     }
 };
 
-window.filterLogsByUser = function(userEmail) {
+window.filterLogsByUser = function (userEmail) {
     window.closeLogDetailModal();
     if (elements.logSearch) {
         elements.logSearch.value = userEmail;
@@ -1068,14 +1074,14 @@ function updateDashboardCounters() {
             });
 
             const STAGE_PROBABILITY = {
-                "Lead Gerado":      5,
-                "Contato":         15,
-                "Qualificação":    30,
-                "Proposta Enviada":50,
-                "Negociação":      70,
-                "Fechamento":      90,
-                "Cliente Ativo":  100,
-                "Perdido":          0
+                "Lead Gerado": 5,
+                "Contato": 15,
+                "Qualificação": 30,
+                "Proposta Enviada": 50,
+                "Negociação": 70,
+                "Fechamento": 90,
+                "Cliente Ativo": 100,
+                "Perdido": 0
             };
 
             const weightedProps = myOpenProposals.reduce((sum, p) => sum + (p.value || 0) * 0.70, 0); // 70% chance para propostas ativas
@@ -1258,7 +1264,7 @@ function setupDailyTaskEvents(userEmail) {
                 taskInput.value = "";
                 taskForm.style.display = "none";
                 renderSellerDailyTasks(userEmail);
-                
+
                 // Atualizar painéis
                 import("./dashboard.js").then(m => {
                     if (m.Dashboard && typeof m.Dashboard.renderTasksWeekChart === "function") {
@@ -1280,7 +1286,7 @@ function setupDailyTaskEvents(userEmail) {
             if (!task.id) task.id = `task_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
             Store.saveTasks(email, tasks).then(() => {
                 renderSellerDailyTasks(email);
-                
+
                 // Atualizar gráfico se estiver ativo
                 import("./dashboard.js").then(m => {
                     if (m.Dashboard && typeof m.Dashboard.renderTasksWeekChart === "function") {
@@ -1296,7 +1302,7 @@ function setupDailyTaskEvents(userEmail) {
         tasks = tasks.filter(t => (t.id !== taskId && t.text !== taskId));
         Store.saveTasks(email, tasks).then(() => {
             renderSellerDailyTasks(email);
-            
+
             // Atualizar gráfico se estiver ativo
             import("./dashboard.js").then(m => {
                 if (m.Dashboard && typeof m.Dashboard.renderTasksWeekChart === "function") {
@@ -1305,7 +1311,7 @@ function setupDailyTaskEvents(userEmail) {
             });
         });
     };
-    
+
     // Ouvir alterações de localStorage vindas de outras abas ou eventos real-time
     const handleTasksUpdate = () => {
         const user = Auth.getCurrentUser();
@@ -1450,20 +1456,20 @@ function renderSellerWeeklyStrategy() {
     const cardWrapper = document.getElementById("seller-weekly-strategy-card");
     const textEl = document.getElementById("seller-weekly-strategy-text");
     if (!cardWrapper || !textEl) return;
-    
+
     // Check if there is an active weekly strategy approved by the administrator
     const activeStrategy = localStorage.getItem("active_weekly_strategy");
     const isGuruActive = localStorage.getItem("agent_guru_active") !== "false";
-    
+
     if (activeStrategy && isGuruActive) {
         // Clean tasks tags [TAREFA_VENDEDOR: ...] from presentation text
         const cleanText = activeStrategy.replace(/\[TAREFA_VENDEDOR:[^\]]+\]/g, "").trim();
-        
+
         // Simple basic markdown bold/list representation
         let htmlText = cleanText
             .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
             .replace(/\n- (.*?)/g, "<br>• $1");
-            
+
         textEl.innerHTML = htmlText;
         cardWrapper.style.display = "block";
     } else {
@@ -1480,10 +1486,10 @@ function renderSellerLeadsNoContact(activeLeads) {
     const leadsWithTime = activeLeads.map(lead => {
         let lastDate = new Date();
         if (lead.interactions && lead.interactions.length > 0) {
-            const sorted = [...lead.interactions].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+            const sorted = [...lead.interactions].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
             lastDate = new Date(sorted[0].timestamp);
         } else if (lead.stageHistory && lead.stageHistory.length > 0) {
-            const sorted = [...lead.stageHistory].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+            const sorted = [...lead.stageHistory].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
             lastDate = new Date(sorted[0].timestamp);
         }
         const diffTime = Math.abs(new Date() - lastDate);
@@ -1595,10 +1601,10 @@ function setupSellerQuickActions() {
 
     // ---- Ativar Cards KPI como botões clicáveis ----
     const kpiCards = [
-        { ids: ["seller-leads-total"],           route: "crm",       title: "Contatos & Leads" },
-        { ids: ["seller-active-negotiations"],    route: "kanban",    title: "Funil Kanban" },
-        { ids: ["seller-closed-month"],          route: "proposals", title: "Propostas & Vendas" },
-        { ids: ["seller-revenue"],               route: "proposals", title: "Propostas & Vendas" },
+        { ids: ["seller-leads-total"], route: "crm", title: "Contatos & Leads" },
+        { ids: ["seller-active-negotiations"], route: "kanban", title: "Funil Kanban" },
+        { ids: ["seller-closed-month"], route: "proposals", title: "Propostas & Vendas" },
+        { ids: ["seller-revenue"], route: "proposals", title: "Propostas & Vendas" },
     ];
 
     kpiCards.forEach(({ ids, route }) => {
@@ -1694,7 +1700,7 @@ function setupEventListeners() {
 
         const email = elements.loginEmail ? elements.loginEmail.value.trim() : "";
         const password = elements.loginPassword ? elements.loginPassword.value : "";
-        
+
         if (!email || !password) {
             if (elements.loginErrorText && elements.loginError) {
                 elements.loginErrorText.textContent = "Por favor, preencha o e-mail e a senha.";
@@ -1735,7 +1741,7 @@ function setupEventListeners() {
                     elements.loginError.classList.add("animate-fade-in");
                 }
             }
-        } catch(e) {
+        } catch (e) {
             console.error("Login error:", e);
         } finally {
             if (btnSubmit && !checkLockout()) {
@@ -1949,7 +1955,7 @@ function setupEventListeners() {
         } else if (currentHash === "goals") {
             Goals.init();
         }
-        
+
         // Rechecar intervenções sempre que houver disparo global e estiver no dashboard
         if (currentHash === "dashboard") {
             Intervention.checkInterventions();

@@ -134,10 +134,10 @@ export const Auth = {
 
         const permissions = {
             admin: ["*"], // Administrador acessa tudo
-            manager: ["dashboard", "clients", "crm", "kanban", "proposals", "contracts", "post-sales", "trash", "calculators", "isocinetica", "team", "goals", "services", "inspections", "calendar", "ai-agents", "learning"],
-            gerente: ["dashboard", "clients", "crm", "kanban", "proposals", "contracts", "post-sales", "trash", "calculators", "isocinetica", "team", "goals", "services", "inspections", "calendar", "ai-agents", "learning"],
-            seller: ["dashboard", "clients", "crm", "kanban", "proposals", "contracts", "post-sales", "trash", "calculators", "isocinetica", "goals", "calendar", "ai-agents", "learning"],
-            vendedor: ["dashboard", "clients", "crm", "kanban", "proposals", "contracts", "post-sales", "trash", "calculators", "isocinetica", "goals", "calendar", "ai-agents", "learning"],
+            manager: ["dashboard", "clients", "crm", "kanban", "proposals", "renewals", "contracts", "post-sales", "trash", "calculators", "isocinetica", "team", "goals", "services", "inspections", "calendar", "ai-agents", "learning"],
+            gerente: ["dashboard", "clients", "crm", "kanban", "proposals", "renewals", "contracts", "post-sales", "trash", "calculators", "isocinetica", "team", "goals", "services", "inspections", "calendar", "ai-agents", "learning"],
+            seller: ["dashboard", "clients", "crm", "kanban", "proposals", "renewals", "contracts", "post-sales", "trash", "calculators", "isocinetica", "goals", "calendar", "ai-agents", "learning"],
+            vendedor: ["dashboard", "clients", "crm", "kanban", "proposals", "renewals", "contracts", "post-sales", "trash", "calculators", "isocinetica", "goals", "calendar", "ai-agents", "learning"],
             operacional: ["dashboard", "calendar", "inspections", "learning"],
             operacoes: ["dashboard", "calendar", "inspections", "learning"],
             operacao: ["dashboard", "calendar", "inspections", "learning"]

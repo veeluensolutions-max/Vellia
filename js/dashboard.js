@@ -12,7 +12,7 @@ export const Dashboard = {
     _dailyProdPeriod: "today",
     _dailyProdCustomDate: "",
 
-        setTimeframe(period) {
+    setTimeframe(period) {
         this.currentTimeframe = period;
         const group = document.getElementById("dashboard-timeframe-selector");
         if (group) {
@@ -65,13 +65,13 @@ export const Dashboard = {
         if (!this.currentTimeframe || this.currentTimeframe === "all") return items;
         const now = new Date();
         const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        
+
         return items.filter(item => {
             const raw = item[dateField] || item.closedAt || item.created_at || item.updatedAt;
             if (!raw) return true;
             const itemDate = new Date(raw);
             if (isNaN(itemDate.getTime())) return true;
-            
+
             if (this.currentTimeframe === "today") {
                 return itemDate >= startOfToday;
             } else if (this.currentTimeframe === "7d") {
@@ -97,7 +97,7 @@ export const Dashboard = {
         if (Store && typeof Store.syncFromSupabase === "function") {
             Store.syncFromSupabase().then(() => {
                 this.renderManagerDailyProductivity(false);
-            }).catch(() => {});
+            }).catch(() => { });
         }
 
         this.renderLiveTasksMonitor();
@@ -123,7 +123,7 @@ export const Dashboard = {
                         this.renderManagerDailyProductivity(false);
                     }
                 };
-            } catch (err) {}
+            } catch (err) { }
         }
 
         // Vincular ouvintes globais apenas UMA vez para evitar vazamentos de memória e repetições
@@ -187,7 +187,7 @@ export const Dashboard = {
             if (viewDashboard && viewDashboard.style.display !== "none") {
                 const session = JSON.parse(sessionStorage.getItem("comercial_session") || localStorage.getItem("comercial_session") || "null");
                 const { leads: currentLeads, proposals: currentProposals } = this.filterRecordsForSellerSession(Store.getLeads(), Store.getProposals(), session);
-                
+
                 const filteredLeads = this.filterByTimeframe(currentLeads, "createdAt");
                 const filteredProposals = this.filterByTimeframe(currentProposals, "createdAt");
                 this.renderRecentActivity(filteredLeads, filteredProposals);
@@ -318,7 +318,7 @@ export const Dashboard = {
             const visibleItems = list.slice(0, 3).map(p => {
                 const lead = leads.find(l => l.id === p.leadId);
                 const leadName = lead ? (lead.company || lead.contact) : "Lead Comercial";
-                
+
                 return `
                 <div style="background: var(--bg-surface-subtle); border: 1px solid var(--border-color-light); border-radius: var(--radius-md); padding: 10px 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
                     <div style="min-width: 0;">
@@ -326,7 +326,7 @@ export const Dashboard = {
                             ${leadName}
                         </div>
                         <div style="font-size: 11.5px; color: var(--text-muted);">
-                            ${p.service || 'Serviço'} • #${p.id.substring(0,6)}
+                            ${p.service || 'Serviço'} • #${p.id.substring(0, 6)}
                         </div>
                     </div>
                     <div style="flex-shrink: 0;">
@@ -381,10 +381,10 @@ export const Dashboard = {
     },
 
     markProposalScheduled(proposalId) {
-        if(confirm("Confirma que esta proposta já foi agendada na agenda principal?")) {
+        if (confirm("Confirma que esta proposta já foi agendada na agenda principal?")) {
             const proposals = Store.getProposals();
             const p = proposals.find(x => x.id === proposalId);
-            if(p) {
+            if (p) {
                 p.status = "Agendada";
                 Store.saveProposals(proposals);
                 this.renderAll();
@@ -432,7 +432,7 @@ export const Dashboard = {
             const max = Math.max(...points);
             const range = (max - min) || 1;
             const stepX = width / (points.length - 1);
-            
+
             const coords = points.map((p, i) => {
                 const x = i * stepX;
                 const y = height - ((p - min) / range) * (height - 8) - 4;
@@ -468,49 +468,49 @@ export const Dashboard = {
         };
 
         const kpis = [
-            { 
-                id: "kpi-mrr", 
-                val: fmt(mrr), 
-                label: "Receita Recorrente", 
-                icon: "🔄", 
-                color: "#6257F5", 
-                trend: "↑ 12.5%", 
+            {
+                id: "kpi-mrr",
+                val: fmt(mrr),
+                label: "Receita Recorrente",
+                icon: "🔄",
+                color: "#6257F5",
+                trend: "↑ 12.5%",
                 trendPositive: true,
                 sparkData: [10, 15, 14, 22, 28, 35, 42],
-                link: "#contracts" 
+                link: "#contracts"
             },
-            { 
-                id: "kpi-tcv", 
-                val: fmt(tcv), 
-                label: "Total em Contratos", 
-                icon: "📜", 
-                color: "#6257F5", 
-                trend: "↑ 18.4%", 
+            {
+                id: "kpi-tcv",
+                val: fmt(tcv),
+                label: "Total em Contratos",
+                icon: "📜",
+                color: "#6257F5",
+                trend: "↑ 18.4%",
                 trendPositive: true,
                 sparkData: [20, 25, 22, 34, 38, 48, 55],
-                link: "#contracts" 
+                link: "#contracts"
             },
-            { 
-                id: "kpi-health-active", 
-                val: activeClientsCount, 
-                label: "Clientes Ativos", 
-                icon: "👥", 
-                color: "#16A36A", 
-                trend: "98% Retenção", 
+            {
+                id: "kpi-health-active",
+                val: activeClientsCount,
+                label: "Clientes Ativos",
+                icon: "👥",
+                color: "#16A36A",
+                trend: "98% Retenção",
                 trendPositive: true,
                 sparkData: [8, 12, 14, 15, 18, 20, 22],
-                link: "#post-sales" 
+                link: "#post-sales"
             },
-            { 
-                id: "kpi-health-risk", 
-                val: riskClientsCount, 
-                label: "Clientes em Risco", 
-                icon: "⚠️", 
-                color: riskClientsCount > 0 ? "#EF4444" : "#16A36A", 
-                trend: riskClientsCount > 0 ? "Atenção" : "Zero Riscos", 
+            {
+                id: "kpi-health-risk",
+                val: riskClientsCount,
+                label: "Clientes em Risco",
+                icon: "⚠️",
+                color: riskClientsCount > 0 ? "#EF4444" : "#16A36A",
+                trend: riskClientsCount > 0 ? "Atenção" : "Zero Riscos",
                 trendPositive: riskClientsCount === 0,
                 sparkData: [5, 4, 6, 3, 4, 2, Math.max(1, riskClientsCount)],
-                link: "#post-sales" 
+                link: "#post-sales"
             }
         ];
 
@@ -618,9 +618,9 @@ export const Dashboard = {
             const stageProposals = proposals.filter(p => {
                 const lead = leads.find(l => l.id === p.leadId);
                 return (lead && st.aliases.some(a => (lead.stage || "").toLowerCase().includes(a.toLowerCase()))) ||
-                       (st.key === "Contrato" && ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)) ||
-                       (st.key === "Negociacao" && p.status === "Em Negociação") ||
-                       (st.key === "Proposta" && p.status === "Enviada");
+                    (st.key === "Contrato" && ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)) ||
+                    (st.key === "Negociacao" && p.status === "Em Negociação") ||
+                    (st.key === "Proposta" && p.status === "Enviada");
             });
 
             const valSum = stageProposals.reduce((sum, p) => sum + (p.value || 0), 0);
@@ -790,12 +790,12 @@ export const Dashboard = {
 
         // Estágios do funil (ordem do pipeline, excluindo "Cliente Perdido")
         const funnelStages = [
-            { label: "Contato",           color: "#94a3b8", emoji: "🔵" },
-            { label: "Lead Gerado",       color: "#6366f1", emoji: "🟣" },
-            { label: "Lead Qualificado",  color: "#8b5cf6", emoji: "🟣" },
-            { label: "Proposta Enviada",  color: "#f59e0b", emoji: "🟡" },
-            { label: "Negociação",        color: "#f97316", emoji: "🟠" },
-            { label: "Cliente Fechado",   color: "#10b981", emoji: "✅" }
+            { label: "Contato", color: "#94a3b8", emoji: "🔵" },
+            { label: "Lead Gerado", color: "#6366f1", emoji: "🟣" },
+            { label: "Lead Qualificado", color: "#8b5cf6", emoji: "🟣" },
+            { label: "Proposta Enviada", color: "#f59e0b", emoji: "🟡" },
+            { label: "Negociação", color: "#f97316", emoji: "🟠" },
+            { label: "Cliente Fechado", color: "#10b981", emoji: "✅" }
         ];
 
         // Contar leads por estágio (CUMULATIVO - para funil de conversão real)
@@ -805,7 +805,7 @@ export const Dashboard = {
         leads.forEach(lead => {
             // Identificar todos os estágios pelos quais o lead já passou
             let reachedStages = new Set();
-            
+
             // 1. A partir do histórico
             if (lead.stageHistory && Array.isArray(lead.stageHistory)) {
                 lead.stageHistory.forEach(h => reachedStages.add(h.stage));
@@ -815,14 +815,14 @@ export const Dashboard = {
 
             // 3. Preenchimento cumulativo reverso (se o lead está num estágio avançado, ele passou pelos anteriores)
             const currentIdx = funnelStages.findIndex(fs => fs.label === lead.stage);
-            
+
             funnelStages.forEach((s, idx) => {
                 // Conta se o lead já passou explicitamente por essa etapa,
                 // Ou se a etapa atual do lead é maior que essa etapa no funil (pulou etapa),
                 // Ou se é Cliente Fechado (passou por todas).
                 if (
-                    reachedStages.has(s.label) || 
-                    (currentIdx !== -1 && idx <= currentIdx) || 
+                    reachedStages.has(s.label) ||
+                    (currentIdx !== -1 && idx <= currentIdx) ||
                     (lead.stage === "Cliente Fechado" && idx <= 5)
                 ) {
                     counts[s.label]++;
@@ -838,7 +838,7 @@ export const Dashboard = {
         const conversionRates = [];
         for (let i = 0; i < funnelStages.length - 1; i++) {
             const from = counts[funnelStages[i].label];
-            const to   = counts[funnelStages[i + 1].label];
+            const to = counts[funnelStages[i + 1].label];
             const rate = from > 0 ? Math.round((to / from) * 100) : 0;
             conversionRates.push(rate);
         }
@@ -851,7 +851,7 @@ export const Dashboard = {
                 const idx = lead.stageHistory.findIndex(h => h.stage === stageLabel);
                 if (idx === -1) return;
                 const entryTs = new Date(lead.stageHistory[idx].timestamp).getTime();
-                const exitTs  = idx + 1 < lead.stageHistory.length
+                const exitTs = idx + 1 < lead.stageHistory.length
                     ? new Date(lead.stageHistory[idx + 1].timestamp).getTime()
                     : Date.now();
                 const days = Math.round((exitTs - entryTs) / (1000 * 60 * 60 * 24));
@@ -865,9 +865,9 @@ export const Dashboard = {
         // Badge de taxa colorido
         function rateBadge(rate) {
             let color, bg, label;
-            if (rate >= 60)      { color = "#10b981"; bg = "rgba(16,185,129,0.13)"; label = "Bom"; }
+            if (rate >= 60) { color = "#10b981"; bg = "rgba(16,185,129,0.13)"; label = "Bom"; }
             else if (rate >= 30) { color = "#f59e0b"; bg = "rgba(245,158,11,0.13)"; label = "Médio"; }
-            else                  { color = "#ef4444"; bg = "rgba(239,68,68,0.13)";  label = "Crítico"; }
+            else { color = "#ef4444"; bg = "rgba(239,68,68,0.13)"; label = "Crítico"; }
             return `<span style="
                 display:inline-flex; align-items:center; gap:4px;
                 background:${bg}; color:${color};
@@ -880,12 +880,12 @@ export const Dashboard = {
         let html = `<div style="padding: 4px 0; display:flex; flex-direction:column; gap:0;">`;
 
         funnelStages.forEach((stage, i) => {
-            const count    = counts[stage.label];
-            const pct      = maxCount > 0 ? Math.round((count / maxCount) * 100) : 0;
-            const avgDays  = avgDaysInStage(stage.label);
+            const count = counts[stage.label];
+            const pct = maxCount > 0 ? Math.round((count / maxCount) * 100) : 0;
+            const avgDays = avgDaysInStage(stage.label);
             const daysText = avgDays !== null ? `· ${avgDays}d médio` : "";
 
-            const rowId    = `funnel-row-${stage.label.replace(/\s+/g, '-')}`;
+            const rowId = `funnel-row-${stage.label.replace(/\s+/g, '-')}`;
 
             // Tooltip nativo via title
             const tooltipTxt = `Clique para ver os vendedores responsáveis por estes leads`;
@@ -982,27 +982,27 @@ export const Dashboard = {
     showFunnelStageDetails(leads, stageLabel, funnelStages) {
         // Encontrar os leads que compõem o número mostrado no funil (cumulativo)
         const currentIdx = funnelStages.findIndex(fs => fs.label === stageLabel);
-        
+
         const stageLeads = leads.filter(lead => {
             let reachedStages = new Set();
             if (lead.stageHistory && Array.isArray(lead.stageHistory)) {
                 lead.stageHistory.forEach(h => reachedStages.add(h.stage));
             }
             reachedStages.add(lead.stage);
-            
-            return reachedStages.has(stageLabel) || 
-                   (currentIdx !== -1 && funnelStages.findIndex(fs => fs.label === lead.stage) >= currentIdx) || 
-                   (lead.stage === "Cliente Fechado");
+
+            return reachedStages.has(stageLabel) ||
+                (currentIdx !== -1 && funnelStages.findIndex(fs => fs.label === lead.stage) >= currentIdx) ||
+                (lead.stage === "Cliente Fechado");
         });
-        
+
         const users = JSON.parse(localStorage.getItem("comercial_users")) || [];
-        
+
         const sellerCounts = {};
         stageLeads.forEach(l => {
             let ownerName = l.owner;
             const u = users.find(u => u.email === l.owner);
             if (u && u.name) ownerName = u.name;
-            
+
             if (!sellerCounts[ownerName]) sellerCounts[ownerName] = { count: 0, names: [] };
             sellerCounts[ownerName].count++;
             sellerCounts[ownerName].names.push(l.company || l.contact || 'Sem Nome');
@@ -1019,8 +1019,8 @@ export const Dashboard = {
             html += `<p style="font-size:14px; color:var(--text-muted);">Nenhum lead nesta etapa no momento.</p>`;
         } else {
             // Ordenar por quem tem mais leads
-            const sortedSellers = Object.entries(sellerCounts).sort((a,b) => b[1].count - a[1].count);
-            
+            const sortedSellers = Object.entries(sellerCounts).sort((a, b) => b[1].count - a[1].count);
+
             sortedSellers.forEach(([ownerName, data]) => {
                 html += `
                     <div style="margin-bottom:16px; border-left:4px solid var(--primary); padding-left:14px; background: rgba(0,0,0,0.02); padding-top: 10px; padding-bottom: 10px; border-radius: 0 6px 6px 0;">
@@ -1276,26 +1276,26 @@ export const Dashboard = {
             },
             plugins: [{
                 id: 'textCenter',
-                beforeDraw: function(chart) {
+                beforeDraw: function (chart) {
                     if (total === 0) return;
                     var width = chart.width,
                         height = chart.height,
                         ctx = chart.ctx;
-            
+
                     ctx.restore();
                     var fontSize = (height / 114).toFixed(2);
                     ctx.font = "800 " + fontSize + "em Inter, sans-serif";
                     ctx.textBaseline = "middle";
-                    
-                    const isDark = document.body.classList.contains("dark") || 
-                                   document.documentElement.getAttribute("data-theme") === "dark";
+
+                    const isDark = document.body.classList.contains("dark") ||
+                        document.documentElement.getAttribute("data-theme") === "dark";
                     ctx.fillStyle = isDark ? "#f8fafc" : "#1e293b";
-            
+
                     var convRate = Math.round((won / total) * 100);
                     var text = convRate + "%",
                         textX = Math.round((chart.chartArea.left + chart.chartArea.right - ctx.measureText(text).width) / 2),
                         textY = chart.chartArea.top + (chart.chartArea.bottom - chart.chartArea.top) / 2;
-            
+
                     ctx.fillText(text, textX, textY);
                     ctx.save();
                 }
@@ -1484,7 +1484,7 @@ export const Dashboard = {
             const won = myProps.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)).length;
             const revenue = myProps.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)).reduce((s, p) => s + (p.value || 0), 0);
             const convRate = myProps.length > 0 ? Math.round((won / myProps.length) * 100) : 0;
-            
+
             // Leads gerados pelo vendedor (criados ou atribuídos)
             const sellerLeads = leads.filter(l => l.createdBy === u.email || l.owner === u.email);
             const leadsCount = sellerLeads.length;
@@ -1680,7 +1680,7 @@ export const Dashboard = {
     renderTasksWeekChart() {
         const weekCanvas = document.getElementById("chart-tasks-week");
         const donutCanvas = document.getElementById("chart-tasks-donut");
-        const pctLabel  = document.getElementById("task-pct-value");
+        const pctLabel = document.getElementById("task-pct-value");
         if (!weekCanvas) return;
 
         const session = JSON.parse(sessionStorage.getItem("comercial_session") || localStorage.getItem("comercial_session") || "null");
@@ -1947,7 +1947,7 @@ export const Dashboard = {
 
             const today = new Date().toLocaleDateString("pt-BR");
             const tasks = Store.getTasks(targetSeller);
-            
+
             tasks.push({
                 id: `task_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
                 text,
@@ -2008,7 +2008,7 @@ export const Dashboard = {
             if (this._liveBus) {
                 try {
                     this._liveBus.postMessage({ type: "LIVE_ACTIVITIES_CHANGED", timestamp: Date.now() });
-                } catch (e) {}
+                } catch (e) { }
             }
         }
     },
@@ -2250,7 +2250,7 @@ export const Dashboard = {
                 const dur = chip.getAttribute("data-dur");
                 textarea.value = val;
                 customMin.value = dur;
-                
+
                 overlay.querySelectorAll(".btn-assign-dur").forEach(b => {
                     if (b.getAttribute("data-min") === dur) {
                         b.classList.add("active");
@@ -2400,7 +2400,7 @@ export const Dashboard = {
             currentTasks.unshift(taskPayload);
             localStorage.setItem(`seller_tasks_${sellerEmail}`, JSON.stringify(currentTasks));
             Store.addLog(sellerEmail, "LIVE_TASK_STARTED", `Iniciou atividade extra: "${newAct.activity}" (${dur} min)`);
-        } catch (e) {}
+        } catch (e) { }
 
         Toast.show(`Atividade extra iniciada com sucesso! (${dur} min)`, "success");
         this.renderLiveTasksMonitor();
@@ -2446,7 +2446,7 @@ export const Dashboard = {
                 localStorage.setItem(`seller_tasks_${act.sellerEmail}`, JSON.stringify(currentTasks));
             }
             Store.addLog(act.sellerEmail, "LIVE_TASK_FINISHED", `Concluiu atividade extra: "${act.activity}" (${act.actualMinutes} min)`);
-        } catch (e) {}
+        } catch (e) { }
 
         Toast.show(`Atividade concluída com sucesso! Tempo dedicado: ${act.actualMinutes} min.`, "success");
         this.renderLiveTasksMonitor();
@@ -2473,7 +2473,7 @@ export const Dashboard = {
                     },
                     body: JSON.stringify({ priority: "cancelled", done: true })
                 }).catch(e => console.warn("Live task cancel cloud sync error:", e));
-            } catch (e) {}
+            } catch (e) { }
         }
         Toast.show("Atividade cancelada.", "info");
         this.renderLiveTasksMonitor();
@@ -2698,12 +2698,12 @@ export const Dashboard = {
                     </div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px;">
                         ${sellers.map(s => {
-                            const activeAct = todayActivities.find(a => a.sellerEmail === s.email && a.status === "in_progress");
-                            const isBusy = !!activeAct;
+                const activeAct = todayActivities.find(a => a.sellerEmail === s.email && a.status === "in_progress");
+                const isBusy = !!activeAct;
 
-                            if (isBusy) {
-                                const startTime = new Date(activeAct.startedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-                                return `
+                if (isBusy) {
+                    const startTime = new Date(activeAct.startedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+                    return `
                                 <div style="background: linear-gradient(135deg, rgba(16,185,129,0.09) 0%, rgba(5,150,105,0.03) 100%); border: 1.5px solid rgba(16,185,129,0.4); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 14px rgba(16,185,129,0.08); transition: transform 0.2s ease;">
                                     <div>
                                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
@@ -2743,10 +2743,10 @@ export const Dashboard = {
                                     </div>
                                 </div>
                                 `;
-                            } else {
-                                // Vendedor livre
-                                const lastFinished = todayActivities.filter(a => a.sellerEmail === s.email && a.status === "completed")[0];
-                                return `
+                } else {
+                    // Vendedor livre
+                    const lastFinished = todayActivities.filter(a => a.sellerEmail === s.email && a.status === "completed")[0];
+                    return `
                                 <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; opacity: 0.9;">
                                     <div>
                                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
@@ -2774,8 +2774,8 @@ export const Dashboard = {
                                     </div>
                                 </div>
                                 `;
-                            }
-                        }).join("")}
+                }
+            }).join("")}
                     </div>
                 </div>
 
@@ -2806,17 +2806,17 @@ export const Dashboard = {
                                 </thead>
                                 <tbody>
                                     ${todayActivities.map(a => {
-                                        const startTime = new Date(a.startedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-                                        let statusBadge = "";
-                                        if (a.status === "in_progress") {
-                                            statusBadge = `<span style="background: rgba(16,185,129,0.15); color: #10b981; font-weight: 800; padding: 3px 8px; border-radius: 6px; font-size: 11px;">🟢 Em Andamento</span>`;
-                                        } else if (a.status === "completed") {
-                                            statusBadge = `<span style="background: rgba(99,102,241,0.12); color: var(--primary); font-weight: 700; padding: 3px 8px; border-radius: 6px; font-size: 11px;">✅ Concluída</span>`;
-                                        } else {
-                                            statusBadge = `<span style="background: rgba(100,116,139,0.12); color: var(--text-muted); padding: 3px 8px; border-radius: 6px; font-size: 11px;">Cancelada</span>`;
-                                        }
+                const startTime = new Date(a.startedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+                let statusBadge = "";
+                if (a.status === "in_progress") {
+                    statusBadge = `<span style="background: rgba(16,185,129,0.15); color: #10b981; font-weight: 800; padding: 3px 8px; border-radius: 6px; font-size: 11px;">🟢 Em Andamento</span>`;
+                } else if (a.status === "completed") {
+                    statusBadge = `<span style="background: rgba(99,102,241,0.12); color: var(--primary); font-weight: 700; padding: 3px 8px; border-radius: 6px; font-size: 11px;">✅ Concluída</span>`;
+                } else {
+                    statusBadge = `<span style="background: rgba(100,116,139,0.12); color: var(--text-muted); padding: 3px 8px; border-radius: 6px; font-size: 11px;">Cancelada</span>`;
+                }
 
-                                        return `
+                return `
                                         <tr style="border-bottom: 1px solid var(--border-color);">
                                             <td style="padding: 10px 14px; font-weight: 700; color: var(--text-primary); white-space: nowrap;">
                                                 ${a.sellerName || a.sellerEmail}
@@ -2838,7 +2838,7 @@ export const Dashboard = {
                                             </td>
                                         </tr>
                                         `;
-                                    }).join("")}
+            }).join("")}
                                 </tbody>
                             </table>
                         </div>
@@ -3188,7 +3188,7 @@ export const Dashboard = {
             const qualifiedCount = chLeads.filter(l => l.stage !== "Contato" && l.stage !== "Lead Gerado" && l.stage !== "Cliente Perdido").length;
             const wonLeads = chLeads.filter(l => l.stage === "Cliente Fechado");
             const wonCount = wonLeads.length;
-            
+
             // Somar receita de propostas ganhas ou estimativa do lead
             const wonRevenue = proposals
                 .filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status) && chLeads.some(l => l.id === p.leadId || l.company === p.company))
@@ -3226,8 +3226,8 @@ export const Dashboard = {
                     </thead>
                     <tbody>
                         ${matrixData.map(row => {
-                            const pctBar = Math.round((row.wonRevenue / maxRevenue) * 100);
-                            return `
+            const pctBar = Math.round((row.wonRevenue / maxRevenue) * 100);
+            return `
                                 <tr style="border-bottom: 1px solid var(--border-color);">
                                     <td style="padding: 12px; font-weight: 700; color: var(--text-primary);">
                                         <div style="display: flex; align-items: center; gap: 8px;">
@@ -3250,7 +3250,7 @@ export const Dashboard = {
                                     <td style="padding: 12px; text-align: right; font-weight: 600; color: var(--text-muted);">${fmt(row.ticketMedio)}</td>
                                 </tr>
                             `;
-                        }).join("")}
+        }).join("")}
                     </tbody>
                 </table>
             </div>
@@ -4245,14 +4245,14 @@ export const Dashboard = {
                                 Nenhum vendedor encontrado para esta empresa.
                             </div>
                         ` : sellerList.map((st, idx) => {
-                            const rStyle = roleLabels[st.role] || roleLabels.seller;
-                            const hasAny = st.leads.length > 0 || st.calls.length > 0 || st.proposals.length > 0;
-                            const lastTimeStr = st.lastActivityTs > 0
-                                ? new Date(st.lastActivityTs).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
-                                : null;
-                            const avatarBg = avatarPalettes[idx % avatarPalettes.length];
+            const rStyle = roleLabels[st.role] || roleLabels.seller;
+            const hasAny = st.leads.length > 0 || st.calls.length > 0 || st.proposals.length > 0;
+            const lastTimeStr = st.lastActivityTs > 0
+                ? new Date(st.lastActivityTs).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+                : null;
+            const avatarBg = avatarPalettes[idx % avatarPalettes.length];
 
-                            return `
+            return `
                             <div class="mdp-seller-row">
                                 <!-- Coluna 0: Vendedor -->
                                 <div onclick="window.Dashboard.openSellerDailyDetailModal('${st.email}', 'all')" style="display: flex; align-items: center; gap: 12px; min-width: 0; cursor: pointer;" title="Ver relatório completo de ${st.name}">
@@ -4336,7 +4336,7 @@ export const Dashboard = {
                                 </div>
                             </div>
                             `;
-                        }).join("")}
+        }).join("")}
                     </div>
                 </div>
             </div>
@@ -4611,64 +4611,160 @@ export const Dashboard = {
     },
 
     openQuickCallModal(preselectedSellerEmail = "", preselectedLeadId = "") {
+        this.injectDailyPanelStyles();
         const curUser = Auth.getCurrentUser();
+        const isSellerRole = curUser && (curUser.role === "seller" || curUser.role === "vendedor");
         const sellerEmail = preselectedSellerEmail || curUser?.email || "admin@vellia.com";
-        const leads = Store.getLeads ? Store.getLeads() : [];
+        const allLeads = Store.getLeads ? Store.getLeads() : [];
+        const leads = isSellerRole
+            ? allLeads.filter(l => (l.owner || "").toLowerCase() === (curUser.email || "").toLowerCase() || (l.createdBy || "").toLowerCase() === (curUser.email || "").toLowerCase() || String(l.id) === String(preselectedLeadId))
+            : allLeads;
+        const finalLeads = leads.length > 0 ? leads : allLeads;
         const sellers = (Store.getUsers ? Store.getUsers() : []).filter(u => u && (u.role === "seller" || u.role === "manager" || u.role === "admin"));
+
+        const initialLead = finalLeads.find(l => String(l.id) === String(preselectedLeadId)) || finalLeads[0] || null;
+        const initialPhone = initialLead ? (initialLead.whatsapp || initialLead.phone || initialLead.phone2 || "Sem telefone cadastrado") : "—";
 
         let modal = document.getElementById("quick-call-log-modal");
         if (!modal) {
             modal = document.createElement("div");
             modal.id = "quick-call-log-modal";
-            modal.style.cssText = "position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); z-index: 3100; display: flex; align-items: center; justify-content: center; padding: 16px;";
+            modal.style.cssText = "position: fixed; inset: 0; background: rgba(15, 23, 42, 0.62); backdrop-filter: blur(5px); z-index: 3100; display: flex; align-items: center; justify-content: center; padding: 16px;";
+            modal.addEventListener("click", (e) => {
+                if (e.target === modal) modal.style.display = "none";
+            });
             document.body.appendChild(modal);
         }
 
+        const quickOutcomes = [
+            {
+                key: "answered",
+                badge: "✅ Atendeu",
+                title: "Atendeu — Cliente Qualificado",
+                desc: "✅ Atendeu — Cliente qualificado e demonstrou interesse comercial.",
+                color: "#059669",
+                bg: "rgba(16, 185, 129, 0.08)",
+                border: "rgba(16, 185, 129, 0.3)"
+            },
+            {
+                key: "proposal",
+                badge: "📄 Pediu Proposta",
+                title: "Atendeu — Solicitou Proposta Comercial",
+                desc: "📄 Atendeu — Cliente solicitou elaboração e envio de proposta comercial.",
+                color: "#6D28D9",
+                bg: "rgba(124, 58, 237, 0.08)",
+                border: "rgba(124, 58, 237, 0.3)",
+                allowOpenProposal: true
+            },
+            {
+                key: "callback",
+                badge: "🔄 Retornar",
+                title: "Pediu para Retornar Depois",
+                desc: "🔄 Contato ocupado — pediu para retornar a ligação em outro horário.",
+                color: "#D97706",
+                bg: "rgba(245, 158, 11, 0.08)",
+                border: "rgba(245, 158, 11, 0.3)"
+            },
+            {
+                key: "no_answer",
+                badge: "📵 Não Atendeu",
+                title: "Não Atendeu / Caixa Postal",
+                desc: "📵 Tentativa de ligação realizada — cliente não atendeu / caixa postal.",
+                color: "#475569",
+                bg: "var(--bg-app, #F8FAFC)",
+                border: "var(--border-color, #E2E8F0)"
+            }
+        ];
+
         modal.style.display = "flex";
         modal.innerHTML = `
-            <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 18px; width: 100%; max-width: 500px; box-shadow: 0 25px 60px rgba(0,0,0,0.35); overflow: hidden;">
-                <div style="padding: 16px 22px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; background: var(--bg-app);">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(16, 185, 129, 0.15); color: #059669; display: flex; align-items: center; justify-content: center; font-size: 18px;">
-                            📞
+            <div style="background: var(--bg-surface, #FFFFFF); border: 1px solid var(--border-color, #E2E8F0); border-radius: 18px; width: 100%; max-width: 560px; box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.38); overflow: hidden;">
+                <!-- Cabeçalho -->
+                <div style="padding: 16px 22px; border-bottom: 1px solid var(--border-color, #E2E8F0); display: flex; align-items: center; justify-content: space-between; background: var(--bg-app, #F8FAFC);">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 40px; height: 40px; border-radius: 11px; background: linear-gradient(135deg, #10B981, #059669); color: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.25);">
+                            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                         </div>
                         <div>
-                            <h3 style="margin: 0; font-size: 15.5px; font-weight: 800; color: var(--text-primary);">Registrar Ligação Realizada</h3>
-                            <span style="font-size: 11.5px; color: var(--text-muted);">Soma automaticamente na produtividade diária do vendedor</span>
+                            <h3 style="margin: 0; font-family: var(--mdp-font-display); font-size: 16.5px; font-weight: 700; color: var(--text-primary, #0F172A); letter-spacing: -0.02em;">
+                                Registrar Ligação em 2 Segundos
+                            </h3>
+                            <span style="font-size: 12px; color: var(--text-secondary, #64748B);">
+                                Clique em uma opção rápida para salvar na hora ou personalize a nota abaixo
+                            </span>
                         </div>
                     </div>
-                    <button type="button" onclick="document.getElementById('quick-call-log-modal').style.display='none'" style="background: none; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer;">&times;</button>
+                    <button type="button" onclick="document.getElementById('quick-call-log-modal').style.display='none'" style="width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-surface); font-size: 18px; color: var(--text-secondary); cursor: pointer;">&times;</button>
                 </div>
 
-                <div style="padding: 20px 22px; display: flex; flex-direction: column; gap: 14px;">
-                    <div>
-                        <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 5px;">Vendedor Responsável *</label>
-                        <select id="quick-call-seller" class="form-control" style="width: 100%; height: 40px; font-size: 13px;">
-                            ${sellers.map(s => `<option value="${s.email}" ${s.email.toLowerCase() === sellerEmail.toLowerCase() ? 'selected' : ''}>${s.name} (${s.email})</option>`).join("")}
-                        </select>
-                    </div>
-
-                    <div>
-                        <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 5px;">Cliente / Lead Contatado *</label>
-                        <select id="quick-call-lead" class="form-control" style="width: 100%; height: 40px; font-size: 13px;">
-                            ${leads.map(l => `<option value="${l.id}" ${String(l.id) === String(preselectedLeadId) ? 'selected' : ''}>${l.company} — ${l.contact || 'Sem contato'} (${l.whatsapp || l.phone || 'S/ tel'})</option>`).join("")}
-                        </select>
-                    </div>
-
-                    <div>
-                        <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 5px;">Resumo Rápido da Ligação *</label>
-                        <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;">
-                            <button type="button" class="quick-call-preset" data-text="Cliente atendeu — solicitou envio de proposta comercial" style="font-size: 11px; padding: 4px 9px; border-radius: 99px; border: 1px solid var(--border-color); background: var(--bg-app); color: var(--text-secondary); cursor: pointer;">✅ Solicita Proposta</button>
-                            <button type="button" class="quick-call-preset" data-text="Follow-up de proposta enviada — em análise pela diretoria" style="font-size: 11px; padding: 4px 9px; border-radius: 99px; border: 1px solid var(--border-color); background: var(--bg-app); color: var(--text-secondary); cursor: pointer;">📄 Follow-up Proposta</button>
-                            <button type="button" class="quick-call-preset" data-text="Agendada reunião / vistoria técnica com o responsável" style="font-size: 11px; padding: 4px 9px; border-radius: 99px; border: 1px solid var(--border-color); background: var(--bg-app); color: var(--text-secondary); cursor: pointer;">📅 Reunião Agendada</button>
-                            <button type="button" class="quick-call-preset" data-text="Tentativa de contato — caixa postal / retornar mais tarde" style="font-size: 11px; padding: 4px 9px; border-radius: 99px; border: 1px solid var(--border-color); background: var(--bg-app); color: var(--text-secondary); cursor: pointer;">📵 Caixa Postal</button>
+                <div style="padding: 18px 22px; display: flex; flex-direction: column; gap: 14px; max-height: 82vh; overflow-y: auto;">
+                    <!-- Linha 1: Vendedor e Cliente -->
+                    <div style="display: grid; grid-template-columns: 1fr 1.25fr; gap: 10px;">
+                        <div>
+                            <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; display: block; margin-bottom: 5px;">Vendedor Responsável</label>
+                            <select id="quick-call-seller" class="form-control" style="width: 100%; height: 38px; font-size: 12.5px; font-weight: 600; border-radius: 9px;" ${isSellerRole ? 'disabled' : ''}>
+                                ${sellers.map(s => `<option value="${s.email}" ${s.email.toLowerCase() === sellerEmail.toLowerCase() ? 'selected' : ''}>${s.name}</option>`).join("")}
+                            </select>
                         </div>
-                        <textarea id="quick-call-desc" class="form-control" placeholder="Descreva o resultado da ligação..." style="width: 100%; min-height: 70px; padding: 10px; font-size: 13px; border-radius: 8px;"></textarea>
+                        <div>
+                            <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; display: block; margin-bottom: 5px;">Cliente / Lead Contatado</label>
+                            <select id="quick-call-lead" class="form-control" style="width: 100%; height: 38px; font-size: 12.5px; font-weight: 600; border-radius: 9px;">
+                                ${finalLeads.map(l => `<option value="${l.id}" ${String(l.id) === String(preselectedLeadId) ? 'selected' : ''}>${l.company} — ${l.contact || 'Sem contato'}</option>`).join("")}
+                            </select>
+                        </div>
                     </div>
 
-                    <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px;">
-                        <button type="button" onclick="document.getElementById('quick-call-log-modal').style.display='none'" class="btn btn-outline" style="height: 38px; padding: 0 16px; font-size: 12.5px;">Cancelar</button>
-                        <button type="button" id="btn-confirm-quick-call" class="btn btn-primary" style="height: 38px; padding: 0 20px; font-size: 12.5px; font-weight: 700; background: #10b981; border-color: #10b981;">
+                    <!-- Banner de Telefone Rápido do Cliente -->
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 9px 14px; border-radius: 10px; background: var(--bg-app, #F8FAFC); border: 1px solid var(--border-color, #E2E8F0);">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 15px;">📱</span>
+                            <div>
+                                <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display: block;">Telefone / WhatsApp do Lead</span>
+                                <span id="quick-call-phone-display" style="font-family: var(--mdp-font-display); font-size: 13.5px; font-weight: 700; color: var(--text-primary);">${initialPhone}</span>
+                            </div>
+                        </div>
+                        <button type="button" id="btn-quick-call-copy-phone" style="height: 28px; padding: 0 10px; font-size: 11.5px; font-weight: 600; border-radius: 7px; border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); cursor: pointer;">
+                            📋 Copiar Número
+                        </button>
+                    </div>
+
+                    <!-- 4 Opções Rápidas em 1 Clique (2 Segundos) -->
+                    <div>
+                        <label style="font-size: 11px; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.04em; display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                            <span>⚡ Resultado Rápido (1 Clique = Salva na Hora)</span>
+                            <span style="font-size: 10.5px; color: var(--text-muted); font-weight: 500; text-transform: none;">Ou clique no texto para editar abaixo</span>
+                        </label>
+                        <div style="display: flex; flex-direction: column; gap: 7px;">
+                            ${quickOutcomes.map(o => `
+                                <div class="quick-call-preset" data-text="${o.desc}" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 12px; border-radius: 10px; border: 1px solid ${o.border}; background: ${o.bg}; cursor: pointer; transition: all 0.15s ease;">
+                                    <div style="min-width: 0; flex: 1;">
+                                        <div style="font-family: var(--mdp-font-display); font-size: 13px; font-weight: 700; color: ${o.color};">${o.title}</div>
+                                        <div style="font-size: 11.5px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${o.desc}</div>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                                        ${o.allowOpenProposal ? `
+                                            <button type="button" class="btn-instant-call-and-prop" data-text="${o.desc}" style="height: 30px; padding: 0 10px; font-size: 11px; font-weight: 700; border-radius: 7px; border: 1px solid #7C3AED; background: #FFFFFF; color: #7C3AED; cursor: pointer; white-space: nowrap;" title="Registrar ligação e já abrir tela de proposta para este cliente">
+                                                + Abrir Proposta
+                                            </button>
+                                        ` : ''}
+                                        <button type="button" class="btn-instant-call-save" data-text="${o.desc}" style="height: 30px; padding: 0 11px; font-size: 11.5px; font-weight: 700; border-radius: 7px; border: none; background: ${o.color === '#475569' ? '#334155' : o.color}; color: #FFFFFF; cursor: pointer; white-space: nowrap;">
+                                            ⚡ Registrar
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join("")}
+                        </div>
+                    </div>
+
+                    <!-- Campo de Observação Personalizada -->
+                    <div>
+                        <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; display: block; margin-bottom: 5px;">Observação / Detalhes da Conversa (Opcional)</label>
+                        <textarea id="quick-call-desc" class="form-control" placeholder="Se desejar, complemente com detalhes da ligação..." style="width: 100%; min-height: 62px; padding: 10px 12px; font-size: 13px; border-radius: 9px;"></textarea>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 2px;">
+                        <button type="button" onclick="document.getElementById('quick-call-log-modal').style.display='none'" class="btn btn-outline" style="height: 38px; padding: 0 16px; font-size: 12.5px; border-radius: 9px;">Cancelar</button>
+                        <button type="button" id="btn-confirm-quick-call" class="btn btn-primary" style="height: 38px; padding: 0 20px; font-size: 12.5px; font-weight: 700; border-radius: 9px; background: linear-gradient(135deg, #10B981, #059669); border: none;">
                             ✓ Salvar Ligação
                         </button>
                     </div>
@@ -4676,31 +4772,98 @@ export const Dashboard = {
             </div>
         `;
 
-        modal.querySelectorAll(".quick-call-preset").forEach(chip => {
-            chip.onclick = () => {
+        const leadSelect = document.getElementById("quick-call-lead");
+        const phoneDisplay = document.getElementById("quick-call-phone-display");
+        if (leadSelect && phoneDisplay) {
+            leadSelect.onchange = () => {
+                const selLead = finalLeads.find(l => String(l.id) === String(leadSelect.value));
+                phoneDisplay.textContent = selLead ? (selLead.whatsapp || selLead.phone || selLead.phone2 || "Sem telefone cadastrado") : "—";
+            };
+        }
+
+        const btnCopyPhone = document.getElementById("btn-quick-call-copy-phone");
+        if (btnCopyPhone && phoneDisplay) {
+            btnCopyPhone.onclick = () => {
+                const num = phoneDisplay.textContent;
+                if (!num || num === "—" || num.includes("Sem telefone")) return;
+                navigator.clipboard.writeText(num);
+                btnCopyPhone.textContent = "✓ Copiado!";
+                setTimeout(() => { btnCopyPhone.textContent = "📋 Copiar Número"; }, 1500);
+            };
+        }
+
+        const executeSaveCall = (customDesc, openProposalAfter = false) => {
+            const sEmail = document.getElementById("quick-call-seller")?.value || sellerEmail;
+            const lId = document.getElementById("quick-call-lead")?.value;
+            const desc = (customDesc || document.getElementById("quick-call-desc")?.value || "").trim() || "Ligação comercial realizada";
+            if (!lId) {
+                alert("Selecione um cliente/lead para registrar a ligação.");
+                return;
+            }
+            const targetLead = Store.getLeadById ? Store.getLeadById(lId) : null;
+            Store.addLeadInteraction(lId, sEmail, {
+                type: "Ligação",
+                description: desc
+            });
+            try {
+                if (window.Audit && typeof window.Audit.logStageChange === "function" && targetLead) {
+                    window.Audit.logStageChange(sEmail, targetLead.company, targetLead.stage, targetLead.stage, `Ligação registrada: ${desc}`);
+                }
+            } catch (e) {}
+
+            modal.style.display = "none";
+            this._lastDailyProdSig = "";
+            this.renderManagerDailyProductivity(false);
+
+            if (window.CRM) {
+                window.CRM.renderLeadsTable?.();
+                if (window.CRM.activeLeadId && String(window.CRM.activeLeadId) === String(lId)) {
+                    const updated = Store.getLeadById(lId);
+                    if (updated) window.CRM.renderTimeline?.(updated);
+                }
+            }
+
+            if (window.Toast && typeof window.Toast.show === "function") {
+                window.Toast.show("Ligação registrada em tempo real!", "success");
+            }
+
+            if (openProposalAfter && targetLead) {
+                window.CRM?.closeLeadDrawer?.();
+                window.location.hash = "#proposals";
+                setTimeout(() => {
+                    window.Proposals?.openBudgetScreen?.(null, targetLead);
+                }, 150);
+            }
+        };
+
+        modal.querySelectorAll(".quick-call-preset").forEach(card => {
+            card.onclick = (e) => {
+                if (e.target.closest(".btn-instant-call-save") || e.target.closest(".btn-instant-call-and-prop")) return;
                 const descEl = document.getElementById("quick-call-desc");
-                if (descEl) descEl.value = chip.getAttribute("data-text");
+                if (descEl) {
+                    descEl.value = card.getAttribute("data-text");
+                    descEl.focus();
+                }
+            };
+        });
+
+        modal.querySelectorAll(".btn-instant-call-save").forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                executeSaveCall(btn.getAttribute("data-text"), false);
+            };
+        });
+
+        modal.querySelectorAll(".btn-instant-call-and-prop").forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                executeSaveCall(btn.getAttribute("data-text"), true);
             };
         });
 
         const btnConfirm = document.getElementById("btn-confirm-quick-call");
         if (btnConfirm) {
-            btnConfirm.onclick = () => {
-                const sEmail = document.getElementById("quick-call-seller")?.value;
-                const lId = document.getElementById("quick-call-lead")?.value;
-                const desc = document.getElementById("quick-call-desc")?.value.trim() || "Ligação comercial realizada";
-                if (!lId) {
-                    alert("Selecione um cliente/lead para registrar a ligação.");
-                    return;
-                }
-                Store.addLeadInteraction(lId, sEmail, {
-                    type: "Ligação",
-                    description: desc
-                });
-                modal.style.display = "none";
-                this.renderManagerDailyProductivity();
-                if (window.Toast) Toast.success("Ligação Registrada!", "O contador diário de ligações foi atualizado.");
-            };
+            btnConfirm.onclick = () => executeSaveCall(null, false);
         }
     },
 
@@ -4709,7 +4872,7 @@ export const Dashboard = {
 // Expor globalmente para os botões no HTML
 window.refreshLiveTasksMonitor = () => Dashboard.renderLiveTasksMonitor();
 window.refreshMetaAdsPanel = () => Dashboard.renderLiveTasksMonitor();
-window.configureCommissionRate = function(currentRate) {
+window.configureCommissionRate = function (currentRate) {
     const input = prompt("Digite a porcentagem da taxa de comissão padrão para as vendas (ex: 5 para 5%):", currentRate || 5);
     if (input !== null) {
         const val = parseFloat(input.replace(",", "."));

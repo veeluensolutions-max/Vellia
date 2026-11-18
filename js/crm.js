@@ -269,6 +269,18 @@ export const CRM = {
             }
         });
 
+        const btnQuickCall = document.getElementById("btn-drawer-quick-call");
+        if (btnQuickCall) {
+            btnQuickCall.addEventListener("click", () => {
+                if (!activeLeadId) return;
+                const lead = Store.getLeadById(activeLeadId);
+                const cur = Auth.getCurrentUser();
+                const isSeller = cur && (cur.role === "seller" || cur.role === "vendedor");
+                const sellerEmail = isSeller ? cur.email : (lead?.owner || cur?.email || "");
+                window.Dashboard?.openQuickCallModal(sellerEmail, activeLeadId);
+            });
+        }
+
         const btnQuickWa = document.getElementById("btn-drawer-quick-wa");
         if (btnQuickWa) {
             btnQuickWa.addEventListener("click", () => {
@@ -366,6 +378,11 @@ export const CRM = {
                 const selectEl = document.getElementById("interaction-type");
                 if (selectEl) selectEl.value = type;
 
+                const quickOutcomes = document.getElementById("drawer-call-quick-outcomes");
+                if (quickOutcomes) {
+                    quickOutcomes.style.display = type === "Ligação" ? "flex" : "none";
+                }
+
                 document.querySelectorAll(".interaction-chip").forEach(c => {
                     if (c.getAttribute("data-type") === type) {
                         c.classList.add("active");
@@ -381,6 +398,34 @@ export const CRM = {
                         c.style.fontWeight = "600";
                     }
                 });
+            });
+        });
+
+        // Registro instantâneo de ligação em 1 clique dentro da ficha do lead
+        document.querySelectorAll(".drawer-instant-call-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                if (!activeLeadId) return;
+                const outcomeText = btn.getAttribute("data-outcome");
+                const currentUser = Auth.getCurrentUser();
+                const lead = Store.getLeadById(activeLeadId);
+                if (!currentUser || !lead || !outcomeText) return;
+
+                Store.addLeadInteraction(activeLeadId, currentUser.email, {
+                    type: "Ligação",
+                    description: outcomeText
+                });
+
+                try {
+                    Audit.logStageChange(currentUser.email, lead.company, lead.stage, lead.stage, `Ligação registrada: ${outcomeText}`);
+                } catch (e) {}
+
+                const updatedLead = Store.getLeadById(activeLeadId);
+                this.renderTimeline(updatedLead);
+                this.renderLeadsTable();
+
+                if (window.Toast && typeof window.Toast.show === "function") {
+                    window.Toast.show("Ligação registrada em tempo real!", "success");
+                }
             });
         });
 
@@ -1052,9 +1097,17 @@ export const CRM = {
                         ${ownerCell}
                     </td>
                     <td style="text-align: right; white-space: nowrap;" onclick="event.stopPropagation();">
-                        <button class="btn btn-outline btn-call-lead" data-id="${lead.id}" style="padding: 0; font-size: 13px; border-color: rgba(99, 102, 241, 0.4); color: #4f46e5; margin-right: 5px; display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 6px; vertical-align: middle;" title="Registrar Ligação Realizada">
-                            📞
-                        </button>
+                        ${(() => {
+                            const callCount = (lead.interactions || []).filter(i => {
+                                const t = (i?.type || "").toLowerCase();
+                                return t === "ligação" || t === "ligacao" || t.includes("liga") || t.includes("call");
+                            }).length;
+                            return `
+                            <button class="btn btn-outline btn-call-lead" data-id="${lead.id}" style="padding: 0 9px; font-size: 11.5px; font-weight: 700; border-color: rgba(16, 185, 129, 0.45); background: rgba(16, 185, 129, 0.08); color: #059669; margin-right: 5px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: 30px; border-radius: 6px; vertical-align: middle;" title="Registrar Ligação em 2 Segundos">
+                                <span>📞</span>
+                                <span>Ligação${callCount > 0 ? ` (${callCount})` : ''}</span>
+                            </button>`;
+                        })()}
                         <button class="btn btn-outline btn-wa-lead" data-id="${lead.id}" style="padding: 0; font-size: 12px; border-color: #25d366; color: #25d366; margin-right: 6px; display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 6px; vertical-align: middle;" title="Enviar WhatsApp">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
                         </button>

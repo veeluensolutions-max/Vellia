@@ -4885,6 +4885,9 @@ Condições de pagamento:
 
             <!-- Barra de Ações Rápidas -->
             <div class="lead-drawer-actions-bar">
+                <button type="button" class="drawer-action-pill call" id="btn-drawer-quick-call" title="Registrar Ligação em 2 Segundos" style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); color: #059669; font-weight: 700;">
+                    <span>📞</span> Registrar Ligação
+                </button>
                 <button type="button" class="drawer-action-pill wa" id="btn-drawer-quick-wa" title="WhatsApp Direto">
                     <span>💬</span> WhatsApp
                 </button>
@@ -5001,6 +5004,23 @@ Condições de pagamento:
                                 <option value="Visita">🚗 Visita</option>
                                 <option value="Observação">📝 Nota</option>
                             </select>
+
+                            <!-- Atalhos de Resultado Rápido da Ligação (1 Clique = Registra em 2 Segundos) -->
+                            <div id="drawer-call-quick-outcomes" style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; padding-top: 6px; border-top: 1px dashed var(--border-color);">
+                                <span style="width: 100%; font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;">⚡ Registro Rápido de Ligação (1 Clique Salva na Hora):</span>
+                                <button type="button" class="drawer-instant-call-btn" data-outcome="✅ Atendeu — Cliente qualificado e com interesse comercial." style="font-size: 11px; font-weight: 600; padding: 4px 9px; border-radius: 7px; border: 1px solid rgba(16, 185, 129, 0.35); background: rgba(16, 185, 129, 0.08); color: #059669; cursor: pointer;">
+                                    ✅ Atendeu
+                                </button>
+                                <button type="button" class="drawer-instant-call-btn" data-outcome="📄 Atendeu — Cliente solicitou envio de proposta comercial." style="font-size: 11px; font-weight: 600; padding: 4px 9px; border-radius: 7px; border: 1px solid rgba(124, 58, 237, 0.35); background: rgba(124, 58, 237, 0.08); color: #6D28D9; cursor: pointer;">
+                                    📄 Pediu Proposta
+                                </button>
+                                <button type="button" class="drawer-instant-call-btn" data-outcome="🔄 Contato ocupado — pediu para retornar a ligação depois." style="font-size: 11px; font-weight: 600; padding: 4px 9px; border-radius: 7px; border: 1px solid rgba(245, 158, 11, 0.35); background: rgba(245, 158, 11, 0.08); color: #D97706; cursor: pointer;">
+                                    🔄 Retornar
+                                </button>
+                                <button type="button" class="drawer-instant-call-btn" data-outcome="📵 Tentativa de ligação — não atendeu / caixa postal." style="font-size: 11px; font-weight: 600; padding: 4px 9px; border-radius: 7px; border: 1px solid var(--border-color); background: var(--bg-app); color: var(--text-secondary); cursor: pointer;">
+                                    📵 Não Atendeu
+                                </button>
+                            </div>
                         </div>
 
                         <textarea id="interaction-desc" class="form-control" placeholder="Descreva os pontos principais conversados, acordos ou próximos passos..." style="width: 100%; min-height: 72px; padding: 10px 12px; font-size: 13px; line-height: 1.5; resize: vertical; border-radius: 8px; border: 1.5px solid var(--border-color); background: var(--bg-app); box-sizing: border-box;" required></textarea>
@@ -8278,9 +8298,9 @@ Condições de pagamento:
     <!-- Script Principal da Aplicação -->
     <script src="js/isocinetica-calculator.js?v=20260903_1010"></script>
     <script src="js/isocinetica-pdf.js?v=20260903_1010"></script>
-    <script type="module" src="js/isocinetica-ui.js?v=20261118_1"></script>
-    <script type="module" src="js/learning.js?v=20261118_1"></script>
-    <script type="module" src="js/app.js?v=20261118_1"></script>
+    <script type="module" src="js/isocinetica-ui.js?v=20261118_2"></script>
+    <script type="module" src="js/learning.js?v=20261118_2"></script>
+    <script type="module" src="js/app.js?v=20261118_2"></script>
 </body>
 </html>
 

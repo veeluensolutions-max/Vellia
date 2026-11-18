@@ -1262,7 +1262,11 @@ export const Store = {
     },
 
     getProposalById(id) {
-        return this.getProposals().find(p => p.id === id) || null;
+        if (!id) return null;
+        const strId = String(id);
+        return this.getProposals().find(p => p && String(p.id) === strId) ||
+               this.getProposalsRaw().find(p => p && String(p.id) === strId) ||
+               null;
     },
 
     addProposal(data) {

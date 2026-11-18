@@ -1641,8 +1641,15 @@ export const Proposals = {
         }
         if (btnWa) btnWa.style.display = isPending ? "flex" : "none";
 
-        document.getElementById("proposal-detail-modal")?.classList.add("open");
-        document.getElementById("proposal-detail-overlay").style.display = "block";
+        const modalEl = document.getElementById("proposal-detail-modal");
+        if (modalEl) {
+            modalEl.classList.add("open");
+        }
+        const overlayEl = document.getElementById("proposal-detail-overlay");
+        if (overlayEl) {
+            overlayEl.style.display = "block";
+            overlayEl.classList.add("open");
+        }
     },
 
     async generateDocsFromProposal() {
@@ -1727,8 +1734,15 @@ export const Proposals = {
     },
 
     closeDetailModal() {
-        document.getElementById("proposal-detail-modal")?.classList.remove("open");
-        document.getElementById("proposal-detail-overlay").style.display = "none";
+        const modalEl = document.getElementById("proposal-detail-modal");
+        if (modalEl) {
+            modalEl.classList.remove("open");
+        }
+        const overlayEl = document.getElementById("proposal-detail-overlay");
+        if (overlayEl) {
+            overlayEl.style.display = "none";
+            overlayEl.classList.remove("open");
+        }
         activeProposalId = null;
     },
 
@@ -1794,13 +1808,23 @@ export const Proposals = {
             dateEl.value = new Date().toISOString().split('T')[0];
         }
 
-        document.getElementById("win-modal").classList.add("open");
-        document.getElementById("win-modal-overlay").style.display = "block";
+        const winModal = document.getElementById("win-modal");
+        if (winModal) winModal.classList.add("open");
+        const winOverlay = document.getElementById("win-modal-overlay");
+        if (winOverlay) {
+            winOverlay.style.display = "block";
+            winOverlay.classList.add("open");
+        }
     },
 
     closeWinModal() {
-        document.getElementById("win-modal")?.classList.remove("open");
-        document.getElementById("win-modal-overlay").style.display = "none";
+        const winModal = document.getElementById("win-modal");
+        if (winModal) winModal.classList.remove("open");
+        const winOverlay = document.getElementById("win-modal-overlay");
+        if (winOverlay) {
+            winOverlay.style.display = "none";
+            winOverlay.classList.remove("open");
+        }
     },
 
     confirmWin() {
@@ -1856,8 +1880,13 @@ export const Proposals = {
         if (!activeProposalId) return;
         const proposal = Store.getProposalById(activeProposalId);
 
-        document.getElementById("loss-modal")?.classList.add("open");
-        document.getElementById("loss-modal-overlay").style.display = "block";
+        const lossModal = document.getElementById("loss-modal");
+        if (lossModal) lossModal.classList.add("open");
+        const lossOverlay = document.getElementById("loss-modal-overlay");
+        if (lossOverlay) {
+            lossOverlay.style.display = "block";
+            lossOverlay.classList.add("open");
+        }
         document.getElementById("loss-form")?.reset();
 
         const wasWon = proposal && ["Ganho", "Aguardando Agendamento", "Agendada"].includes(proposal.status);
@@ -1868,8 +1897,13 @@ export const Proposals = {
     },
 
     closeLossModal() {
-        document.getElementById("loss-modal")?.classList.remove("open");
-        document.getElementById("loss-modal-overlay").style.display = "none";
+        const lossModal = document.getElementById("loss-modal");
+        if (lossModal) lossModal.classList.remove("open");
+        const lossOverlay = document.getElementById("loss-modal-overlay");
+        if (lossOverlay) {
+            lossOverlay.style.display = "none";
+            lossOverlay.classList.remove("open");
+        }
     },
 
     confirmLoss() {

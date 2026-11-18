@@ -595,9 +595,28 @@ export const CRM = {
                 const lead = Store.getLeadById(activeLeadId);
                 const rawNum = lead?.whatsapp || lead?.phone;
                 if (!rawNum) return;
+                const curUser = Auth.getCurrentUser();
+                Store.addLeadInteraction(activeLeadId, curUser?.email || "sistema@vellia.com", {
+                    type: "WhatsApp",
+                    description: `Contato direto via WhatsApp (${rawNum}) iniciado com ${lead.contact || lead.company}.`
+                });
                 const clean = rawNum.replace(/\D/g, "");
                 const num = clean.startsWith("55") ? clean : `55${clean}`;
                 window.open(`https://wa.me/${num}`, "_blank");
+            });
+        }
+
+        const btnMailLink = document.getElementById("btn-mail-link");
+        if (btnMailLink) {
+            btnMailLink.addEventListener("click", () => {
+                if (!activeLeadId) return;
+                const lead = Store.getLeadById(activeLeadId);
+                if (!lead || !lead.email) return;
+                const curUser = Auth.getCurrentUser();
+                Store.addLeadInteraction(activeLeadId, curUser?.email || "sistema@vellia.com", {
+                    type: "E-mail",
+                    description: `Contato via E-mail (${lead.email}) enviado para ${lead.contact || lead.company}.`
+                });
             });
         }
     },

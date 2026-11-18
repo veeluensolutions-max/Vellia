@@ -3622,6 +3622,7 @@ export const Dashboard = {
                 companyAccess: s.companyAccess || "Ambas",
                 leads: [],
                 calls: [],
+                channelCounts: { call: 0, whatsapp: 0, email: 0, other: 0 },
                 proposals: [],
                 totalProposalValue: 0,
                 lastActivityTs: 0,
@@ -3714,13 +3715,40 @@ export const Dashboard = {
                 }
             }
 
-            // Verificar interações do lead para contabilizar LIGAÇÕES
+            // Verificar interações do lead para contabilizar INTERAÇÕES NO DIA (Ligação, WhatsApp, E-mail, Reunião, Visita)
             const interactions = Array.isArray(lead.interactions) ? lead.interactions : [];
             interactions.forEach(int => {
                 if (!int) return;
-                const typeStr = (int.type || "").toLowerCase();
-                const isCall = typeStr === "ligação" || typeStr === "ligacao" || typeStr.includes("liga") || typeStr.includes("telefone") || typeStr.includes("call");
-                if (!isCall) return;
+                const rawType = String(int.type || "").trim();
+                const typeStr = rawType.toLowerCase();
+                const descStr = String(int.description || "");
+                const idStr = String(int.id || "");
+
+                // Ignorar laudos técnicos de inspeção e redirecionamentos automáticos de carteira
+                if (typeStr === "inspeção" || typeStr === "inspecao" || typeStr.includes("inspe")) return;
+                if (idStr.startsWith("assign_") || descStr.includes("Lead redirecionado de")) return;
+
+                let channelLabel = "Interação";
+                let channelKey = "other";
+                if (typeStr === "ligação" || typeStr === "ligacao" || typeStr.includes("liga") || typeStr.includes("telefone") || typeStr.includes("call")) {
+                    channelLabel = "Ligação";
+                    channelKey = "call";
+                } else if (typeStr.includes("whatsapp") || typeStr === "wa" || descStr.toLowerCase().includes("whatsapp")) {
+                    channelLabel = "WhatsApp";
+                    channelKey = "whatsapp";
+                } else if (typeStr.includes("mail") || descStr.toLowerCase().includes("e-mail")) {
+                    channelLabel = "E-mail";
+                    channelKey = "email";
+                } else if (typeStr.includes("reuni")) {
+                    channelLabel = "Reunião";
+                    channelKey = "other";
+                } else if (typeStr.includes("visit")) {
+                    channelLabel = "Visita";
+                    channelKey = "other";
+                } else {
+                    channelLabel = rawType && rawType !== "undefined" ? rawType : "Contato";
+                    channelKey = "other";
+                }
 
                 let intTs = int.timestamp ? new Date(int.timestamp).getTime() : 0;
                 if ((!intTs || isNaN(intTs)) && typeof int.id === "string" && int.id.startsWith("int_")) {
@@ -3733,43 +3761,55 @@ export const Dashboard = {
                     if (sellerKey && statsMap.has(sellerKey)) {
                         const st = statsMap.get(sellerKey);
                         st.calls.push({
-                            id: int.id || `call_${intTs}`,
+                            id: int.id || `int_${intTs}`,
                             leadId: lead.id,
+                            channel: channelLabel,
+                            channelKey: channelKey,
                             company: lead.company || "Cliente",
                             contact: lead.contact || "—",
                             phone: lead.whatsapp || lead.phone || "—",
-                            description: int.description || "Ligação comercial registrada",
+                            description: int.description || `${channelLabel} comercial registrada`,
                             timestamp: intTs
                         });
-                        registerActivity(st, intTs, `Ligação: ${lead.company || "Cliente"}`);
+                        if (st.channelCounts && st.channelCounts[channelKey] !== undefined) {
+                            st.channelCounts[channelKey] += 1;
+                        }
+                        registerActivity(st, intTs, `${channelLabel}: ${lead.company || "Cliente"}`);
                     }
                 }
             });
         });
 
-        // Contabilizar também atividades ao vivo de ligação caso não estejam duplicadas
+        // Contabilizar também atividades ao vivo de ligação/contato caso não estejam duplicadas
         const liveActs = this.getLiveActivities ? this.getLiveActivities() : [];
         liveActs.forEach(act => {
             if (!act || !act.activity) return;
             const matchesComp = !act.workspace || act.workspace === activeCompany;
             if (!matchesComp) return;
             const actText = act.activity.toLowerCase();
-            if (!actText.includes("liga") && !actText.includes("📞") && !actText.includes("telefon")) return;
+            if (!actText.includes("liga") && !actText.includes("📞") && !actText.includes("telefon") && !actText.includes("whatsapp") && !actText.includes("mail")) return;
 
             const actTs = act.startedAt ? new Date(act.startedAt).getTime() : 0;
             if (actTs > 0 && this.matchesDailyProdFilter(actTs)) {
                 const sellerKey = resolveSellerKey(act.sellerEmail, act.sellerName, "");
                 if (sellerKey && statsMap.has(sellerKey)) {
                     const st = statsMap.get(sellerKey);
+                    const chKey = actText.includes("whatsapp") ? "whatsapp" : (actText.includes("mail") ? "email" : "call");
+                    const chLabel = chKey === "whatsapp" ? "WhatsApp" : (chKey === "email" ? "E-mail" : "Ligação");
                     st.calls.push({
                         id: act.id || `live_${actTs}`,
                         leadId: "",
-                        company: "Bloco de Ligações / Prospecção",
+                        channel: chLabel,
+                        channelKey: chKey,
+                        company: "Bloco de Prospecção / Contato",
                         contact: act.sellerName || st.name,
                         phone: "—",
                         description: `${act.activity} (${act.actualMinutes || act.durationMinutes || 0} min)`,
                         timestamp: actTs
                     });
+                    if (st.channelCounts && st.channelCounts[chKey] !== undefined) {
+                        st.channelCounts[chKey] += 1;
+                    }
                     registerActivity(st, actTs, `Atividade: ${act.activity}`);
                 }
             }
@@ -3837,13 +3877,17 @@ export const Dashboard = {
         const totals = sellerList.reduce((acc, st) => {
             acc.leads += st.leads.length;
             acc.calls += st.calls.length;
+            acc.channelCounts.call += (st.channelCounts?.call || 0);
+            acc.channelCounts.whatsapp += (st.channelCounts?.whatsapp || 0);
+            acc.channelCounts.email += (st.channelCounts?.email || 0);
+            acc.channelCounts.other += (st.channelCounts?.other || 0);
             acc.proposals += st.proposals.length;
             acc.proposalsValue += st.totalProposalValue;
             if (st.leads.length > 0 || st.calls.length > 0 || st.proposals.length > 0) {
                 acc.activeSellers += 1;
             }
             return acc;
-        }, { leads: 0, calls: 0, proposals: 0, proposalsValue: 0, activeSellers: 0 });
+        }, { leads: 0, calls: 0, channelCounts: { call: 0, whatsapp: 0, email: 0, other: 0 }, proposals: 0, proposalsValue: 0, activeSellers: 0 });
 
         return { sellerList, totals };
     },
@@ -4127,12 +4171,12 @@ export const Dashboard = {
                                 </span>
                             </div>
                             <p style="margin: 4px 0 0 0; font-size: 13px; font-weight: 400; color: var(--text-secondary, #64748B); letter-spacing: -0.005em;">
-                                Acompanhamento em tempo real de <strong style="font-weight: 600; color: var(--text-primary, #1E293B);">Leads Adicionados</strong>, <strong style="font-weight: 600; color: var(--text-primary, #1E293B);">Ligações Realizadas</strong> e <strong style="font-weight: 600; color: var(--text-primary, #1E293B);">Propostas Preenchidas</strong>.
+                                Acompanhamento em tempo real de <strong style="font-weight: 600; color: var(--text-primary, #1E293B);">Leads Adicionados</strong>, <strong style="font-weight: 600; color: var(--text-primary, #1E293B);">Interações no Dia (Ligação, WhatsApp e E-mail)</strong> e <strong style="font-weight: 600; color: var(--text-primary, #1E293B);">Propostas Preenchidas</strong>.
                             </p>
                         </div>
                     </div>
 
-                    <!-- Controles Segmentados de Dia + Sincronizar + Botão Registrar Ligação -->
+                    <!-- Controles Segmentados de Dia + Sincronizar + Botão Registrar Interação -->
                     <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                         <div class="mdp-segmented-group">
                             <button type="button" class="mdp-seg-btn ${period === 'today' ? 'active' : ''}" onclick="window.Dashboard.setDailyProdPeriod('today')">Hoje</button>
@@ -4151,7 +4195,7 @@ export const Dashboard = {
 
                         <button type="button" onclick="window.Dashboard.openQuickCallModal()" style="height: 36px; padding: 0 15px; font-size: 12.5px; font-weight: 600; border-radius: 10px; background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: #FFFFFF; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.22); transition: all 0.2s ease;" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
                             ${svgPhone}
-                            <span>Registrar Ligação</span>
+                            <span>Registrar Interação</span>
                         </button>
                     </div>
                 </div>
@@ -4179,23 +4223,30 @@ export const Dashboard = {
                         </div>
                     </div>
 
-                    <!-- Card 2: Ligações Realizadas -->
+                    <!-- Card 2: Interações no Dia (Ligação, WhatsApp e E-mail) -->
                     <div id="card-daily-total-calls" class="mdp-kpi-card" style="--card-accent: #10B981; --card-border-hover: #6EE7B7;" role="button" tabindex="0" onclick="window.Dashboard.openSellerDailyDetailModal('all', 'calls')">
                         <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
                             <div>
                                 <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary, #64748B); display: block; margin-bottom: 6px;">
-                                    Ligações Realizadas (${period === 'today' ? 'Hoje' : currentPeriodLabel})
+                                    Interações no Dia (${period === 'today' ? 'Hoje' : currentPeriodLabel})
                                 </span>
-                                <div style="font-family: var(--mdp-font-display); font-size: 34px; font-weight: 700; color: var(--text-primary, #0F172A); line-height: 1.05; letter-spacing: -0.03em; font-variant-numeric: tabular-nums;" id="mgr-total-calls-today">
-                                    ${totals.calls}
+                                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                    <span style="font-family: var(--mdp-font-display); font-size: 34px; font-weight: 700; color: var(--text-primary, #0F172A); line-height: 1.05; letter-spacing: -0.03em; font-variant-numeric: tabular-nums;" id="mgr-total-calls-today">
+                                        ${totals.calls}
+                                    </span>
+                                    <div style="display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap;">
+                                        <span style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 6px; background: rgba(16, 185, 129, 0.1); color: #059669;" title="Ligações telefônicas">📞 ${totals.channelCounts?.call || 0}</span>
+                                        <span style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 6px; background: rgba(37, 211, 102, 0.12); color: #15803D;" title="Contatos via WhatsApp">💬 ${totals.channelCounts?.whatsapp || 0}</span>
+                                        <span style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 6px; background: rgba(59, 130, 246, 0.1); color: #2563EB;" title="Contatos via E-mail">✉️ ${totals.channelCounts?.email || 0}</span>
+                                    </div>
                                 </div>
                             </div>
                             <div style="width: 42px; height: 42px; border-radius: 11px; background: rgba(16, 185, 129, 0.1); color: #059669; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
                             </div>
                         </div>
                         <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 10px; border-top: 1px solid var(--border-color, #F1F5F9); font-size: 12px; font-weight: 600; color: #059669;">
-                            <span>Ver histórico de ligações</span>
+                            <span>Ver histórico de interações (Ligação, WhatsApp e E-mail)</span>
                             <span class="mdp-kpi-arrow">${svgArrowRight}</span>
                         </div>
                     </div>
@@ -4233,7 +4284,7 @@ export const Dashboard = {
                     <div style="display: grid; grid-template-columns: 1.55fr 0.95fr 1.1fr 1.1fr 1.3fr; align-items: center; background: var(--bg-app, #F8FAFC); border-bottom: 1px solid var(--border-color, #E2E8F0); padding: 11px 18px; font-size: 11px; font-weight: 600; color: var(--text-secondary, #64748B); text-transform: uppercase; letter-spacing: 0.05em; gap: 12px;">
                         <div>Vendedor / Responsável</div>
                         <div style="text-align: center;">Leads no Dia</div>
-                        <div style="text-align: center;">Ligações Feitas</div>
+                        <div style="text-align: center;">Interações no Dia</div>
                         <div style="text-align: center;">Propostas Preenchidas</div>
                         <div style="text-align: right;">Status & Ações</div>
                     </div>
@@ -4282,15 +4333,24 @@ export const Dashboard = {
                                     </button>
                                 </div>
 
-                                <!-- Coluna 2: Ligações Feitas -->
+                                <!-- Coluna 2: Interações no Dia (Ligação, WhatsApp, E-mail) -->
                                 <div style="text-align: center;">
                                     <div style="display: inline-flex; align-items: center; gap: 6px;">
-                                        <button type="button" class="mdp-metric-pill btn-daily-seller-calls ${st.calls.length > 0 ? 'has-calls' : ''}" data-seller="${st.email}" onclick="window.Dashboard.openSellerDailyDetailModal('${st.email}', 'calls')" title="Ver ligações feitas por ${st.name}">
-                                            ${svgPhone}
-                                            <span class="mdp-pill-num">${st.calls.length}</span>
-                                            <span>${st.calls.length === 1 ? 'Ligação' : 'Ligações'}</span>
+                                        <button type="button" class="mdp-metric-pill btn-daily-seller-calls ${st.calls.length > 0 ? 'has-calls' : ''}" style="${st.calls.length > 0 ? 'height: auto; min-height: 36px; padding: 5px 12px; flex-direction: column; gap: 2px;' : ''}" data-seller="${st.email}" onclick="window.Dashboard.openSellerDailyDetailModal('${st.email}', 'calls')" title="Ver interações feitas por ${st.name} (Ligação, WhatsApp e E-mail)">
+                                            <div style="display: flex; align-items: center; gap: 6px;">
+                                                ${svgPhone}
+                                                <span class="mdp-pill-num">${st.calls.length}</span>
+                                                <span>${st.calls.length === 1 ? 'Interação' : 'Interações'}</span>
+                                            </div>
+                                            ${st.calls.length > 0 ? `
+                                                <span style="font-size: 10px; font-weight: 700; color: #047857; display: inline-flex; gap: 5px;">
+                                                    <span>📞 ${st.channelCounts?.call || 0}</span>
+                                                    <span>💬 ${st.channelCounts?.whatsapp || 0}</span>
+                                                    <span>✉️ ${st.channelCounts?.email || 0}</span>
+                                                </span>
+                                            ` : ''}
                                         </button>
-                                        <button type="button" class="mdp-quick-add-call" onclick="window.Dashboard.openQuickCallModal('${st.email}')" title="Registrar nova ligação para ${st.name}">
+                                        <button type="button" class="mdp-quick-add-call" onclick="window.Dashboard.openQuickCallModal('${st.email}')" title="Registrar nova interação (Ligação, WhatsApp ou E-mail) para ${st.name}">
                                             +1
                                         </button>
                                     </div>
@@ -4450,9 +4510,16 @@ export const Dashboard = {
 
         const sectionTitles = {
             leads: `Leads Adicionados — ${targetStats.name}`,
-            calls: `Ligações Realizadas — ${targetStats.name}`,
+            calls: `Interações no Dia (Ligação, WhatsApp e E-mail) — ${targetStats.name}`,
             proposals: `Propostas Preenchidas — ${targetStats.name}`,
             all: `Relatório de Produtividade — ${targetStats.name}`
+        };
+
+        const chBadgeMap = {
+            call: { icon: "📞", label: "Ligação", bg: "rgba(16, 185, 129, 0.1)", color: "#059669" },
+            whatsapp: { icon: "💬", label: "WhatsApp", bg: "rgba(37, 211, 102, 0.14)", color: "#15803D" },
+            email: { icon: "✉️", label: "E-mail", bg: "rgba(59, 130, 246, 0.12)", color: "#2563EB" },
+            other: { icon: "📌", label: "Contato", bg: "rgba(100, 116, 139, 0.12)", color: "#475569" }
         };
 
         modal.style.display = "flex";
@@ -4469,7 +4536,7 @@ export const Dashboard = {
                                 ${sectionTitles[focusSection] || sectionTitles.all}
                             </h3>
                             <span style="font-size: 12.5px; color: var(--text-secondary, #64748B); font-weight: 500;">
-                                ${targetStats.leads.length} Leads &bull; ${targetStats.calls.length} Ligações &bull; ${targetStats.proposals.length} Propostas (${fmtCurrency(targetStats.totalProposalValue)})
+                                ${targetStats.leads.length} Leads &bull; ${targetStats.calls.length} Interações &bull; ${targetStats.proposals.length} Propostas (${fmtCurrency(targetStats.totalProposalValue)})
                             </span>
                         </div>
                     </div>
@@ -4489,7 +4556,7 @@ export const Dashboard = {
                         Leads Adicionados (${targetStats.leads.length})
                     </button>
                     <button type="button" onclick="window.Dashboard.openSellerDailyDetailModal('${targetStats.email}', 'calls')" style="padding: 7px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 600; cursor: pointer; transition: all 0.15s; border: 1px solid ${focusSection === 'calls' ? '#059669' : 'var(--border-color)'}; background: ${focusSection === 'calls' ? '#059669' : 'var(--bg-app)'}; color: ${focusSection === 'calls' ? '#FFFFFF' : 'var(--text-secondary)'};">
-                        Ligações Feitas (${targetStats.calls.length})
+                        Interações no Dia (${targetStats.calls.length})
                     </button>
                     <button type="button" onclick="window.Dashboard.openSellerDailyDetailModal('${targetStats.email}', 'proposals')" style="padding: 7px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 600; cursor: pointer; transition: all 0.15s; border: 1px solid ${focusSection === 'proposals' ? '#7C3AED' : 'var(--border-color)'}; background: ${focusSection === 'proposals' ? '#7C3AED' : 'var(--bg-app)'}; color: ${focusSection === 'proposals' ? '#FFFFFF' : 'var(--text-secondary)'};">
                         Propostas Preenchidas (${targetStats.proposals.length})
@@ -4536,25 +4603,29 @@ export const Dashboard = {
                     ` : ''}
 
                     ${showCalls ? `
-                    <!-- 2. Ligações Realizadas -->
+                    <!-- 2. Interações no Dia (Ligação, WhatsApp e E-mail) -->
                     <div style="border: 1px solid var(--border-color, #E2E8F0); border-radius: 12px; padding: 16px; background: var(--bg-surface, #FFFFFF);">
-                        <div style="font-size: 12px; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
-                            <span>Ligações Realizadas (${targetStats.calls.length})</span>
+                        <div style="font-size: 12px; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                            <span>Interações no Dia — Ligação, WhatsApp e E-mail (${targetStats.calls.length})</span>
                             <button type="button" onclick="document.getElementById('seller-daily-detail-modal').style.display='none'; window.Dashboard.openQuickCallModal('${isAllTeam ? '' : targetStats.email}');" style="font-size: 11.5px; font-weight: 600; color: #059669; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.28); border-radius: 7px; padding: 4px 11px; cursor: pointer;">
-                                + Registrar Ligação
+                                + Registrar Interação
                             </button>
                         </div>
                         ${targetStats.calls.length === 0 ? `
-                            <div style="font-size: 13px; color: var(--text-muted); padding: 16px; text-align: center; background: var(--bg-app); border-radius: 8px;">Nenhuma ligação registrada neste período.</div>
+                            <div style="font-size: 13px; color: var(--text-muted); padding: 16px; text-align: center; background: var(--bg-app); border-radius: 8px;">Nenhuma interação registrada neste período.</div>
                         ` : `
                             <div style="display: flex; flex-direction: column; gap: 8px;">
-                                ${targetStats.calls.map(c => `
+                                ${targetStats.calls.map(c => {
+                                    const chStyle = chBadgeMap[c.channelKey] || chBadgeMap.other;
+                                    const chLabel = c.channel || chStyle.label;
+                                    return `
                                     <div onclick="${c.leadId ? `document.getElementById('seller-daily-detail-modal').style.display='none'; window.CRM?.openLeadDrawer('${c.leadId}');` : ''}" style="${c.leadId ? 'cursor: pointer;' : ''} display: flex; align-items: center; justify-content: space-between; padding: 11px 14px; background: var(--bg-app, #F8FAFC); border-radius: 10px; border: 1px solid var(--border-color, #E2E8F0); gap: 10px; transition: all 0.15s;">
                                         <div style="min-width: 0; flex: 1;">
                                             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                                <span style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: ${chStyle.bg}; color: ${chStyle.color};">${chStyle.icon} ${chLabel}</span>
                                                 <span style="font-family: var(--mdp-font-display); font-weight: 700; font-size: 13.5px; color: var(--text-primary);">${c.company}</span>
                                                 <span style="font-size: 12px; color: var(--text-secondary);">(${c.contact} &bull; ${c.phone})</span>
-                                                <span style="font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 6px; background: rgba(16,185,129,0.1); color: #059669;">${c.sellerName}</span>
+                                                <span style="font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 6px; background: rgba(79,70,229,0.08); color: #4F46E5;">${c.sellerName}</span>
                                             </div>
                                             <div style="font-size: 12.5px; color: var(--text-secondary); margin-top: 4px; line-height: 1.45;">${c.description}</div>
                                         </div>
@@ -4567,7 +4638,8 @@ export const Dashboard = {
                                             ` : ''}
                                         </div>
                                     </div>
-                                `).join("")}
+                                    `;
+                                }).join("")}
                             </div>
                         `}
                     </div>
@@ -4687,10 +4759,10 @@ export const Dashboard = {
                         </div>
                         <div>
                             <h3 style="margin: 0; font-family: var(--mdp-font-display); font-size: 16.5px; font-weight: 700; color: var(--text-primary, #0F172A); letter-spacing: -0.02em;">
-                                Registrar Ligação em 2 Segundos
+                                Registrar Interação em 2 Segundos
                             </h3>
                             <span style="font-size: 12px; color: var(--text-secondary, #64748B);">
-                                Clique em uma opção rápida para salvar na hora ou personalize a nota abaixo
+                                Escolha o canal (Ligação, WhatsApp ou E-mail) e salve em 1 clique
                             </span>
                         </div>
                     </div>
@@ -4698,6 +4770,23 @@ export const Dashboard = {
                 </div>
 
                 <div style="padding: 18px 22px; display: flex; flex-direction: column; gap: 14px; max-height: 82vh; overflow-y: auto;">
+                    <!-- Seletor de Canal da Interação -->
+                    <div>
+                        <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; display: block; margin-bottom: 6px;">Canal do Contato Realizado</label>
+                        <input type="hidden" id="quick-call-channel" value="Ligação">
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;" id="quick-call-channel-group">
+                            <button type="button" class="quick-channel-btn active" data-channel="Ligação" style="height: 36px; border-radius: 9px; border: 1.5px solid #10B981; background: rgba(16, 185, 129, 0.1); color: #059669; font-weight: 700; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                📞 Ligação
+                            </button>
+                            <button type="button" class="quick-channel-btn" data-channel="WhatsApp" style="height: 36px; border-radius: 9px; border: 1.5px solid var(--border-color, #E2E8F0); background: var(--bg-surface, #FFFFFF); color: var(--text-secondary, #64748B); font-weight: 600; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                💬 WhatsApp
+                            </button>
+                            <button type="button" class="quick-channel-btn" data-channel="E-mail" style="height: 36px; border-radius: 9px; border: 1.5px solid var(--border-color, #E2E8F0); background: var(--bg-surface, #FFFFFF); color: var(--text-secondary, #64748B); font-weight: 600; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                ✉️ E-mail
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- Linha 1: Vendedor e Cliente -->
                     <div style="display: grid; grid-template-columns: 1fr 1.25fr; gap: 10px;">
                         <div>
@@ -4765,12 +4854,28 @@ export const Dashboard = {
                     <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 2px;">
                         <button type="button" onclick="document.getElementById('quick-call-log-modal').style.display='none'" class="btn btn-outline" style="height: 38px; padding: 0 16px; font-size: 12.5px; border-radius: 9px;">Cancelar</button>
                         <button type="button" id="btn-confirm-quick-call" class="btn btn-primary" style="height: 38px; padding: 0 20px; font-size: 12.5px; font-weight: 700; border-radius: 9px; background: linear-gradient(135deg, #10B981, #059669); border: none;">
-                            ✓ Salvar Ligação
+                            ✓ Salvar Interação
                         </button>
                     </div>
                 </div>
             </div>
         `;
+
+        modal.querySelectorAll(".quick-channel-btn").forEach(btn => {
+            btn.onclick = () => {
+                const ch = btn.getAttribute("data-channel") || "Ligação";
+                const chInput = document.getElementById("quick-call-channel");
+                if (chInput) chInput.value = ch;
+                modal.querySelectorAll(".quick-channel-btn").forEach(b => {
+                    const isAct = b === btn;
+                    b.classList.toggle("active", isAct);
+                    b.style.borderColor = isAct ? "#10B981" : "var(--border-color, #E2E8F0)";
+                    b.style.background = isAct ? "rgba(16, 185, 129, 0.1)" : "var(--bg-surface, #FFFFFF)";
+                    b.style.color = isAct ? "#059669" : "var(--text-secondary, #64748B)";
+                    b.style.fontWeight = isAct ? "700" : "600";
+                });
+            };
+        });
 
         const leadSelect = document.getElementById("quick-call-lead");
         const phoneDisplay = document.getElementById("quick-call-phone-display");
@@ -4795,19 +4900,20 @@ export const Dashboard = {
         const executeSaveCall = (customDesc, openProposalAfter = false) => {
             const sEmail = document.getElementById("quick-call-seller")?.value || sellerEmail;
             const lId = document.getElementById("quick-call-lead")?.value;
-            const desc = (customDesc || document.getElementById("quick-call-desc")?.value || "").trim() || "Ligação comercial realizada";
+            const channelType = document.getElementById("quick-call-channel")?.value || "Ligação";
+            const desc = (customDesc || document.getElementById("quick-call-desc")?.value || "").trim() || `${channelType} comercial realizada`;
             if (!lId) {
-                alert("Selecione um cliente/lead para registrar a ligação.");
+                alert("Selecione um cliente/lead para registrar a interação.");
                 return;
             }
             const targetLead = Store.getLeadById ? Store.getLeadById(lId) : null;
             Store.addLeadInteraction(lId, sEmail, {
-                type: "Ligação",
+                type: channelType,
                 description: desc
             });
             try {
                 if (window.Audit && typeof window.Audit.logStageChange === "function" && targetLead) {
-                    window.Audit.logStageChange(sEmail, targetLead.company, targetLead.stage, targetLead.stage, `Ligação registrada: ${desc}`);
+                    window.Audit.logStageChange(sEmail, targetLead.company, targetLead.stage, targetLead.stage, `${channelType} registrada: ${desc}`);
                 }
             } catch (e) {}
 
@@ -4824,7 +4930,7 @@ export const Dashboard = {
             }
 
             if (window.Toast && typeof window.Toast.show === "function") {
-                window.Toast.show("Ligação registrada em tempo real!", "success");
+                window.Toast.show(`${channelType} registrada em tempo real!`, "success");
             }
 
             if (openProposalAfter && targetLead) {

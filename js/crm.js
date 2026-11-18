@@ -641,24 +641,33 @@ export const CRM = {
             "Negociação",
             "Cliente Fechado"
         ];
+        const shortLabels = {
+            "Contato": "Contato",
+            "Lead Gerado": "Gerado",
+            "Lead Qualificado": "Qualificado",
+            "Proposta Enviada": "Proposta",
+            "Negociação": "Negociação",
+            "Cliente Fechado": "Fechado"
+        };
 
         const isLost = currentStage === "Cliente Perdido";
         const currentIndex = stages.indexOf(currentStage);
 
         document.querySelectorAll(".lead-stage-step").forEach((btn, idx) => {
             const stepStage = btn.getAttribute("data-stage");
+            const label = shortLabels[stepStage] || stepStage.replace("Lead ", "");
             btn.classList.remove("active", "completed", "lost");
 
             if (isLost) {
-                btn.innerHTML = `${idx + 1}. ${stepStage.replace("Lead ", "")}`;
+                btn.innerHTML = `${idx + 1}. ${label}`;
             } else if (idx < currentIndex) {
                 btn.classList.add("completed");
-                btn.innerHTML = `✓ ${stepStage.replace("Lead ", "")}`;
+                btn.innerHTML = `✓ ${label}`;
             } else if (idx === currentIndex) {
                 btn.classList.add("active");
-                btn.innerHTML = `● ${stepStage.replace("Lead ", "")}`;
+                btn.innerHTML = `● ${label}`;
             } else {
-                btn.innerHTML = `${idx + 1}. ${stepStage.replace("Lead ", "")}`;
+                btn.innerHTML = `${idx + 1}. ${label}`;
             }
         });
 
@@ -1575,6 +1584,11 @@ export const CRM = {
     },
 
     openLeadDrawer(id) {
+        if (!this._eventsBound && !window.__velliaCrmEventsBound) {
+            this.bindEvents();
+            this._eventsBound = true;
+            window.__velliaCrmEventsBound = true;
+        }
         const lead = Store.getLeadById(id);
         if (!lead) return;
 
@@ -1813,14 +1827,24 @@ export const CRM = {
         CrossSelling.evaluateLead(id);
 
         // Exibir Drawer e Overlay
-        document.getElementById("lead-drawer").classList.add("open");
-        document.getElementById("drawer-overlay").style.display = "block";
+        const drawerEl = document.getElementById("lead-drawer");
+        if (drawerEl) drawerEl.classList.add("open");
+        const overlayEl = document.getElementById("drawer-overlay");
+        if (overlayEl) {
+            overlayEl.style.display = "block";
+            overlayEl.classList.add("open");
+        }
     },
 
     closeLeadDrawer() {
         activeLeadId = null;
-        document.getElementById("lead-drawer").classList.remove("open");
-        document.getElementById("drawer-overlay").style.display = "none";
+        const drawerEl = document.getElementById("lead-drawer");
+        if (drawerEl) drawerEl.classList.remove("open");
+        const overlayEl = document.getElementById("drawer-overlay");
+        if (overlayEl) {
+            overlayEl.style.display = "none";
+            overlayEl.classList.remove("open");
+        }
         this.renderLeadsTable();
     },
 

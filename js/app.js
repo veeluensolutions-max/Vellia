@@ -292,6 +292,19 @@ function showAppShell(user) {
         window.Renewals = Renewals;
         try { WhatsApp.init(); } catch (e) { console.error("WhatsApp init error:", e); }
         try { Copilot.init(); } catch (e) { console.error("Copilot init error:", e); }
+        try {
+            if (!CRM._eventsBound && !window.__velliaCrmEventsBound) {
+                CRM.bindEvents();
+                CRM._eventsBound = true;
+                window.__velliaCrmEventsBound = true;
+            }
+        } catch (e) { console.error("CRM bindEvents error:", e); }
+        try {
+            if (!Proposals._eventsBound) {
+                Proposals.bindEvents();
+                Proposals._eventsBound = true;
+            }
+        } catch (e) { console.error("Proposals bindEvents error:", e); }
         try { Intervention.init(); } catch (e) { console.error("Intervention init error:", e); }
         try { ChurnAutopilot.init(); } catch (e) { console.error("Churn init error:", e); }
         try { Leaderboard.init(); } catch (e) { console.error("Leaderboard init error:", e); }

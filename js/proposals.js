@@ -468,7 +468,8 @@ export const Proposals = {
             }
 
             // Status geral superior
-            if (statusFilter !== "all" && status !== statusFilter) {
+            const normalizedStatus = status === "Aguardando Agendamento" ? "Ganho" : status;
+            if (statusFilter !== "all" && normalizedStatus !== statusFilter && status !== statusFilter) {
                 return false;
             }
 
@@ -493,7 +494,7 @@ export const Proposals = {
             }
 
             // 4. Coluna Status
-            if (colStatus !== "all" && status !== colStatus) {
+            if (colStatus !== "all" && normalizedStatus !== colStatus && status !== colStatus) {
                 return false;
             }
 
@@ -550,7 +551,8 @@ export const Proposals = {
                 // Status breakdown
                 const statusCounts = {};
                 filtered.forEach(p => {
-                    const st = p.status || "Outro";
+                    const rawSt = p.status || "Outro";
+                    const st = rawSt === "Aguardando Agendamento" ? "Ganho" : rawSt;
                     statusCounts[st] = (statusCounts[st] || 0) + 1;
                 });
 
@@ -683,7 +685,7 @@ export const Proposals = {
             "Enviada": `<span class="badge" style="background: #EFF6FF; color: #2563EB; border: 1px solid #BFDBFE; font-size: 11px; font-weight: 600; border-radius: 6px; padding: 3px 8px;">Enviada</span>`,
             "Em Negociação": `<span class="badge" style="background: #FAF5FF; color: #7C3AED; border: 1px solid #E9D5FF; font-size: 11px; font-weight: 600; border-radius: 6px; padding: 3px 8px;">Em Negociação</span>`,
             "Ganho": `<span class="badge" style="background: #ECFDF5; color: #16A36A; border: 1px solid #A7F3D0; font-size: 11px; font-weight: 600; border-radius: 6px; padding: 3px 8px;">● Ganho</span>`,
-            "Aguardando Agendamento": `<span class="badge" style="background: #FFFBEB; color: #D97706; border: 1px solid #FDE68A; font-size: 11px; font-weight: 600; border-radius: 6px; padding: 3px 8px;">⏳ Aguardando</span>`,
+            "Aguardando Agendamento": `<span class="badge" style="background: #ECFDF5; color: #16A36A; border: 1px solid #A7F3D0; font-size: 11px; font-weight: 600; border-radius: 6px; padding: 3px 8px;">● Ganho</span>`,
             "Agendada": `<span class="badge" style="background: #ECFDF5; color: #16A36A; border: 1px solid #A7F3D0; font-size: 11px; font-weight: 600; border-radius: 6px; padding: 3px 8px;">🗓️ Agendada</span>`,
             "Perdido": `<span class="badge" style="background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; font-size: 11px; font-weight: 600; border-radius: 6px; padding: 3px 8px;">● Perdido</span>`,
             "Cancelada": `<span class="badge" style="background: #F3F4F6; color: #4B5563; border: 1px solid #E5E7EB; font-size: 11px; font-weight: 600; border-radius: 6px; padding: 3px 8px;">Cancelada</span>`
@@ -1839,7 +1841,7 @@ export const Proposals = {
         const userEmail = currentUser?.email || "sistema@vellia.com";
 
         Store.updateProposal(activeProposalId, {
-            status: "Aguardando Agendamento",
+            status: "Ganho",
             service: service,
             value: finalValue,
             executionDate: executionDate || null,

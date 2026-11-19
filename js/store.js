@@ -157,11 +157,12 @@ function decodeProposalFromSupabase(rawProp) {
     if (!rawProp) return rawProp;
     const notesStr = rawProp.notes || "";
     const match = notesStr.match(/<!-- GESTAOCLICK_METADATA:([\s\S]*?)-->/);
+    let decoded = rawProp;
     if (match) {
         try {
             const meta = JSON.parse(match[1]);
             const cleanNotes = notesStr.replace(/\n\n<!-- GESTAOCLICK_METADATA:[\s\S]*?-->/g, "").trim();
-            return {
+            decoded = {
                 ...rawProp,
                 ...meta,
                 notes: cleanNotes
@@ -170,7 +171,10 @@ function decodeProposalFromSupabase(rawProp) {
             console.warn("Falha ao decodificar metadados de proposta do Supabase:", e);
         }
     }
-    return rawProp;
+    if (decoded.status === "Aguardando Agendamento") {
+        decoded = { ...decoded, status: "Ganho" };
+    }
+    return decoded;
 }
 
 function encodeLeadForSupabase(lead) {
@@ -1258,7 +1262,8 @@ export const Store = {
     },
 
     getProposalsRaw() {
-        return MemoryCache.get("comercial_proposals", () => []) || [];
+        const list = MemoryCache.get("comercial_proposals", () => []) || [];
+        return list.map(p => (p && p.status === "Aguardando Agendamento") ? { ...p, status: "Ganho" } : p);
     },
 
     getProposalById(id) {

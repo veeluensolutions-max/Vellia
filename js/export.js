@@ -1,16 +1,25 @@
 import { Store } from "./store.js";
+import { Auth } from "./auth.js";
 
 export const DataExport = {
     panel: null,
     btnToggle: null,
     btnLeads: null,
     btnProposals: null,
+    btnFullBackup: null,
 
     init() {
+        window.DataExport = this;
         this.panel = document.getElementById("export-panel");
         this.btnToggle = document.getElementById("btn-export-menu");
         this.btnLeads = document.getElementById("btn-export-leads");
         this.btnProposals = document.getElementById("btn-export-proposals");
+        this.btnFullBackup = document.getElementById("btn-export-full-excel");
+
+        const btnDashBackup = document.getElementById("btn-dashboard-backup-excel");
+        if (btnDashBackup) {
+            btnDashBackup.addEventListener("click", () => this.exportFullExcelBackup());
+        }
 
         if (!this.panel || !this.btnToggle) return;
 
@@ -28,6 +37,13 @@ export const DataExport = {
                 this.closePanel();
             }
         });
+
+        if (this.btnFullBackup) {
+            this.btnFullBackup.addEventListener("click", () => {
+                this.exportFullExcelBackup();
+                this.closePanel();
+            });
+        }
 
         if (this.btnLeads) {
             this.btnLeads.addEventListener("click", () => {
@@ -254,6 +270,265 @@ export const DataExport = {
 </html>
         `);
         printWin.document.close();
+    },
+
+    /**
+     * Gera e baixa uma cópia completa de segurança (backup físico) de todas as bases de dados
+     * do Vellia CRM em formato Excel (.xlsx), com abas organizadas para Leads, Propostas,
+     * Itens Orçados, Contratos, Histórico de Interações, Usuários e Resumo de Integridade.
+     */
+    async exportFullExcelBackup() {
+        try {
+            // 1. Carregar SheetJS (XLSX)
+            let XLSX = window.XLSX;
+            if (!XLSX) {
+                if (typeof showToast === "function") {
+                    showToast("Carregando motor de planilhas Excel...", "info");
+                }
+                XLSX = await window.LazyLoader?.ensureXLSX?.();
+            }
+
+            if (!XLSX) {
+                alert("Não foi possível carregar o motor de exportação Excel. Verifique a conexão.");
+                return;
+            }
+
+            if (typeof showToast === "function") {
+                showToast("Gerando backup completo das bases de dados em Excel...", "info");
+            }
+
+            // 2. Coletar dados do Store
+            const leads = Store.getLeads() || [];
+            const proposals = Store.getProposals() || [];
+            const contracts = Store.getContracts() || [];
+            const users = Store.getUsers() || [];
+            const currentUser = Auth.getCurrentUser() || { name: "Usuário", email: "sistema@vellia.com" };
+
+            // 3. Formatar Aba: Leads e Clientes
+            const leadsRows = leads.map(l => ({
+                "ID": l.id || "",
+                "Nome Fantasia / Empresa": l.company || "",
+                "Razão Social": l.corporateName || l.razaoSocial || "",
+                "CNPJ": l.cnpj || "",
+                "Contato Principal": l.contact || "",
+                "Cargo": l.role || "",
+                "WhatsApp": l.whatsapp || "",
+                "Telefone Principal": l.phone || "",
+                "Telefone 2": l.phone2 || "",
+                "E-mail Principal": l.email || "",
+                "E-mail 2": l.email2 || "",
+                "Cidade": l.city || "",
+                "Estado (UF)": l.state || "",
+                "CEP": l.cep || "",
+                "Endereço Completo": l.address || "",
+                "Segmento": l.segment || "",
+                "Origem do Lead": l.source || "",
+                "Estágio Atual": l.stage || "",
+                "Responsável (Vendedor)": l.owner || "",
+                "Score / Temperatura": l.score ? `${l.score} (${l.temperature || ''})` : (l.temperature || ""),
+                "Valor Estimado (R$)": Number(l.estimatedValue || 0),
+                "Data de Cadastro": l.createdAt ? new Date(l.createdAt).toLocaleString("pt-BR") : "",
+                "Última Interação": l.lastInteraction ? new Date(l.lastInteraction).toLocaleString("pt-BR") : "",
+                "Observações Gerais": l.notes || ""
+            }));
+
+            // 4. Formatar Aba: Propostas e Orçamentos
+            const proposalsRows = proposals.map(p => ({
+                "ID": p.id || "",
+                "Número do Orçamento": p.budgetNumber || p.id || "",
+                "Empresa / Cliente": p.company || "",
+                "Contato": p.contact || "",
+                "Título da Proposta": p.title || "",
+                "Serviço Principal": p.service || "",
+                "Valor Bruto (R$)": Number(p.value || 0),
+                "Desconto (%)": Number(p.discount || 0),
+                "Valor Final (R$)": Number(p.finalValue || p.value || 0),
+                "Status": p.status || "",
+                "Data de Envio": p.sentAt ? new Date(p.sentAt).toLocaleDateString("pt-BR") : "",
+                "Válida Até": p.validUntil ? new Date(p.validUntil).toLocaleDateString("pt-BR") : "",
+                "Data de Fechamento": p.closedAt ? new Date(p.closedAt).toLocaleDateString("pt-BR") : "",
+                "Vendedor / Responsável": p.seller || p.createdBy || "",
+                "Canal": p.channel || "",
+                "Centro de Custo": p.costCenter || "",
+                "Motivo de Perda": p.lossReason || "",
+                "Concorrente": p.competitor || "",
+                "Observações / Condições": p.notes || ""
+            }));
+
+            // 5. Formatar Aba: Itens dos Orçamentos (Serviços e Produtos)
+            const itemsRows = [];
+            proposals.forEach(p => {
+                const propNum = p.budgetNumber || p.id || "";
+                if (Array.isArray(p.servicesList) && p.servicesList.length > 0) {
+                    p.servicesList.forEach(s => {
+                        const qty = Number(s.qty || 1);
+                        const price = Number(s.price || 0);
+                        itemsRows.push({
+                            "ID Proposta": p.id,
+                            "Número Orçamento": propNum,
+                            "Empresa": p.company || "",
+                            "Tipo de Item": "Serviço",
+                            "Item / Serviço": s.service || s.name || "",
+                            "Detalhes / Especificação": s.details || "",
+                            "Quantidade": qty,
+                            "Valor Unitário (R$)": price,
+                            "Subtotal (R$)": qty * price
+                        });
+                    });
+                } else if (p.service || p.title) {
+                    itemsRows.push({
+                        "ID Proposta": p.id,
+                        "Número Orçamento": propNum,
+                        "Empresa": p.company || "",
+                        "Tipo de Item": "Serviço Principal",
+                        "Item / Serviço": p.service || p.title || "",
+                        "Detalhes / Especificação": p.title || "",
+                        "Quantidade": 1,
+                        "Valor Unitário (R$)": Number(p.value || 0),
+                        "Subtotal (R$)": Number(p.value || 0)
+                    });
+                }
+
+                if (Array.isArray(p.productsList) && p.productsList.length > 0) {
+                    p.productsList.forEach(prod => {
+                        const qty = Number(prod.qty || 1);
+                        const price = Number(prod.price || 0);
+                        itemsRows.push({
+                            "ID Proposta": p.id,
+                            "Número Orçamento": propNum,
+                            "Empresa": p.company || "",
+                            "Tipo de Item": "Produto / Material",
+                            "Item / Serviço": prod.product || prod.name || "",
+                            "Detalhes / Especificação": prod.details || "",
+                            "Quantidade": qty,
+                            "Valor Unitário (R$)": price,
+                            "Subtotal (R$)": qty * price
+                        });
+                    });
+                }
+            });
+
+            // 6. Formatar Aba: Contratos
+            const contractsRows = contracts.map(c => {
+                const lead = leads.find(l => l.id === c.leadId);
+                return {
+                    "ID": c.id || "",
+                    "Número do Contrato": c.number || c.id || "",
+                    "Empresa / Cliente": lead ? lead.company : (c.company || ""),
+                    "Status": c.status || "",
+                    "Valor Total (R$)": Number(c.totalValue || 0),
+                    "Valor Recorrente (R$)": Number(c.recurringValue || 0),
+                    "Periodicidade": c.periodicity || "Mensal",
+                    "Data Início": c.startDate ? new Date(c.startDate).toLocaleDateString("pt-BR") : "",
+                    "Data Término": c.endDate ? new Date(c.endDate).toLocaleDateString("pt-BR") : "",
+                    "Renovação Automática": c.autoRenew ? "Sim" : "Não",
+                    "Responsável": c.owner || c.createdBy || "",
+                    "Observações": c.notes || ""
+                };
+            });
+
+            // 7. Formatar Aba: Histórico de Interações
+            const interactionsRows = [];
+            leads.forEach(lead => {
+                if (Array.isArray(lead.interactions)) {
+                    lead.interactions.forEach(int => {
+                        interactionsRows.push({
+                            "Data e Hora": int.timestamp ? new Date(int.timestamp).toLocaleString("pt-BR") : "",
+                            "Empresa": lead.company || "",
+                            "Contato": lead.contact || "",
+                            "Tipo": int.type || "Interação",
+                            "Usuário / Autor": int.userEmail || "",
+                            "Detalhes / Mensagem": int.description || ""
+                        });
+                    });
+                }
+                if (Array.isArray(lead.stageHistory)) {
+                    lead.stageHistory.forEach(stg => {
+                        interactionsRows.push({
+                            "Data e Hora": stg.timestamp ? new Date(stg.timestamp).toLocaleString("pt-BR") : "",
+                            "Empresa": lead.company || "",
+                            "Contato": lead.contact || "",
+                            "Tipo": "Mudança de Estágio",
+                            "Usuário / Autor": stg.userEmail || "",
+                            "Detalhes / Mensagem": `Estágio alterado para: ${stg.stage || ''}. ${stg.reason || ''}`
+                        });
+                    });
+                }
+            });
+
+            // Ordenar interações da mais recente para a mais antiga
+            interactionsRows.sort((a, b) => (b["Data e Hora"] || "").localeCompare(a["Data e Hora"] || ""));
+
+            // 8. Formatar Aba: Usuários da Equipe
+            const usersRows = users.map(u => ({
+                "ID": u.id || "",
+                "Nome Completo": u.name || "",
+                "E-mail de Acesso": u.email || "",
+                "Perfil / Função": u.role || "",
+                "Telefone / WhatsApp": u.phone || "",
+                "Status": u.active !== false ? "Ativo" : "Inativo",
+                "Cadastrado em": u.createdAt ? new Date(u.createdAt).toLocaleDateString("pt-BR") : ""
+            }));
+
+            // 9. Formatar Aba: Resumo do Backup
+            const now = new Date();
+            const dateStr = now.toLocaleDateString("pt-BR");
+            const timeStr = now.toLocaleTimeString("pt-BR");
+            const summaryRows = [
+                { "Item": "Sistema", "Valor": "Vellia CRM - Plataforma Comercial Oficial" },
+                { "Item": "Data da Exportação", "Valor": `${dateStr} às ${timeStr}` },
+                { "Item": "Gerado Por", "Valor": `${currentUser.name} (${currentUser.email})` },
+                { "Item": "Finalidade", "Valor": "Cópia Física de Segurança e Armazenamento Local" },
+                { "Item": "Total de Leads / Clientes", "Valor": leads.length },
+                { "Item": "Total de Propostas Comerciais", "Valor": proposals.length },
+                { "Item": "Total de Itens Orçados", "Valor": itemsRows.length },
+                { "Item": "Total de Contratos", "Valor": contracts.length },
+                { "Item": "Total de Registros de Interações", "Valor": interactionsRows.length },
+                { "Item": "Total de Usuários Cadastrados", "Valor": users.length },
+                { "Item": "Integridade dos Dados", "Valor": "Base consolidada (Sincronizada com Supabase)" }
+            ];
+
+            // 10. Criar Pasta de Trabalho do Excel (Workbook)
+            const wb = XLSX.utils.book_new();
+
+            // Adicionar abas
+            const addSheet = (data, sheetName) => {
+                const ws = data.length > 0 
+                    ? XLSX.utils.json_to_sheet(data)
+                    : XLSX.utils.aoa_to_sheet([["Nenhum registro encontrado nesta base."]]);
+                XLSX.utils.book_append_sheet(wb, ws, sheetName);
+            };
+
+            addSheet(summaryRows, "Resumo do Backup");
+            addSheet(leadsRows, "Leads e Clientes");
+            addSheet(proposalsRows, "Propostas Comerciais");
+            if (itemsRows.length > 0) addSheet(itemsRows, "Itens dos Orçamentos");
+            addSheet(contractsRows, "Contratos");
+            addSheet(interactionsRows, "Histórico de Atividades");
+            addSheet(usersRows, "Equipe e Usuários");
+
+            // 11. Gerar e baixar arquivo .xlsx
+            const pad = (n) => String(n).padStart(2, "0");
+            const yyyy = now.getFullYear();
+            const mm = pad(now.getMonth() + 1);
+            const dd = pad(now.getDate());
+            const hh = pad(now.getHours());
+            const min = pad(now.getMinutes());
+            const filename = `Backup_Vellia_CRM_${yyyy}-${mm}-${dd}_${hh}h${min}.xlsx`;
+
+            XLSX.writeFile(wb, filename);
+
+            Store.addLog(currentUser.email, "DATA_BACKUP_EXCEL", `Backup completo do sistema em Excel exportado (${filename})`);
+
+            if (typeof showToast === "function") {
+                showToast(`Backup em Excel gerado com sucesso! Arquivo: ${filename}`, "success");
+            } else {
+                alert(`✅ Backup Completo do Vellia CRM gerado com sucesso!\n\nArquivo baixado: ${filename}\n\nO arquivo contém todas as abas: Leads, Propostas, Itens, Contratos, Histórico de Atividades e Usuários.`);
+            }
+        } catch (error) {
+            console.error("❌ Erro ao gerar backup em Excel:", error);
+            alert("Erro ao gerar o backup em Excel: " + (error.message || error));
+        }
     }
 };
 

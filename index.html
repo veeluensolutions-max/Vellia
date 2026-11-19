@@ -5488,9 +5488,16 @@ Condições de pagamento:
                             <option value="Construção Civil">Construção Civil</option>
                             <option value="Transportes">Transportes</option>
                             <option value="Saúde">Saúde</option>
-                            <option value="Varejo">Varejo</option>
+                            <option value="Indústria">Indústria</option>
+                            <option value="Agronegócio">Agronegócio</option>
+                            <option value="Energia">Energia</option>
+                            <option value="Comércio / Varejo">Comércio / Varejo</option>
+                            <option value="Serviços">Serviços</option>
                             <option value="Outros">Outros</option>
                         </select>
+                        <div id="lead-segment-custom-wrap" style="display: none; margin-top: 6px;">
+                            <input type="text" id="lead-segment-custom" class="form-control" style="padding: 8px 12px; font-size: 13px; border-color: var(--primary);" placeholder="Especifique o segmento...">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="lead-source">Origem do Lead</label>
@@ -5507,6 +5514,9 @@ Condições de pagamento:
                             <option value="Site">Site</option>
                             <option value="Outros">Outros</option>
                         </select>
+                        <div id="lead-source-custom-wrap" style="display: none; margin-top: 6px;">
+                            <input type="text" id="lead-source-custom" class="form-control" style="padding: 8px 12px; font-size: 13px; border-color: var(--primary);" placeholder="Especifique a origem do lead...">
+                        </div>
                     </div>
                 </div>
 
@@ -5631,10 +5641,16 @@ Condições de pagamento:
                             <option value="Transportes">Transportes</option>
                             <option value="Saúde">Saúde</option>
                             <option value="Indústria">Indústria</option>
-                            <option value="Varejo">Varejo</option>
+                            <option value="Agronegócio">Agronegócio</option>
+                            <option value="Energia">Energia</option>
+                            <option value="Comércio / Varejo">Comércio / Varejo</option>
+                            <option value="Serviços">Serviços</option>
                             <option value="Redes Sociais">Redes Sociais</option>
                             <option value="Outros">Outros</option>
                         </select>
+                        <div id="edit-lead-segment-custom-wrap" style="display: none; margin-top: 6px;">
+                            <input type="text" id="edit-lead-segment-custom" class="form-control" style="padding: 8px 12px; font-size: 13px; border-color: var(--primary);" placeholder="Especifique o segmento...">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="edit-lead-source">Origem do Lead</label>
@@ -5651,6 +5667,9 @@ Condições de pagamento:
                             <option value="Site">Site</option>
                             <option value="Outros">Outros</option>
                         </select>
+                        <div id="edit-lead-source-custom-wrap" style="display: none; margin-top: 6px;">
+                            <input type="text" id="edit-lead-source-custom" class="form-control" style="padding: 8px 12px; font-size: 13px; border-color: var(--primary);" placeholder="Especifique a origem do lead...">
+                        </div>
                     </div>
                 </div>
 
@@ -5853,32 +5872,6 @@ Condições de pagamento:
                     Cancelar
                 </button>
                 <div style="display: flex; gap: 8px; align-items: center;">
-                    <button type="button" id="btn-skip-qualify" class="btn btn-outline btn-sm" style="font-size: 12px; padding: 7px 12px; border-radius: 8px; border-color: var(--border-color); color: var(--text-secondary); background: var(--bg-surface);">
-                        Mover sem Preencher
-                    </button>
-                    <button type="submit" class="ql-btn-submit">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                        Qualificar Lead
-                    </button>
-                </div>
-            </div>
-        </form>
-    </div>
-
-    <!-- Modal de Justificativa — Cliente Perdido -->
-    <div id="stage-reason-modal" class="modal ql-modal-redesign" style="max-width: 440px;">
-        <div class="ql-modal-header ql-modal-header-danger">
-            <div class="ql-modal-header-icon ql-icon-danger">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            </div>
-            <div class="ql-modal-header-text">
-                <h3>Registrar Perda</h3>
-                <p>Mover para: <strong id="stage-reason-target-name">Cliente Perdido</strong></p>
-            </div>
-        </div>
-        <form id="stage-reason-form" onsubmit="return false;">
-            <div class="ql-modal-body">
-                <div class="ql-loss-alert">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                     Esta ação marcará o lead como perdido e registrará o motivo no histórico de auditoria.
                 </div>
@@ -8326,9 +8319,9 @@ Condições de pagamento:
     <!-- Script Principal da Aplicação -->
     <script src="js/isocinetica-calculator.js?v=20260903_1010"></script>
     <script src="js/isocinetica-pdf.js?v=20260903_1010"></script>
-    <script type="module" src="js/isocinetica-ui.js?v=20261119_2"></script>
-    <script type="module" src="js/learning.js?v=20261119_2"></script>
-    <script type="module" src="js/app.js?v=20261119_2"></script>
+    <script type="module" src="js/isocinetica-ui.js?v=20261119_3"></script>
+    <script type="module" src="js/learning.js?v=20261119_3"></script>
+    <script type="module" src="js/app.js?v=20261119_3"></script>
 </body>
 </html>
 

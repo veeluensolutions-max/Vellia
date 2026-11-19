@@ -144,6 +144,37 @@ export const CRM = {
             });
         }
 
+        // Toggle campos personalizados quando "Outros" for selecionado em Segmento ou Origem (Novo Lead)
+        const newSegSelect = document.getElementById("lead-segment");
+        const newSegCustomWrap = document.getElementById("lead-segment-custom-wrap");
+        const newSegCustomInput = document.getElementById("lead-segment-custom");
+        if (newSegSelect) {
+            newSegSelect.addEventListener("change", (e) => {
+                const isOutros = e.target.value === "Outros";
+                if (newSegCustomWrap) {
+                    newSegCustomWrap.style.display = isOutros ? "block" : "none";
+                    if (isOutros && newSegCustomInput) {
+                        newSegCustomInput.focus();
+                    }
+                }
+            });
+        }
+
+        const newSrcSelect = document.getElementById("lead-source");
+        const newSrcCustomWrap = document.getElementById("lead-source-custom-wrap");
+        const newSrcCustomInput = document.getElementById("lead-source-custom");
+        if (newSrcSelect) {
+            newSrcSelect.addEventListener("change", (e) => {
+                const isOutros = e.target.value === "Outros";
+                if (newSrcCustomWrap) {
+                    newSrcCustomWrap.style.display = isOutros ? "block" : "none";
+                    if (isOutros && newSrcCustomInput) {
+                        newSrcCustomInput.focus();
+                    }
+                }
+            });
+        }
+
         // Modal Edição de Lead
         if (elements.btnEditLead) elements.btnEditLead.addEventListener("click", () => this.openEditLeadModal());
         if (elements.btnDeleteLead) elements.btnDeleteLead.addEventListener("click", () => this.deleteLead());
@@ -153,6 +184,37 @@ export const CRM = {
             elements.editLeadForm.addEventListener("submit", (e) => {
                 e.preventDefault();
                 this.saveEditLead();
+            });
+        }
+
+        // Toggle campos personalizados quando "Outros" for selecionado em Segmento ou Origem (Edição de Lead)
+        const editSegSelect = document.getElementById("edit-lead-segment");
+        const editSegCustomWrap = document.getElementById("edit-lead-segment-custom-wrap");
+        const editSegCustomInput = document.getElementById("edit-lead-segment-custom");
+        if (editSegSelect) {
+            editSegSelect.addEventListener("change", (e) => {
+                const isOutros = e.target.value === "Outros";
+                if (editSegCustomWrap) {
+                    editSegCustomWrap.style.display = isOutros ? "block" : "none";
+                    if (isOutros && editSegCustomInput) {
+                        editSegCustomInput.focus();
+                    }
+                }
+            });
+        }
+
+        const editSrcSelect = document.getElementById("edit-lead-source");
+        const editSrcCustomWrap = document.getElementById("edit-lead-source-custom-wrap");
+        const editSrcCustomInput = document.getElementById("edit-lead-source-custom");
+        if (editSrcSelect) {
+            editSrcSelect.addEventListener("change", (e) => {
+                const isOutros = e.target.value === "Outros";
+                if (editSrcCustomWrap) {
+                    editSrcCustomWrap.style.display = isOutros ? "block" : "none";
+                    if (isOutros && editSrcCustomInput) {
+                        editSrcCustomInput.focus();
+                    }
+                }
             });
         }
 
@@ -417,7 +479,7 @@ export const CRM = {
 
                 try {
                     Audit.logStageChange(currentUser.email, lead.company, lead.stage, lead.stage, `Ligação registrada: ${outcomeText}`);
-                } catch (e) {}
+                } catch (e) { }
 
                 const updatedLead = Store.getLeadById(activeLeadId);
                 this.renderTimeline(updatedLead);
@@ -487,7 +549,7 @@ export const CRM = {
                     // Pre-fill datetime to 1 hour from now
                     const dt = new Date(Date.now() + 3600000);
                     const pad = n => String(n).padStart(2, "0");
-                    const local = `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+                    const local = `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
                     const inp = document.getElementById("followup-datetime");
                     if (inp) inp.value = local;
                 }
@@ -756,7 +818,7 @@ export const CRM = {
     // ==========================================================================
     // RENDERIZAR TABELA DE LEADS
     // ==========================================================================
-    
+
     renderLeadsTable() {
         const tableBody = document.getElementById("crm-table-body");
         if (!tableBody) return;
@@ -829,7 +891,7 @@ export const CRM = {
         const getLeadDaysNoContact = (lead) => {
             let lastDate = new Date(lead.createdAt || now);
             if (lead.interactions && lead.interactions.length > 0) {
-                const sorted = [...lead.interactions].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+                const sorted = [...lead.interactions].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
                 lastDate = new Date(sorted[0].timestamp);
             }
             return Math.floor(Math.abs(now - lastDate) / (1000 * 60 * 60 * 24));
@@ -838,7 +900,7 @@ export const CRM = {
         const getLeadMinutesSLA = (lead) => {
             let lastDate = new Date(lead.createdAt || now);
             if (lead.interactions && lead.interactions.length > 0) {
-                const sorted = [...lead.interactions].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+                const sorted = [...lead.interactions].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
                 lastDate = new Date(sorted[0].timestamp);
             }
             return Math.floor(Math.abs(now - lastDate) / (1000 * 60));
@@ -1031,9 +1093,9 @@ export const CRM = {
             let scoreBadge = `<span style="font-size: 11px; color: var(--text-muted);">—</span>`;
             if (aiScore !== null) {
                 let icon, color, bg, gradStart, gradEnd;
-                if (aiScore >= 75)      { icon = "🔥"; color = "#ef4444"; bg = "rgba(239,68,68,0.1)"; gradStart = "#f43f5e"; gradEnd = "#e11d48"; }
+                if (aiScore >= 75) { icon = "🔥"; color = "#ef4444"; bg = "rgba(239,68,68,0.1)"; gradStart = "#f43f5e"; gradEnd = "#e11d48"; }
                 else if (aiScore >= 45) { icon = "⚡"; color = "#f59e0b"; bg = "rgba(245,158,11,0.1)"; gradStart = "#fbbf24"; gradEnd = "#f59e0b"; }
-                else                   { icon = "❄️"; color = "#3b82f6"; bg = "rgba(59,130,246,0.1)"; gradStart = "#60a5fa"; gradEnd = "#3b82f6"; }
+                else { icon = "❄️"; color = "#3b82f6"; bg = "rgba(59,130,246,0.1)"; gradStart = "#60a5fa"; gradEnd = "#3b82f6"; }
                 scoreBadge = `
                     <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
                         <span style="font-size:10px;font-weight:700;background:${bg};color:${color};border:1px solid ${color}30;padding:2px 8px;border-radius:99px;display:inline-flex;align-items:center;gap:3px;">${icon} ${aiScore}/100</span>
@@ -1111,13 +1173,13 @@ export const CRM = {
                         <span class="badge ${stageBadgeClass}" style="font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px;">${lead.stage}</span>
                         <div style="margin-top: 4px;">
                             ${(() => {
-                                const m = getLeadMinutesSLA(lead);
-                                if (lead.stage === "Cliente Fechado" || lead.stage === "Cliente Perdido") return "";
-                                if (m < 15) return `<span style="font-size: 10px; font-weight: 600; background: #ECFDF5; color: #16A36A; border: 1px solid #A7F3D0; padding: 1.5px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">⏱️ ${m}m SLA</span>`;
-                                if (m <= 60) return `<span style="font-size: 10px; font-weight: 600; background: #FFFBEB; color: #D97706; border: 1px solid #FDE68A; padding: 1.5px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">⏱️ ${m}m Alerta</span>`;
-                                const h = Math.floor(m / 60);
-                                return `<span style="font-size: 10px; font-weight: 600; background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; padding: 1.5px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">🚨 ${h}h+ Atrasado</span>`;
-                            })()}
+                    const m = getLeadMinutesSLA(lead);
+                    if (lead.stage === "Cliente Fechado" || lead.stage === "Cliente Perdido") return "";
+                    if (m < 15) return `<span style="font-size: 10px; font-weight: 600; background: #ECFDF5; color: #16A36A; border: 1px solid #A7F3D0; padding: 1.5px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">⏱️ ${m}m SLA</span>`;
+                    if (m <= 60) return `<span style="font-size: 10px; font-weight: 600; background: #FFFBEB; color: #D97706; border: 1px solid #FDE68A; padding: 1.5px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">⏱️ ${m}m Alerta</span>`;
+                    const h = Math.floor(m / 60);
+                    return `<span style="font-size: 10px; font-weight: 600; background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; padding: 1.5px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">🚨 ${h}h+ Atrasado</span>`;
+                })()}
                         </div>
                     </td>
                     <td style="text-align:center;">${scoreBadge}</td>
@@ -1126,16 +1188,16 @@ export const CRM = {
                     </td>
                     <td style="text-align: right; white-space: nowrap;" onclick="event.stopPropagation();">
                         ${(() => {
-                            const callCount = (lead.interactions || []).filter(i => {
-                                const t = (i?.type || "").toLowerCase();
-                                return t === "ligação" || t === "ligacao" || t.includes("liga") || t.includes("call");
-                            }).length;
-                            return `
+                    const callCount = (lead.interactions || []).filter(i => {
+                        const t = (i?.type || "").toLowerCase();
+                        return t === "ligação" || t === "ligacao" || t.includes("liga") || t.includes("call");
+                    }).length;
+                    return `
                             <button class="btn btn-outline btn-call-lead" data-id="${lead.id}" style="padding: 0 9px; font-size: 11.5px; font-weight: 700; border-color: rgba(16, 185, 129, 0.45); background: rgba(16, 185, 129, 0.08); color: #059669; margin-right: 5px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: 30px; border-radius: 6px; vertical-align: middle;" title="Registrar Ligação em 2 Segundos">
                                 <span>📞</span>
                                 <span>Ligação${callCount > 0 ? ` (${callCount})` : ''}</span>
                             </button>`;
-                        })()}
+                })()}
                         <button class="btn btn-outline btn-wa-lead" data-id="${lead.id}" style="padding: 0; font-size: 12px; border-color: #25d366; color: #25d366; margin-right: 6px; display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 6px; vertical-align: middle;" title="Enviar WhatsApp">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
                         </button>
@@ -1283,11 +1345,11 @@ export const CRM = {
             unassignedLeads.forEach(lead => {
                 // Ordenar vendedores por carga ativa de forma ascendente
                 sellerLoads.sort((a, b) => a.activeCount - b.activeCount);
-                
+
                 // Atribui o lead para o vendedor mais disponível (primeiro da lista)
                 const chosenSeller = sellerLoads[0];
                 this.assignLeadOwner(lead.id, chosenSeller.email);
-                
+
                 // Incrementa a carga simulada do vendedor para o próximo loop
                 chosenSeller.activeCount++;
                 count++;
@@ -1368,7 +1430,7 @@ export const CRM = {
             if (notesEl) {
                 const currentNotes = notesEl.value.trim();
                 const enrichmentNotes = `[Dados Cadastrais Receita Federal]\nRazão Social: ${data.razaoSocial}\nSituação: ${data.situacaoCadastral} (${data.dataSituacao || 'Ativa'})\nEndereço: ${data.address}\nCNAE: ${data.cnaeDescription || data.cnaeCode || 'N/A'}${data.capitalSocial ? `\nCapital Social: ${data.capitalSocial}` : ''}${data.porte ? `\nPorte: ${data.porte}` : ''}`;
-                
+
                 if (!currentNotes) {
                     notesEl.value = enrichmentNotes;
                 } else if (!currentNotes.includes("Dados Cadastrais Receita Federal")) {
@@ -1430,7 +1492,7 @@ export const CRM = {
         const lead = Store.getLeadById(activeLeadId);
         if (!lead) return;
 
-        document.getElementById("edit-lead-id").value    = lead.id;
+        document.getElementById("edit-lead-id").value = lead.id;
         const cnpjInput = document.getElementById("edit-lead-cnpj");
         if (cnpjInput) cnpjInput.value = lead.cnpj ? CNPJService.formatCNPJ(lead.cnpj) : "";
         const cnpjStatus = document.getElementById("edit-lead-cnpj-status");
@@ -1441,17 +1503,63 @@ export const CRM = {
 
         document.getElementById("edit-lead-company").value = lead.company || "";
         document.getElementById("edit-lead-contact").value = lead.contact || "";
-        document.getElementById("edit-lead-role").value    = lead.role || "";
-        document.getElementById("edit-lead-email").value   = lead.email || "";
+        document.getElementById("edit-lead-role").value = lead.role || "";
+        document.getElementById("edit-lead-email").value = lead.email || "";
         document.getElementById("edit-lead-whatsapp").value = lead.whatsapp || "";
-        document.getElementById("edit-lead-phone").value   = lead.phone || "";
-        document.getElementById("edit-lead-phone2").value  = lead.phone2 || "";
-        document.getElementById("edit-lead-email2").value  = lead.email2 || "";
-        document.getElementById("edit-lead-notes").value   = lead.notes || "";
-        document.getElementById("edit-lead-city").value    = lead.city || "";
-        document.getElementById("edit-lead-state").value   = lead.state || "";
-        document.getElementById("edit-lead-segment").value = lead.segment || "Outros";
-        document.getElementById("edit-lead-source").value  = lead.source || "Outbound";
+        document.getElementById("edit-lead-phone").value = lead.phone || "";
+        document.getElementById("edit-lead-phone2").value = lead.phone2 || "";
+        document.getElementById("edit-lead-email2").value = lead.email2 || "";
+        document.getElementById("edit-lead-notes").value = lead.notes || "";
+        document.getElementById("edit-lead-city").value = lead.city || "";
+        document.getElementById("edit-lead-state").value = lead.state || "";
+
+        // Configurar Segmento (se não estiver na lista ou for "Outros", abre campo para especificar)
+        const editSegSelect = document.getElementById("edit-lead-segment");
+        const editSegCustomWrap = document.getElementById("edit-lead-segment-custom-wrap");
+        const editSegCustomInput = document.getElementById("edit-lead-segment-custom");
+        const currentSeg = lead.segment || "Outros";
+        let segMatched = false;
+        if (editSegSelect) {
+            for (let i = 0; i < editSegSelect.options.length; i++) {
+                if (editSegSelect.options[i].value.toLowerCase() === currentSeg.toLowerCase()) {
+                    editSegSelect.selectedIndex = i;
+                    segMatched = true;
+                    break;
+                }
+            }
+            if (!segMatched || currentSeg.toLowerCase() === "outros") {
+                editSegSelect.value = "Outros";
+                if (editSegCustomWrap) editSegCustomWrap.style.display = "block";
+                if (editCustomSegInput) editCustomSegInput.value = (currentSeg.toLowerCase() !== "outros" ? currentSeg : "");
+            } else {
+                if (editSegCustomWrap) editSegCustomWrap.style.display = "none";
+                if (editCustomSegInput) editCustomSegInput.value = "";
+            }
+        }
+
+        // Configurar Origem do Lead (se não estiver na lista ou for "Outros", abre campo para especificar)
+        const editSrcSelect = document.getElementById("edit-lead-source");
+        const editSrcCustomWrap = document.getElementById("edit-lead-source-custom-wrap");
+        const editSrcCustomInput = document.getElementById("edit-lead-source-custom");
+        const currentSrc = lead.source || "Outbound";
+        let srcMatched = false;
+        if (editSrcSelect) {
+            for (let i = 0; i < editSrcSelect.options.length; i++) {
+                if (editSrcSelect.options[i].value.toLowerCase() === currentSrc.toLowerCase()) {
+                    editSrcSelect.selectedIndex = i;
+                    srcMatched = true;
+                    break;
+                }
+            }
+            if (!srcMatched || currentSrc.toLowerCase() === "outros") {
+                editSrcSelect.value = "Outros";
+                if (editSrcCustomWrap) editSrcCustomWrap.style.display = "block";
+                if (editCustomSrcInput) editCustomSrcInput.value = (currentSrc.toLowerCase() !== "outros" ? currentSrc : "");
+            } else {
+                if (editSrcCustomWrap) editSrcCustomWrap.style.display = "none";
+                if (editCustomSrcInput) editCustomSrcInput.value = "";
+            }
+        }
 
         document.getElementById("edit-lead-modal").classList.add("open");
         document.getElementById("modal-overlay").style.display = "block";
@@ -1460,7 +1568,7 @@ export const CRM = {
     closeEditLeadModal() {
         document.getElementById("edit-lead-modal").classList.remove("open");
         // Only close modal-overlay, preserve drawer-overlay if drawer is open
-        if (!document.getElementById("new-lead-modal").classList.contains("open") && 
+        if (!document.getElementById("new-lead-modal").classList.contains("open") &&
             !document.getElementById("stage-reason-modal").classList.contains("open")) {
             document.getElementById("modal-overlay").style.display = "none";
         }
@@ -1471,20 +1579,34 @@ export const CRM = {
         if (!id) return;
 
         const updatedData = {
-            cnpj     : CNPJService.cleanDigits(document.getElementById("edit-lead-cnpj")?.value || ""),
-            company  : document.getElementById("edit-lead-company").value.trim(),
-            contact  : document.getElementById("edit-lead-contact").value.trim(),
-            role     : document.getElementById("edit-lead-role").value.trim(),
-            email    : document.getElementById("edit-lead-email").value.trim(),
-            whatsapp : document.getElementById("edit-lead-whatsapp").value.trim(),
-            phone    : document.getElementById("edit-lead-phone").value.trim(),
-            phone2   : document.getElementById("edit-lead-phone2").value.trim(),
-            email2   : document.getElementById("edit-lead-email2").value.trim(),
-            notes    : document.getElementById("edit-lead-notes").value.trim(),
-            city     : document.getElementById("edit-lead-city").value.trim(),
-            state    : document.getElementById("edit-lead-state").value.trim().toUpperCase(),
-            segment  : document.getElementById("edit-lead-segment").value,
-            source   : document.getElementById("edit-lead-source").value
+            cnpj: CNPJService.cleanDigits(document.getElementById("edit-lead-cnpj")?.value || ""),
+            company: document.getElementById("edit-lead-company").value.trim(),
+            contact: document.getElementById("edit-lead-contact").value.trim(),
+            role: document.getElementById("edit-lead-role").value.trim(),
+            email: document.getElementById("edit-lead-email").value.trim(),
+            whatsapp: document.getElementById("edit-lead-whatsapp").value.trim(),
+            phone: document.getElementById("edit-lead-phone").value.trim(),
+            phone2: document.getElementById("edit-lead-phone2").value.trim(),
+            email2: document.getElementById("edit-lead-email2").value.trim(),
+            notes: document.getElementById("edit-lead-notes").value.trim(),
+            city: document.getElementById("edit-lead-city").value.trim(),
+            state: document.getElementById("edit-lead-state").value.trim().toUpperCase(),
+            segment: (() => {
+                const segVal = document.getElementById("edit-lead-segment")?.value || "Outros";
+                if (segVal === "Outros") {
+                    const customSeg = document.getElementById("edit-lead-segment-custom")?.value.trim();
+                    if (customSeg) return customSeg;
+                }
+                return segVal;
+            })(),
+            source: (() => {
+                const srcVal = document.getElementById("edit-lead-source")?.value || "Outbound";
+                if (srcVal === "Outros") {
+                    const customSrc = document.getElementById("edit-lead-source-custom")?.value.trim();
+                    if (customSrc) return customSrc;
+                }
+                return srcVal;
+            })()
         };
 
         if (!updatedData.company || !updatedData.contact) {
@@ -1494,7 +1616,7 @@ export const CRM = {
 
         const user = Auth.getCurrentUser();
         Store.updateLead(id, updatedData, user ? user.email : "sistema@vellia.com");
-        
+
         this.closeEditLeadModal();
         this.openLeadDrawer(id);
         this.renderLeadsTable();
@@ -1576,7 +1698,7 @@ export const CRM = {
     // ==========================================================================
     // CONTROLE DE DRAWERS (DETALHES DO LEAD)
     // ==========================================================================
-    
+
     openScannerFromDrawer() {
         if (window.VisionOCR) {
             window.VisionOCR.openModal(activeLeadId);
@@ -1662,8 +1784,8 @@ export const CRM = {
 
         const cnpjEl = document.getElementById("drawer-lead-cnpj");
         if (cnpjEl) {
-            cnpjEl.innerHTML = lead.cnpj 
-                ? `<span style="font-family: monospace; font-weight: 600; color: var(--primary);">${CNPJService.formatCNPJ(lead.cnpj)}</span>` 
+            cnpjEl.innerHTML = lead.cnpj
+                ? `<span style="font-family: monospace; font-weight: 600; color: var(--primary);">${CNPJService.formatCNPJ(lead.cnpj)}</span>`
                 : "Não informado";
         }
 
@@ -1818,7 +1940,7 @@ export const CRM = {
         const inspectionFormContainer = document.getElementById("inspection-form-container");
         if (btnToggleInspection) btnToggleInspection.textContent = "+ Registrar Nova";
         if (inspectionFormContainer) inspectionFormContainer.style.display = "none";
-        
+
         if (!isSellerRole) {
             this.renderDrawerInspections(lead);
         }
@@ -2011,7 +2133,7 @@ export const CRM = {
 
         // Role colors
         const roleColor = { admin: "#7c3aed", manager: "#1d4ed8", seller: "#059669" };
-        const roleBg   = { admin: "rgba(124,58,237,0.08)", manager: "rgba(29,78,216,0.08)", seller: "rgba(5,150,105,0.08)" };
+        const roleBg = { admin: "rgba(124,58,237,0.08)", manager: "rgba(29,78,216,0.08)", seller: "rgba(5,150,105,0.08)" };
         const users = Store.getUsers();
 
         const sorted = [...comments].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
@@ -2124,8 +2246,8 @@ export const CRM = {
             });
 
             const icon = item.type === "stage-change" ? iconMap["stage-change"] : (iconMap[item.intType] || "📌");
-            const markerClass = item.type === "stage-change" 
-                ? "stage-change" 
+            const markerClass = item.type === "stage-change"
+                ? "stage-change"
                 : `interaction-${(item.intType || "Outros").replace(" ", "-")}`;
 
             return `
@@ -2149,11 +2271,11 @@ export const CRM = {
     // ==========================================================================
     // REGISTRAR INTERAÇÃO
     // ==========================================================================
-    
+
     submitInteraction() {
         const typeEl = document.getElementById("interaction-type");
         const descEl = document.getElementById("interaction-desc");
-        
+
         if (!typeEl || !descEl || !activeLeadId) return;
 
         const type = typeEl.value;
@@ -2163,18 +2285,18 @@ export const CRM = {
 
         const currentUser = Auth.getCurrentUser();
         const lead = Store.getLeadById(activeLeadId);
-        
+
         if (!currentUser || !lead) return;
 
         // Registrar
         Store.addLeadInteraction(activeLeadId, currentUser.email, { type, description });
-        
+
         // Log de Auditoria
         Audit.logStageChange(currentUser.email, lead.company, lead.stage, lead.stage, `Registrou nova interação: ${type} - ${description.substring(0, 30)}...`);
 
         // Limpar campo e recarregar timeline
         descEl.value = "";
-        
+
         // Feedback visual no botão
         const btnSubmit = document.getElementById("btn-submit-interaction");
         if (btnSubmit) {
@@ -2203,11 +2325,11 @@ export const CRM = {
         let currentUser = null;
         try {
             currentUser = (typeof Auth !== "undefined" && Auth.getCurrentUser) ? Auth.getCurrentUser() : null;
-        } catch(e) {}
+        } catch (e) { }
         if (!currentUser) {
             try {
                 currentUser = JSON.parse(sessionStorage.getItem("comercial_session") || localStorage.getItem("comercial_session") || "null");
-            } catch(e) {}
+            } catch (e) { }
         }
         if (!currentUser) {
             currentUser = { email: lead.owner || "vendedor@vellia.com", name: "Vendedor", role: "seller" };
@@ -2224,13 +2346,13 @@ export const CRM = {
         // Registrar no log de auditoria operacional
         try {
             Audit.logStageChange(currentUser.email, lead.company, oldStage, newStage, finalReason);
-        } catch(e) {}
+        } catch (e) { }
 
         // Se for Cliente Fechado, registrar vitória comercial
         if (newStage === "Cliente Fechado") {
             try {
                 Audit.logSaleWon(currentUser.email, lead.company, "Sob Consulta (Ver Propostas)");
-            } catch(e) {}
+            } catch (e) { }
         }
 
         // Atualizar dropdown do drawer se for o lead ativo
@@ -2281,7 +2403,7 @@ export const CRM = {
         if (newStage === "Lead Qualificado") {
             const form = document.getElementById("qualify-lead-form");
             if (form) form.reset();
-            
+
             // Pré-preenchimento inteligente para não travar o usuário
             const srvEl = document.getElementById("qualify-service");
             if (srvEl) {
@@ -2431,7 +2553,7 @@ export const CRM = {
 
         // Recarregar drawer e tabelas
         const updatedLead = Store.getLeadById(activeLeadId);
-        
+
         // Atualizar dropdown do drawer
         const stageSelect = document.getElementById("drawer-change-stage");
         if (stageSelect) stageSelect.value = updatedLead.stage;
@@ -2552,9 +2674,21 @@ export const CRM = {
     // ==========================================================================
     // MODAL DE CADASTRO DE NOVO LEAD
     // ==========================================================================
-    
+
     openNewLeadModal(prefillData = null) {
         document.getElementById("new-lead-form").reset();
+
+        // Resetar wraps e inputs customizados de segmento e origem
+        const newSegCustomWrap = document.getElementById("lead-segment-custom-wrap");
+        const newSegCustomInput = document.getElementById("lead-segment-custom");
+        if (newSegCustomWrap) newSegCustomWrap.style.display = "none";
+        if (newSegCustomInput) newSegCustomInput.value = "";
+
+        const newSrcCustomWrap = document.getElementById("lead-source-custom-wrap");
+        const newSrcCustomInput = document.getElementById("lead-source-custom");
+        if (newSrcCustomWrap) newSrcCustomWrap.style.display = "none";
+        if (newSrcCustomInput) newSrcCustomInput.value = "";
+
         if (prefillData) {
             if (prefillData.service) {
                 const notesEl = document.getElementById("lead-notes");
@@ -2568,11 +2702,29 @@ export const CRM = {
             }
             if (prefillData.segment) {
                 const segEl = document.getElementById("lead-segment");
-                if (segEl) segEl.value = prefillData.segment;
+                if (segEl) {
+                    const match = Array.from(segEl.options).some(o => o.value.toLowerCase() === prefillData.segment.toLowerCase());
+                    if (match && prefillData.segment.toLowerCase() !== "outros") {
+                        segEl.value = prefillData.segment;
+                    } else {
+                        segEl.value = "Outros";
+                        if (newSegCustomWrap) newSegCustomWrap.style.display = "block";
+                        if (newSegCustomInput) newSegCustomInput.value = prefillData.segment;
+                    }
+                }
             }
             if (prefillData.source) {
                 const srcEl = document.getElementById("lead-source");
-                if (srcEl) srcEl.value = prefillData.source;
+                if (srcEl) {
+                    const match = Array.from(srcEl.options).some(o => o.value.toLowerCase() === prefillData.source.toLowerCase());
+                    if (match && prefillData.source.toLowerCase() !== "outros") {
+                        srcEl.value = prefillData.source;
+                    } else {
+                        srcEl.value = "Outros";
+                        if (newSrcCustomWrap) newSrcCustomWrap.style.display = "block";
+                        if (newSrcCustomInput) newSrcCustomInput.value = prefillData.source;
+                    }
+                }
             }
         }
         const statusEl = document.getElementById("lead-cnpj-status");
@@ -2607,8 +2759,17 @@ export const CRM = {
         const notes = getVal("lead-notes");
         const city = getVal("lead-city");
         const state = getVal("lead-state");
-        const segment = getVal("lead-segment");
-        const source = getVal("lead-source");
+        let segment = getVal("lead-segment");
+        if (segment === "Outros") {
+            const customSeg = getVal("lead-segment-custom");
+            if (customSeg) segment = customSeg;
+        }
+
+        let source = getVal("lead-source");
+        if (source === "Outros") {
+            const customSrc = getVal("lead-source-custom");
+            if (customSrc) source = customSrc;
+        }
         let stage = getVal("lead-stage-init");
 
         if (!company || !contact || !whatsapp) {
@@ -2664,7 +2825,7 @@ export const CRM = {
         if (typeof window.WhatsApp?.sendAutomatedMessage === "function") {
             window.WhatsApp.sendAutomatedMessage(newLead.id, "welcome");
         }
-        
+
         // Atualizar contadores
         const dashboardView = document.getElementById("view-dashboard");
         if (dashboardView && dashboardView.style.display !== "none") {
@@ -2677,19 +2838,19 @@ export const CRM = {
     renderWhatsAppChat(lead) {
         const chatContainer = document.getElementById("chat-message-history");
         if (!chatContainer) return;
-        
+
         chatContainer.innerHTML = "";
-        
+
         const interactions = lead.interactions || [];
-        
+
         // Filtrar e parsear interações de WhatsApp
         const waInteractions = interactions.filter(i => i.type === "WhatsApp");
-        
+
         if (waInteractions.length === 0) {
             chatContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 11px; margin-top: 40px;">Nenhuma mensagem trocada via WhatsApp ainda.</div>`;
             return;
         }
-        
+
         const appendBubble = (sender, text, type, timestamp) => {
             const bubbleWrapper = document.createElement("div");
             bubbleWrapper.style.display = "flex";
@@ -2697,14 +2858,14 @@ export const CRM = {
             bubbleWrapper.style.alignItems = type === "outgoing" ? "flex-end" : "flex-start";
             bubbleWrapper.style.width = "100%";
             bubbleWrapper.style.marginBottom = "4px";
-            
+
             const nameEl = document.createElement("span");
             nameEl.style.fontSize = "10px";
             nameEl.style.fontWeight = "600";
             nameEl.style.color = "var(--text-muted)";
             nameEl.style.marginBottom = "2px";
             nameEl.textContent = sender;
-            
+
             const bubble = document.createElement("div");
             bubble.style.maxWidth = "80%";
             bubble.style.padding = "8px 12px";
@@ -2712,7 +2873,7 @@ export const CRM = {
             bubble.style.lineHeight = "1.4";
             bubble.style.wordBreak = "break-word";
             bubble.style.fontSize = "13px";
-            
+
             if (type === "outgoing") {
                 bubble.style.background = "var(--primary)";
                 bubble.style.color = "#ffffff";
@@ -2723,25 +2884,25 @@ export const CRM = {
                 bubble.style.borderBottomLeftRadius = "2px";
                 bubble.style.border = "1px solid var(--border-color)";
             }
-            
+
             bubble.textContent = text;
-            
+
             const timeEl = document.createElement("span");
             timeEl.style.fontSize = "9px";
             timeEl.style.color = "var(--text-muted)";
             timeEl.style.marginTop = "2px";
             timeEl.textContent = timestamp ? new Date(timestamp).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "";
-            
+
             bubbleWrapper.appendChild(nameEl);
             bubbleWrapper.appendChild(bubble);
             bubbleWrapper.appendChild(timeEl);
-            
+
             chatContainer.appendChild(bubbleWrapper);
         };
-        
+
         waInteractions.forEach(interaction => {
             const desc = interaction.description;
-            
+
             if (desc.includes("Conversa de Triagem SDR AI:")) {
                 const lines = desc.split("\n\n");
                 lines.forEach(line => {
@@ -2770,7 +2931,7 @@ export const CRM = {
                 appendBubble("Sistema", desc, "incoming", interaction.timestamp);
             }
         });
-        
+
         // Rolar até o fim
         setTimeout(() => {
             chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -2782,29 +2943,29 @@ export const CRM = {
         const btnTakeover = document.getElementById("btn-takeover-chat");
         const inputContainer = document.getElementById("chat-input-container");
         const activeAlert = document.getElementById("chat-sdr-active-alert");
-        
+
         if (!badge || !btnTakeover || !inputContainer || !activeAlert) return;
-        
+
         if (lead.sdrPaused) {
             badge.textContent = "SDR AI Pausado";
             badge.style.background = "#fee2e2";
             badge.style.color = "#dc2626";
-            
+
             btnTakeover.innerHTML = "🤖 Devolver p/ AI";
             btnTakeover.style.borderColor = "var(--success)";
             btnTakeover.style.color = "var(--success)";
-            
+
             inputContainer.style.display = "flex";
             activeAlert.style.display = "none";
         } else {
             badge.textContent = "SDR AI Ativo";
             badge.style.background = "#e0f2fe";
             badge.style.color = "#0284c7";
-            
+
             btnTakeover.innerHTML = "🤝 Assumir";
             btnTakeover.style.borderColor = "var(--primary)";
             btnTakeover.style.color = "var(--primary)";
-            
+
             inputContainer.style.display = "none";
             activeAlert.style.display = "block";
         }
@@ -2813,15 +2974,15 @@ export const CRM = {
     handleChatTakeover() {
         const lead = Store.getLeadById(activeLeadId);
         if (!lead) return;
-        
+
         const isPaused = !lead.sdrPaused;
         lead.sdrPaused = isPaused;
-        
+
         Store.updateLead(lead.id, { sdrPaused: isPaused });
-        
+
         const user = Auth.getCurrentUser();
         Audit.logConfigChange(user?.email || "sistema@vellia.com", "SDR_TAKEOVER_TOGGLE", `Vendedor ${user?.name} alterou controle do lead ${lead.company} para ${isPaused ? "HUMANO" : "SDR AI"}.`);
-        
+
         this.updateChatUIState(lead);
         this.renderTimeline(lead);
     },
@@ -2829,31 +2990,31 @@ export const CRM = {
     sendChatWhatsAppMessage() {
         const input = document.getElementById("chat-text-input");
         if (!input) return;
-        
+
         const text = input.value.trim();
         if (!text) return;
-        
+
         const lead = Store.getLeadById(activeLeadId);
         if (!lead) return;
-        
+
         const user = Auth.getCurrentUser();
         const userEmail = user?.email || "sistema@vellia.com";
-        
+
         Store.addLeadInteraction(lead.id, userEmail, {
             type: "WhatsApp",
             description: `💬 **Mensagem enviada via WhatsApp:** ${text}`
         });
-        
+
         input.value = "";
-        
+
         const updatedLead = Store.getLeadById(activeLeadId);
         this.renderWhatsAppChat(updatedLead);
         this.renderTimeline(updatedLead);
-        
+
         if (updatedLead.sdrPaused) {
             setTimeout(() => {
                 if (activeLeadId !== updatedLead.id) return;
-                
+
                 const replies = [
                     "Perfeito! Obrigado pelas informações. Vou analisar e te retorno.",
                     "Opa! Ótimo, muito obrigado pelo retorno rápido.",
@@ -2861,12 +3022,12 @@ export const CRM = {
                     "Certo. Vocês têm algum caso de sucesso no meu segmento para eu dar uma olhada?"
                 ];
                 const randomReply = replies[Math.floor(Math.random() * replies.length)];
-                
+
                 Store.addLeadInteraction(updatedLead.id, "sistema@vellia.com", {
                     type: "WhatsApp",
                     description: `💬 **Mensagem recebida via WhatsApp:** ${randomReply}`
                 });
-                
+
                 const refreshedLead = Store.getLeadById(activeLeadId);
                 this.renderWhatsAppChat(refreshedLead);
                 this.renderTimeline(refreshedLead);
@@ -2996,9 +3157,9 @@ Instruções: Retorne APENAS o texto curto pronto da mensagem em tom amigável e
 
             // Prazos e status
             const today = new Date();
-            today.setHours(0,0,0,0);
+            today.setHours(0, 0, 0, 0);
             const expDate = new Date(expiryDate + "T12:00:00");
-            expDate.setHours(0,0,0,0);
+            expDate.setHours(0, 0, 0, 0);
             const diff = expDate.getTime() - today.getTime();
             const daysRemaining = Math.ceil(diff / (1000 * 3600 * 24));
 
@@ -3019,7 +3180,7 @@ Instruções: Retorne APENAS o texto curto pronto da mensagem em tom amigável e
                 remainingText = `Vence em ${daysRemaining} dias`;
             }
 
-            const notifyBtn = showNotify 
+            const notifyBtn = showNotify
                 ? `<button class="btn btn-sm btn-success" style="background:#25d366; color:white; border:none; border-radius:6px; font-size:10px; cursor:pointer; font-weight:700; padding:4px 8px;" onclick="window.sendInspectionNotification('${lead.id}', '${item.id}')">💬 Alerta</button>`
                 : "";
 
@@ -3097,14 +3258,14 @@ Instruções: Retorne APENAS o texto curto pronto da mensagem em tom amigável e
         if (lead) {
             lead.interactions = lead.interactions || [];
             lead.interactions.push(interaction);
-            
+
             Store.updateLead(lead.id, { interactions: lead.interactions }, userEmail);
 
             // Limpar formulário
             execInput.value = "";
             if (expInput) expInput.value = "";
             if (notesInput) notesInput.value = "";
-            
+
             const formContainer = document.getElementById("inspection-form-container");
             const btnToggle = document.getElementById("btn-toggle-inspection-form");
             if (formContainer) formContainer.style.display = "none";

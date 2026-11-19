@@ -308,7 +308,7 @@ function showAppShell(user) {
         try { Intervention.init(); } catch (e) { console.error("Intervention init error:", e); }
         try { ChurnAutopilot.init(); } catch (e) { console.error("Churn init error:", e); }
         try { Leaderboard.init(); } catch (e) { console.error("Leaderboard init error:", e); }
-        try { Renewals.updateSidebarBadge(Renewals.getRenewalItems()); } catch (e) {}
+        try { Renewals.updateSidebarBadge(Renewals.getRenewalItems()); } catch (e) { }
     }
 
     // Atualizar Perfil no Rodapé da Sidebar

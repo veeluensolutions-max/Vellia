@@ -447,7 +447,7 @@ async function syncFromSupabase() {
             localStorage.setItem("comercial_users_initialized", "true");
             try {
                 window.dispatchEvent(new CustomEvent("vellia:userUpdated", { detail: validUsers }));
-            } catch(evErr) {}
+            } catch (evErr) { }
         }
 
         // 2. Metas
@@ -622,8 +622,8 @@ function initStorage() {
     let existingUsers = [];
     try {
         existingUsers = JSON.parse(localStorage.getItem("comercial_users")) || [];
-    } catch(e) {}
-    
+    } catch (e) { }
+
     const isInitialized = localStorage.getItem("comercial_users_initialized");
 
     // Injetar DEFAULT_USERS APENAS se for a primeira vez e o banco/storage estiverem vazios
@@ -637,7 +637,7 @@ function initStorage() {
         try {
             const existingLogs = (JSON.parse(localStorage.getItem("comercial_logs")) || []).filter(lg => !isTestArtifactRecord(lg));
             MemoryCache.set("comercial_logs", existingLogs);
-        } catch(e) {}
+        } catch (e) { }
     }
     if (!localStorage.getItem("comercial_leads")) {
         MemoryCache.set("comercial_leads", []);
@@ -648,7 +648,7 @@ function initStorage() {
                 existingLeads.sort((a, b) => getLeadTimestamp(b) - getLeadTimestamp(a));
                 MemoryCache.set("comercial_leads", existingLeads);
             }
-        } catch(e) {}
+        } catch (e) { }
     }
     if (!localStorage.getItem("comercial_proposals")) {
         MemoryCache.set("comercial_proposals", []);
@@ -656,7 +656,7 @@ function initStorage() {
         try {
             const existingProps = (JSON.parse(localStorage.getItem("comercial_proposals")) || []).filter(p => !isTestArtifactRecord(p));
             MemoryCache.set("comercial_proposals", existingProps);
-        } catch(e) {}
+        } catch (e) { }
     }
     if (!localStorage.getItem("comercial_goals")) {
         MemoryCache.set("comercial_goals", []);
@@ -819,9 +819,9 @@ export const Store = {
     },
     saveCalendarEvents(events) {
         MemoryCache.set("vellia_calendar_events", events);
-        try { localStorage.setItem("vellia_calendar_events", JSON.stringify(events)); } catch(e){}
+        try { localStorage.setItem("vellia_calendar_events", JSON.stringify(events)); } catch (e) { }
         upsertSupabase("comercial_calendar_events", events);
-        try { window.dispatchEvent(new CustomEvent("vellia:calendarEventsUpdated", { detail: events })); } catch(e){}
+        try { window.dispatchEvent(new CustomEvent("vellia:calendarEventsUpdated", { detail: events })); } catch (e) { }
     },
 
     DEFAULT_USERS,
@@ -860,7 +860,7 @@ export const Store = {
                     localStorage.setItem("comercial_deleted_user_emails", JSON.stringify(deletedEmails));
                 }
             }
-        } catch (e) {}
+        } catch (e) { }
 
         // 2. Remover do cache e localStorage imediatamente
         const updatedUsers = users.filter(u => u && u.id !== targetId && (!targetEmail || u.email?.toLowerCase().trim() !== targetEmail));
@@ -898,7 +898,7 @@ export const Store = {
         const allLeads = this.getAllLeadsRaw();
         const activeCompany = localStorage.getItem("activeCompany") || "Veeluen Solutions";
         return allLeads.filter(l => {
-            if(l.deleted_at) return false;
+            if (l.deleted_at) return false;
             const w = l.workspace || "Veeluen Solutions";
             return w === activeCompany;
         }).sort((a, b) => getLeadTimestamp(b) - getLeadTimestamp(a));
@@ -918,25 +918,25 @@ export const Store = {
             if (l.workspace && l.workspace !== activeCompany && activeCompany !== "Veeluen Solutions") return false;
             // Legacy items without workspace go to Veeluen
             if (!l.workspace && activeCompany !== "Veeluen Solutions") return false;
-            
+
             const deletedTs = new Date(l.deleted_at).getTime();
-            return (now - deletedTs) < THIRTY_DAYS_MS; 
+            return (now - deletedTs) < THIRTY_DAYS_MS;
         });
     },
 
     saveLeads(workspaceLeads) {
         let allLeads = this.getAllLeadsRaw();
         const activeCompany = localStorage.getItem("activeCompany") || "Veeluen Solutions";
-        
+
         // Remove leads from active company from allLeads
         allLeads = allLeads.filter(l => {
             const w = l.workspace || "Veeluen Solutions";
             return w !== activeCompany;
         });
-        
+
         // Add updated leads
         allLeads = allLeads.concat(workspaceLeads);
-        
+
         MemoryCache.set("comercial_leads", allLeads);
         if (Array.isArray(workspaceLeads)) {
             for (const lead of workspaceLeads) {
@@ -1068,6 +1068,80 @@ export const Store = {
         return this.addLead(lead, userEmail);
     },
 
+    async addLeadsBulk(leadsInputArray, userEmail = "sistema@vellia.com") {
+        if (!Array.isArray(leadsInputArray) || leadsInputArray.length === 0) return [];
+        const leads = this.getAllLeadsRaw();
+        const nowIso = new Date().toISOString();
+        const nowMs = Date.now();
+
+        const isMika = userEmail === "mika@vellia.com" || (typeof Auth !== "undefined" && Auth.getCurrentUser && Auth.getCurrentUser()?.email === "mika@vellia.com");
+        const curAccess = (typeof Auth !== "undefined" && Auth.getCurrentUser) ? Auth.getCurrentUser()?.companyAccess : null;
+        let defaultWorkspace = localStorage.getItem('activeCompany') || 'Veeluen Solutions';
+        if (curAccess && curAccess !== "Ambas") {
+            defaultWorkspace = curAccess;
+        } else if (isMika) {
+            defaultWorkspace = "Excelência Ambiental";
+        }
+
+        const createdLeads = leadsInputArray.map((lead, idx) => {
+            const stage = lead.stage || "Contato";
+            const ownerEmail = lead.owner || userEmail;
+            const creatorEmail = lead.createdBy || userEmail;
+            return {
+                id: `lead_${nowMs + idx}_${Math.random().toString(36).substr(2, 5)}`,
+                workspace: lead.workspace || defaultWorkspace,
+                cnpj: lead.cnpj || "",
+                company: String(lead.company || "").trim(),
+                contact: String(lead.contact || "Responsável").trim(),
+                role: String(lead.role || "").trim(),
+                phone: String(lead.phone || "").trim(),
+                whatsapp: String(lead.whatsapp || lead.phone || "").trim(),
+                phone2: String(lead.phone2 || "").trim(),
+                email2: String(lead.email2 || "").trim(),
+                notes: String(lead.notes || "").trim(),
+                email: String(lead.email || "").trim(),
+                city: String(lead.city || "").trim(),
+                state: String(lead.state || "").trim(),
+                segment: String(lead.segment || "Outros").trim(),
+                source: String(lead.source || "Planilha Excel").trim(),
+                stage,
+                owner: ownerEmail,
+                createdBy: creatorEmail,
+                createdAt: lead.createdAt || nowIso,
+                _lastModified: nowMs,
+                interactions: lead.interactions || [],
+                stageHistory: lead.stageHistory || [
+                    {
+                        stage,
+                        userEmail: creatorEmail,
+                        timestamp: nowIso,
+                        reason: "Importação de leads via planilha Excel."
+                    }
+                ]
+            };
+        });
+
+        const updatedAllLeads = [...createdLeads, ...leads];
+        MemoryCache.set("comercial_leads", updatedAllLeads);
+
+        // Sincronizar em lotes de 50 registros com o Supabase
+        const encodedAll = createdLeads.map(l => encodeLeadForSupabase(l));
+        for (let i = 0; i < encodedAll.length; i += 50) {
+            const chunk = encodedAll.slice(i, i + 50);
+            await upsertSupabase("comercial_leads", chunk);
+        }
+
+        this.addLog(userEmail, "LEADS_IMPORTED_EXCEL", `${createdLeads.length} lead(s) importado(s) via planilha Excel.`, "SUCCESS");
+        if (createdLeads[0]) {
+            window.dispatchEvent(new CustomEvent("vellia:leadAdded", { detail: createdLeads[0] }));
+        }
+        window.dispatchEvent(new CustomEvent("vellia:leadsUpdated"));
+        window.dispatchEvent(new CustomEvent("vellia:waSent"));
+        window.dispatchEvent(new Event("storage"));
+
+        return createdLeads;
+    },
+
 
     updateLead(leadId, updatedData, userEmail = "sistema@vellia.com") {
         const leads = this.getAllLeadsRaw();
@@ -1124,7 +1198,7 @@ export const Store = {
             const oldStage = leads[index].stage;
             leads[index].stage = newStage;
             leads[index]._lastModified = Date.now();
-            
+
             // Gravar histórico de etapas
             leads[index].stageHistory = leads[index].stageHistory || [];
             leads[index].stageHistory.push({
@@ -1192,7 +1266,7 @@ export const Store = {
             workspace: localStorage.getItem('activeCompany') || 'Veeluen Solutions',
             leadId: data.leadId || "",
             proposalId: data.proposalId || null,
-            number: data.number || `CT-${new Date().getFullYear()}-${Math.floor(Math.random()*1000).toString().padStart(3, '0')}`,
+            number: data.number || `CT-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
             status: data.status || "Em formalização",
             totalValue: parseFloat(data.totalValue) || 0,
             recurringValue: parseFloat(data.recurringValue) || 0,
@@ -1210,7 +1284,7 @@ export const Store = {
         contracts.push(newContract);
         MemoryCache.set("comercial_contracts", contracts);
         upsertSupabase("comercial_contracts", newContract);
-        
+
         if (data.services && data.services.length > 0) {
             const cServices = this.getContractServices();
             data.services.forEach(srv => {
@@ -1225,7 +1299,7 @@ export const Store = {
             });
             MemoryCache.set("comercial_contract_services", cServices);
         }
-        
+
         this.addLog(data.createdBy, "CONTRACT_CREATED", `Contrato ${newContract.number} criado.`);
         return newContract;
     },
@@ -1242,11 +1316,11 @@ export const Store = {
         }
         return null;
     },
-    
+
     getContractServices() {
         return MemoryCache.get("comercial_contract_services", () => []) || [];
     },
-    
+
     getServicesForContract(contractId) {
         return this.getContractServices().filter(cs => cs.contractId === contractId);
     },
@@ -1270,8 +1344,8 @@ export const Store = {
         if (!id) return null;
         const strId = String(id);
         return this.getProposals().find(p => p && String(p.id) === strId) ||
-               this.getProposalsRaw().find(p => p && String(p.id) === strId) ||
-               null;
+            this.getProposalsRaw().find(p => p && String(p.id) === strId) ||
+            null;
     },
 
     addProposal(data) {
@@ -1322,12 +1396,12 @@ export const Store = {
         proposals.push(newProposal);
         MemoryCache.set("comercial_proposals", proposals);
         upsertSupabase("comercial_proposals", encodeProposalForSupabase(newProposal));
-        
+
         window.dispatchEvent(new CustomEvent("vellia:proposalUpdated", { detail: newProposal }));
         window.dispatchEvent(new CustomEvent("vellia:scoreUpdated", { detail: { sellerEmail: newProposal.createdBy, action: "PROPOSAL_ADDED", points: 100 } }));
         window.dispatchEvent(new CustomEvent("vellia:waSent"));
         window.dispatchEvent(new Event("storage"));
-        
+
         return newProposal;
     },
 
@@ -1339,12 +1413,12 @@ export const Store = {
             MemoryCache.set("comercial_proposals", proposals);
             upsertSupabase("comercial_proposals", encodeProposalForSupabase(proposals[index]));
             this.addLog(userEmail, "PROPOSAL_UPDATED", `Proposta ${proposals[index].title || proposals[index].budgetNumber || proposals[index].id} atualizada.`);
-            
+
             window.dispatchEvent(new CustomEvent("vellia:proposalUpdated", { detail: proposals[index] }));
             window.dispatchEvent(new CustomEvent("vellia:scoreUpdated", { detail: { sellerEmail: userEmail, action: "PROPOSAL_UPDATED" } }));
             window.dispatchEvent(new CustomEvent("vellia:waSent"));
             window.dispatchEvent(new Event("storage"));
-            
+
             return proposals[index];
         }
         return null;
@@ -1460,7 +1534,7 @@ export const Store = {
         try {
             window.dispatchEvent(new CustomEvent("vellia:logAdded", { detail: newLog }));
             window.dispatchEvent(new CustomEvent("vellia:logsUpdated", { detail: logs }));
-        } catch(evErr) {}
+        } catch (evErr) { }
         return newLog;
     },
 
@@ -1568,7 +1642,7 @@ export const Store = {
                     try {
                         const parsed = MemoryCache.get(k, () => JSON.parse(localStorage.getItem(k)));
                         if (Array.isArray(parsed)) tasks.push(...parsed);
-                    } catch(e) {}
+                    } catch (e) { }
                 }
             }
             return tasks;
@@ -1583,32 +1657,32 @@ export const Store = {
             try {
                 const session = JSON.parse(sessionStorage.getItem("comercial_session") || localStorage.getItem("comercial_session") || "null");
                 email = session?.email || "gestao@vellia.com";
-            } catch(e) {
+            } catch (e) {
                 email = "gestao@vellia.com";
             }
         }
         if (!email) return;
         const key = `seller_tasks_${email}`;
         MemoryCache.set(key, tasks);
-        
+
         // Sincronizar com Supabase utilizando comparação de listas (diff sync)
         try {
             const remoteTasks = await supabaseFetch(`comercial_tasks?owner=eq.${email}`) || [];
-            
+
             // 1. Identificar tarefas a deletar (existem no remoto mas não localmente)
             const localIds = tasks.map(t => t.id).filter(Boolean);
             const toDelete = remoteTasks.filter(rt => rt.id && !localIds.includes(rt.id));
             for (const rt of toDelete) {
                 await deleteSupabase("comercial_tasks", `?id=eq.${rt.id}`);
             }
-            
+
             // 2. Inserir ou atualizar tarefas locais
             for (let i = 0; i < tasks.length; i++) {
                 const t = tasks[i];
                 if (!t.id) {
                     t.id = `task_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 4)}`;
                 }
-                
+
                 // Verificar se houve alteração em relação ao banco remoto
                 const remoteMatch = remoteTasks.find(rt => rt.id === t.id);
                 if (remoteMatch) {
@@ -1617,7 +1691,7 @@ export const Store = {
                         continue; // Nenhuma modificação, pula o POST de upsert
                     }
                 }
-                
+
                 const dbTask = {
                     id: t.id,
                     owner: email,
@@ -1660,17 +1734,17 @@ export const Store = {
             let currentUser = null;
             try {
                 currentUser = JSON.parse(sessionStorage.getItem("comercial_session") || localStorage.getItem("comercial_session") || "null");
-            } catch (e) {}
+            } catch (e) { }
 
             // Notificar se novas tarefas foram atribuídas por outra pessoa
             if (currentUser && email.toLowerCase() === currentUser.email.toLowerCase()) {
                 const oldTasks = JSON.parse(localStorage.getItem(`seller_tasks_old_${email}`) || "[]");
-                const newAssignedTasks = formattedTasks.filter(t => 
-                    t.assignedBy && 
-                    t.assignedBy.toLowerCase() !== currentUser.email.toLowerCase() && 
+                const newAssignedTasks = formattedTasks.filter(t =>
+                    t.assignedBy &&
+                    t.assignedBy.toLowerCase() !== currentUser.email.toLowerCase() &&
                     !oldTasks.some(old => old.id === t.id)
                 );
-                
+
                 newAssignedTasks.forEach(t => {
                     window.dispatchEvent(new CustomEvent("vellia:aiNotification", {
                         detail: {
@@ -1824,9 +1898,9 @@ export const Store = {
     },
     saveCalendarEvents(events) {
         MemoryCache.set("vellia_calendar_events", events);
-        try { localStorage.setItem("vellia_calendar_events", JSON.stringify(events)); } catch(e){}
+        try { localStorage.setItem("vellia_calendar_events", JSON.stringify(events)); } catch (e) { }
         upsertSupabase("comercial_calendar_events", events);
-        try { window.dispatchEvent(new CustomEvent("vellia:calendarEventsUpdated", { detail: events })); } catch(e){}
+        try { window.dispatchEvent(new CustomEvent("vellia:calendarEventsUpdated", { detail: events })); } catch (e) { }
     },
 
     // Métodos utilitários para resetar banco se necessário

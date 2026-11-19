@@ -101,12 +101,35 @@ export async function ensureChartJs() {
     }
 }
 
+/**
+ * Garante que SheetJS (XLSX) esteja disponível para leitura/escrita de planilhas Excel (.xlsx, .xls, .csv).
+ */
+export async function ensureXLSX() {
+    if (window.XLSX) {
+        return window.XLSX;
+    }
+
+    try {
+        await loadScript("https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js");
+        return window.XLSX;
+    } catch (err) {
+        try {
+            await loadScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js");
+            return window.XLSX;
+        } catch (err2) {
+            console.error("❌ [LazyLoader] Falha ao carregar SheetJS (XLSX):", err2);
+            throw err2;
+        }
+    }
+}
+
 // Expor no escopo global para compatibilidade com scripts legados
 const LazyLoader = {
     loadScript,
     ensureJsPDF,
     ensurePdfJs,
-    ensureChartJs
+    ensureChartJs,
+    ensureXLSX
 };
 
 if (typeof window !== "undefined") {

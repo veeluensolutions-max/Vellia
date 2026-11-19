@@ -3117,6 +3117,845 @@ Instruções: Retorne APENAS o texto curto pronto da mensagem em tom amigável e
             // Disparar sincronização local para atualizar a visualização central de inspeções
             window.dispatchEvent(new CustomEvent("vellia:waSent"));
         }
+    },
+
+    // ==========================================================================
+    // IMPORTAÇÃO DE LEADS A PARTIR DE PLANILHAS EXCEL (.XLSX, .XLS, .CSV)
+    // ==========================================================================
+    _excelState: {
+        workbook: null,
+        sheetNames: [],
+        activeSheet: "",
+        headers: [],
+        rawRows: [],
+        mapping: {},
+        parsedLeads: [],
+        fileName: ""
+    },
+
+    openExcelImportModal() {
+        // Carregar SheetJS em background para leitura imediata
+        window.LazyLoader?.ensureXLSX?.().catch(() => {});
+
+        const curUser = Auth.getCurrentUser() || { email: "admin@vellia.com", name: "Administrador", role: "admin" };
+        const role = (curUser.role || "").toLowerCase().trim();
+        const isAdminOrManager = role === "admin" || role === "manager" || role === "gerente";
+        const allUsers = (Store.getUsers ? Store.getUsers() : []).filter(u => u && (u.role === "seller" || u.role === "vendedor" || u.role === "manager" || u.role === "admin"));
+        const sellersOnly = allUsers.filter(u => u.role === "seller" || u.role === "vendedor");
+
+        let modal = document.getElementById("modal-import-excel-leads");
+        if (!modal) {
+            modal = document.createElement("div");
+            modal.id = "modal-import-excel-leads";
+            modal.style.cssText = "position: fixed; inset: 0; z-index: 99998; background: rgba(15, 23, 42, 0.62); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; padding: 16px;";
+            modal.addEventListener("click", (e) => {
+                if (e.target === modal) this.closeExcelImportModal();
+            });
+            document.body.appendChild(modal);
+        }
+
+        // Resetar estado
+        this._excelState = {
+            workbook: null,
+            sheetNames: [],
+            activeSheet: "",
+            headers: [],
+            rawRows: [],
+            mapping: {},
+            parsedLeads: [],
+            fileName: ""
+        };
+
+        modal.innerHTML = `
+            <div style="background: var(--bg-surface, #FFFFFF); border-radius: 18px; width: 100%; max-width: 1040px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.35); border: 1px solid var(--border-color, #E2E8F0); overflow: hidden; font-family: 'Inter', system-ui, sans-serif;">
+                <!-- Header -->
+                <div style="padding: 18px 24px; background: linear-gradient(135deg, #059669 0%, #047857 100%); color: #FFFFFF; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 42px; height: 42px; border-radius: 11px; background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid rgba(255,255,255,0.28);">
+                            📊
+                        </div>
+                        <div>
+                            <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: #FFFFFF; font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; letter-spacing: -0.01em;">
+                                Importar Leads de Planilha Excel
+                            </h3>
+                            <p style="margin: 2px 0 0 0; font-size: 12.5px; color: rgba(255,255,255,0.88);">
+                                Carregue arquivos <strong>.xlsx, .xls ou .csv</strong> com mapeamento inteligente de colunas e prevenção de duplicados.
+                            </p>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <button type="button" id="btn-download-excel-template" style="background: rgba(255,255,255,0.16); color: #FFFFFF; border: 1px solid rgba(255,255,255,0.35); border-radius: 9px; padding: 7px 13px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s;">
+                            📥 Baixar Planilha Modelo (.xlsx)
+                        </button>
+                        <button type="button" id="btn-close-excel-import" style="background: rgba(255,255,255,0.16); border: none; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 16px; color: #FFFFFF; font-weight: 700; display: flex; align-items: center; justify-content: center;">
+                            ✕
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Body Scrollable -->
+                <div style="padding: 20px 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; flex: 1;">
+                    <!-- 1. Zona de Upload + Configurações Padrão -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
+                        <!-- Dropzone -->
+                        <div id="excel-dropzone" style="border: 2px dashed rgba(16, 185, 129, 0.45); background: rgba(16, 185, 129, 0.04); border-radius: 14px; padding: 22px 18px; text-align: center; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;">
+                            <input type="file" id="excel-file-input" accept=".xlsx,.xls,.csv,.tsv" style="display: none;">
+                            <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(16, 185, 129, 0.12); color: #059669; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                                📂
+                            </div>
+                            <div id="excel-file-label" style="font-size: 14px; font-weight: 700; color: var(--text-primary, #0F172A);">
+                                Clique para selecionar ou arraste sua planilha aqui
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-muted, #64748B);">
+                                Suporta planilhas do Microsoft Excel (<strong>.xlsx, .xls</strong>) e <strong>.csv</strong>
+                            </div>
+                            <div id="excel-sheet-selector-wrap" style="display: none; margin-top: 8px; width: 100%; max-width: 280px;" onclick="event.stopPropagation();">
+                                <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px; text-align: left;">Aba da Planilha:</label>
+                                <select id="excel-sheet-select" class="form-control" style="height: 34px; font-size: 12.5px; padding: 4px 10px;"></select>
+                            </div>
+                        </div>
+
+                        <!-- Configurações de Destino no CRM -->
+                        <div style="border: 1px solid var(--border-color, #E2E8F0); background: var(--bg-app, #F8FAFC); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 11px;">
+                            <div style="font-size: 12px; font-weight: 800; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.04em;">
+                                ⚙️ Configurações da Importação
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <div>
+                                    <label style="font-size: 11.5px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Responsável pelos Leads</label>
+                                    <select id="excel-default-owner" class="form-control" style="height: 36px; font-size: 12.5px; padding: 4px 10px;" ${!isAdminOrManager ? 'disabled' : ''}>
+                                        <option value="${curUser.email}">${curUser.name} (Meu Usuário)</option>
+                                        ${isAdminOrManager && sellersOnly.length > 1 ? `<option value="__ROUND_ROBIN__">🤖 Distribuir igualmente entre vendedores (${sellersOnly.length})</option>` : ''}
+                                        ${isAdminOrManager ? allUsers.filter(u => u.email !== curUser.email).map(u => `<option value="${u.email}">${u.name} (${u.role === 'seller' ? 'Vendedor' : u.role})</option>`).join("") : ''}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="font-size: 11.5px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Etapa Inicial no Funil</label>
+                                    <select id="excel-default-stage" class="form-control" style="height: 36px; font-size: 12.5px; padding: 4px 10px;">
+                                        <option value="Contato" selected>1. Contato</option>
+                                        <option value="Lead Gerado">2. Lead Gerado</option>
+                                        <option value="Lead Qualificado">3. Lead Qualificado</option>
+                                        <option value="Proposta Enviada">4. Proposta Enviada</option>
+                                        <option value="Negociação">5. Negociação</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="font-size: 11.5px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Segmento Padrão</label>
+                                    <select id="excel-default-segment" class="form-control" style="height: 36px; font-size: 12.5px; padding: 4px 10px;">
+                                        <option value="Outros" selected>Outros</option>
+                                        <option value="Indústria">Indústria</option>
+                                        <option value="Construção Civil">Construção Civil</option>
+                                        <option value="Agronegócio">Agronegócio</option>
+                                        <option value="Energia">Energia</option>
+                                        <option value="Comércio">Comércio</option>
+                                        <option value="Serviços">Serviços</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="font-size: 11.5px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Origem Padrão</label>
+                                    <input type="text" id="excel-default-source" class="form-control" value="Planilha Excel" style="height: 36px; font-size: 12.5px; padding: 4px 10px;">
+                                </div>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 2px;">
+                                <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-primary); cursor: pointer; font-weight: 600;">
+                                    <input type="checkbox" id="excel-skip-duplicates" checked style="width: 15px; height: 15px; accent-color: #059669;">
+                                    <span>Desmarcar automaticamente empresas/CNPJs que já existem no CRM</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); cursor: pointer;">
+                                    <input type="checkbox" id="excel-append-extra-cols" checked style="width: 15px; height: 15px; accent-color: #059669;">
+                                    <span>Salvar colunas extras da planilha dentro das Observações do Lead</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Mapeamento Inteligente de Colunas (Exibido após carregar planilha) -->
+                    <div id="excel-mapping-section" style="display: none; border: 1px solid var(--border-color, #E2E8F0); border-radius: 14px; padding: 16px; background: var(--bg-surface, #FFFFFF);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                            <div style="font-size: 12.5px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                                <span>🧭 Mapeamento Automático de Colunas</span>
+                                <span style="font-size: 11px; font-weight: 600; color: #059669; background: rgba(16,185,129,0.1); padding: 2px 8px; border-radius: 6px;">Ajuste se necessário</span>
+                            </div>
+                            <span style="font-size: 11.5px; color: var(--text-muted);">Relacione as colunas da sua planilha com os campos do Vellia CRM</span>
+                        </div>
+                        <div id="excel-mapping-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(185px, 1fr)); gap: 10px;"></div>
+                    </div>
+
+                    <!-- 3. Pré-visualização dos Leads -->
+                    <div id="excel-preview-section" style="display: none; flex-direction: column; gap: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <span style="font-size: 13.5px; font-weight: 800; color: var(--text-primary);">📋 Pré-visualização dos Leads</span>
+                                <span id="excel-stat-total" style="font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 99px; background: #EFF6FF; color: #2563EB;">0 na planilha</span>
+                                <span id="excel-stat-selected" style="font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 99px; background: #ECFDF5; color: #059669;">0 selecionados</span>
+                                <span id="excel-stat-duplicates" style="font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 99px; background: #FFFBEB; color: #D97706;">0 já existentes</span>
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-muted);">
+                                Marque ou desmarque as linhas que deseja importar
+                            </div>
+                        </div>
+
+                        <div style="border: 1px solid var(--border-color, #E2E8F0); border-radius: 12px; overflow: hidden; max-height: 310px; overflow-y: auto;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; text-align: left;">
+                                <thead style="background: var(--bg-app, #F8FAFC); position: sticky; top: 0; z-index: 2; border-bottom: 1px solid var(--border-color, #E2E8F0);">
+                                    <tr>
+                                        <th style="padding: 10px 12px; width: 36px; text-align: center;">
+                                            <input type="checkbox" id="excel-check-all" checked style="width: 15px; height: 15px; accent-color: #059669; cursor: pointer;">
+                                        </th>
+                                        <th style="padding: 10px 12px; font-weight: 700; color: var(--text-secondary);">Empresa / Cliente</th>
+                                        <th style="padding: 10px 12px; font-weight: 700; color: var(--text-secondary);">Contato</th>
+                                        <th style="padding: 10px 12px; font-weight: 700; color: var(--text-secondary);">Telefone / WhatsApp</th>
+                                        <th style="padding: 10px 12px; font-weight: 700; color: var(--text-secondary);">E-mail</th>
+                                        <th style="padding: 10px 12px; font-weight: 700; color: var(--text-secondary);">CNPJ</th>
+                                        <th style="padding: 10px 12px; font-weight: 700; color: var(--text-secondary);">Cidade/UF</th>
+                                        <th style="padding: 10px 12px; font-weight: 700; color: var(--text-secondary);">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="excel-preview-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div style="padding: 14px 24px; background: var(--bg-app, #F8FAFC); border-top: 1px solid var(--border-color, #E2E8F0); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                    <div id="excel-import-status-msg" style="font-size: 12.5px; color: var(--text-secondary); font-weight: 500;">
+                        Selecione uma planilha Excel (.xlsx, .xls ou .csv) para visualizar os leads antes de importar.
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button type="button" id="btn-cancel-excel-import" class="btn btn-outline" style="height: 38px; padding: 0 16px; font-size: 13px;">
+                            Cancelar
+                        </button>
+                        <button type="button" id="btn-confirm-excel-import" class="btn btn-primary" disabled style="height: 38px; padding: 0 20px; font-size: 13px; font-weight: 700; background: #059669; border-color: #059669; display: inline-flex; align-items: center; gap: 8px; opacity: 0.55; cursor: not-allowed;">
+                            <span>✅ Importar Leads para o CRM</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        modal.style.display = "flex";
+
+        // Eventos do modal
+        document.getElementById("btn-close-excel-import")?.addEventListener("click", () => this.closeExcelImportModal());
+        document.getElementById("btn-cancel-excel-import")?.addEventListener("click", () => this.closeExcelImportModal());
+        document.getElementById("btn-download-excel-template")?.addEventListener("click", () => this.downloadExcelTemplate());
+        document.getElementById("btn-confirm-excel-import")?.addEventListener("click", () => this.confirmExcelImport());
+
+        const dropzone = document.getElementById("excel-dropzone");
+        const fileInput = document.getElementById("excel-file-input");
+
+        if (dropzone && fileInput) {
+            dropzone.addEventListener("click", (e) => {
+                if (e.target.closest("#excel-sheet-selector-wrap")) return;
+                fileInput.click();
+            });
+            dropzone.addEventListener("dragover", (e) => {
+                e.preventDefault();
+                dropzone.style.borderColor = "#059669";
+                dropzone.style.background = "rgba(16, 185, 129, 0.12)";
+            });
+            dropzone.addEventListener("dragleave", () => {
+                dropzone.style.borderColor = "rgba(16, 185, 129, 0.45)";
+                dropzone.style.background = "rgba(16, 185, 129, 0.04)";
+            });
+            dropzone.addEventListener("drop", (e) => {
+                e.preventDefault();
+                dropzone.style.borderColor = "rgba(16, 185, 129, 0.45)";
+                dropzone.style.background = "rgba(16, 185, 129, 0.04)";
+                const file = e.dataTransfer?.files?.[0];
+                if (file) this.handleExcelFileSelected(file);
+            });
+            fileInput.addEventListener("change", (e) => {
+                const file = e.target.files?.[0];
+                if (file) this.handleExcelFileSelected(file);
+            });
+        }
+
+        document.getElementById("excel-sheet-select")?.addEventListener("change", (e) => {
+            this.loadExcelSheetByName(e.target.value);
+        });
+
+        ["excel-default-stage", "excel-default-segment", "excel-default-source", "excel-skip-duplicates", "excel-append-extra-cols"].forEach(id => {
+            document.getElementById(id)?.addEventListener("change", () => {
+                if (this._excelState.rawRows.length > 0) {
+                    this.rebuildExcelParsedLeads();
+                    this.renderExcelImportPreview();
+                }
+            });
+        });
+    },
+
+    closeExcelImportModal() {
+        const modal = document.getElementById("modal-import-excel-leads");
+        if (modal) modal.style.display = "none";
+    },
+
+    async downloadExcelTemplate() {
+        const sampleRows = [
+            {
+                "Empresa": "Indústria Metalúrgica Modelo Ltda",
+                "Contato": "Carlos Eduardo",
+                "Cargo": "Gerente de SGI",
+                "Telefone / WhatsApp": "(81) 99876-5432",
+                "E-mail": "carlos@metalurgicamodelo.com.br",
+                "CNPJ": "12.345.678/0001-90",
+                "Cidade": "Recife",
+                "UF": "PE",
+                "Segmento": "Indústria",
+                "Origem": "Planilha Excel",
+                "Etapa": "Contato",
+                "Observações": "Interesse em Licenciamento Ambiental e NR-13"
+            },
+            {
+                "Empresa": "Construtora Horizonte S/A",
+                "Contato": "Fernanda Lima",
+                "Cargo": "Engenheira Ambiental",
+                "Telefone / WhatsApp": "(81) 99123-4567",
+                "E-mail": "fernanda@construtorahorizonte.com.br",
+                "CNPJ": "98.765.432/0001-10",
+                "Cidade": "Jaboatão dos Guararapes",
+                "UF": "PE",
+                "Segmento": "Construção Civil",
+                "Origem": "Planilha Excel",
+                "Etapa": "Contato",
+                "Observações": "Solicitou orçamento para monitoramento ambiental"
+            }
+        ];
+
+        try {
+            const XLSX = await window.LazyLoader?.ensureXLSX?.();
+            if (XLSX) {
+                const ws = XLSX.utils.json_to_sheet(sampleRows);
+                ws["!cols"] = [
+                    { wch: 34 }, { wch: 20 }, { wch: 20 }, { wch: 18 },
+                    { wch: 30 }, { wch: 20 }, { wch: 20 }, { wch: 6 },
+                    { wch: 18 }, { wch: 16 }, { wch: 14 }, { wch: 42 }
+                ];
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Modelo Leads Vellia");
+                XLSX.writeFile(wb, "Modelo_Importacao_Leads_Vellia_CRM.xlsx");
+                return;
+            }
+        } catch (e) {
+            console.warn("Fallback CSV para planilha modelo:", e);
+        }
+
+        // Fallback CSV com BOM UTF-8 (abre direto no Excel em português com separador ;)
+        const headers = Object.keys(sampleRows[0]);
+        const csvLines = [
+            headers.join(";"),
+            ...sampleRows.map(r => headers.map(h => `"${String(r[h] || "").replace(/"/g, '""')}"`).join(";"))
+        ];
+        const blob = new Blob(["\uFEFF" + csvLines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "Modelo_Importacao_Leads_Vellia_CRM.csv";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    },
+
+    async handleExcelFileSelected(file) {
+        const labelEl = document.getElementById("excel-file-label");
+        const statusMsg = document.getElementById("excel-import-status-msg");
+        if (labelEl) labelEl.textContent = `⏳ Lendo arquivo "${file.name}"...`;
+        if (statusMsg) statusMsg.textContent = `Processando planilha "${file.name}"...`;
+
+        this._excelState.fileName = file.name;
+        const ext = (file.name.split(".").pop() || "").toLowerCase();
+
+        try {
+            let XLSX = window.XLSX;
+            if (!XLSX) {
+                try {
+                    XLSX = await window.LazyLoader?.ensureXLSX?.();
+                } catch (e) {
+                    XLSX = null;
+                }
+            }
+
+            if (XLSX && (ext === "xlsx" || ext === "xls" || ext === "csv" || ext === "tsv")) {
+                const buffer = await file.arrayBuffer();
+                const wb = XLSX.read(buffer, { type: "array", cellDates: true, raw: false });
+                this._excelState.workbook = wb;
+                this._excelState.sheetNames = wb.SheetNames || [];
+
+                const sheetWrap = document.getElementById("excel-sheet-selector-wrap");
+                const sheetSelect = document.getElementById("excel-sheet-select");
+                if (sheetWrap && sheetSelect) {
+                    if (this._excelState.sheetNames.length > 1) {
+                        sheetWrap.style.display = "block";
+                        sheetSelect.innerHTML = this._excelState.sheetNames.map(n => `<option value="${n}">${n}</option>`).join("");
+                    } else {
+                        sheetWrap.style.display = "none";
+                    }
+                }
+
+                const firstSheet = this._excelState.sheetNames[0];
+                if (!firstSheet) throw new Error("A planilha não possui abas válidas.");
+                this.loadExcelSheetByName(firstSheet);
+            } else {
+                // Fallback nativo para arquivos CSV / TSV
+                const text = await file.text();
+                const matrix = this.parseCsvTextFallback(text);
+                this.extractRowsFromSheetMatrix(matrix);
+            }
+
+            if (labelEl) {
+                labelEl.innerHTML = `<span style="color: #059669;">✅ ${file.name}</span> <span style="font-size: 12px; font-weight: 500; color: var(--text-muted);">(${this._excelState.rawRows.length} linhas detectadas — clique para trocar)</span>`;
+            }
+        } catch (err) {
+            console.error("Erro ao ler planilha:", err);
+            if (labelEl) labelEl.textContent = `❌ Falha ao ler "${file.name}". Clique para tentar outro arquivo.`;
+            alert(`Não foi possível processar o arquivo "${file.name}":\n${err.message || err}`);
+        }
+    },
+
+    loadExcelSheetByName(sheetName) {
+        const wb = this._excelState.workbook;
+        const XLSX = window.XLSX;
+        if (!wb || !XLSX) return;
+        this._excelState.activeSheet = sheetName;
+        const ws = wb.Sheets[sheetName];
+        const matrix = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", blankrows: false });
+        this.extractRowsFromSheetMatrix(matrix);
+    },
+
+    parseCsvTextFallback(text) {
+        const clean = (text || "").replace(/^\uFEFF/, "");
+        const lines = clean.split(/\r?\n/).filter(l => l.trim().length > 0);
+        if (lines.length === 0) return [];
+        const firstLine = lines[0];
+        const semiCount = (firstLine.match(/;/g) || []).length;
+        const commaCount = (firstLine.match(/,/g) || []).length;
+        const tabCount = (firstLine.match(/\t/g) || []).length;
+        const sep = tabCount > semiCount && tabCount > commaCount ? "\t" : (semiCount >= commaCount ? ";" : ",");
+
+        return lines.map(line => {
+            const cells = [];
+            let cur = "";
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                const ch = line[i];
+                if (ch === '"') {
+                    if (inQuotes && line[i + 1] === '"') {
+                        cur += '"';
+                        i++;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (ch === sep && !inQuotes) {
+                    cells.push(cur.trim());
+                    cur = "";
+                } else {
+                    cur += ch;
+                }
+            }
+            cells.push(cur.trim());
+            return cells;
+        });
+    },
+
+    extractRowsFromSheetMatrix(matrix) {
+        if (!Array.isArray(matrix) || matrix.length === 0) {
+            throw new Error("A planilha selecionada está vazia.");
+        }
+
+        // Encontrar a melhor linha de cabeçalho (entre as 10 primeiras linhas)
+        const headerKeywords = ["empresa", "cliente", "razao", "fantasia", "nome", "contato", "telefone", "whatsapp", "celular", "fone", "email", "e-mail", "cnpj", "cidade", "uf", "estado", "segmento", "cargo", "observa"];
+        let bestHeaderIdx = 0;
+        let bestScore = -1;
+
+        const maxScan = Math.min(matrix.length, 10);
+        for (let i = 0; i < maxScan; i++) {
+            const row = matrix[i];
+            if (!Array.isArray(row)) continue;
+            const nonEmpty = row.filter(c => String(c ?? "").trim().length > 0);
+            if (nonEmpty.length === 0) continue;
+            let score = nonEmpty.length;
+            nonEmpty.forEach(cell => {
+                const norm = String(cell).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                if (headerKeywords.some(kw => norm.includes(kw))) {
+                    score += 5;
+                }
+            });
+            if (score > bestScore) {
+                bestScore = score;
+                bestHeaderIdx = i;
+            }
+        }
+
+        const rawHeaderRow = matrix[bestHeaderIdx] || [];
+        const headers = [];
+        const colIndices = [];
+
+        rawHeaderRow.forEach((cell, colIdx) => {
+            const name = String(cell ?? "").trim() || `Coluna ${colIdx + 1}`;
+            // Verificar se a coluna tem algum dado nas linhas abaixo ou cabeçalho explícito
+            const hasDataBelow = matrix.slice(bestHeaderIdx + 1).some(r => Array.isArray(r) && String(r[colIdx] ?? "").trim().length > 0);
+            if (String(cell ?? "").trim().length > 0 || hasDataBelow) {
+                headers.push(name);
+                colIndices.push(colIdx);
+            }
+        });
+
+        const dataRows = [];
+        for (let r = bestHeaderIdx + 1; r < matrix.length; r++) {
+            const rowArr = matrix[r];
+            if (!Array.isArray(rowArr)) continue;
+            const rowObj = {};
+            let nonEmptyCells = 0;
+            headers.forEach((h, idx) => {
+                const val = String(rowArr[colIndices[idx]] ?? "").trim();
+                rowObj[h] = val;
+                if (val.length > 0) nonEmptyCells++;
+            });
+            if (nonEmptyCells > 0) {
+                dataRows.push(rowObj);
+            }
+        }
+
+        if (dataRows.length === 0) {
+            throw new Error("Nenhum registro de lead foi encontrado abaixo do cabeçalho da planilha.");
+        }
+
+        this._excelState.headers = headers;
+        this._excelState.rawRows = dataRows;
+        this._excelState.mapping = this.autoDetectExcelColumnMapping(headers);
+
+        this.renderExcelColumnMappingUI();
+        this.rebuildExcelParsedLeads();
+        this.renderExcelImportPreview();
+    },
+
+    autoDetectExcelColumnMapping(headers) {
+        const norm = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        const used = new Set();
+
+        const findBestHeader = (patterns) => {
+            for (const pat of patterns) {
+                const exact = headers.find(h => !used.has(h) && norm(h) === pat);
+                if (exact) { used.add(exact); return exact; }
+            }
+            for (const pat of patterns) {
+                const partial = headers.find(h => !used.has(h) && norm(h).includes(pat));
+                if (partial) { used.add(partial); return partial; }
+            }
+            return "";
+        };
+
+        const mapping = {
+            company: findBestHeader(["empresa", "razao social", "nome fantasia", "cliente", "organizacao", "companhia", "estabelecimento", "unidade"]),
+            contact: findBestHeader(["contato", "responsavel", "decisor", "nome do contato", "pessoa", "representante", "solicitante", "nome"]),
+            phone: findBestHeader(["telefone / whatsapp", "whatsapp", "telefone", "celular", "fone", "tel", "contato telefonico", "numero"]),
+            phone2: findBestHeader(["telefone 2", "fone 2", "tel 2", "fixo", "segundo telefone"]),
+            email: findBestHeader(["e-mail", "email", "correio", "mail"]),
+            cnpj: findBestHeader(["cnpj", "cpf/cnpj", "documento", "cpf"]),
+            role: findBestHeader(["cargo", "funcao", "departamento", "setor"]),
+            city: findBestHeader(["cidade", "municipio", "localidade"]),
+            state: findBestHeader(["uf", "estado"]),
+            segment: findBestHeader(["segmento", "ramo", "atividade", "vertical", "area"]),
+            source: findBestHeader(["origem", "fonte", "canal"]),
+            stage: findBestHeader(["etapa", "estagio", "fase", "status"]),
+            notes: findBestHeader(["observacoes", "observacao", "obs", "notas", "historico", "comentarios", "servico", "descricao", "detalhes"])
+        };
+
+        // Se não achou coluna "Empresa", mas achou "Contato" (ex: planilha com apenas coluna "Nome" ou a 1ª coluna da planilha)
+        if (!mapping.company && headers.length > 0) {
+            mapping.company = mapping.contact || headers[0];
+        }
+
+        return mapping;
+    },
+
+    renderExcelColumnMappingUI() {
+        const sec = document.getElementById("excel-mapping-section");
+        const grid = document.getElementById("excel-mapping-grid");
+        if (!sec || !grid) return;
+
+        sec.style.display = "block";
+        const headers = this._excelState.headers;
+        const mapping = this._excelState.mapping;
+
+        const fields = [
+            { key: "company", label: "🏢 Empresa / Cliente *" },
+            { key: "contact", label: "👤 Contato / Responsável" },
+            { key: "phone", label: "📞 Telefone / WhatsApp" },
+            { key: "email", label: "✉️ E-mail" },
+            { key: "cnpj", label: "🪪 CNPJ / Documento" },
+            { key: "role", label: "💼 Cargo" },
+            { key: "city", label: "📍 Cidade" },
+            { key: "state", label: "🗺️ UF / Estado" },
+            { key: "segment", label: "🏷️ Segmento" },
+            { key: "notes", label: "📝 Observações" }
+        ];
+
+        grid.innerHTML = fields.map(f => `
+            <div>
+                <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 3px;">${f.label}</label>
+                <select class="form-control excel-col-map-select" data-field="${f.key}" style="height: 34px; font-size: 12px; padding: 4px 8px;">
+                    <option value="">— Não mapear —</option>
+                    ${headers.map(h => `<option value="${h.replace(/"/g, '&quot;')}" ${mapping[f.key] === h ? "selected" : ""}>${h}</option>`).join("")}
+                </select>
+            </div>
+        `).join("");
+
+        grid.querySelectorAll(".excel-col-map-select").forEach(sel => {
+            sel.addEventListener("change", (e) => {
+                const field = e.target.getAttribute("data-field");
+                this._excelState.mapping[field] = e.target.value;
+                this.rebuildExcelParsedLeads();
+                this.renderExcelImportPreview();
+            });
+        });
+    },
+
+    rebuildExcelParsedLeads() {
+        const { rawRows, headers, mapping } = this._excelState;
+        const defaultStage = document.getElementById("excel-default-stage")?.value || "Contato";
+        const defaultSegment = document.getElementById("excel-default-segment")?.value || "Outros";
+        const defaultSource = document.getElementById("excel-default-source")?.value.trim() || "Planilha Excel";
+        const skipDuplicates = document.getElementById("excel-skip-duplicates")?.checked !== false;
+        const appendExtraCols = document.getElementById("excel-append-extra-cols")?.checked !== false;
+
+        const existingLeads = Store.getLeads ? Store.getLeads() : [];
+        const existingCompanies = new Set(existingLeads.map(l => (l.company || "").toLowerCase().trim()).filter(Boolean));
+        const existingCnpjs = new Set(existingLeads.map(l => String(l.cnpj || "").replace(/\D/g, "")).filter(d => d.length >= 11));
+
+        const mappedHeadersSet = new Set(Object.values(mapping).filter(Boolean));
+
+        const parsed = [];
+        rawRows.forEach((row, idx) => {
+            const getCol = (key) => (mapping[key] && row[mapping[key]]) ? String(row[mapping[key]]).trim() : "";
+
+            let company = getCol("company");
+            let contact = getCol("contact");
+            if (!company && contact) {
+                company = contact;
+            }
+            if (!company) return; // Ignorar linha completamente sem identificação
+
+            const phone = getCol("phone");
+            const phone2 = getCol("phone2");
+            const email = getCol("email");
+            const rawCnpj = getCol("cnpj");
+            const cleanCnpjDigits = rawCnpj.replace(/\D/g, "");
+            const cnpjFormatted = cleanCnpjDigits.length === 14 ? CNPJService.formatCNPJ(cleanCnpjDigits) : rawCnpj;
+            const role = getCol("role");
+            const city = getCol("city");
+            const state = getCol("state").toUpperCase().slice(0, 2);
+            const segment = getCol("segment") || defaultSegment;
+            const source = getCol("source") || defaultSource;
+
+            // Mapear etapa caso exista na planilha
+            const rawStage = getCol("stage").toLowerCase();
+            let stage = defaultStage;
+            if (rawStage) {
+                if (rawStage.includes("fechado") || rawStage.includes("ganho")) stage = "Cliente Fechado";
+                else if (rawStage.includes("negocia")) stage = "Negociação";
+                else if (rawStage.includes("proposta") || rawStage.includes("orcamento") || rawStage.includes("orçamento")) stage = "Proposta Enviada";
+                else if (rawStage.includes("qualificado")) stage = "Lead Qualificado";
+                else if (rawStage.includes("gerado") || rawStage.includes("novo")) stage = "Lead Gerado";
+                else if (rawStage.includes("perdido")) stage = "Cliente Perdido";
+            }
+
+            let notesParts = [];
+            const baseNotes = getCol("notes");
+            if (baseNotes) notesParts.push(baseNotes);
+
+            if (appendExtraCols) {
+                const extras = [];
+                headers.forEach(h => {
+                    if (!mappedHeadersSet.has(h)) {
+                        const val = String(row[h] ?? "").trim();
+                        if (val) extras.push(`${h}: ${val}`);
+                    }
+                });
+                if (extras.length > 0) {
+                    notesParts.push(`[Dados da Planilha]: ${extras.join(" | ")}`);
+                }
+            }
+
+            const isDuplicate = existingCompanies.has(company.toLowerCase().trim()) ||
+                                (cleanCnpjDigits.length >= 11 && existingCnpjs.has(cleanCnpjDigits));
+
+            parsed.push({
+                _rowIndex: idx,
+                selected: skipDuplicates ? !isDuplicate : true,
+                isDuplicate,
+                company,
+                contact: contact || "Responsável",
+                role,
+                phone,
+                whatsapp: phone,
+                phone2,
+                email,
+                cnpj: cleanCnpjDigits || rawCnpj,
+                cnpjDisplay: cnpjFormatted,
+                city,
+                state,
+                segment,
+                source,
+                stage,
+                notes: notesParts.join("\n")
+            });
+        });
+
+        this._excelState.parsedLeads = parsed;
+    },
+
+    renderExcelImportPreview() {
+        const previewSec = document.getElementById("excel-preview-section");
+        const tbody = document.getElementById("excel-preview-tbody");
+        const statTotal = document.getElementById("excel-stat-total");
+        const statSelected = document.getElementById("excel-stat-selected");
+        const statDuplicates = document.getElementById("excel-stat-duplicates");
+        const btnConfirm = document.getElementById("btn-confirm-excel-import");
+        const statusMsg = document.getElementById("excel-import-status-msg");
+        const checkAll = document.getElementById("excel-check-all");
+
+        if (!previewSec || !tbody) return;
+
+        const list = this._excelState.parsedLeads;
+        previewSec.style.display = "flex";
+
+        const updateCounters = () => {
+            const total = list.length;
+            const selectedCount = list.filter(item => item.selected).length;
+            const dupCount = list.filter(item => item.isDuplicate).length;
+
+            if (statTotal) statTotal.textContent = `${total} na planilha`;
+            if (statSelected) statSelected.textContent = `${selectedCount} selecionados para importar`;
+            if (statDuplicates) statDuplicates.textContent = `${dupCount} já existentes no CRM`;
+
+            if (btnConfirm) {
+                btnConfirm.disabled = selectedCount === 0;
+                btnConfirm.style.opacity = selectedCount === 0 ? "0.55" : "1";
+                btnConfirm.style.cursor = selectedCount === 0 ? "not-allowed" : "pointer";
+                btnConfirm.innerHTML = `<span>✅ Importar ${selectedCount} ${selectedCount === 1 ? "Lead" : "Leads"} para o CRM</span>`;
+            }
+            if (statusMsg) {
+                statusMsg.innerHTML = selectedCount > 0
+                    ? `Pronto para importar <strong>${selectedCount}</strong> lead(s) diretamente para o Vellia CRM e sincronizar com o Supabase.`
+                    : `Nenhum lead selecionado para importação.`;
+            }
+            if (checkAll) {
+                checkAll.checked = total > 0 && selectedCount === total;
+            }
+        };
+
+        tbody.innerHTML = list.map((item, idx) => `
+            <tr style="border-bottom: 1px solid var(--border-color, #E2E8F0); background: ${item.isDuplicate ? 'rgba(245, 158, 11, 0.04)' : 'transparent'};">
+                <td style="padding: 9px 12px; text-align: center;">
+                    <input type="checkbox" class="excel-row-check" data-idx="${idx}" ${item.selected ? "checked" : ""} style="width: 15px; height: 15px; accent-color: #059669; cursor: pointer;">
+                </td>
+                <td style="padding: 9px 12px; font-weight: 700; color: var(--text-primary);">${item.company}</td>
+                <td style="padding: 9px 12px; color: var(--text-secondary);">${item.contact}${item.role ? ` <span style="font-size:11px; color:var(--text-muted);">(${item.role})</span>` : ""}</td>
+                <td style="padding: 9px 12px; color: var(--text-secondary); font-family: monospace;">${item.phone || "—"}</td>
+                <td style="padding: 9px 12px; color: var(--text-secondary);">${item.email || "—"}</td>
+                <td style="padding: 9px 12px; color: var(--text-secondary); font-family: monospace;">${item.cnpjDisplay || "—"}</td>
+                <td style="padding: 9px 12px; color: var(--text-secondary);">${item.city || "—"}${item.state ? `/${item.state}` : ""}</td>
+                <td style="padding: 9px 12px;">
+                    ${item.isDuplicate
+                        ? `<span style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: #FFFBEB; color: #D97706; border: 1px solid #FDE68A;">⚠️ Já existe</span>`
+                        : `<span style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0;">✓ Novo</span>`
+                    }
+                </td>
+            </tr>
+        `).join("");
+
+        tbody.querySelectorAll(".excel-row-check").forEach(chk => {
+            chk.addEventListener("change", (e) => {
+                const i = parseInt(e.target.getAttribute("data-idx"), 10);
+                if (list[i]) list[i].selected = e.target.checked;
+                updateCounters();
+            });
+        });
+
+        if (checkAll) {
+            checkAll.onclick = (e) => {
+                const checked = e.target.checked;
+                list.forEach(item => { item.selected = checked; });
+                tbody.querySelectorAll(".excel-row-check").forEach(chk => { chk.checked = checked; });
+                updateCounters();
+            };
+        }
+
+        updateCounters();
+    },
+
+    async confirmExcelImport() {
+        const selectedLeads = (this._excelState.parsedLeads || []).filter(item => item.selected);
+        if (selectedLeads.length === 0) return;
+
+        const btnConfirm = document.getElementById("btn-confirm-excel-import");
+        if (btnConfirm) {
+            btnConfirm.disabled = true;
+            btnConfirm.innerHTML = `<span>⏳ Importando ${selectedLeads.length} leads...</span>`;
+        }
+
+        try {
+            const curUser = Auth.getCurrentUser() || { email: "admin@vellia.com", name: "Administrador", role: "admin" };
+            const ownerSetting = document.getElementById("excel-default-owner")?.value || curUser.email;
+            const sellersOnly = (Store.getUsers ? Store.getUsers() : []).filter(u => u && (u.role === "seller" || u.role === "vendedor"));
+
+            const payloads = selectedLeads.map((item, idx) => {
+                let assignedOwner = ownerSetting;
+                if (ownerSetting === "__ROUND_ROBIN__" && sellersOnly.length > 0) {
+                    assignedOwner = sellersOnly[idx % sellersOnly.length].email;
+                }
+                return {
+                    company: item.company,
+                    contact: item.contact,
+                    role: item.role,
+                    phone: item.phone,
+                    whatsapp: item.whatsapp,
+                    phone2: item.phone2,
+                    email: item.email,
+                    cnpj: item.cnpj,
+                    city: item.city,
+                    state: item.state,
+                    segment: item.segment,
+                    source: item.source,
+                    stage: item.stage,
+                    notes: item.notes,
+                    owner: assignedOwner,
+                    createdBy: assignedOwner
+                };
+            });
+
+            const created = await Store.addLeadsBulk(payloads, curUser.email);
+
+            this.closeExcelImportModal();
+            this.renderLeadsTable();
+            if (window.Kanban && typeof window.Kanban.renderBoard === "function") {
+                window.Kanban.renderBoard();
+            }
+            if (window.Dashboard && typeof window.Dashboard.renderManagerDailyProductivity === "function") {
+                window.Dashboard.renderManagerDailyProductivity();
+            }
+
+            if (window.Toast && typeof window.Toast.show === "function") {
+                window.Toast.show({
+                    type: "success",
+                    title: "Importação Concluída!",
+                    message: `${created.length} lead(s) importado(s) da planilha Excel com sucesso.`,
+                    duration: 4000
+                });
+            } else {
+                alert(`✅ Importação concluída! ${created.length} lead(s) foram adicionados ao CRM.`);
+            }
+        } catch (err) {
+            console.error("Erro na importação de leads via Excel:", err);
+            alert("Ocorreu um erro ao importar os leads: " + (err.message || err));
+            if (btnConfirm) {
+                btnConfirm.disabled = false;
+                btnConfirm.innerHTML = `<span>✅ Importar ${selectedLeads.length} Leads para o CRM</span>`;
+            }
+        }
     }
 };
 

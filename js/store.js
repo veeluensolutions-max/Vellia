@@ -1425,9 +1425,9 @@ export const Store = {
     },
 
     deleteProposal(id, userEmail = "sistema@vellia.com") {
-        const proposals = this.getProposalsRaw().filter(p => p.id !== id);
+        const proposals = this.getProposalsRaw().filter(p => String(p.id) !== String(id));
         MemoryCache.set("comercial_proposals", proposals);
-        deleteSupabase("comercial_proposals", `?id=eq.${id}`);
+        deleteSupabase("comercial_proposals", `?id=eq.${encodeURIComponent(id)}`);
         this.addLog(userEmail, "PROPOSAL_DELETED", `Proposta ${id} excluída.`);
         window.dispatchEvent(new CustomEvent("vellia:proposalUpdated"));
         window.dispatchEvent(new CustomEvent("vellia:waSent"));

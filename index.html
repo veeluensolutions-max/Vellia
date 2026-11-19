@@ -3423,6 +3423,10 @@ Condições de pagamento:
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                                 <span>Cancelar</span>
                             </button>
+                            <button type="button" id="gc-btn-delete" class="gc-btn-cancel" style="display: none; background: rgba(220, 38, 38, 0.08); color: #DC2626; border-color: rgba(220, 38, 38, 0.35); margin-left: auto;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                <span>Excluir Orçamento</span>
+                            </button>
                         </div>
 
                     </div>
@@ -5847,31 +5851,6 @@ Condições de pagamento:
                         Probabilidade de Fechamento <span class="ql-required">*</span>
                         <span class="ql-prob-badge" id="qualify-prob-badge">50%</span>
                     </label>
-                    <div class="ql-prob-track">
-                        <input type="range" id="qualify-prob" class="ql-prob-slider" min="0" max="100" value="50" step="5"
-                               oninput="document.getElementById('qualify-prob-badge').textContent=this.value+'%'; this.style.setProperty('--pct', this.value+'%');" required>
-                        <div class="ql-prob-markers">
-                            <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Observações -->
-                <div class="ql-field-group">
-                    <label class="ql-label" for="qualify-notes">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                        Observações
-                    </label>
-                    <textarea id="qualify-notes" class="ql-textarea" placeholder="Detalhes da oportunidade, contexto, necessidades do cliente..."></textarea>
-                </div>
-            </div>
-
-            <div class="ql-modal-footer" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
-                <button type="button" id="btn-cancel-qualify" class="ql-btn-cancel">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    Cancelar
-                </button>
-                <div style="display: flex; gap: 8px; align-items: center;">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                     Esta ação marcará o lead como perdido e registrará o motivo no histórico de auditoria.
                 </div>
@@ -6155,6 +6134,10 @@ Condições de pagamento:
             </button>
             <button id="btn-proposal-reopen" class="btn btn-outline" style="color: #d97706; border-color: rgba(217,119,6,0.35); display: none; align-items: center; gap: 6px;">
                 🔄 Reverter para Em Negociação
+            </button>
+            <button id="btn-proposal-delete" class="btn btn-outline" style="color: var(--danger); border-color: rgba(239,68,68,0.35); display: flex; align-items: center; gap: 6px;" title="Excluir proposta">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                <span>Excluir</span>
             </button>
             <button id="btn-proposal-lose" class="btn btn-outline" style="color: var(--danger); border-color: rgba(239,68,68,0.35); display: flex; align-items: center; gap: 6px;">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -8319,9 +8302,9 @@ Condições de pagamento:
     <!-- Script Principal da Aplicação -->
     <script src="js/isocinetica-calculator.js?v=20260903_1010"></script>
     <script src="js/isocinetica-pdf.js?v=20260903_1010"></script>
-    <script type="module" src="js/isocinetica-ui.js?v=20261119_3"></script>
-    <script type="module" src="js/learning.js?v=20261119_3"></script>
-    <script type="module" src="js/app.js?v=20261119_3"></script>
+    <script type="module" src="js/isocinetica-ui.js?v=20261119_4"></script>
+    <script type="module" src="js/learning.js?v=20261119_4"></script>
+    <script type="module" src="js/app.js?v=20261119_4"></script>
 </body>
 </html>
 

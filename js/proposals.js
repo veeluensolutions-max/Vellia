@@ -78,6 +78,13 @@ export const Proposals = {
         const btnGcCancel = document.getElementById("gc-btn-cancel");
         if (btnGcCancel) btnGcCancel.addEventListener("click", () => this.closeBudgetScreen());
 
+        const btnGcDelete = document.getElementById("gc-btn-delete");
+        if (btnGcDelete) {
+            btnGcDelete.addEventListener("click", () => {
+                if (currentEditingBudgetId) this.deleteProposal(currentEditingBudgetId);
+            });
+        }
+
         const btnGcAddService = document.getElementById("gc-btn-add-service");
         if (btnGcAddService) btnGcAddService.addEventListener("click", () => this.addServiceRow());
 
@@ -262,6 +269,9 @@ export const Proposals = {
 
         const btnReopen = document.getElementById("btn-proposal-reopen");
         if (btnReopen) btnReopen.addEventListener("click", () => this.reopenProposal());
+
+        const btnDeleteProp = document.getElementById("btn-proposal-delete");
+        if (btnDeleteProp) btnDeleteProp.addEventListener("click", () => this.deleteProposal());
 
         const btnWa = document.getElementById("btn-proposal-wa");
         if (btnWa) {
@@ -643,7 +653,15 @@ export const Proposals = {
                                     🔄 Reabrir
                                 </button>
                             `}
-                            <button type="button" class="btn btn-sm btn-outline btn-view-proposal" data-id="${p.id}" style="font-size: 12px; font-weight: 600; padding: 4px 11px; border-radius: 6px;">Ver</button>
+                            <button type="button" class="btn btn-sm btn-outline btn-view-proposal" data-id="${p.id}" style="font-size: 12px; font-weight: 600; padding: 4px 11px; border-radius: 6px;" title="Visualizar detalhes">Ver</button>
+                            <button type="button" class="btn btn-sm btn-outline btn-row-edit-proposal" data-id="${p.id}" style="font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 6px; color: var(--primary); border-color: rgba(99, 102, 241, 0.35); background: rgba(99, 102, 241, 0.06); display: inline-flex; align-items: center; gap: 4px;" title="Editar orçamento">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                Editar
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline btn-row-delete-proposal" data-id="${p.id}" style="font-size: 12px; font-weight: 600; padding: 4px 9px; border-radius: 6px; color: #DC2626; border-color: rgba(220, 38, 38, 0.35); background: rgba(220, 38, 38, 0.06); display: inline-flex; align-items: center; gap: 4px;" title="Excluir proposta">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                Excluir
+                            </button>
                         </div>
                     </td>
                 </tr>
@@ -676,6 +694,18 @@ export const Proposals = {
             btn.addEventListener("click", () => {
                 activeProposalId = btn.getAttribute("data-id");
                 this.reopenProposal(activeProposalId);
+            });
+        });
+        tbody.querySelectorAll(".btn-row-edit-proposal").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const id = btn.getAttribute("data-id");
+                this.openBudgetScreen(id);
+            });
+        });
+        tbody.querySelectorAll(".btn-row-delete-proposal").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const id = btn.getAttribute("data-id");
+                this.deleteProposal(id);
             });
         });
     },
@@ -926,6 +956,11 @@ export const Proposals = {
         const titleEl = document.getElementById("gc-title-action");
         const breadcrumbEl = document.getElementById("gc-breadcrumb-action");
         const submitBtn = document.getElementById("gc-btn-submit");
+        const deleteBtn = document.getElementById("gc-btn-delete");
+
+        if (deleteBtn) {
+            deleteBtn.style.display = proposalId ? "inline-flex" : "none";
+        }
 
         this.populateClientsDatalist();
 
@@ -1140,6 +1175,8 @@ export const Proposals = {
     closeBudgetScreen() {
         const listContainer = document.getElementById("proposals-list-container");
         const budgetView = document.getElementById("gestaoclick-budget-view");
+        const deleteBtn = document.getElementById("gc-btn-delete");
+        if (deleteBtn) deleteBtn.style.display = "none";
         if (budgetView) budgetView.style.display = "none";
         if (listContainer) listContainer.style.display = "block";
         currentEditingBudgetId = null;
@@ -1783,6 +1820,44 @@ export const Proposals = {
         this.renderStats();
         this.renderTable();
         alert("Proposta atualizada com sucesso!");
+    },
+
+    // ==========================================================================
+    // EXCLUSÃO DE PROPOSTA
+    // ==========================================================================
+    async deleteProposal(id = null) {
+        const targetId = id || activeProposalId || currentEditingBudgetId;
+        if (!targetId) return;
+
+        const proposal = Store.getProposalById(targetId);
+        const proposalName = proposal ? (proposal.title || proposal.company || targetId) : targetId;
+
+        const confirmMsg = `Tem certeza que deseja excluir a proposta:\n"${proposalName}"?\n\nEsta ação não poderá ser desfeita e removerá a proposta do sistema e da nuvem.`;
+        if (!confirm(confirmMsg)) {
+            return;
+        }
+
+        const user = Auth.getCurrentUser();
+        const userEmail = user ? user.email : "sistema@vellia.com";
+
+        Store.deleteProposal(targetId, userEmail);
+
+        if (activeProposalId === targetId) {
+            this.closeDetailModal();
+        }
+
+        if (currentEditingBudgetId === targetId) {
+            this.closeBudgetScreen();
+        }
+
+        activeProposalId = null;
+        currentEditingBudgetId = null;
+
+        this.renderStats();
+        this.renderTable();
+        this.renderLossAnalysis();
+
+        alert("Proposta excluída com sucesso!");
     },
 
     // ==========================================================================

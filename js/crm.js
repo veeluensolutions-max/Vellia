@@ -3296,7 +3296,7 @@ Instruções: Retorne APENAS o texto curto pronto da mensagem em tom amigável e
 
     openExcelImportModal() {
         // Carregar SheetJS em background para leitura imediata
-        window.LazyLoader?.ensureXLSX?.().catch(() => {});
+        window.LazyLoader?.ensureXLSX?.().catch(() => { });
 
         const curUser = Auth.getCurrentUser() || { email: "admin@vellia.com", name: "Administrador", role: "admin" };
         const role = (curUser.role || "").toLowerCase().trim();
@@ -3941,7 +3941,7 @@ Instruções: Retorne APENAS o texto curto pronto da mensagem em tom amigável e
             }
 
             const isDuplicate = existingCompanies.has(company.toLowerCase().trim()) ||
-                                (cleanCnpjDigits.length >= 11 && existingCnpjs.has(cleanCnpjDigits));
+                (cleanCnpjDigits.length >= 11 && existingCnpjs.has(cleanCnpjDigits));
 
             parsed.push({
                 _rowIndex: idx,
@@ -4021,9 +4021,9 @@ Instruções: Retorne APENAS o texto curto pronto da mensagem em tom amigável e
                 <td style="padding: 9px 12px; color: var(--text-secondary);">${item.city || "—"}${item.state ? `/${item.state}` : ""}</td>
                 <td style="padding: 9px 12px;">
                     ${item.isDuplicate
-                        ? `<span style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: #FFFBEB; color: #D97706; border: 1px solid #FDE68A;">⚠️ Já existe</span>`
-                        : `<span style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0;">✓ Novo</span>`
-                    }
+                ? `<span style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: #FFFBEB; color: #D97706; border: 1px solid #FDE68A;">⚠️ Já existe</span>`
+                : `<span style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0;">✓ Novo</span>`
+            }
                 </td>
             </tr>
         `).join("");

@@ -971,6 +971,7 @@ export const Store = {
         allLeads[index].deleted_by = userEmail;
         MemoryCache.set("comercial_leads", allLeads);
         upsertSupabase("comercial_leads", encodeLeadForSupabase(allLeads[index]));
+        window.dispatchEvent(new CustomEvent("vellia:leadDeleted"));
         return true;
     },
 
@@ -995,6 +996,7 @@ export const Store = {
             deleteSupabase("comercial_leads", `?id=eq.${id}`);
         }
         this.addLog(userEmail, "LEAD_PURGED", `${leadIds.length} lead(s) excluído(s) definitivamente da lixeira por ${userEmail}.`, "SUCCESS");
+        window.dispatchEvent(new CustomEvent("vellia:leadDeleted"));
     },
 
     deleteLead(leadId) {

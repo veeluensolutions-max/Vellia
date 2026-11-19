@@ -13,6 +13,7 @@ let activeLeadId = null;
 let pendingStageChange = null;
 
 export const CRM = {
+    selectedLeadIds: new Set(),
     _eventsBound: false,
     _realtimeListenersBound: false,
     get activeLeadId() {
@@ -282,6 +283,22 @@ export const CRM = {
                 if (topOwner) topOwner.value = "all";
                 this.renderLeadsTable();
             });
+        }
+
+        // Ações da Barra de Seleção em Massa de Leads
+        const btnBulkDeselect = document.getElementById("btn-bulk-deselect");
+        if (btnBulkDeselect) {
+            btnBulkDeselect.addEventListener("click", () => this.clearSelectedLeads());
+        }
+
+        const btnBulkTrash = document.getElementById("btn-bulk-trash-leads");
+        if (btnBulkTrash) {
+            btnBulkTrash.addEventListener("click", () => this.deleteSelectedLeads(false));
+        }
+
+        const btnBulkPurge = document.getElementById("btn-bulk-purge-leads");
+        if (btnBulkPurge) {
+            btnBulkPurge.addEventListener("click", () => this.deleteSelectedLeads(true));
         }
 
         // Pílulas de Filtros Rápidos (Pill Filters)
@@ -1050,12 +1067,13 @@ export const CRM = {
 
         if (filteredLeads.length === 0) {
             tableBody.innerHTML = `
-                            <tr>
-                    <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 40px 20px;">
+                <tr>
+                    <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 40px 20px;">
                         Nenhum lead ou contato encontrado para a pesquisa.
                     </td>
                 </tr>
             `;
+            this.updateBulkSelectionUI([]);
             return;
         }
 
@@ -1140,8 +1158,13 @@ export const CRM = {
             const dateStr = createdAtTs > 0 ? new Date(createdAtTs).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
             const recentBadge = isRecent ? `<span class="badge" style="font-size: 9.5px; font-weight: 700; background: rgba(16, 185, 129, 0.12); color: #059669; border: 1px solid rgba(16, 185, 129, 0.3); padding: 1.5px 6px; border-radius: 99px; margin-left: 6px; display: inline-flex; align-items: center; gap: 3px;" title="Lead cadastrado recentemente (${dateStr})">✨ Novo</span>` : "";
 
+            const isChecked = this.selectedLeadIds.has(lead.id);
+
             return `
-                <tr class="clickable-row" data-id="${lead.id}">
+                <tr class="clickable-row ${isChecked ? 'row-selected' : ''}" data-id="${lead.id}">
+                    <td style="width: 44px; min-width: 44px; text-align: center; padding: 0 8px;" onclick="event.stopPropagation();">
+                        <input type="checkbox" class="lead-row-select" data-id="${lead.id}" ${isChecked ? "checked" : ""} style="width: 17px; height: 17px; cursor: pointer; accent-color: var(--primary);">
+                    </td>
                     <td style="min-width: 180px;">
                         <div class="table-company-cell">
                             <div class="table-avatar">${(lead.company || 'L').substring(0, 2).toUpperCase()}</div>
@@ -1204,6 +1227,9 @@ export const CRM = {
                         <button class="btn btn-outline btn-view-lead" data-id="${lead.id}" style="padding: 5px 11px; font-size: 12px; font-weight: 600; border-radius: 6px; vertical-align: middle;">
                             Detalhes
                         </button>
+                        <button class="btn btn-outline btn-delete-row-lead" data-id="${lead.id}" style="padding: 0; font-size: 13px; border-color: rgba(220,38,38,0.35); color: #dc2626; background: rgba(220,38,38,0.06); margin-left: 6px; display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 6px; vertical-align: middle;" title="Excluir este lead">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        </button>
                     </td>
                 </tr>
             `;
@@ -1211,11 +1237,65 @@ export const CRM = {
 
         // Eventos de clique para linha e botões
         tableBody.querySelectorAll("tr").forEach(row => {
-            row.addEventListener("click", () => {
+            row.addEventListener("click", (e) => {
+                if (e.target.closest("input, select, button, a")) return;
                 const id = row.getAttribute("data-id");
-                this.openLeadDrawer(id);
+                if (id) this.openLeadDrawer(id);
             });
         });
+
+        // Checkboxes individuais de linha
+        tableBody.querySelectorAll(".lead-row-select").forEach(chk => {
+            chk.addEventListener("change", () => {
+                const id = chk.getAttribute("data-id");
+                if (chk.checked) {
+                    this.selectedLeadIds.add(id);
+                    chk.closest("tr")?.classList.add("row-selected");
+                } else {
+                    this.selectedLeadIds.delete(id);
+                    chk.closest("tr")?.classList.remove("row-selected");
+                }
+                this.updateBulkSelectionUI(filteredLeads.map(l => l.id));
+            });
+        });
+
+        // Botão de exclusão rápida individual na linha
+        tableBody.querySelectorAll(".btn-delete-row-lead").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const id = btn.getAttribute("data-id");
+                this.deleteSingleLead(id);
+            });
+        });
+
+        // Checkbox Master (Selecionar Todos os Visíveis)
+        const selectAllChk = document.getElementById("lead-select-all");
+        if (selectAllChk) {
+            const visibleIds = filteredLeads.map(l => l.id);
+            const allSelected = visibleIds.length > 0 && visibleIds.every(id => this.selectedLeadIds.has(id));
+            const someSelected = visibleIds.some(id => this.selectedLeadIds.has(id));
+
+            selectAllChk.checked = allSelected;
+            selectAllChk.indeterminate = !allSelected && someSelected;
+
+            selectAllChk.onclick = (e) => {
+                const checked = e.target.checked;
+                visibleIds.forEach(id => {
+                    if (checked) {
+                        this.selectedLeadIds.add(id);
+                    } else {
+                        this.selectedLeadIds.delete(id);
+                    }
+                });
+                tableBody.querySelectorAll(".lead-row-select").forEach(chk => {
+                    chk.checked = checked;
+                    if (checked) chk.closest("tr")?.classList.add("row-selected");
+                    else chk.closest("tr")?.classList.remove("row-selected");
+                });
+                this.updateBulkSelectionUI(visibleIds);
+            };
+        }
+
+        this.updateBulkSelectionUI(filteredLeads.map(l => l.id));
 
         tableBody.querySelectorAll(".btn-view-lead").forEach(btn => {
             btn.addEventListener("click", () => {
@@ -1694,6 +1774,101 @@ export const CRM = {
 
         // Disparar evento global para atualizar a UI do app (CRM, Kanban, Dashboard, etc.)
         window.dispatchEvent(new CustomEvent("vellia:leadDeleted", { detail: { leadId: activeLeadId } }));
+    },
+
+    clearSelectedLeads() {
+        this.selectedLeadIds.clear();
+        const tableBody = document.getElementById("crm-table-body");
+        if (tableBody) {
+            tableBody.querySelectorAll(".lead-row-select").forEach(chk => {
+                chk.checked = false;
+                chk.closest("tr")?.classList.remove("row-selected");
+            });
+        }
+        const selectAllChk = document.getElementById("lead-select-all");
+        if (selectAllChk) {
+            selectAllChk.checked = false;
+            selectAllChk.indeterminate = false;
+        }
+        this.updateBulkSelectionUI();
+    },
+
+    updateBulkSelectionUI(visibleIds = []) {
+        const bar = document.getElementById("leads-bulk-actions-bar");
+        const countEl = document.getElementById("bulk-selected-count");
+        const selectAllChk = document.getElementById("lead-select-all");
+
+        const count = this.selectedLeadIds.size;
+
+        if (bar) {
+            bar.style.display = count > 0 ? "flex" : "none";
+        }
+        if (countEl) {
+            countEl.textContent = `${count} ${count === 1 ? 'lead selecionado' : 'leads selecionados'}`;
+        }
+
+        if (selectAllChk && visibleIds.length > 0) {
+            const allSelected = visibleIds.every(id => this.selectedLeadIds.has(id));
+            const someSelected = visibleIds.some(id => this.selectedLeadIds.has(id));
+            selectAllChk.checked = allSelected;
+            selectAllChk.indeterminate = !allSelected && someSelected;
+        }
+    },
+
+    async deleteSingleLead(leadId) {
+        if (!leadId) return;
+        const lead = Store.getLeadById(leadId);
+        if (!lead) return;
+
+        const confirmMsg = `Mover o lead da empresa "${lead.company}" para a lixeira?\n\nEle ficará arquivado por 30 dias na lixeira e poderá ser restaurado caso necessário. Administradores podem excluí-lo definitivamente na lixeira.`;
+        if (!confirm(confirmMsg)) return;
+
+        const user = Auth.getCurrentUser();
+        const userEmail = user ? user.email : "sistema@vellia.com";
+
+        Store.moveToTrash(leadId, userEmail);
+        Store.addLog(userEmail, "LEAD_TRASHED", `Lead "${lead.company}" movido para a lixeira por ${user?.name || userEmail}.`, "SUCCESS");
+
+        this.selectedLeadIds.delete(leadId);
+        this.renderLeadsTable();
+
+        alert(`🗑️ Lead "${lead.company}" movido para a lixeira com sucesso!`);
+    },
+
+    async deleteSelectedLeads(permanent = false) {
+        const count = this.selectedLeadIds.size;
+        if (count === 0) {
+            alert("Nenhum lead selecionado.");
+            return;
+        }
+
+        const user = Auth.getCurrentUser();
+        const userEmail = user ? user.email : "sistema@vellia.com";
+        const ids = Array.from(this.selectedLeadIds);
+
+        if (permanent) {
+            const msg = `⚠️ ATENÇÃO: Tem certeza que deseja EXCLUIR DEFINITIVAMENTE ${count} lead(s) selecionado(s)?\n\nEsta operação apagará permanentemente os registros do sistema e da nuvem Supabase.\nEssa ação NÃO poderá ser desfeita.`;
+            if (!confirm(msg)) return;
+
+            Store.purgeLeads(ids, userEmail);
+            this.selectedLeadIds.clear();
+            this.renderLeadsTable();
+
+            alert(`✅ ${count} lead(s) excluído(s) definitivamente com sucesso!`);
+        } else {
+            const msg = `Deseja mover ${count} lead(s) selecionado(s) para a lixeira?\n\nEles ficarão arquivados por 30 dias na lixeira e poderão ser restaurados caso necessário.`;
+            if (!confirm(msg)) return;
+
+            for (const id of ids) {
+                Store.moveToTrash(id, userEmail);
+            }
+            Store.addLog(userEmail, "LEADS_BULK_TRASHED", `${count} lead(s) movidos para a lixeira em massa por ${user?.name || userEmail}.`, "SUCCESS");
+
+            this.selectedLeadIds.clear();
+            this.renderLeadsTable();
+
+            alert(`🗑️ ${count} lead(s) movido(s) para a lixeira com sucesso!`);
+        }
     },
     // ==========================================================================
     // CONTROLE DE DRAWERS (DETALHES DO LEAD)

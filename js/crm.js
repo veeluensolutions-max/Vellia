@@ -1805,16 +1805,37 @@ export const CRM = {
             }
         }
 
-        document.getElementById("edit-lead-modal").classList.add("open");
-        document.getElementById("modal-overlay").style.display = "block";
+        const editModal = document.getElementById("edit-lead-modal");
+        if (editModal) {
+            editModal.classList.add("open");
+            editModal.style.display = "flex";
+            editModal.style.opacity = "1";
+            editModal.style.pointerEvents = "auto";
+        }
+        const overlay = document.getElementById("modal-overlay");
+        if (overlay) {
+            overlay.classList.add("open");
+            overlay.style.display = "block";
+            overlay.style.opacity = "1";
+        }
     },
 
     closeEditLeadModal() {
-        document.getElementById("edit-lead-modal").classList.remove("open");
+        const editModal = document.getElementById("edit-lead-modal");
+        if (editModal) {
+            editModal.classList.remove("open");
+            editModal.style.display = "none";
+            editModal.style.opacity = "";
+            editModal.style.pointerEvents = "";
+        }
         // Only close modal-overlay, preserve drawer-overlay if drawer is open
-        if (!document.getElementById("new-lead-modal").classList.contains("open") &&
-            !document.getElementById("stage-reason-modal").classList.contains("open")) {
-            document.getElementById("modal-overlay").style.display = "none";
+        if (!document.getElementById("new-lead-modal")?.classList.contains("open") &&
+            !document.getElementById("stage-reason-modal")?.classList.contains("open")) {
+            const overlay = document.getElementById("modal-overlay");
+            if (overlay) {
+                overlay.classList.remove("open");
+                overlay.style.display = "none";
+            }
         }
     },
 
@@ -3229,13 +3250,34 @@ export const CRM = {
             statusEl.textContent = "Digite o CNPJ para auto-completar";
             statusEl.style.color = "var(--text-muted)";
         }
-        document.getElementById("new-lead-modal").classList.add("open");
-        document.getElementById("modal-overlay").style.display = "block";
+        const newModal = document.getElementById("new-lead-modal");
+        if (newModal) {
+            newModal.classList.add("open");
+            newModal.style.display = "flex";
+            newModal.style.opacity = "1";
+            newModal.style.pointerEvents = "auto";
+        }
+        const overlay = document.getElementById("modal-overlay");
+        if (overlay) {
+            overlay.classList.add("open");
+            overlay.style.display = "block";
+            overlay.style.opacity = "1";
+        }
     },
 
     closeNewLeadModal() {
-        document.getElementById("new-lead-modal").classList.remove("open");
-        document.getElementById("modal-overlay").style.display = "none";
+        const newModal = document.getElementById("new-lead-modal");
+        if (newModal) {
+            newModal.classList.remove("open");
+            newModal.style.display = "none";
+            newModal.style.opacity = "";
+            newModal.style.pointerEvents = "";
+        }
+        const overlay = document.getElementById("modal-overlay");
+        if (overlay) {
+            overlay.classList.remove("open");
+            overlay.style.display = "none";
+        }
     },
 
     saveNewLead() {

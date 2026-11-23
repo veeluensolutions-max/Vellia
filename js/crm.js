@@ -1181,12 +1181,15 @@ export const CRM = {
                         </div>
                     </td>
                     <td>
-                        <div style="font-weight: 600; color: var(--text-primary); font-size: 13px;">${lead.contact}</div>
+                        <div style="font-weight: 600; color: var(--text-primary); font-size: 13px;">${lead.contact || 'Responsável'}</div>
                         <div style="font-size: 11.5px; color: var(--text-muted);">${lead.role || 'Sem cargo'}</div>
                     </td>
                     <td>
                         <div style="font-size: 12.5px; color: var(--text-primary);">${lead.email || '—'}</div>
-                        <div style="font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-top: 1px;">${lead.whatsapp || lead.phone || '—'}</div>
+                        <div style="font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-top: 1px;">
+                            ${lead.whatsapp ? `<span>📱 ${lead.whatsapp}</span>` : (lead.phone ? `<span>📞 ${lead.phone}</span>` : '—')}
+                            ${lead.phone && lead.whatsapp && lead.phone !== lead.whatsapp ? `<span style="font-size: 11px; color: var(--text-muted); display: block;">📞 ${lead.phone}</span>` : ''}
+                        </div>
                     </td>
                     <td>
                         <span style="font-size: 12.5px; font-weight: 500; color: var(--text-primary);">${lead.segment}</span>
@@ -3545,6 +3548,12 @@ Instruções: Retorne APENAS o texto curto pronto da mensagem em tom amigável e
                             <div style="font-size: 12px; color: var(--text-muted, #64748B);">
                                 Suporta planilhas do Microsoft Excel (<strong>.xlsx, .xls</strong>) e <strong>.csv</strong>
                             </div>
+                            <div style="margin-top: 4px; padding: 6px 12px; background: rgba(5, 150, 105, 0.08); border: 1px solid rgba(5, 150, 105, 0.25); border-radius: 8px; font-size: 12px; color: #047857; display: inline-flex; align-items: center; gap: 6px;" onclick="event.stopPropagation();">
+                                <span>💡 Dica:</span>
+                                <span>Utilize nosso</span>
+                                <button type="button" onclick="window.CRM?.downloadExcelTemplate()" style="background: none; border: none; color: #047857; font-weight: 800; text-decoration: underline; cursor: pointer; padding: 0;">Modelo Oficial (.xlsx)</button>
+                                <span>para contatos e telefones entrarem 100% formatados.</span>
+                            </div>
                             <div id="excel-sheet-selector-wrap" style="display: none; margin-top: 8px; width: 100%; max-width: 280px;" onclick="event.stopPropagation();">
                                 <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px; text-align: left;">Aba da Planilha:</label>
                                 <select id="excel-sheet-select" class="form-control" style="height: 34px; font-size: 12.5px; padding: 4px 10px;"></select>
@@ -3727,50 +3736,249 @@ Instruções: Retorne APENAS o texto curto pronto da mensagem em tom amigável e
         if (modal) modal.style.display = "none";
     },
 
+    sanitizeExcelPhone(val) {
+        if (val == null) return "";
+        let str = String(val).trim();
+        if (!str) return "";
+
+        // Se vier em notação científica (ex: 8.19988E+10)
+        if (/[eE]\+?\d+/.test(str)) {
+            const num = Number(str);
+            if (!isNaN(num)) {
+                str = num.toLocaleString("fullwide", { useGrouping: false });
+            }
+        }
+
+        // Remover sufixo .0 ou .00 comum do Excel
+        str = str.replace(/\.0+$/, "");
+
+        // Extrair dígitos
+        let digits = str.replace(/\D/g, "");
+        if (!digits) return str.trim();
+
+        // Se tiver DDI 55 e tamanho 12 ou 13 (ex: 5581988115963 ou 558133221100)
+        if (digits.startsWith("55") && (digits.length === 12 || digits.length === 13)) {
+            digits = digits.slice(2);
+        }
+
+        // Se tiver zero no início do DDD (ex: 081988115963)
+        if (digits.startsWith("0") && (digits.length === 11 || digits.length === 12)) {
+            digits = digits.slice(1);
+        }
+
+        // Formatação padrão brasileira
+        if (digits.length === 11) {
+            // Celular: (XX) 9XXXX-XXXX
+            return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+        } else if (digits.length === 10) {
+            // Fixo: (XX) XXXX-XXXX
+            return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+        } else if (digits.length === 9) {
+            return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+        } else if (digits.length === 8) {
+            return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+        }
+
+        return str;
+    },
+
+    sanitizeExcelCNPJ(val) {
+        if (val == null) return "";
+        let str = String(val).trim();
+        if (!str) return "";
+
+        if (/[eE]\+?\d+/.test(str)) {
+            const num = Number(str);
+            if (!isNaN(num)) str = num.toLocaleString("fullwide", { useGrouping: false });
+        }
+        str = str.replace(/\.0+$/, "");
+        const digits = str.replace(/\D/g, "");
+
+        if (digits.length === 14) {
+            return (typeof CNPJService !== "undefined" && CNPJService.formatCNPJ)
+                ? CNPJService.formatCNPJ(digits)
+                : `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12)}`;
+        }
+        if (digits.length === 11) {
+            return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+        }
+        return str;
+    },
+
     async downloadExcelTemplate() {
         const sampleRows = [
             {
                 "Empresa": "Indústria Metalúrgica Modelo Ltda",
-                "Contato": "Carlos Eduardo",
-                "Cargo": "Gerente de SGI",
-                "Telefone / WhatsApp": "(81) 99876-5432",
-                "E-mail": "carlos@metalurgicamodelo.com.br",
-                "CNPJ": "12.345.678/0001-90",
+                "Nome do Contato": "Carlos Eduardo Mendes",
+                "Cargo": "Gerente de Manutenção & SGI",
+                "WhatsApp / Celular": "(81) 99876-5432",
+                "Telefone Fixo / Comercial": "(81) 3421-9000",
+                "E-mail": "carlos.mendes@metalurgicamodelo.com.br",
+                "CNPJ ou CPF": "12.345.678/0001-90",
                 "Cidade": "Recife",
                 "UF": "PE",
                 "Segmento": "Indústria",
-                "Origem": "Planilha Excel",
-                "Etapa": "Contato",
-                "Observações": "Interesse em Licenciamento Ambiental e NR-13"
+                "Origem do Lead": "Prospecção Ativa",
+                "Estágio Comercial": "Contato",
+                "Observações / Escopo": "Interesse em inspeção NR-13 (caldeiras e vasos) e renovação de Licença Ambiental"
             },
             {
-                "Empresa": "Construtora Horizonte S/A",
-                "Contato": "Fernanda Lima",
-                "Cargo": "Engenheira Ambiental",
-                "Telefone / WhatsApp": "(81) 99123-4567",
-                "E-mail": "fernanda@construtorahorizonte.com.br",
-                "CNPJ": "98.765.432/0001-10",
+                "Empresa": "Condomínio Edifício Parque das Flores",
+                "Nome do Contato": "Roberta Albuquerque",
+                "Cargo": "Síndica Profissional",
+                "WhatsApp / Celular": "(81) 99123-4567",
+                "Telefone Fixo / Comercial": "(81) 3268-1122",
+                "E-mail": "sindico@parquedasflores.com.br",
+                "CNPJ ou CPF": "98.765.432/0001-10",
                 "Cidade": "Jaboatão dos Guararapes",
                 "UF": "PE",
                 "Segmento": "Construção Civil",
-                "Origem": "Planilha Excel",
-                "Etapa": "Contato",
-                "Observações": "Solicitou orçamento para monitoramento ambiental"
+                "Origem do Lead": "Indicação",
+                "Estágio Comercial": "Contato",
+                "Observações / Escopo": "Solicitou orçamento para vistoria de fachadas, laudo estrutural e teste de percussão preventiva"
+            },
+            {
+                "Empresa": "Agropecuária Vale Verde S/A",
+                "Nome do Contato": "Mariana Fontes",
+                "Cargo": "Diretora de Operações",
+                "WhatsApp / Celular": "(81) 98765-1122",
+                "Telefone Fixo / Comercial": "(81) 3721-5500",
+                "E-mail": "mariana.fontes@valeverdeagro.com.br",
+                "CNPJ ou CPF": "45.123.890/0001-55",
+                "Cidade": "Caruaru",
+                "UF": "PE",
+                "Segmento": "Agronegócio",
+                "Origem do Lead": "Google Ads",
+                "Estágio Comercial": "Lead Qualificado",
+                "Observações / Escopo": "Demanda de licenciamento ambiental e outorga para captação de água em poços profundos"
+            }
+        ];
+
+        const instructionRows = [
+            {
+                "Coluna da Planilha": "Empresa",
+                "Obrigatório": "SIM",
+                "Formato Recomendado": "Razão Social ou Nome Fantasia",
+                "Instruções e Dicas": "Identificação principal do cliente. Usado para evitar duplicados no CRM."
+            },
+            {
+                "Coluna da Planilha": "Nome do Contato",
+                "Obrigatório": "RECOMENDADO",
+                "Formato Recomendado": "Nome e Sobrenome (ex: Carlos Eduardo)",
+                "Instruções e Dicas": "Pessoa de contato ou decisor na empresa. Se deixado vazio, assumirá 'Responsável'."
+            },
+            {
+                "Coluna da Planilha": "Cargo",
+                "Obrigatório": "OPCIONAL",
+                "Formato Recomendado": "Ex: Síndico, Gerente de Manutenção, Diretor",
+                "Instruções e Dicas": "Cargo ou função do contato dentro da organização."
+            },
+            {
+                "Coluna da Planilha": "WhatsApp / Celular",
+                "Obrigatório": "RECOMENDADO",
+                "Formato Recomendado": "(81) 9XXXX-XXXX ou com DDD (apenas números)",
+                "Instruções e Dicas": "Habilita o botão direto verde de WhatsApp com 1 clique no CRM."
+            },
+            {
+                "Coluna da Planilha": "Telefone Fixo / Comercial",
+                "Obrigatório": "OPCIONAL",
+                "Formato Recomendado": "(81) 3XXX-XXXX ou com DDD",
+                "Instruções e Dicas": "Telefone fixo corporativo para registro de chamadas e histórico."
+            },
+            {
+                "Coluna da Planilha": "E-mail",
+                "Obrigatório": "RECOMENDADO",
+                "Formato Recomendado": "contato@empresa.com.br",
+                "Instruções e Dicas": "E-mail para envio de propostas, orçamentos e relatórios."
+            },
+            {
+                "Coluna da Planilha": "CNPJ ou CPF",
+                "Obrigatório": "RECOMENDADO",
+                "Formato Recomendado": "00.000.000/0000-00 (com ou sem pontuação)",
+                "Instruções e Dicas": "Documento fiscal. Permite enriquecimento automático via Receita Federal."
+            },
+            {
+                "Coluna da Planilha": "Cidade",
+                "Obrigatório": "OPCIONAL",
+                "Formato Recomendado": "Nome da Cidade (ex: Recife)",
+                "Instruções e Dicas": "Localização da empresa ou filial."
+            },
+            {
+                "Coluna da Planilha": "UF",
+                "Obrigatório": "OPCIONAL",
+                "Formato Recomendado": "Sigla de 2 letras (ex: PE, SP, BA)",
+                "Instruções e Dicas": "Estado da federação."
+            },
+            {
+                "Coluna da Planilha": "Segmento",
+                "Obrigatório": "OPCIONAL",
+                "Formato Recomendado": "Indústria, Construção Civil, Serviços, Comércio, Agronegócio, Energia, Outros",
+                "Instruções e Dicas": "Ramo de atividade. Se vazio, assumirá o Segmento Padrão selecionado."
+            },
+            {
+                "Coluna da Planilha": "Origem do Lead",
+                "Obrigatório": "OPCIONAL",
+                "Formato Recomendado": "Prospecção Ativa, Indicação, Google Ads, Meta Ads, Evento, Site, Planilha Excel",
+                "Instruções e Dicas": "Canal de aquisição do lead."
+            },
+            {
+                "Coluna da Planilha": "Estágio Comercial",
+                "Obrigatório": "OPCIONAL",
+                "Formato Recomendado": "Contato, Lead Gerado, Lead Qualificado, Proposta Enviada, Negociação",
+                "Instruções e Dicas": "Estágio inicial no funil comercial do CRM. Padrão: 'Contato'."
+            },
+            {
+                "Coluna da Planilha": "Observações / Escopo",
+                "Obrigatório": "OPCIONAL",
+                "Formato Recomendado": "Texto livre",
+                "Instruções e Dicas": "Histórico prévio, necessidades levantadas, laudos e serviços solicitados."
             }
         ];
 
         try {
             const XLSX = await window.LazyLoader?.ensureXLSX?.();
             if (XLSX) {
-                const ws = XLSX.utils.json_to_sheet(sampleRows);
-                ws["!cols"] = [
-                    { wch: 34 }, { wch: 20 }, { wch: 20 }, { wch: 18 },
-                    { wch: 30 }, { wch: 20 }, { wch: 20 }, { wch: 6 },
-                    { wch: 18 }, { wch: 16 }, { wch: 14 }, { wch: 42 }
-                ];
                 const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Modelo Leads Vellia");
+
+                // Aba 1: Modelo de Importação
+                const wsModel = XLSX.utils.json_to_sheet(sampleRows);
+                wsModel["!cols"] = [
+                    { wch: 38 }, // Empresa
+                    { wch: 28 }, // Nome do Contato
+                    { wch: 30 }, // Cargo
+                    { wch: 24 }, // WhatsApp / Celular
+                    { wch: 26 }, // Telefone Fixo / Comercial
+                    { wch: 38 }, // E-mail
+                    { wch: 24 }, // CNPJ ou CPF
+                    { wch: 24 }, // Cidade
+                    { wch: 8 },  // UF
+                    { wch: 20 }, // Segmento
+                    { wch: 22 }, // Origem do Lead
+                    { wch: 20 }, // Estágio Comercial
+                    { wch: 60 }  // Observações / Escopo
+                ];
+                XLSX.utils.book_append_sheet(wb, wsModel, "Modelo Importação Leads");
+
+                // Aba 2: Instruções & Dicas
+                const wsInfo = XLSX.utils.json_to_sheet(instructionRows);
+                wsInfo["!cols"] = [
+                    { wch: 26 }, // Coluna
+                    { wch: 16 }, // Obrigatório
+                    { wch: 36 }, // Formato Recomendado
+                    { wch: 72 }  // Instruções e Dicas
+                ];
+                XLSX.utils.book_append_sheet(wb, wsInfo, "Instruções & Dicas");
+
                 XLSX.writeFile(wb, "Modelo_Importacao_Leads_Vellia_CRM.xlsx");
+
+                if (window.Toast && typeof window.Toast.show === "function") {
+                    window.Toast.show({
+                        type: "success",
+                        title: "Modelo Excel Baixado!",
+                        message: "A planilha oficial com instruções e exemplos foi salva em seus downloads.",
+                        duration: 4000
+                    });
+                }
                 return;
             }
         } catch (e) {
@@ -3856,7 +4064,8 @@ Instruções: Retorne APENAS o texto curto pronto da mensagem em tom amigável e
         if (!wb || !XLSX) return;
         this._excelState.activeSheet = sheetName;
         const ws = wb.Sheets[sheetName];
-        const matrix = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", blankrows: false });
+        // raw: false para obter os valores formatados pelo Excel como strings (ex: telefones com máscara e zeros à esquerda)
+        const matrix = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", blankrows: false, raw: false });
         this.extractRowsFromSheetMatrix(matrix);
     },
 
@@ -3972,10 +4181,12 @@ Instruções: Retorne APENAS o texto curto pronto da mensagem em tom amigável e
         const used = new Set();
 
         const findBestHeader = (patterns) => {
+            // 1º passo: Match exato normalizado
             for (const pat of patterns) {
                 const exact = headers.find(h => !used.has(h) && norm(h) === pat);
                 if (exact) { used.add(exact); return exact; }
             }
+            // 2º passo: Match onde o cabeçalho contém o padrão
             for (const pat of patterns) {
                 const partial = headers.find(h => !used.has(h) && norm(h).includes(pat));
                 if (partial) { used.add(partial); return partial; }
@@ -3984,22 +4195,23 @@ Instruções: Retorne APENAS o texto curto pronto da mensagem em tom amigável e
         };
 
         const mapping = {
-            company: findBestHeader(["empresa", "razao social", "nome fantasia", "cliente", "organizacao", "companhia", "estabelecimento", "unidade"]),
-            contact: findBestHeader(["contato", "responsavel", "decisor", "nome do contato", "pessoa", "representante", "solicitante", "nome"]),
-            phone: findBestHeader(["telefone / whatsapp", "whatsapp", "telefone", "celular", "fone", "tel", "contato telefonico", "numero"]),
-            phone2: findBestHeader(["telefone 2", "fone 2", "tel 2", "fixo", "segundo telefone"]),
-            email: findBestHeader(["e-mail", "email", "correio", "mail"]),
-            cnpj: findBestHeader(["cnpj", "cpf/cnpj", "documento", "cpf"]),
-            role: findBestHeader(["cargo", "funcao", "departamento", "setor"]),
+            company: findBestHeader(["empresa", "razao social", "nome da empresa", "nome fantasia", "fantasia", "cliente", "organizacao", "companhia", "estabelecimento", "unidade"]),
+            contact: findBestHeader(["nome do contato", "contato principal", "contato", "responsavel", "decisor", "representante", "solicitante", "nome", "interlocutor"]),
+            role: findBestHeader(["cargo", "funcao", "departamento", "setor", "profissao", "posicao"]),
+            whatsapp: findBestHeader(["whatsapp / celular", "whatsapp", "whats", "zap", "wpp", "celular", "mobile", "telefone celular", "cel"]),
+            phone: findBestHeader(["telefone fixo / comercial", "telefone comercial", "telefone fixo", "telefone / whatsapp", "telefone", "fone", "tel", "contato telefonico", "fixo", "comercial", "numero"]),
+            phone2: findBestHeader(["telefone 2", "fone 2", "tel 2", "fixo 2", "segundo telefone", "outro telefone", "celular 2"]),
+            email: findBestHeader(["e-mail", "email", "correio", "mail", "e-mail comercial", "email 1"]),
+            cnpj: findBestHeader(["cnpj ou cpf", "cnpj / cpf", "cnpj", "cpf/cnpj", "cpf", "documento", "doc", "inscricao"]),
             city: findBestHeader(["cidade", "municipio", "localidade"]),
             state: findBestHeader(["uf", "estado"]),
-            segment: findBestHeader(["segmento", "ramo", "atividade", "vertical", "area"]),
-            source: findBestHeader(["origem", "fonte", "canal"]),
-            stage: findBestHeader(["etapa", "estagio", "fase", "status"]),
-            notes: findBestHeader(["observacoes", "observacao", "obs", "notas", "historico", "comentarios", "servico", "descricao", "detalhes"])
+            segment: findBestHeader(["segmento", "ramo", "atividade", "vertical", "area", "setor"]),
+            source: findBestHeader(["origem do lead", "origem", "fonte", "canal", "meio"]),
+            stage: findBestHeader(["estagio comercial", "estagio", "etapa", "fase", "status", "situacao"]),
+            notes: findBestHeader(["observacoes / escopo", "observacoes", "observacao", "obs", "notas", "historico", "comentarios", "servico", "escopo", "descricao", "detalhes"])
         };
 
-        // Se não achou coluna "Empresa", mas achou "Contato" (ex: planilha com apenas coluna "Nome" ou a 1ª coluna da planilha)
+        // Se não achou coluna "Empresa", mas achou "Contato" (ou 1ª coluna)
         if (!mapping.company && headers.length > 0) {
             mapping.company = mapping.contact || headers[0];
         }
@@ -4017,16 +4229,19 @@ Instruções: Retorne APENAS o texto curto pronto da mensagem em tom amigável e
         const mapping = this._excelState.mapping;
 
         const fields = [
-            { key: "company", label: "🏢 Empresa / Cliente *" },
-            { key: "contact", label: "👤 Contato / Responsável" },
-            { key: "phone", label: "📞 Telefone / WhatsApp" },
+            { key: "company", label: "🏢 Empresa / Razão Social *" },
+            { key: "contact", label: "👤 Nome do Contato" },
+            { key: "role", label: "💼 Cargo / Função" },
+            { key: "whatsapp", label: "📱 WhatsApp / Celular" },
+            { key: "phone", label: "📞 Telefone Fixo / Comercial" },
             { key: "email", label: "✉️ E-mail" },
-            { key: "cnpj", label: "🪪 CNPJ / Documento" },
-            { key: "role", label: "💼 Cargo" },
+            { key: "cnpj", label: "🪪 CNPJ / CPF" },
             { key: "city", label: "📍 Cidade" },
             { key: "state", label: "🗺️ UF / Estado" },
             { key: "segment", label: "🏷️ Segmento" },
-            { key: "notes", label: "📝 Observações" }
+            { key: "source", label: "📢 Origem do Lead" },
+            { key: "stage", label: "🎯 Estágio Comercial" },
+            { key: "notes", label: "📝 Observações / Escopo" }
         ];
 
         grid.innerHTML = fields.map(f => `
@@ -4065,7 +4280,7 @@ Instruções: Retorne APENAS o texto curto pronto da mensagem em tom amigável e
 
         const parsed = [];
         rawRows.forEach((row, idx) => {
-            const getCol = (key) => (mapping[key] && row[mapping[key]]) ? String(row[mapping[key]]).trim() : "";
+            const getCol = (key) => (mapping[key] && row[mapping[key]] != null) ? String(row[mapping[key]]).trim() : "";
 
             let company = getCol("company");
             let contact = getCol("contact");
@@ -4074,15 +4289,35 @@ Instruções: Retorne APENAS o texto curto pronto da mensagem em tom amigável e
             }
             if (!company) return; // Ignorar linha completamente sem identificação
 
-            const phone = getCol("phone");
-            const phone2 = getCol("phone2");
+            const role = getCol("role");
+            if (!contact) {
+                contact = role ? `Responsável (${role})` : "Responsável";
+            }
+
+            const rawWhatsapp = getCol("whatsapp");
+            const rawPhone = getCol("phone");
+            const rawPhone2 = getCol("phone2");
+
+            let whatsapp = this.sanitizeExcelPhone(rawWhatsapp);
+            let phone = this.sanitizeExcelPhone(rawPhone);
+            const phone2 = this.sanitizeExcelPhone(rawPhone2);
+
+            // Cross-fallback inteligente para garantir funcionamento perfeito de botões de contato
+            if (whatsapp && !phone) {
+                phone = whatsapp;
+            } else if (phone && !whatsapp) {
+                whatsapp = phone;
+            }
+
             const email = getCol("email");
             const rawCnpj = getCol("cnpj");
             const cleanCnpjDigits = rawCnpj.replace(/\D/g, "");
-            const cnpjFormatted = cleanCnpjDigits.length === 14 ? CNPJService.formatCNPJ(cleanCnpjDigits) : rawCnpj;
-            const role = getCol("role");
+            const cnpjFormatted = this.sanitizeExcelCNPJ(rawCnpj);
+
             const city = getCol("city");
-            const state = getCol("state").toUpperCase().slice(0, 2);
+            const rawState = getCol("state");
+            const state = rawState.replace(/[^a-zA-Z]/g, "").toUpperCase().slice(0, 2);
+
             const segment = getCol("segment") || defaultSegment;
             const source = getCol("source") || defaultSource;
 
@@ -4123,10 +4358,10 @@ Instruções: Retorne APENAS o texto curto pronto da mensagem em tom amigável e
                 selected: skipDuplicates ? !isDuplicate : true,
                 isDuplicate,
                 company,
-                contact: contact || "Responsável",
+                contact,
                 role,
                 phone,
-                whatsapp: phone,
+                whatsapp,
                 phone2,
                 email,
                 cnpj: cleanCnpjDigits || rawCnpj,
@@ -4189,11 +4424,17 @@ Instruções: Retorne APENAS o texto curto pronto da mensagem em tom amigável e
                     <input type="checkbox" class="excel-row-check" data-idx="${idx}" ${item.selected ? "checked" : ""} style="width: 15px; height: 15px; accent-color: #059669; cursor: pointer;">
                 </td>
                 <td style="padding: 9px 12px; font-weight: 700; color: var(--text-primary);">${item.company}</td>
-                <td style="padding: 9px 12px; color: var(--text-secondary);">${item.contact}${item.role ? ` <span style="font-size:11px; color:var(--text-muted);">(${item.role})</span>` : ""}</td>
-                <td style="padding: 9px 12px; color: var(--text-secondary); font-family: monospace;">${item.phone || "—"}</td>
-                <td style="padding: 9px 12px; color: var(--text-secondary);">${item.email || "—"}</td>
-                <td style="padding: 9px 12px; color: var(--text-secondary); font-family: monospace;">${item.cnpjDisplay || "—"}</td>
-                <td style="padding: 9px 12px; color: var(--text-secondary);">${item.city || "—"}${item.state ? `/${item.state}` : ""}</td>
+                <td style="padding: 9px 12px; color: var(--text-secondary);">
+                    <div style="font-weight: 600; color: var(--text-primary);">${item.contact}</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">${item.role || "Sem cargo"}</div>
+                </td>
+                <td style="padding: 9px 12px; color: var(--text-secondary); font-family: monospace; font-size: 11.5px;">
+                    ${item.whatsapp ? `<div>📱 ${item.whatsapp}</div>` : ""}
+                    ${item.phone && item.phone !== item.whatsapp ? `<div>📞 ${item.phone}</div>` : (!item.whatsapp ? "—" : "")}
+                </td>
+                <td style="padding: 9px 12px; color: var(--text-secondary); font-size: 12px;">${item.email || "—"}</td>
+                <td style="padding: 9px 12px; color: var(--text-secondary); font-family: monospace; font-size: 11.5px;">${item.cnpjDisplay || "—"}</td>
+                <td style="padding: 9px 12px; color: var(--text-secondary); font-size: 12px;">${item.city || "—"}${item.state ? `/${item.state}` : ""}</td>
                 <td style="padding: 9px 12px;">
                     ${item.isDuplicate
                 ? `<span style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: #FFFBEB; color: #D97706; border: 1px solid #FDE68A;">⚠️ Já existe</span>`

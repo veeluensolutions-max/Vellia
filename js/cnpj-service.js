@@ -231,6 +231,10 @@ export const CNPJService = {
             city: rawData.municipio || "",
             state: rawData.uf || "",
             cep: rawData.cep || "",
+            street: rawData.logradouro ? `${rawData.descricao_tipo_de_logradouro || ''} ${rawData.logradouro}`.trim() : (rawData.logradouro || ''),
+            number: rawData.numero || "",
+            complement: rawData.complemento || "",
+            neighborhood: rawData.bairro || "",
             address: addressParts,
             segment: segment,
             cnaeCode: rawData.cnae_fiscal,
@@ -264,6 +268,60 @@ export const CNPJService = {
                 return word.charAt(0).toUpperCase() + word.slice(1);
             })
             .join(" ");
+    },
+
+    /**
+     * Consulta endereço por CEP com fallback automático (BrasilAPI + ViaCEP)
+     */
+    async lookupCEP(cep) {
+        const cleanCep = this.cleanDigits(cep).slice(0, 8);
+        if (cleanCep.length !== 8) return null;
+
+        // Provedor 1: BrasilAPI
+        try {
+            const res = await fetch(`https://brasilapi.com.br/api/cep/v1/${cleanCep}`, {
+                headers: { "Accept": "application/json" }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                return {
+                    cep: this.formatCEP(cleanCep),
+                    street: data.street || "",
+                    neighborhood: data.neighborhood || "",
+                    city: data.city || "",
+                    state: data.state || ""
+                };
+            }
+        } catch (e) { }
+
+        // Provedor 2: ViaCEP (Fallback)
+        try {
+            const res2 = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+            if (res2.ok) {
+                const data2 = await res2.json();
+                if (!data2.erro) {
+                    return {
+                        cep: this.formatCEP(cleanCep),
+                        street: data2.logradouro || "",
+                        neighborhood: data2.bairro || "",
+                        city: data2.localidade || "",
+                        state: data2.uf || "",
+                        complement: data2.complemento || ""
+                    };
+                }
+            }
+        } catch (e) { }
+
+        return null;
+    },
+
+    /**
+     * Formata CEP (00000-000)
+     */
+    formatCEP(value) {
+        const digits = this.cleanDigits(value).slice(0, 8);
+        if (digits.length <= 5) return digits;
+        return `${digits.slice(0, 5)}-${digits.slice(5, 8)}`;
     }
 };
 

@@ -134,6 +134,48 @@ export const CRM = {
             elements.btnEditLookupCnpj.addEventListener("click", () => this.lookupCNPJ('edit'));
         }
 
+        // Eventos de Busca Automática de CEP (Novo Lead e Edição)
+        const leadCepInput = document.getElementById("lead-cep");
+        if (leadCepInput) {
+            leadCepInput.addEventListener("input", (e) => {
+                e.target.value = CNPJService.formatCEP ? CNPJService.formatCEP(e.target.value) : e.target.value;
+                const digits = CNPJService.cleanDigits(e.target.value);
+                if (digits.length === 8) {
+                    this.lookupCEP('new');
+                }
+            });
+        }
+        const editLeadCepInput = document.getElementById("edit-lead-cep");
+        if (editLeadCepInput) {
+            editLeadCepInput.addEventListener("input", (e) => {
+                e.target.value = CNPJService.formatCEP ? CNPJService.formatCEP(e.target.value) : e.target.value;
+                const digits = CNPJService.cleanDigits(e.target.value);
+                if (digits.length === 8) {
+                    this.lookupCEP('edit');
+                }
+            });
+        }
+
+        // Formatação automática para campos de telefone / WhatsApp
+        const formatPhoneOnInput = (elId) => {
+            const inputEl = document.getElementById(elId);
+            if (!inputEl) return;
+            inputEl.addEventListener("input", (e) => {
+                let v = e.target.value.replace(/\D/g, "");
+                if (v.length > 11) v = v.substring(0, 11);
+                if (v.length > 10) {
+                    e.target.value = `(${v.substring(0, 2)}) ${v.substring(2, 7)}-${v.substring(7)}`;
+                } else if (v.length > 6) {
+                    e.target.value = `(${v.substring(0, 2)}) ${v.substring(2, 6)}-${v.substring(6)}`;
+                } else if (v.length > 2) {
+                    e.target.value = `(${v.substring(0, 2)}) ${v.substring(2)}`;
+                } else if (v.length > 0) {
+                    e.target.value = `(${v}`;
+                }
+            });
+        };
+        ["lead-whatsapp", "lead-phone", "lead-phone2", "edit-lead-whatsapp", "edit-lead-phone", "edit-lead-phone2"].forEach(formatPhoneOnInput);
+
         // Modal Novo Lead
         if (elements.btnNewLead) elements.btnNewLead.addEventListener("click", () => this.openNewLeadModal());
         if (elements.btnCloseLeadModal) elements.btnCloseLeadModal.addEventListener("click", () => this.closeNewLeadModal());
@@ -1457,6 +1499,55 @@ export const CRM = {
 
 
     // ==========================================================================
+    // CONSULTA AUTOMÁTICA DE CEP (CORREIOS / VIACEP / BRASILAPI)
+    // ==========================================================================
+
+    async lookupCEP(type = 'new') {
+        const prefix = type === 'new' ? 'lead-' : 'edit-lead-';
+        const cepInput = document.getElementById(prefix + 'cep');
+        const statusEl = document.getElementById(prefix + 'cep-status');
+        const digits = CNPJService.cleanDigits(cepInput?.value || '');
+
+        if (digits.length !== 8) return;
+
+        if (statusEl) {
+            statusEl.textContent = '🔄 Consultando CEP...';
+            statusEl.style.color = 'var(--primary)';
+        }
+
+        try {
+            const data = await CNPJService.lookupCEP(digits);
+            if (data) {
+                const streetEl = document.getElementById(prefix + 'street');
+                if (streetEl && data.street) streetEl.value = data.street;
+
+                const neighEl = document.getElementById(prefix + 'neighborhood');
+                if (neighEl && data.neighborhood) neighEl.value = data.neighborhood;
+
+                const cityEl = document.getElementById(prefix + 'city');
+                if (cityEl && data.city) cityEl.value = data.city;
+
+                const stateEl = document.getElementById(prefix + 'state');
+                if (stateEl && data.state) stateEl.value = data.state;
+
+                if (statusEl) {
+                    statusEl.textContent = `✅ ${data.city || ''} - ${data.state || ''} localizado`;
+                    statusEl.style.color = '#10b981';
+                }
+
+                // Focar automaticamente no número
+                const numEl = document.getElementById(prefix + 'number');
+                if (numEl && !numEl.value) numEl.focus();
+            }
+        } catch (err) {
+            if (statusEl) {
+                statusEl.textContent = '⚠️ CEP não encontrado';
+                statusEl.style.color = '#f59e0b';
+            }
+        }
+    },
+
+    // ==========================================================================
     // CONSULTA E ENRIQUECIMENTO AUTOMÁTICO DE CNPJ (RECEITA / BRASILAPI)
     // ==========================================================================
 
@@ -1503,15 +1594,35 @@ export const CRM = {
             };
 
             setVal('company', data.companyName);
+            if (data.tradeName) setVal('trade-name', data.tradeName);
             if (data.contactName) setVal('contact', data.contactName);
             if (data.contactRole) setVal('role', data.contactRole);
             if (data.email) setVal('email', data.email);
             if (data.phone) setVal('phone', data.phone);
             if (data.whatsapp) setVal('whatsapp', data.whatsapp);
             if (data.phone2) setVal('phone2', data.phone2);
+
+            // Preenchimento inteligente de endereço completo da empresa via CNPJ
+            if (data.cep) {
+                setVal('cep', CNPJService.formatCEP ? CNPJService.formatCEP(data.cep) : data.cep);
+            }
+            if (data.street) setVal('street', data.street);
+            if (data.number) setVal('number', data.number);
+            if (data.complement) setVal('complement', data.complement);
+            if (data.neighborhood) setVal('neighborhood', data.neighborhood);
             if (data.city) setVal('city', data.city);
             if (data.state) setVal('state', data.state);
             if (data.segment) setVal('segment', data.segment);
+
+            const cepStatusEl = document.getElementById(prefix + 'cep-status');
+            if (cepStatusEl && data.cep) {
+                cepStatusEl.textContent = `✅ Endereço preenchido automaticamente via Receita Federal`;
+                cepStatusEl.style.color = '#10b981';
+            }
+
+            // Selecionar Tipo de Cliente como Pessoa Jurídica
+            const clientTypeEl = document.getElementById(prefix + 'client-type');
+            if (clientTypeEl) clientTypeEl.value = 'Pessoa Jurídica';
 
             // Observações enriquecidas com dados cadastrais
             const notesEl = document.getElementById(prefix + 'notes');
@@ -1589,7 +1700,16 @@ export const CRM = {
             cnpjStatus.style.color = "var(--text-muted)";
         }
 
+        const clientTypeEl = document.getElementById("edit-lead-client-type");
+        if (clientTypeEl) clientTypeEl.value = lead.clientType || (lead.cnpj ? "Pessoa Jurídica" : "Pessoa Física");
+
+        const stageSelect = document.getElementById("edit-lead-stage");
+        if (stageSelect) stageSelect.value = lead.stage || "Contato";
+
         document.getElementById("edit-lead-company").value = lead.company || "";
+        const tradeNameEl = document.getElementById("edit-lead-trade-name");
+        if (tradeNameEl) tradeNameEl.value = lead.tradeName || lead.trade_name || lead.company || "";
+
         document.getElementById("edit-lead-contact").value = lead.contact || "";
         document.getElementById("edit-lead-role").value = lead.role || "";
         document.getElementById("edit-lead-email").value = lead.email || "";
@@ -1598,8 +1718,44 @@ export const CRM = {
         document.getElementById("edit-lead-phone2").value = lead.phone2 || "";
         document.getElementById("edit-lead-email2").value = lead.email2 || "";
         document.getElementById("edit-lead-notes").value = lead.notes || "";
+
+        // Endereço
+        const cepEl = document.getElementById("edit-lead-cep");
+        if (cepEl) cepEl.value = lead.cep ? (CNPJService.formatCEP ? CNPJService.formatCEP(lead.cep) : lead.cep) : "";
+        const cepStatus = document.getElementById("edit-lead-cep-status");
+        if (cepStatus) {
+            cepStatus.textContent = lead.cep ? "CEP cadastrado" : "Digite o CEP para buscar endereço";
+            cepStatus.style.color = "var(--text-muted)";
+        }
+
+        const streetEl = document.getElementById("edit-lead-street");
+        if (streetEl) streetEl.value = lead.street || "";
+        const numberEl = document.getElementById("edit-lead-number");
+        if (numberEl) numberEl.value = lead.number || "";
+        const complementEl = document.getElementById("edit-lead-complement");
+        if (complementEl) complementEl.value = lead.complement || "";
+        const neighborhoodEl = document.getElementById("edit-lead-neighborhood");
+        if (neighborhoodEl) neighborhoodEl.value = lead.neighborhood || "";
         document.getElementById("edit-lead-city").value = lead.city || "";
         document.getElementById("edit-lead-state").value = lead.state || "";
+
+        // Valor Estimado
+        const estValEl = document.getElementById("edit-lead-estimated-value");
+        if (estValEl) estValEl.value = lead.estimatedValue || lead.value || "";
+
+        // Vendedor / Responsável
+        const ownerEl = document.getElementById("edit-lead-owner");
+        if (ownerEl) {
+            const allUsers = Store.getUsers ? Store.getUsers() : [];
+            const sellers = allUsers.filter(u => u && (u.role === "seller" || u.role === "vendedor" || u.role === "manager" || u.role === "admin"));
+            ownerEl.innerHTML = sellers.map(s => `<option value="${s.email}">${s.name || s.email}</option>`).join("");
+            if (lead.owner) {
+                ownerEl.value = lead.owner;
+            } else {
+                const cur = Auth.getCurrentUser();
+                if (cur) ownerEl.value = cur.email;
+            }
+        }
 
         // Configurar Segmento (se não estiver na lista ou for "Outros", abre campo para especificar)
         const editSegSelect = document.getElementById("edit-lead-segment");
@@ -1618,10 +1774,10 @@ export const CRM = {
             if (!segMatched || currentSeg.toLowerCase() === "outros") {
                 editSegSelect.value = "Outros";
                 if (editSegCustomWrap) editSegCustomWrap.style.display = "block";
-                if (editCustomSegInput) editCustomSegInput.value = (currentSeg.toLowerCase() !== "outros" ? currentSeg : "");
+                if (editSegCustomInput) editSegCustomInput.value = (currentSeg.toLowerCase() !== "outros" ? currentSeg : "");
             } else {
                 if (editSegCustomWrap) editSegCustomWrap.style.display = "none";
-                if (editCustomSegInput) editCustomSegInput.value = "";
+                if (editSegCustomInput) editSegCustomInput.value = "";
             }
         }
 
@@ -1642,10 +1798,10 @@ export const CRM = {
             if (!srcMatched || currentSrc.toLowerCase() === "outros") {
                 editSrcSelect.value = "Outros";
                 if (editSrcCustomWrap) editSrcCustomWrap.style.display = "block";
-                if (editCustomSrcInput) editCustomSrcInput.value = (currentSrc.toLowerCase() !== "outros" ? currentSrc : "");
+                if (editSrcCustomInput) editSrcCustomInput.value = (currentSrc.toLowerCase() !== "outros" ? currentSrc : "");
             } else {
                 if (editSrcCustomWrap) editSrcCustomWrap.style.display = "none";
-                if (editCustomSrcInput) editCustomSrcInput.value = "";
+                if (editSrcCustomInput) editSrcCustomInput.value = "";
             }
         }
 
@@ -1666,9 +1822,32 @@ export const CRM = {
         const id = document.getElementById("edit-lead-id").value;
         if (!id) return;
 
+        const street = document.getElementById("edit-lead-street")?.value.trim() || "";
+        const number = document.getElementById("edit-lead-number")?.value.trim() || "";
+        const complement = document.getElementById("edit-lead-complement")?.value.trim() || "";
+        const neighborhood = document.getElementById("edit-lead-neighborhood")?.value.trim() || "";
+        const city = document.getElementById("edit-lead-city")?.value.trim() || "";
+        const state = document.getElementById("edit-lead-state")?.value.trim().toUpperCase() || "";
+        const cep = CNPJService.cleanDigits(document.getElementById("edit-lead-cep")?.value || "");
+
+        // Montar endereço unificado para compatibilidade com buscas e visualização
+        let addressStr = "";
+        if (street) {
+            addressStr = street;
+            if (number) addressStr += `, ${number}`;
+            if (complement) addressStr += ` - ${complement}`;
+            if (neighborhood) addressStr += `, ${neighborhood}`;
+            if (city) addressStr += `, ${city}`;
+            if (state) addressStr += ` - ${state}`;
+            if (cep) addressStr += ` (CEP: ${CNPJService.formatCEP ? CNPJService.formatCEP(cep) : cep})`;
+        }
+
         const updatedData = {
             cnpj: CNPJService.cleanDigits(document.getElementById("edit-lead-cnpj")?.value || ""),
+            clientType: document.getElementById("edit-lead-client-type")?.value || "Pessoa Jurídica",
+            stage: document.getElementById("edit-lead-stage")?.value || "Contato",
             company: document.getElementById("edit-lead-company").value.trim(),
+            tradeName: document.getElementById("edit-lead-trade-name")?.value.trim() || "",
             contact: document.getElementById("edit-lead-contact").value.trim(),
             role: document.getElementById("edit-lead-role").value.trim(),
             email: document.getElementById("edit-lead-email").value.trim(),
@@ -1676,9 +1855,17 @@ export const CRM = {
             phone: document.getElementById("edit-lead-phone").value.trim(),
             phone2: document.getElementById("edit-lead-phone2").value.trim(),
             email2: document.getElementById("edit-lead-email2").value.trim(),
+            owner: document.getElementById("edit-lead-owner")?.value || "",
+            estimatedValue: parseFloat(document.getElementById("edit-lead-estimated-value")?.value) || 0,
+            cep,
+            street,
+            number,
+            complement,
+            neighborhood,
+            city,
+            state,
+            address: addressStr,
             notes: document.getElementById("edit-lead-notes").value.trim(),
-            city: document.getElementById("edit-lead-city").value.trim(),
-            state: document.getElementById("edit-lead-state").value.trim().toUpperCase(),
             segment: (() => {
                 const segVal = document.getElementById("edit-lead-segment")?.value || "Outros";
                 if (segVal === "Outros") {
@@ -2050,7 +2237,7 @@ export const CRM = {
         document.getElementById("drawer-lead-whatsapp").textContent = lead.whatsapp || "Não informado";
         document.getElementById("drawer-lead-phone2").textContent = lead.phone2 || "Não informado";
         document.getElementById("drawer-lead-notes").textContent = lead.notes || "Sem observações.";
-        document.getElementById("drawer-lead-location").textContent = `${lead.city || "-"} / ${lead.state || "-"}`;
+        document.getElementById("drawer-lead-location").textContent = lead.address || `${lead.city || "-"} / ${lead.state || "-"}`;
         document.getElementById("drawer-lead-source").textContent = `${lead.segment} (${lead.source})`;
 
         const cnpjEl = document.getElementById("drawer-lead-cnpj");
@@ -2949,6 +3136,45 @@ export const CRM = {
     openNewLeadModal(prefillData = null) {
         document.getElementById("new-lead-form").reset();
 
+        // Popular responsáveis / vendedores
+        const ownerEl = document.getElementById("lead-owner");
+        if (ownerEl) {
+            const allUsers = Store.getUsers ? Store.getUsers() : [];
+            const sellers = allUsers.filter(u => u && (u.role === "seller" || u.role === "vendedor" || u.role === "manager" || u.role === "admin"));
+            ownerEl.innerHTML = sellers.map(s => `<option value="${s.email}">${s.name || s.email}</option>`).join("");
+            const cur = Auth.getCurrentUser();
+            if (cur) ownerEl.value = cur.email;
+        }
+
+        // Resetar campos de endereço e novos campos
+        const clientTypeEl = document.getElementById("lead-client-type");
+        if (clientTypeEl) clientTypeEl.value = "Pessoa Jurídica";
+        const stageInitEl = document.getElementById("lead-stage-init");
+        if (stageInitEl) stageInitEl.value = "Contato";
+        const tradeNameEl = document.getElementById("lead-trade-name");
+        if (tradeNameEl) tradeNameEl.value = "";
+        const estValEl = document.getElementById("lead-estimated-value");
+        if (estValEl) estValEl.value = "";
+        const cepEl = document.getElementById("lead-cep");
+        if (cepEl) cepEl.value = "";
+        const cepStatus = document.getElementById("lead-cep-status");
+        if (cepStatus) {
+            cepStatus.textContent = "Digite o CEP para buscar endereço";
+            cepStatus.style.color = "var(--text-muted)";
+        }
+        const streetEl = document.getElementById("lead-street");
+        if (streetEl) streetEl.value = "";
+        const numEl = document.getElementById("lead-number");
+        if (numEl) numEl.value = "";
+        const compEl = document.getElementById("lead-complement");
+        if (compEl) compEl.value = "";
+        const neighEl = document.getElementById("lead-neighborhood");
+        if (neighEl) neighEl.value = "";
+        const cityEl = document.getElementById("lead-city");
+        if (cityEl) cityEl.value = "";
+        const stateEl = document.getElementById("lead-state");
+        if (stateEl) stateEl.value = "";
+
         // Resetar wraps e inputs customizados de segmento e origem
         const newSegCustomWrap = document.getElementById("lead-segment-custom-wrap");
         const newSegCustomInput = document.getElementById("lead-segment-custom");
@@ -3018,8 +3244,10 @@ export const CRM = {
 
         const getVal = (id) => document.getElementById(id)?.value.trim() || "";
 
+        const clientType = getVal("lead-client-type") || "Pessoa Jurídica";
         const cnpj = CNPJService.cleanDigits(getVal("lead-cnpj"));
         const company = getVal("lead-company");
+        const tradeName = getVal("lead-trade-name");
         const contact = getVal("lead-contact");
         const role = getVal("lead-role");
         const email = getVal("lead-email");
@@ -3027,9 +3255,31 @@ export const CRM = {
         const whatsapp = getVal("lead-whatsapp");
         const phone2 = getVal("lead-phone2");
         const email2 = getVal("lead-email2");
-        const notes = getVal("lead-notes");
+        const owner = getVal("lead-owner");
+        const estimatedValue = parseFloat(getVal("lead-estimated-value")) || 0;
+
+        // Endereço
+        const cep = CNPJService.cleanDigits(getVal("lead-cep"));
+        const street = getVal("lead-street");
+        const number = getVal("lead-number");
+        const complement = getVal("lead-complement");
+        const neighborhood = getVal("lead-neighborhood");
         const city = getVal("lead-city");
         const state = getVal("lead-state");
+        const notes = getVal("lead-notes");
+
+        // Endereço textual unificado para consultas e compatibilidade
+        let addressStr = "";
+        if (street) {
+            addressStr = street;
+            if (number) addressStr += `, ${number}`;
+            if (complement) addressStr += ` - ${complement}`;
+            if (neighborhood) addressStr += `, ${neighborhood}`;
+            if (city) addressStr += `, ${city}`;
+            if (state) addressStr += ` - ${state}`;
+            if (cep) addressStr += ` (CEP: ${CNPJService.formatCEP ? CNPJService.formatCEP(cep) : cep})`;
+        }
+
         let segment = getVal("lead-segment");
         if (segment === "Outros") {
             const customSeg = getVal("lead-segment-custom");
@@ -3044,14 +3294,14 @@ export const CRM = {
         let stage = getVal("lead-stage-init");
 
         if (!company || !contact || !whatsapp) {
-            alert("Por favor, preencha todos os campos obrigatórios (*).");
+            alert("Por favor, preencha todos os campos obrigatórios (*): Empresa/Razão Social, Contato Principal e WhatsApp.");
             this.isSaving = false;
             return;
         }
 
         const currentUser = Auth.getCurrentUser();
         const userEmail = currentUser ? currentUser.email : "sistema@vellia.com";
-        const userRole = currentUser ? currentUser.role : "seller";
+        const assignedOwner = owner || userEmail;
 
         // Preservar estágio selecionado (padrão Contato caso não especificado)
         if (!stage) {
@@ -3061,7 +3311,9 @@ export const CRM = {
         // Salvar lead
         const newLead = Store.addLead({
             cnpj,
+            clientType,
             company,
+            tradeName,
             contact,
             role,
             email,
@@ -3069,9 +3321,17 @@ export const CRM = {
             whatsapp,
             phone2,
             email2,
-            notes,
+            owner: assignedOwner,
+            estimatedValue,
+            cep,
+            street,
+            number,
+            complement,
+            neighborhood,
             city,
             state,
+            address: addressStr,
+            notes,
             segment,
             source,
             stage,
@@ -3080,7 +3340,7 @@ export const CRM = {
                     stage,
                     userEmail,
                     timestamp: new Date().toISOString(),
-                    reason: `Cadastro inicial do lead via formulário.`
+                    reason: `Cadastro inicial do lead via formulário GestãoClick.`
                 }
             ]
         }, userEmail);

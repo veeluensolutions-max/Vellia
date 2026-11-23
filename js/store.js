@@ -1077,6 +1077,7 @@ export const Store = {
             }
         }
         const newLead = {
+            ...lead,
             id: `lead_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
             workspace: targetWorkspace,
             cnpj: lead.cnpj || "",

@@ -5473,294 +5473,444 @@ Condições de pagamento:
             </div>
         </div>
     </div>
-    <!-- Modal: Cadastro de Novo Lead -->
-    <div id="new-lead-modal" class="modal">
-        <div class="modal-header">
-            <h3 style="font-weight: 700;">Cadastrar Novo Lead</h3>
-            <button id="btn-close-lead-modal" class="drawer-close">
+    <!-- Modal: Cadastro de Novo Lead (Design GestãoClick Moderno & Integrado) -->
+    <div id="new-lead-modal" class="modal" style="max-width: 1040px; width: 95vw; max-height: 92vh; border-radius: 16px; overflow: hidden; display: none; flex-direction: column; background: var(--bg-surface, #ffffff); border: 1px solid var(--border-color, #e2e8f0); box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.35);">
+        <div class="modal-header" style="background: var(--bg-surface, #ffffff); border-bottom: 1px solid var(--border-color, #e2e8f0); padding: 18px 24px;">
+            <div>
+                <div style="font-size: 11px; font-weight: 700; color: var(--text-muted, #94a3b8); text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
+                    <span>Início</span> <span>›</span> <span>Leads & Contatos</span> <span>›</span> <span style="color: var(--primary);">Cadastrar Lead</span>
+                </div>
+                <h3 style="margin: 4px 0 0 0; font-size: 18px; font-weight: 800; color: var(--text-primary, #0f172a); font-family: 'Plus Jakarta Sans', sans-serif;">
+                    Adicionar Lead / Cliente
+                </h3>
+            </div>
+            <button id="btn-close-lead-modal" class="drawer-close" style="width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
         </div>
-        <form id="new-lead-form" onsubmit="return false;">
-            <div class="modal-body">
-                <!-- Busca Inteligente por CNPJ (Receita Federal / BrasilAPI) -->
-                <div style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(99, 102, 241, 0.05)); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-                        <label for="lead-cnpj" style="margin: 0; font-size: 12px; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 6px;">
-                            <span>⚡</span> Preenchimento Rápido por CNPJ
-                        </label>
-                        <span id="lead-cnpj-status" style="font-size: 11px; color: var(--text-muted);">Digite o CNPJ para auto-completar</span>
-                    </div>
-                    <div style="display: flex; gap: 8px; align-items: center;">
-                        <div style="position: relative; flex: 1;">
-                            <input type="text" id="lead-cnpj" class="form-control" style="padding: 9px 12px; font-size: 13.5px; font-family: monospace; letter-spacing: 0.5px;" placeholder="00.000.000/0000-00" maxlength="18">
-                        </div>
-                        <button type="button" id="btn-lookup-cnpj" class="btn btn-primary" style="height: 38px; padding: 0 14px; font-size: 12.5px; display: flex; align-items: center; gap: 6px; white-space: nowrap;">
-                            <span id="btn-lookup-cnpj-icon">🔍</span>
-                            <span id="btn-lookup-cnpj-text">Buscar Dados</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="grid-modal-2col" style="margin-bottom: 16px;">
-                    <div class="form-group">
-                        <label for="lead-company">Empresa *</label>
-                        <input type="text" id="lead-company" class="form-control" style="padding: 10px 12px;" required placeholder="Nome da empresa">
-                    </div>
-                    <div class="form-group">
-                        <label for="lead-contact">Contato *</label>
-                        <input type="text" id="lead-contact" class="form-control" style="padding: 10px 12px;" required placeholder="Nome do contato principal">
-                    </div>
-                </div>
-
-                <div class="grid-modal-2col" style="margin-bottom: 16px;">
-                    <div class="form-group">
-                        <label for="lead-role">Cargo</label>
-                        <input type="text" id="lead-role" class="form-control" style="padding: 10px 12px;" placeholder="Ex: Diretor de Compras">
-                    </div>
-                    <div class="form-group">
-                        <label for="lead-email">E-mail</label>
-                        <input type="email" id="lead-email" class="form-control" style="padding: 10px 12px;" placeholder="contato@empresa.com">
-                    </div>
-                </div>
-
-                <div class="grid-modal-2col" style="margin-bottom: 16px;">
-                    <div class="form-group">
-                        <label for="lead-phone">Telefone</label>
-                        <input type="text" id="lead-phone" class="form-control" style="padding: 10px 12px;" placeholder="(00) 0000-0000">
-                    </div>
-                    <div class="form-group">
-                        <label for="lead-whatsapp">WhatsApp *</label>
-                        <input type="text" id="lead-whatsapp" class="form-control" style="padding: 10px 12px;" required placeholder="(00) 00000-0000">
-                    </div>
-                </div>
-
-                <div class="grid-modal-2col" style="margin-bottom: 16px;">
-                    <div class="form-group">
-                        <label for="lead-phone2">Telefone 2</label>
-                        <input type="text" id="lead-phone2" class="form-control" style="padding: 10px 12px;" placeholder="(00) 00000-0000">
-                    </div>
-                    <div class="form-group">
-                        <label for="lead-email2">E-mail 2</label>
-                        <input type="email" id="lead-email2" class="form-control" style="padding: 10px 12px;" placeholder="contato2@empresa.com">
-                    </div>
-                </div>
-
-                <div class="grid-modal-2col" style="margin-bottom: 16px;">
-                    <div class="form-group">
-                        <label for="lead-city">Cidade</label>
-                        <input type="text" id="lead-city" class="form-control" style="padding: 10px 12px;" placeholder="Ex: São Paulo">
-                    </div>
-                    <div class="form-group">
-                        <label for="lead-state">Estado (UF)</label>
-                        <input type="text" id="lead-state" class="form-control" style="padding: 10px 12px;" maxlength="2" placeholder="Ex: SP">
-                    </div>
-                </div>
-
-                <div class="grid-modal-2col" style="margin-bottom: 16px;">
-                    <div class="form-group">
-                        <label for="lead-segment">Segmento</label>
-                        <select id="lead-segment" class="filter-control" style="height: 42px;">
-                            <option value="Tecnologia">Tecnologia</option>
-                            <option value="Construção Civil">Construção Civil</option>
-                            <option value="Transportes">Transportes</option>
-                            <option value="Saúde">Saúde</option>
-                            <option value="Indústria">Indústria</option>
-                            <option value="Agronegócio">Agronegócio</option>
-                            <option value="Energia">Energia</option>
-                            <option value="Comércio / Varejo">Comércio / Varejo</option>
-                            <option value="Serviços">Serviços</option>
-                            <option value="Outros">Outros</option>
-                        </select>
-                        <div id="lead-segment-custom-wrap" style="display: none; margin-top: 6px;">
-                            <input type="text" id="lead-segment-custom" class="form-control" style="padding: 8px 12px; font-size: 13px; border-color: var(--primary);" placeholder="Especifique o segmento...">
+        <form id="new-lead-form" onsubmit="return false;" style="display: flex; flex-direction: column; flex: 1; overflow: hidden;">
+            <div class="modal-body" style="padding: 20px 24px; overflow-y: auto; flex: 1; background: var(--bg-app, #f8fafc); display: flex; flex-direction: column; gap: 16px;">
+                
+                <!-- Card 1: Dados Gerais do Cliente -->
+                <div style="background: var(--bg-surface, #ffffff); border: 1px solid var(--border-color, #e2e8f0); border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px; border-bottom: 1px solid var(--border-color, #f1f5f9); padding-bottom: 10px;">
+                        <span style="font-size: 18px;">📝</span>
+                        <div>
+                            <h4 style="margin: 0; font-size: 14px; font-weight: 700; color: var(--text-primary, #0f172a);">Preencha os dados gerais do cliente</h4>
+                            <span style="font-size: 11.5px; color: var(--text-muted, #64748b);">Informações básicas como tipo de pessoa, nome da empresa, documentos e contatos.</span>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label for="lead-source">Origem do Lead</label>
-                        <select id="lead-source" class="filter-control" style="height: 42px;">
-                            <option value="Google Ads">Google Ads</option>
-                            <option value="Meta Ads">Meta Ads (Facebook/Instagram)</option>
-                            <option value="Indicação">Indicação</option>
-                            <option value="Outbound">Outbound / Cold Call</option>
-                            <option value="Redes Sociais">Redes Sociais</option>
-                            <option value="WhatsApp">WhatsApp</option>
-                            <option value="Instagram Direct">Instagram Direct</option>
-                            <option value="Facebook Messenger">Facebook Messenger</option>
-                            <option value="Evento">Evento</option>
-                            <option value="Site">Site</option>
-                            <option value="Outros">Outros</option>
-                        </select>
-                        <div id="lead-source-custom-wrap" style="display: none; margin-top: 6px;">
-                            <input type="text" id="lead-source-custom" class="form-control" style="padding: 8px 12px; font-size: 13px; border-color: var(--primary);" placeholder="Especifique a origem do lead...">
+
+                    <!-- Linha 1: Tipo de Cliente, Situação, CNPJ/CPF com busca, Empresa -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 14px;">
+                        <div class="form-group" style="margin: 0;">
+                            <label for="lead-client-type" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Tipo de Cliente *</label>
+                            <select id="lead-client-type" class="form-control" style="height: 38px; font-size: 13px;">
+                                <option value="PJ" selected>Pessoa Jurídica (PJ)</option>
+                                <option value="PF">Pessoa Física (PF)</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="lead-stage-init" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Situação / Estágio Inicial</label>
+                            <select id="lead-stage-init" class="form-control" style="height: 38px; font-size: 13px;">
+                                <option value="Contato" selected>1. Contato (Ativo)</option>
+                                <option value="Lead Gerado">2. Lead Gerado</option>
+                                <option value="Lead Qualificado">3. Lead Qualificado</option>
+                                <option value="Proposta Enviada">4. Proposta Enviada</option>
+                                <option value="Negociação">5. Negociação</option>
+                                <option value="Cliente Fechado">6. Cliente Fechado</option>
+                                <option value="Cliente Perdido">7. Cliente Perdido</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin: 0; grid-column: span 2;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                <label for="lead-cnpj" style="font-size: 11px; font-weight: 700; color: var(--primary); text-transform: uppercase; margin: 0; display: flex; align-items: center; gap: 4px;">
+                                    <span>⚡</span> CNPJ / CPF (Busca Automática)
+                                </label>
+                                <span id="lead-cnpj-status" style="font-size: 11px; color: var(--text-muted);">Digite 14 dígitos para preencher endereço e empresa</span>
+                            </div>
+                            <div style="display: flex; gap: 6px;">
+                                <input type="text" id="lead-cnpj" class="form-control" style="height: 38px; font-size: 13px; font-family: monospace;" placeholder="00.000.000/0000-00" maxlength="18">
+                                <button type="button" id="btn-lookup-cnpj" class="btn btn-primary" style="height: 38px; padding: 0 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">
+                                    <span id="btn-lookup-cnpj-icon">🔍</span>
+                                    <span id="btn-lookup-cnpj-text">Buscar CNPJ</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Linha 2: Razão Social, Nome Fantasia, Contato, Cargo -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 14px;">
+                        <div class="form-group" style="margin: 0;">
+                            <label for="lead-company" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Razão Social / Nome da Empresa *</label>
+                            <input type="text" id="lead-company" class="form-control" style="height: 38px; font-size: 13px;" required placeholder="Ex: Indústria Metalúrgica Ltda">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="lead-trade-name" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Nome Fantasia</label>
+                            <input type="text" id="lead-trade-name" class="form-control" style="height: 38px; font-size: 13px;" placeholder="Nome comercial ou de marca">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="lead-contact" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Nome do Contato Principal *</label>
+                            <input type="text" id="lead-contact" class="form-control" style="height: 38px; font-size: 13px;" required placeholder="Nome do decisor / contato">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="lead-role" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Cargo / Função</label>
+                            <input type="text" id="lead-role" class="form-control" style="height: 38px; font-size: 13px;" placeholder="Ex: Diretor, Síndico, Gerente">
+                        </div>
+                    </div>
+
+                    <!-- Linha 3: Telefones e E-mails -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 14px;">
+                        <div class="form-group" style="margin: 0;">
+                            <label for="lead-whatsapp" style="font-size: 11px; font-weight: 700; color: #059669; text-transform: uppercase; display: block; margin-bottom: 4px;">📱 WhatsApp / Celular *</label>
+                            <input type="text" id="lead-whatsapp" class="form-control" style="height: 38px; font-size: 13px; border-color: rgba(16, 185, 129, 0.4);" required placeholder="(00) 00000-0000">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="lead-phone" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">📞 Telefone Comercial / Fixo</label>
+                            <input type="text" id="lead-phone" class="form-control" style="height: 38px; font-size: 13px;" placeholder="(00) 0000-0000">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="lead-email" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">✉️ E-mail Principal</label>
+                            <input type="email" id="lead-email" class="form-control" style="height: 38px; font-size: 13px;" placeholder="contato@empresa.com">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="lead-email2" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">✉️ E-mail 2 (Secundário)</label>
+                            <input type="email" id="lead-email2" class="form-control" style="height: 38px; font-size: 13px;" placeholder="comercial@empresa.com">
+                        </div>
+                    </div>
+
+                    <!-- Linha 4: Segmento, Origem, Vendedor, Valor Estimado -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+                        <div class="form-group" style="margin: 0;">
+                            <label for="lead-segment" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">🏷️ Segmento</label>
+                            <select id="lead-segment" class="form-control" style="height: 38px; font-size: 13px;">
+                                <option value="Indústria" selected>Indústria</option>
+                                <option value="Construção Civil">Construção Civil</option>
+                                <option value="Serviços">Serviços</option>
+                                <option value="Tecnologia">Tecnologia</option>
+                                <option value="Agronegócio">Agronegócio</option>
+                                <option value="Energia">Energia</option>
+                                <option value="Comércio / Varejo">Comércio / Varejo</option>
+                                <option value="Transportes">Transportes</option>
+                                <option value="Saúde">Saúde</option>
+                                <option value="Outros">Outros</option>
+                            </select>
+                            <div id="lead-segment-custom-wrap" style="display: none; margin-top: 6px;">
+                                <input type="text" id="lead-segment-custom" class="form-control" style="height: 34px; font-size: 12px; border-color: var(--primary);" placeholder="Especifique o segmento...">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="lead-source" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">📢 Origem do Lead</label>
+                            <select id="lead-source" class="form-control" style="height: 38px; font-size: 13px;">
+                                <option value="Prospecção Ativa">Prospecção Ativa</option>
+                                <option value="Indicação">Indicação</option>
+                                <option value="Google Ads">Google Ads</option>
+                                <option value="Meta Ads">Meta Ads (Facebook/Instagram)</option>
+                                <option value="WhatsApp">WhatsApp</option>
+                                <option value="Site">Site</option>
+                                <option value="Evento">Evento</option>
+                                <option value="Planilha Excel">Planilha Excel</option>
+                                <option value="Outros">Outros</option>
+                            </select>
+                            <div id="lead-source-custom-wrap" style="display: none; margin-top: 6px;">
+                                <input type="text" id="lead-source-custom" class="form-control" style="height: 34px; font-size: 12px; border-color: var(--primary);" placeholder="Especifique a origem...">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="lead-owner" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">👤 Vendedor / Responsável</label>
+                            <select id="lead-owner" class="form-control" style="height: 38px; font-size: 13px;">
+                                <!-- Preenchido dinamicamente com vendedores -->
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="lead-estimated-value" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">💰 Valor Estimado (R$)</label>
+                            <input type="text" id="lead-estimated-value" class="form-control" style="height: 38px; font-size: 13px;" placeholder="Ex: 15.000,00">
                         </div>
                     </div>
                 </div>
 
-                <div class="form-group" style="margin-bottom: 16px;">
-                    <label for="lead-notes">Observação</label>
-                    <textarea id="lead-notes" class="form-control" style="padding: 10px 12px; min-height: 80px; resize: vertical;" placeholder="Observações e detalhes sobre o lead..."></textarea>
+                <!-- Card 2: Endereços (GestãoClick Style) -->
+                <div style="background: var(--bg-surface, #ffffff); border: 1px solid var(--border-color, #e2e8f0); border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px; border-bottom: 1px solid var(--border-color, #f1f5f9); padding-bottom: 10px;">
+                        <span style="font-size: 18px;">📍</span>
+                        <div>
+                            <h4 style="margin: 0; font-size: 14px; font-weight: 700; color: var(--text-primary, #0f172a);">Cadastre os endereços</h4>
+                            <span style="font-size: 11.5px; color: var(--text-muted, #64748b);">Endereço da empresa preenchido automaticamente ao digitar o CNPJ ou CEP.</span>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 140px 1fr 100px; gap: 12px; margin-bottom: 12px;">
+                        <div class="form-group" style="margin: 0;">
+                            <label for="lead-cep" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">CEP</label>
+                            <input type="text" id="lead-cep" class="form-control" style="height: 38px; font-size: 13px; font-family: monospace;" placeholder="00000-000" maxlength="9">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="lead-street" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Logradouro (Rua / Av)</label>
+                            <input type="text" id="lead-street" class="form-control" style="height: 38px; font-size: 13px;" placeholder="Rua, Avenida, Praça...">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="lead-number" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Número</label>
+                            <input type="text" id="lead-number" class="form-control" style="height: 38px; font-size: 13px;" placeholder="Nº">
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1.2fr 80px; gap: 12px;">
+                        <div class="form-group" style="margin: 0;">
+                            <label for="lead-complement" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Complemento</label>
+                            <input type="text" id="lead-complement" class="form-control" style="height: 38px; font-size: 13px;" placeholder="Sala, Bloco, Galpão...">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="lead-neighborhood" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Bairro</label>
+                            <input type="text" id="lead-neighborhood" class="form-control" style="height: 38px; font-size: 13px;" placeholder="Bairro">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="lead-city" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Cidade</label>
+                            <input type="text" id="lead-city" class="form-control" style="height: 38px; font-size: 13px;" placeholder="Ex: Recife">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="lead-state" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">UF</label>
+                            <input type="text" id="lead-state" class="form-control" style="height: 38px; font-size: 13px; text-transform: uppercase;" maxlength="2" placeholder="PE">
+                        </div>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="lead-stage-init">Estágio Inicial</label>
-                    <select id="lead-stage-init" class="filter-control" style="height: 42px;">
-                        <option value="Contato">1. Contato</option>
-                        <option value="Lead Gerado">2. Lead Gerado</option>
-                        <option value="Lead Qualificado">3. Lead Qualificado</option>
-                        <option value="Proposta Enviada">4. Proposta Enviada</option>
-                        <option value="Negociação">5. Negociação</option>
-                        <option value="Cliente Fechado">6. Cliente Fechado</option>
-                        <option value="Cliente Perdido">7. Cliente Perdido</option>
-                    </select>
+                <!-- Card 3: Observações e Detalhes da Oportunidade -->
+                <div style="background: var(--bg-surface, #ffffff); border: 1px solid var(--border-color, #e2e8f0); border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px; border-bottom: 1px solid var(--border-color, #f1f5f9); padding-bottom: 10px;">
+                        <span style="font-size: 18px;">📋</span>
+                        <div>
+                            <h4 style="margin: 0; font-size: 14px; font-weight: 700; color: var(--text-primary, #0f172a);">Registre as observações</h4>
+                            <span style="font-size: 11.5px; color: var(--text-muted, #64748b);">Adicione histórico, laudos, normas ou necessidades levantadas para este cliente.</span>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <textarea id="lead-notes" class="form-control" style="padding: 12px; min-height: 85px; resize: vertical; font-size: 13px;" placeholder="Descreva os laudos, necessidades ambientais, prazos ou histórico de contato..."></textarea>
+                    </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" id="btn-cancel-lead" class="btn btn-outline">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Salvar Lead</button>
+
+            <!-- Modal Footer -->
+            <div class="modal-footer" style="padding: 14px 24px; background: var(--bg-surface, #ffffff); border-top: 1px solid var(--border-color, #e2e8f0); display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" id="btn-cancel-lead" class="btn btn-outline" style="height: 38px; padding: 0 18px; font-size: 13px;">Cancelar</button>
+                <button type="submit" class="btn btn-primary" style="height: 38px; padding: 0 22px; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Salvar Lead</span>
+                </button>
             </div>
         </form>
     </div>
 
-    <!-- Modal: Edição de Lead -->
-    <div id="edit-lead-modal" class="modal">
-        <div class="modal-header">
-            <h3 style="font-weight: 700;">Editar Contato & Lead</h3>
-            <button id="btn-close-edit-lead" class="drawer-close">
+    <!-- Modal: Edição de Lead (Design GestãoClick Moderno & Integrado) -->
+    <div id="edit-lead-modal" class="modal" style="max-width: 1040px; width: 95vw; max-height: 92vh; border-radius: 16px; overflow: hidden; display: none; flex-direction: column; background: var(--bg-surface, #ffffff); border: 1px solid var(--border-color, #e2e8f0); box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.35);">
+        <div class="modal-header" style="background: var(--bg-surface, #ffffff); border-bottom: 1px solid var(--border-color, #e2e8f0); padding: 18px 24px;">
+            <div>
+                <div style="font-size: 11px; font-weight: 700; color: var(--text-muted, #94a3b8); text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
+                    <span>Início</span> <span>›</span> <span>Leads & Contatos</span> <span>›</span> <span style="color: var(--primary);">Editar Lead</span>
+                </div>
+                <h3 style="margin: 4px 0 0 0; font-size: 18px; font-weight: 800; color: var(--text-primary, #0f172a); font-family: 'Plus Jakarta Sans', sans-serif;">
+                    Editar Contato & Lead
+                </h3>
+            </div>
+            <button id="btn-close-edit-lead" class="drawer-close" style="width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
         </div>
-        <form id="edit-lead-form" onsubmit="return false;">
+        <form id="edit-lead-form" onsubmit="return false;" style="display: flex; flex-direction: column; flex: 1; overflow: hidden;">
             <input type="hidden" id="edit-lead-id">
-            <div class="modal-body">
-                <!-- Busca Inteligente por CNPJ (Receita Federal / BrasilAPI) -->
-                <div style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(99, 102, 241, 0.05)); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-                        <label for="edit-lead-cnpj" style="margin: 0; font-size: 12px; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 6px;">
-                            <span>⚡</span> CNPJ & Dados Cadastrais
-                        </label>
-                        <span id="edit-lead-cnpj-status" style="font-size: 11px; color: var(--text-muted);">Sincronize com a Receita Federal</span>
-                    </div>
-                    <div style="display: flex; gap: 8px; align-items: center;">
-                        <div style="position: relative; flex: 1;">
-                            <input type="text" id="edit-lead-cnpj" class="form-control" style="padding: 9px 12px; font-size: 13.5px; font-family: monospace; letter-spacing: 0.5px;" placeholder="00.000.000/0000-00" maxlength="18">
+            <div class="modal-body" style="padding: 20px 24px; overflow-y: auto; flex: 1; background: var(--bg-app, #f8fafc); display: flex; flex-direction: column; gap: 16px;">
+                
+                <!-- Card 1: Dados Gerais do Cliente -->
+                <div style="background: var(--bg-surface, #ffffff); border: 1px solid var(--border-color, #e2e8f0); border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px; border-bottom: 1px solid var(--border-color, #f1f5f9); padding-bottom: 10px;">
+                        <span style="font-size: 18px;">📝</span>
+                        <div>
+                            <h4 style="margin: 0; font-size: 14px; font-weight: 700; color: var(--text-primary, #0f172a);">Preencha os dados gerais do cliente</h4>
+                            <span style="font-size: 11.5px; color: var(--text-muted, #64748b);">Atualize informações cadastrais, documentos e canais de contato.</span>
                         </div>
-                        <button type="button" id="btn-edit-lookup-cnpj" class="btn btn-primary" style="height: 38px; padding: 0 14px; font-size: 12.5px; display: flex; align-items: center; gap: 6px; white-space: nowrap;">
-                            <span id="btn-edit-lookup-cnpj-icon">🔍</span>
-                            <span id="btn-edit-lookup-cnpj-text">Sincronizar</span>
-                        </button>
+                    </div>
+
+                    <!-- Linha 1: Tipo de Cliente, CNPJ com busca, Empresa -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 14px;">
+                        <div class="form-group" style="margin: 0;">
+                            <label for="edit-lead-client-type" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Tipo de Cliente *</label>
+                            <select id="edit-lead-client-type" class="form-control" style="height: 38px; font-size: 13px;">
+                                <option value="PJ">Pessoa Jurídica (PJ)</option>
+                                <option value="PF">Pessoa Física (PF)</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin: 0; grid-column: span 2;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                <label for="edit-lead-cnpj" style="font-size: 11px; font-weight: 700; color: var(--primary); text-transform: uppercase; margin: 0; display: flex; align-items: center; gap: 4px;">
+                                    <span>⚡</span> CNPJ / CPF (Sincronizar Dados)
+                                </label>
+                                <span id="edit-lead-cnpj-status" style="font-size: 11px; color: var(--text-muted);">Sincronize com a Receita Federal</span>
+                            </div>
+                            <div style="display: flex; gap: 6px;">
+                                <input type="text" id="edit-lead-cnpj" class="form-control" style="height: 38px; font-size: 13px; font-family: monospace;" placeholder="00.000.000/0000-00" maxlength="18">
+                                <button type="button" id="btn-edit-lookup-cnpj" class="btn btn-primary" style="height: 38px; padding: 0 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">
+                                    <span id="btn-edit-lookup-cnpj-icon">🔍</span>
+                                    <span id="btn-edit-lookup-cnpj-text">Sincronizar</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="edit-lead-company" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Razão Social / Nome da Empresa *</label>
+                            <input type="text" id="edit-lead-company" class="form-control" style="height: 38px; font-size: 13px;" required>
+                        </div>
+                    </div>
+
+                    <!-- Linha 2: Nome Fantasia, Contato, Cargo, E-mail -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 14px;">
+                        <div class="form-group" style="margin: 0;">
+                            <label for="edit-lead-trade-name" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Nome Fantasia</label>
+                            <input type="text" id="edit-lead-trade-name" class="form-control" style="height: 38px; font-size: 13px;" placeholder="Nome comercial">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="edit-lead-contact" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Nome do Contato Principal *</label>
+                            <input type="text" id="edit-lead-contact" class="form-control" style="height: 38px; font-size: 13px;" required>
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="edit-lead-role" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Cargo / Função</label>
+                            <input type="text" id="edit-lead-role" class="form-control" style="height: 38px; font-size: 13px;" placeholder="Ex: Síndico, Gerente">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="edit-lead-email" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">✉️ E-mail Principal</label>
+                            <input type="email" id="edit-lead-email" class="form-control" style="height: 38px; font-size: 13px;">
+                        </div>
+                    </div>
+
+                    <!-- Linha 3: Telefones e E-mail 2 -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 14px;">
+                        <div class="form-group" style="margin: 0;">
+                            <label for="edit-lead-whatsapp" style="font-size: 11px; font-weight: 700; color: #059669; text-transform: uppercase; display: block; margin-bottom: 4px;">📱 WhatsApp / Celular *</label>
+                            <input type="text" id="edit-lead-whatsapp" class="form-control" style="height: 38px; font-size: 13px; border-color: rgba(16, 185, 129, 0.4);" required placeholder="(00) 00000-0000">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="edit-lead-phone" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">📞 Telefone Comercial / Fixo</label>
+                            <input type="text" id="edit-lead-phone" class="form-control" style="height: 38px; font-size: 13px;" placeholder="(00) 0000-0000">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="edit-lead-phone2" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Telefone 2</label>
+                            <input type="text" id="edit-lead-phone2" class="form-control" style="height: 38px; font-size: 13px;" placeholder="(00) 00000-0000">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="edit-lead-email2" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">✉️ E-mail 2</label>
+                            <input type="email" id="edit-lead-email2" class="form-control" style="height: 38px; font-size: 13px;" placeholder="comercial@empresa.com">
+                        </div>
+                    </div>
+
+                    <!-- Linha 4: Segmento, Origem, Vendedor -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+                        <div class="form-group" style="margin: 0;">
+                            <label for="edit-lead-segment" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">🏷️ Segmento</label>
+                            <select id="edit-lead-segment" class="form-control" style="height: 38px; font-size: 13px;">
+                                <option value="Indústria">Indústria</option>
+                                <option value="Construção Civil">Construção Civil</option>
+                                <option value="Serviços">Serviços</option>
+                                <option value="Tecnologia">Tecnologia</option>
+                                <option value="Agronegócio">Agronegócio</option>
+                                <option value="Energia">Energia</option>
+                                <option value="Comércio / Varejo">Comércio / Varejo</option>
+                                <option value="Transportes">Transportes</option>
+                                <option value="Saúde">Saúde</option>
+                                <option value="Outros">Outros</option>
+                            </select>
+                            <div id="edit-lead-segment-custom-wrap" style="display: none; margin-top: 6px;">
+                                <input type="text" id="edit-lead-segment-custom" class="form-control" style="height: 34px; font-size: 12px; border-color: var(--primary);" placeholder="Especifique o segmento...">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="edit-lead-source" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">📢 Origem do Lead</label>
+                            <select id="edit-lead-source" class="form-control" style="height: 38px; font-size: 13px;">
+                                <option value="Prospecção Ativa">Prospecção Ativa</option>
+                                <option value="Indicação">Indicação</option>
+                                <option value="Google Ads">Google Ads</option>
+                                <option value="Meta Ads">Meta Ads (Facebook/Instagram)</option>
+                                <option value="WhatsApp">WhatsApp</option>
+                                <option value="Site">Site</option>
+                                <option value="Evento">Evento</option>
+                                <option value="Planilha Excel">Planilha Excel</option>
+                                <option value="Outros">Outros</option>
+                            </select>
+                            <div id="edit-lead-source-custom-wrap" style="display: none; margin-top: 6px;">
+                                <input type="text" id="edit-lead-source-custom" class="form-control" style="height: 34px; font-size: 12px; border-color: var(--primary);" placeholder="Especifique a origem...">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="edit-lead-owner" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">👤 Vendedor / Responsável</label>
+                            <select id="edit-lead-owner" class="form-control" style="height: 38px; font-size: 13px;">
+                                <!-- Preenchido dinamicamente -->
+                            </select>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Linha 1: Empresa + Contato -->
-                <div class="grid-modal-2col" style="margin-bottom: 16px;">
-                    <div class="form-group">
-                        <label for="edit-lead-company">Empresa *</label>
-                        <input type="text" id="edit-lead-company" class="form-control" style="padding: 10px 12px;" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-lead-contact">Nome do Contato *</label>
-                        <input type="text" id="edit-lead-contact" class="form-control" style="padding: 10px 12px;" required>
-                    </div>
-                </div>
-                <!-- Linha 2: Cargo + E-mail -->
-                <div class="grid-modal-2col" style="margin-bottom: 16px;">
-                    <div class="form-group">
-                        <label for="edit-lead-role">Cargo / Função</label>
-                        <input type="text" id="edit-lead-role" class="form-control" style="padding: 10px 12px;" placeholder="Ex: Gerente de Compras">
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-lead-email">E-mail</label>
-                        <input type="email" id="edit-lead-email" class="form-control" style="padding: 10px 12px;">
-                    </div>
-                </div>
-                <!-- Linha 3: WhatsApp + Telefone -->
-                <div class="grid-modal-2col" style="margin-bottom: 16px;">
-                    <div class="form-group">
-                        <label for="edit-lead-whatsapp">WhatsApp</label>
-                        <input type="text" id="edit-lead-whatsapp" class="form-control" style="padding: 10px 12px;" placeholder="Ex: 11999998888">
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-lead-phone">Telefone Fixo</label>
-                        <input type="text" id="edit-lead-phone" class="form-control" style="padding: 10px 12px;" placeholder="Ex: 1133334444">
-                    </div>
-                </div>
-
-                <!-- Linha 3.5: Telefone 2 + E-mail 2 -->
-                <div class="grid-modal-2col" style="margin-bottom: 16px;">
-                    <div class="form-group">
-                        <label for="edit-lead-phone2">Telefone 2</label>
-                        <input type="text" id="edit-lead-phone2" class="form-control" style="padding: 10px 12px;" placeholder="Ex: 11999998888">
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-lead-email2">E-mail 2</label>
-                        <input type="email" id="edit-lead-email2" class="form-control" style="padding: 10px 12px;" placeholder="Ex: comercial@empresa.com">
-                    </div>
-                </div>
-                <!-- Linha 4: Cidade + Estado -->
-                <div class="grid-modal-2col" style="margin-bottom: 16px;">
-                    <div class="form-group">
-                        <label for="edit-lead-city">Cidade</label>
-                        <input type="text" id="edit-lead-city" class="form-control" style="padding: 10px 12px;" placeholder="Ex: São Paulo">
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-lead-state">Estado (UF)</label>
-                        <input type="text" id="edit-lead-state" class="form-control" style="padding: 10px 12px;" placeholder="Ex: SP" maxlength="2">
-                    </div>
-                </div>
-                <!-- Linha 5: Segmento + Origem -->
-                <div class="grid-modal-2col" style="margin-bottom: 16px;">
-                    <div class="form-group">
-                        <label for="edit-lead-segment">Segmento</label>
-                        <select id="edit-lead-segment" class="filter-control" style="height: 42px;">
-                            <option value="Tecnologia">Tecnologia</option>
-                            <option value="Construção Civil">Construção Civil</option>
-                            <option value="Transportes">Transportes</option>
-                            <option value="Saúde">Saúde</option>
-                            <option value="Indústria">Indústria</option>
-                            <option value="Agronegócio">Agronegócio</option>
-                            <option value="Energia">Energia</option>
-                            <option value="Comércio / Varejo">Comércio / Varejo</option>
-                            <option value="Serviços">Serviços</option>
-                            <option value="Redes Sociais">Redes Sociais</option>
-                            <option value="Outros">Outros</option>
-                        </select>
-                        <div id="edit-lead-segment-custom-wrap" style="display: none; margin-top: 6px;">
-                            <input type="text" id="edit-lead-segment-custom" class="form-control" style="padding: 8px 12px; font-size: 13px; border-color: var(--primary);" placeholder="Especifique o segmento...">
+                <!-- Card 2: Endereços (GestãoClick Style) -->
+                <div style="background: var(--bg-surface, #ffffff); border: 1px solid var(--border-color, #e2e8f0); border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px; border-bottom: 1px solid var(--border-color, #f1f5f9); padding-bottom: 10px;">
+                        <span style="font-size: 18px;">📍</span>
+                        <div>
+                            <h4 style="margin: 0; font-size: 14px; font-weight: 700; color: var(--text-primary, #0f172a);">Cadastre os endereços</h4>
+                            <span style="font-size: 11.5px; color: var(--text-muted, #64748b);">Endereço da empresa preenchido automaticamente ao digitar o CNPJ ou CEP.</span>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label for="edit-lead-source">Origem do Lead</label>
-                        <select id="edit-lead-source" class="filter-control" style="height: 42px;">
-                            <option value="Google Ads">Google Ads</option>
-                            <option value="Meta Ads">Meta Ads (Facebook/Instagram)</option>
-                            <option value="Indicação">Indicação</option>
-                            <option value="Outbound">Outbound / Cold Call</option>
-                            <option value="Redes Sociais">Redes Sociais</option>
-                            <option value="WhatsApp">WhatsApp</option>
-                            <option value="Instagram Direct">Instagram Direct</option>
-                            <option value="Facebook Messenger">Facebook Messenger</option>
-                            <option value="Evento">Evento</option>
-                            <option value="Site">Site</option>
-                            <option value="Outros">Outros</option>
-                        </select>
-                        <div id="edit-lead-source-custom-wrap" style="display: none; margin-top: 6px;">
-                            <input type="text" id="edit-lead-source-custom" class="form-control" style="padding: 8px 12px; font-size: 13px; border-color: var(--primary);" placeholder="Especifique a origem do lead...">
+
+                    <div style="display: grid; grid-template-columns: 140px 1fr 100px; gap: 12px; margin-bottom: 12px;">
+                        <div class="form-group" style="margin: 0;">
+                            <label for="edit-lead-cep" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">CEP</label>
+                            <input type="text" id="edit-lead-cep" class="form-control" style="height: 38px; font-size: 13px; font-family: monospace;" placeholder="00000-000" maxlength="9">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="edit-lead-street" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Logradouro (Rua / Av)</label>
+                            <input type="text" id="edit-lead-street" class="form-control" style="height: 38px; font-size: 13px;" placeholder="Rua, Avenida, Praça...">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="edit-lead-number" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Número</label>
+                            <input type="text" id="edit-lead-number" class="form-control" style="height: 38px; font-size: 13px;" placeholder="Nº">
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1.2fr 80px; gap: 12px;">
+                        <div class="form-group" style="margin: 0;">
+                            <label for="edit-lead-complement" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Complemento</label>
+                            <input type="text" id="edit-lead-complement" class="form-control" style="height: 38px; font-size: 13px;" placeholder="Sala, Bloco, Galpão...">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="edit-lead-neighborhood" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Bairro</label>
+                            <input type="text" id="edit-lead-neighborhood" class="form-control" style="height: 38px; font-size: 13px;" placeholder="Bairro">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="edit-lead-city" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Cidade</label>
+                            <input type="text" id="edit-lead-city" class="form-control" style="height: 38px; font-size: 13px;" placeholder="Ex: Recife">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="edit-lead-state" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">UF</label>
+                            <input type="text" id="edit-lead-state" class="form-control" style="height: 38px; font-size: 13px; text-transform: uppercase;" maxlength="2" placeholder="PE">
                         </div>
                     </div>
                 </div>
 
-                <!-- Linha 6: Observação -->
-                <div class="form-group" style="margin-bottom: 16px;">
-                    <label for="edit-lead-notes">Observação</label>
-                    <textarea id="edit-lead-notes" class="form-control" style="padding: 10px 12px; min-height: 80px; resize: vertical;" placeholder="Observações e detalhes sobre o lead..."></textarea>
+                <!-- Card 3: Observações -->
+                <div style="background: var(--bg-surface, #ffffff); border: 1px solid var(--border-color, #e2e8f0); border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px; border-bottom: 1px solid var(--border-color, #f1f5f9); padding-bottom: 10px;">
+                        <span style="font-size: 18px;">📋</span>
+                        <div>
+                            <h4 style="margin: 0; font-size: 14px; font-weight: 700; color: var(--text-primary, #0f172a);">Registre as observações</h4>
+                            <span style="font-size: 11.5px; color: var(--text-muted, #64748b);">Adicione histórico, laudos, normas ou necessidades levantadas para este cliente.</span>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <textarea id="edit-lead-notes" class="form-control" style="padding: 12px; min-height: 85px; resize: vertical; font-size: 13px;" placeholder="Observações e detalhes sobre o lead..."></textarea>
+                    </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" id="btn-cancel-edit-lead" class="btn btn-outline">Cancelar</button>
-                <button type="submit" class="btn btn-primary" style="gap: 8px; display: inline-flex; align-items: center;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                    Salvar Alterações
+
+            <!-- Modal Footer -->
+            <div class="modal-footer" style="padding: 14px 24px; background: var(--bg-surface, #ffffff); border-top: 1px solid var(--border-color, #e2e8f0); display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" id="btn-cancel-edit-lead" class="btn btn-outline" style="height: 38px; padding: 0 18px; font-size: 13px;">Cancelar</button>
+                <button type="submit" class="btn btn-primary" style="height: 38px; padding: 0 22px; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    <span>Salvar Alterações</span>
                 </button>
             </div>
         </form>

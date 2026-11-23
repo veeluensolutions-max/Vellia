@@ -23,7 +23,8 @@
         }
         #new-lead-modal.open,
         #edit-lead-modal.open,
-        #gc-lead-selector-modal.open {
+        #gc-lead-selector-modal.open,
+        #modal-proposal-print.open {
             display: flex !important;
             opacity: 1 !important;
             visibility: visible !important;
@@ -3521,6 +3522,10 @@ Condições de pagamento:
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                                 <span>Cadastrar</span>
                             </button>
+                            <button type="button" id="gc-btn-print" class="gc-btn-cancel" style="background: var(--bg-surface, #ffffff); border-color: var(--primary, #3b82f6); color: var(--primary, #3b82f6); font-weight: 700; display: inline-flex; align-items: center; gap: 7px; cursor: pointer;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                                <span>Imprimir / Gerar PDF</span>
+                            </button>
                             <button type="button" id="gc-btn-cancel" class="gc-btn-cancel">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                                 <span>Cancelar</span>
@@ -6130,6 +6135,39 @@ Condições de pagamento:
         </div>
     </div>
 
+    <!-- Modal: Visualização e Impressão de Proposta Comercial (Design Profissional Timbrado) -->
+    <div id="modal-proposal-print" class="modal" style="max-width: 920px; width: 95vw; max-height: 94vh; border-radius: 16px; overflow: hidden; flex-direction: column; background: var(--bg-surface, #ffffff); border: 1px solid var(--border-color, #e2e8f0); box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.4); z-index: 1150; padding: 0;">
+        <div class="modal-header" style="padding: 14px 22px; border-bottom: 1px solid var(--border-color, #e2e8f0); display: flex; align-items: center; justify-content: space-between; background: var(--bg-surface, #ffffff);">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(59, 130, 246, 0.1); display: flex; align-items: center; justify-content: center; color: var(--primary, #3b82f6); font-size: 18px;">
+                    🖨️
+                </div>
+                <div>
+                    <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text-primary, #0f172a); font-family: 'Plus Jakarta Sans', sans-serif;">Visualização da Proposta Comercial</h3>
+                    <span id="print-modal-subtitle" style="font-size: 11.5px; color: var(--text-muted, #64748b);">Documento oficial pronto para impressão ou download em PDF.</span>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <button type="button" id="btn-print-modal-trigger" class="btn btn-primary" style="height: 34px; padding: 0 14px; font-size: 12.5px; font-weight: 700; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                    <span>Imprimir / Salvar PDF</span>
+                </button>
+                <button type="button" id="btn-print-modal-download" class="btn btn-outline" style="height: 34px; padding: 0 12px; font-size: 12px; font-weight: 600; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <span>Baixar (.pdf)</span>
+                </button>
+                <button type="button" id="btn-close-proposal-print" class="drawer-close" style="width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+        </div>
+        <div style="flex: 1; overflow-y: auto; padding: 24px 28px; background: #525659; display: flex; justify-content: center;">
+            <div id="print-sheet-wrapper" style="width: 100%; max-width: 800px; background: #ffffff; box-shadow: 0 10px 35px rgba(0,0,0,0.3); border-radius: 4px; padding: 40px; color: #1e293b; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                <!-- Conteúdo da folha A4 montado via JS -->
+            </div>
+        </div>
+    </div>
+
     <!-- ========================================================
          MODAIS: PROPOSTAS (ETAPA 4)
          ======================================================== -->
@@ -6365,6 +6403,10 @@ Condições de pagamento:
                     🇧🇷 PT
                 </button>
             </div>
+            <button id="btn-proposal-print" class="btn btn-outline" style="color: var(--primary); border-color: rgba(99,102,241,0.3); display: flex; align-items: center; gap: 8px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                Imprimir Proposta
+            </button>
             <button id="btn-proposal-pdf" class="btn btn-outline" style="color: var(--primary); border-color: rgba(99,102,241,0.3); display: flex; align-items: center; gap: 8px;">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 Exportar PDF

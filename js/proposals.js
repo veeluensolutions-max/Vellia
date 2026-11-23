@@ -50,6 +50,7 @@ let isSaving = false;
 let currentEditingBudgetId = null;
 let currentEditingLeadId = null;
 let currentBudgetAttachments = [];
+let currentPrintProposal = null;
 
 export const Proposals = {
     formatProposalDate,
@@ -467,6 +468,36 @@ export const Proposals = {
             btnPropPdf.addEventListener("click", () => {
                 if (activeProposalId) this.exportProposalToPDF(activeProposalId);
             });
+        }
+
+        // Botões de Impressão e PDF com Papel Timbrado Profissional
+        const btnGcPrint = document.getElementById("gc-btn-print");
+        if (btnGcPrint) {
+            btnGcPrint.addEventListener("click", () => this.openPrintPreview());
+        }
+
+        const btnPropPrint = document.getElementById("btn-proposal-print");
+        if (btnPropPrint) {
+            btnPropPrint.addEventListener("click", () => {
+                if (activeProposalId) this.openPrintPreview(activeProposalId);
+            });
+        }
+
+        const btnPrintModalTrigger = document.getElementById("btn-print-modal-trigger");
+        if (btnPrintModalTrigger) {
+            btnPrintModalTrigger.addEventListener("click", () => this.printActiveProposalDocument());
+        }
+
+        const btnPrintModalDownload = document.getElementById("btn-print-modal-download");
+        if (btnPrintModalDownload) {
+            btnPrintModalDownload.addEventListener("click", () => {
+                this.exportProposalToPDF(currentPrintProposal?.id || currentPrintProposal);
+            });
+        }
+
+        const btnClosePrintModal = document.getElementById("btn-close-proposal-print");
+        if (btnClosePrintModal) {
+            btnClosePrintModal.addEventListener("click", () => this.closePrintPreview());
         }
 
         const btnGenDocs = document.getElementById("btn-proposal-generate-docs");
@@ -2503,7 +2534,7 @@ Seja profissional, direto e use uma linguagem persuasiva focada em fechamento co
         }
     },
 
-    async exportProposalToPDF(id) {
+    async exportProposalToPDF(idOrProp) {
         if (!window.jspdf || !window.jspdf.jsPDF) {
             if (window.LazyLoader) {
                 await window.LazyLoader.ensureJsPDF();
@@ -2511,25 +2542,33 @@ Seja profissional, direto e use uma linguagem persuasiva focada em fechamento co
         }
         const jsPDFLib = window.jspdf;
         if (!jsPDFLib || !jsPDFLib.jsPDF) {
-            alert("Biblioteca jsPDF não carregada. Recarregue a página e tente novamente.");
+            this.printActiveProposalDocument();
             return;
         }
         const { jsPDF } = jsPDFLib;
 
-        const proposal = Store.getProposalById(id);
+        let proposal = null;
+        if (typeof idOrProp === "object" && idOrProp !== null) {
+            proposal = idOrProp;
+        } else if (idOrProp) {
+            proposal = Store.getProposalById(idOrProp);
+        }
         if (!proposal) {
-            alert("Proposta não encontrada.");
+            proposal = this.getLiveBudgetFormData();
+        }
+        if (!proposal || !proposal.company) {
+            alert("Proposta ou orçamento não encontrado para exportação.");
             return;
         }
 
-        const leads = Store.getLeads();
-        const lead = leads.find(l => l.company.toLowerCase() === proposal.company.toLowerCase());
+        const leads = Store.getLeads() || [];
+        const lead = leads.find(l => (l.company || "").toLowerCase() === (proposal.company || "").toLowerCase());
 
         const doc = new jsPDF({ unit: "mm", format: "a4" });
         const pageW = 210;
         const pageH = 297;
 
-        const BRAND_COLOR = [59, 130, 246];
+        const BRAND_COLOR = [30, 64, 175];
         const DARK_COLOR  = [15, 23, 42];
         const GRAY_COLOR  = [100, 116, 139];
         const WHITE       = [255, 255, 255];
@@ -2557,7 +2596,8 @@ Seja profissional, direto e use uma linguagem persuasiva focada em fechamento co
         doc.setFont("helvetica", "normal");
         doc.setFontSize(8.5);
         doc.setTextColor(148, 163, 184);
-        doc.text(`Proposta Nº: ${proposal.id.substring(0, 8).toUpperCase()}   •   Status: ${proposal.status.toUpperCase()}`, 48, 28);
+        const propNum = proposal.budgetNumber || (proposal.id ? proposal.id.substring(0, 8).toUpperCase() : "001");
+        doc.text(`Orçamento Nº: ${propNum}   •   Status: ${(proposal.status || "Em Elaboração").toUpperCase()}`, 48, 28);
 
         // 2. METADATA & CLIENT CARDS
         let y = 52;
@@ -2566,7 +2606,6 @@ Seja profissional, direto e use uma linguagem persuasiva focada em fechamento co
         doc.setFillColor(248, 250, 252);
         doc.setDrawColor(226, 232, 240);
         doc.roundedRect(14, y, 88, 38, 3, 3, "FD");
-        // Accent Left
         doc.setFillColor(...BRAND_COLOR);
         doc.rect(14, y, 3, 38, "F");
         
@@ -2590,7 +2629,6 @@ Seja profissional, direto e use uma linguagem persuasiva focada em fechamento co
         doc.setFillColor(248, 250, 252);
         doc.setDrawColor(226, 232, 240);
         doc.roundedRect(108, y, 88, 38, 3, 3, "FD");
-        // Accent Left
         doc.setFillColor(...GREEN_COLOR);
         doc.rect(108, y, 3, 38, "F");
         
@@ -2601,9 +2639,10 @@ Seja profissional, direto e use uma linguagem persuasiva focada em fechamento co
         doc.setFont("helvetica", "normal");
         doc.setFontSize(8.5);
         doc.setTextColor(...GRAY_COLOR);
-        doc.text(`Data de Emissão: ${formatProposalDate(proposal.sentAt)}`, 115, y + 16);
-        doc.text(`Válida até: ${proposal.validUntil ? formatProposalDate(proposal.validUntil) : "A combinar"}`, 115, y + 22);
-        doc.text(`Serviço: ${proposal.service || "Serviço Técnico"}`, 115, y + 28);
+        doc.text(`Data de Emissão: ${formatProposalDate(proposal.sentAt || proposal.date)}`, 115, y + 16);
+        doc.text(`Validade: ${proposal.validityText || (proposal.validUntil ? formatProposalDate(proposal.validUntil) : "10 dias")}`, 115, y + 22);
+        const mainServiceName = proposal.servicesList?.[0]?.service || proposal.service || "Serviço Técnico Especializado";
+        doc.text(`Serviço: ${mainServiceName.substring(0, 32)}`, 115, y + 28);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(11);
         doc.setTextColor(...GREEN_COLOR);
@@ -2617,14 +2656,22 @@ Seja profissional, direto e use uma linguagem persuasiva focada em fechamento co
         doc.setFont("helvetica", "bold");
         doc.setFontSize(11);
         doc.setTextColor(...DARK_COLOR);
-        doc.text("Detalhamento do Escopo e Observações", 20, y + 4.5);
+        doc.text("Detalhamento do Escopo e Itens", 20, y + 4.5);
         
         y += 12;
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9.5);
-        doc.setTextColor(51, 65, 85); // Slate 700
+        doc.setTextColor(51, 65, 85);
         
-        const notesText = proposal.notes || "Nenhuma observação ou escopo específico anexado.";
+        const introText = proposal.intro ? `Apresentação:\n${proposal.intro}\n\n` : "";
+        let itemsText = "";
+        if (proposal.servicesList && proposal.servicesList.length > 0) {
+            itemsText += "Serviços Inclusos:\n" + proposal.servicesList.map((s, idx) => `  ${idx + 1}. ${s.service} (Qtd: ${s.qty}) - R$ ${parseFloat(s.subtotal || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} ${s.details ? '\n     ' + s.details : ''}`).join("\n") + "\n\n";
+        }
+        if (proposal.productsList && proposal.productsList.length > 0) {
+            itemsText += "Produtos / Materiais:\n" + proposal.productsList.map((p, idx) => `  ${idx + 1}. ${p.product} (Qtd: ${p.qty}) - R$ ${parseFloat(p.subtotal || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`).join("\n") + "\n\n";
+        }
+        const notesText = introText + itemsText + (proposal.notes || "Condições padrão conforme acordado.");
         const lines = doc.splitTextToSize(notesText, pageW - 28);
         
         for (const line of lines) {
@@ -2633,7 +2680,7 @@ Seja profissional, direto e use uma linguagem persuasiva focada em fechamento co
                 y = 20;
             }
             doc.text(line, 14, y);
-            y += 6; // line spacing
+            y += 5.5;
         }
 
         // 4. SIGNATURES
@@ -2650,18 +2697,16 @@ Seja profissional, direto e use uma linguagem persuasiva focada em fechamento co
         doc.setDrawColor(148, 163, 184);
         doc.setLineWidth(0.3);
 
-        // Proponente
         doc.line(14, sigY, 14 + sigW, sigY);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(9);
         doc.setTextColor(...DARK_COLOR);
-        doc.text("Vellia Comercial & Engenharia", 14, sigY + 5);
+        doc.text("Veeluen Solutions / Excelência", 14, sigY + 5);
         doc.setFont("helvetica", "normal");
         doc.setFontSize(8);
         doc.setTextColor(...GRAY_COLOR);
-        doc.text("Responsável Técnico/Vendas", 14, sigY + 9);
+        doc.text("Responsável Técnico / Comercial", 14, sigY + 9);
 
-        // Cliente
         doc.line(pageW - 14 - sigW, sigY, pageW - 14, sigY);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(9);
@@ -2676,22 +2721,575 @@ Seja profissional, direto e use uma linguagem persuasiva focada em fechamento co
         const totalPages = doc.internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
-            
-            // Draw a bottom accent line or full banner
             doc.setFillColor(...DARK_COLOR);
             doc.rect(0, pageH - 12, pageW, 12, "F");
-            
             doc.setFont("helvetica", "normal");
             doc.setFontSize(8);
             doc.setTextColor(148, 163, 184);
             doc.text("Vellia CRM — Sistema Comercial Inteligente  •  Documento confidencial", 14, pageH - 4.5);
-            
             doc.setTextColor(...WHITE);
             doc.text(`Página ${i} de ${totalPages}`, pageW - 28, pageH - 4.5);
         }
 
         const safeName = (proposal.company || "Cliente").replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "").substring(0, 20);
-        doc.save(`Proposta_${safeName}_${proposal.id.substring(0, 8)}.pdf`);
+        doc.save(`Proposta_${safeName}_${propNum}.pdf`);
+    },
+
+    // ==========================================================================
+    // SISTEMA DE IMPRESSÃO & MODELO PROFISSIONAL TIMBRADO (A4 / PDF)
+    // ==========================================================================
+    getCompanyBranding(workspaceName) {
+        const ws = (workspaceName || localStorage.getItem("activeCompany") || "Veeluen Solutions").toLowerCase();
+        const isExcelencia = ws.includes("excel") || ws.includes("ambiental");
+
+        if (isExcelencia) {
+            return {
+                name: "EXCELÊNCIA AMBIENTAL",
+                legalName: "Excelência Assessoria e Engenharia Ambiental Ltda.",
+                tagline: "Consultoria, Licenciamento & Gestão Ambiental Estratégica",
+                cnpj: "38.124.908/0001-12",
+                address: "Av. Gov. Agamenon Magalhães, 2615 • Recife / PE",
+                phone: "(81) 98155-8002",
+                email: "contato@excelenciaambiental.com.br",
+                website: "www.excelenciaambiental.com.br",
+                primaryColor: "#059669",
+                secondaryColor: "#065f46",
+                accentLight: "#ecfdf5",
+                badgeText: "EA",
+                sigTitle: "Excelência Ambiental — Diretoria Técnica"
+            };
+        }
+
+        return {
+            name: "VEELUEN SOLUTIONS",
+            legalName: "Veeluen Solutions Engenharia e Meio Ambiente Ltda.",
+            tagline: "Engenharia, Soluções Ambientais & Gestão Integrada",
+            cnpj: "42.891.244/0001-38",
+            address: "Recife / Pernambuco • Atuação e Operações em Todo o Brasil",
+            phone: "(81) 99658-1000 / (81) 3035-3500",
+            email: "comercial@veeluen.ai",
+            website: "www.veeluen.ai",
+            primaryColor: "#1e40af",
+            secondaryColor: "#1e3a8a",
+            accentLight: "#eff6ff",
+            badgeText: "VS",
+            sigTitle: "Veeluen Solutions — Engenharia & Comercial"
+        };
+    },
+
+    getLiveBudgetFormData() {
+        const getVal = (id) => document.getElementById(id)?.value?.trim() || "";
+        const budgetNumber = getVal("gc-budget-number") || "001";
+        const company = getVal("gc-budget-client") || "Cliente Não Informado";
+        const seller = getVal("gc-budget-seller") || (Auth.getCurrentUser()?.name || "Consultor Técnico");
+        const date = getVal("gc-budget-date") || new Date().toISOString().split("T")[0];
+        const deliveryDate = getVal("gc-budget-delivery-date") || "";
+        const contact = getVal("gc-budget-attention") || "";
+        const validityText = getVal("gc-budget-validity") || "10 dias";
+        const channel = getVal("gc-budget-channel") || "";
+        const costCenter = getVal("gc-budget-cost-center") || "";
+        const intro = getVal("gc-budget-intro") || "";
+        const techDescription = getVal("gc-budget-tech-desc") || "";
+        const freight = parseCurrency(getVal("gc-budget-freight"));
+        const carrier = getVal("gc-budget-carrier") || "";
+        const notes = getVal("gc-budget-notes") || "";
+        const internalNotes = getVal("gc-budget-internal-notes") || "";
+
+        const servicesList = [];
+        document.querySelectorAll("#gc-services-tbody .gc-item-row").forEach(row => {
+            const service = row.querySelector(".gc-item-name")?.value.trim() || "";
+            const details = row.querySelector(".gc-item-details")?.value.trim() || "";
+            const qty = parseFloat(row.querySelector(".gc-item-qty")?.value) || 1;
+            const price = parseFloat(row.querySelector(".gc-item-price")?.value) || 0;
+            const discountVal = parseFloat(row.querySelector(".gc-item-discount-val")?.value) || 0;
+            const discountType = row.querySelector(".gc-item-discount-type")?.value || "R$";
+            const subtotalStr = row.querySelector(".gc-item-subtotal")?.value.replace(/\./g, "").replace(",", ".") || "0";
+            const subtotal = parseFloat(subtotalStr) || 0;
+            if (service || price > 0) {
+                servicesList.push({ service, details, qty, price, discountVal, discountType, subtotal });
+            }
+        });
+
+        const productsList = [];
+        document.querySelectorAll("#gc-products-tbody .gc-item-row").forEach(row => {
+            const product = row.querySelector(".gc-item-name")?.value.trim() || "";
+            const details = row.querySelector(".gc-item-details")?.value.trim() || "";
+            const qty = parseFloat(row.querySelector(".gc-item-qty")?.value) || 1;
+            const price = parseFloat(row.querySelector(".gc-item-price")?.value) || 0;
+            const discountVal = parseFloat(row.querySelector(".gc-item-discount-val")?.value) || 0;
+            const discountType = row.querySelector(".gc-item-discount-type")?.value || "R$";
+            const subtotalStr = row.querySelector(".gc-item-subtotal")?.value.replace(/\./g, "").replace(",", ".") || "0";
+            const subtotal = parseFloat(subtotalStr) || 0;
+            if (product || price > 0) {
+                productsList.push({ product, details, qty, price, discountVal, discountType, subtotal });
+            }
+        });
+
+        const totalFinalStr = document.getElementById("gc-total-final")?.value.replace(/\./g, "").replace(",", ".") || "0";
+        const finalValue = parseFloat(totalFinalStr) || 0;
+
+        let deliveryAddress = null;
+        if (document.getElementById("gc-check-delivery-address")?.checked) {
+            deliveryAddress = {
+                cep: getVal("gc-delivery-cep"),
+                street: getVal("gc-delivery-street"),
+                number: getVal("gc-delivery-number"),
+                neighborhood: getVal("gc-delivery-neighborhood"),
+                city: getVal("gc-delivery-city"),
+                state: getVal("gc-delivery-state")
+            };
+        }
+
+        const paymentType = document.querySelector('input[name="gc-payment-type"]:checked')?.value || "vista";
+        const activeWs = localStorage.getItem("activeCompany") || "Veeluen Solutions";
+
+        return {
+            id: currentEditingBudgetId || `ORC-${Date.now().toString(36).toUpperCase()}`,
+            budgetNumber,
+            company,
+            contact,
+            seller,
+            sentAt: date,
+            date,
+            deliveryDate,
+            validityText,
+            channel,
+            costCenter,
+            intro,
+            techDescription,
+            freight,
+            carrier,
+            notes,
+            internalNotes,
+            servicesList,
+            productsList,
+            deliveryAddress,
+            paymentType,
+            value: finalValue,
+            status: "Em Elaboração",
+            workspace: activeWs
+        };
+    },
+
+    openPrintPreview(proposalIdOrData = null) {
+        let prop = null;
+        if (typeof proposalIdOrData === "object" && proposalIdOrData !== null) {
+            prop = proposalIdOrData;
+        } else if (proposalIdOrData) {
+            prop = Store.getProposalById(proposalIdOrData);
+        }
+
+        if (!prop) {
+            prop = this.getLiveBudgetFormData();
+        }
+
+        currentPrintProposal = prop;
+
+        const sheetWrapper = document.getElementById("print-sheet-wrapper");
+        if (sheetWrapper) {
+            sheetWrapper.innerHTML = this.buildProposalPrintBodyHTML(prop);
+        }
+
+        const subtitleEl = document.getElementById("print-modal-subtitle");
+        if (subtitleEl) {
+            const num = prop.budgetNumber || (prop.id ? prop.id.substring(0, 8).toUpperCase() : "001");
+            subtitleEl.textContent = `Orçamento / Proposta Nº ${num} • Cliente: ${prop.company || 'Geral'}`;
+        }
+
+        const modal = document.getElementById("modal-proposal-print");
+        if (modal) {
+            modal.classList.add("open");
+        }
+    },
+
+    closePrintPreview() {
+        const modal = document.getElementById("modal-proposal-print");
+        if (modal) {
+            modal.classList.remove("open");
+        }
+    },
+
+    printActiveProposalDocument() {
+        let prop = currentPrintProposal;
+        if (!prop) {
+            prop = this.getLiveBudgetFormData();
+        }
+        if (!prop) {
+            alert("Nenhuma proposta carregada para impressão.");
+            return;
+        }
+
+        const html = this.buildProposalPrintHTML(prop);
+        const printWin = window.open("", "_blank", "width=920,height=850,menubar=no,toolbar=no,location=no,status=no");
+        if (!printWin) {
+            alert("O navegador bloqueou a janela pop-up. Por favor, permita pop-ups para imprimir diretamente.");
+            return;
+        }
+
+        printWin.document.open();
+        printWin.document.write(html);
+        printWin.document.close();
+    },
+
+    buildProposalPrintBodyHTML(prop) {
+        const brand = this.getCompanyBranding(prop.workspace);
+        const fmtCur = (v) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(parseFloat(v) || 0);
+
+        // Buscar dados complementares do Lead se disponíveis
+        const leads = Store.getLeads() || [];
+        const lead = leads.find(l => (l.company || "").toLowerCase() === (prop.company || "").toLowerCase()) || {};
+
+        const propNumber = prop.budgetNumber || (prop.id ? prop.id.substring(0, 8).toUpperCase() : "001");
+        const emitDate = formatProposalDate(prop.sentAt || prop.date || new Date().toISOString());
+        const validity = prop.validityText || (prop.validUntil ? formatProposalDate(prop.validUntil) : "10 dias úteis");
+        const sellerName = prop.seller || (Auth.getCurrentUser()?.name || "Consultor Técnico");
+
+        // Montar linhas de serviços
+        let servicesList = prop.servicesList || [];
+        if (servicesList.length === 0 && (prop.service || prop.value)) {
+            servicesList = [{
+                service: prop.service || "Prestação de Serviços Técnicos Especializados",
+                details: prop.notes ? prop.notes.substring(0, 150) : "Serviços de engenharia e consultoria ambiental conforme escopo.",
+                qty: 1,
+                price: prop.value || 0,
+                discountVal: 0,
+                subtotal: prop.value || 0
+            }];
+        }
+
+        let servicesRowsHTML = "";
+        let totalServicesVal = 0;
+        servicesList.forEach((s, idx) => {
+            const qty = parseFloat(s.qty) || 1;
+            const price = parseFloat(s.price) || 0;
+            const subtotal = parseFloat(s.subtotal !== undefined ? s.subtotal : qty * price) || 0;
+            totalServicesVal += subtotal;
+
+            servicesRowsHTML += `
+                <tr style="border-bottom: 1px solid #e2e8f0; font-size: 13px;">
+                    <td style="padding: 10px 12px; text-align: center; color: #64748b; font-weight: 600;">${String(idx + 1).padStart(2, '0')}</td>
+                    <td style="padding: 10px 12px;">
+                        <strong style="color: #0f172a; display: block; font-size: 13.5px;">${s.service || 'Serviço'}</strong>
+                        ${s.details ? `<span style="font-size: 12px; color: #475569; display: block; margin-top: 3px; line-height: 1.4;">${s.details.replace(/\n/g, '<br>')}</span>` : ''}
+                    </td>
+                    <td style="padding: 10px 12px; text-align: center; color: #1e293b; font-weight: 600;">${qty}</td>
+                    <td style="padding: 10px 12px; text-align: right; color: #1e293b;">${fmtCur(price)}</td>
+                    <td style="padding: 10px 12px; text-align: right; color: #0f172a; font-weight: 700;">${fmtCur(subtotal)}</td>
+                </tr>
+            `;
+        });
+
+        // Montar linhas de produtos (se houver)
+        const productsList = prop.productsList || [];
+        let productsRowsHTML = "";
+        let totalProductsVal = 0;
+        if (productsList.length > 0) {
+            productsList.forEach((p, idx) => {
+                const qty = parseFloat(p.qty) || 1;
+                const price = parseFloat(p.price) || 0;
+                const subtotal = parseFloat(p.subtotal !== undefined ? p.subtotal : qty * price) || 0;
+                totalProductsVal += subtotal;
+
+                productsRowsHTML += `
+                    <tr style="border-bottom: 1px solid #e2e8f0; font-size: 13px;">
+                        <td style="padding: 10px 12px; text-align: center; color: #64748b; font-weight: 600;">${String(idx + 1).padStart(2, '0')}</td>
+                        <td style="padding: 10px 12px;">
+                            <strong style="color: #0f172a; display: block; font-size: 13.5px;">${p.product || 'Produto'}</strong>
+                            ${p.details ? `<span style="font-size: 12px; color: #475569; display: block; margin-top: 3px;">${p.details}</span>` : ''}
+                        </td>
+                        <td style="padding: 10px 12px; text-align: center; color: #1e293b; font-weight: 600;">${qty}</td>
+                        <td style="padding: 10px 12px; text-align: right; color: #1e293b;">${fmtCur(price)}</td>
+                        <td style="padding: 10px 12px; text-align: right; color: #0f172a; font-weight: 700;">${fmtCur(subtotal)}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Endereço de entrega / local de execução
+        const delivery = prop.deliveryAddress || (lead.city || lead.state ? {
+            street: lead.street || lead.address || "",
+            number: lead.number || "",
+            neighborhood: lead.neighborhood || "",
+            city: lead.city || "",
+            state: lead.state || "",
+            cep: lead.cep || ""
+        } : null);
+
+        let deliveryHTML = "";
+        if (delivery && (delivery.city || delivery.street || delivery.cep)) {
+            const line = [
+                delivery.street ? `${delivery.street}${delivery.number ? ', nº ' + delivery.number : ''}` : '',
+                delivery.neighborhood,
+                delivery.city ? `${delivery.city}${delivery.state ? '/' + delivery.state : ''}` : '',
+                delivery.cep ? `CEP: ${delivery.cep}` : ''
+            ].filter(Boolean).join(" • ");
+
+            deliveryHTML = `
+                <div style="margin-top: 18px; padding: 12px 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+                    <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px; display: block; margin-bottom: 3px;">Local de Prestação / Endereço de Entrega</span>
+                    <span style="font-size: 13px; color: #1e293b; font-weight: 500;">📍 ${line}</span>
+                </div>
+            `;
+        }
+
+        const totalFinal = prop.value || (totalServicesVal + totalProductsVal + (prop.freight || 0));
+
+        return `
+            <div class="proposal-print-document" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #0f172a; line-height: 1.5; max-width: 800px; margin: 0 auto;">
+                
+                <!-- 1. CABEÇALHO TIMBRADO -->
+                <div style="border-bottom: 2px solid ${brand.primaryColor}; padding-bottom: 18px; margin-bottom: 22px; display: flex; justify-content: space-between; align-items: flex-start; gap: 20px;">
+                    <div style="display: flex; align-items: flex-start; gap: 14px;">
+                        <div style="width: 52px; height: 52px; border-radius: 12px; background: ${brand.primaryColor}; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; letter-spacing: -1px; box-shadow: 0 4px 10px rgba(0,0,0,0.12);">
+                            ${brand.badgeText}
+                        </div>
+                        <div>
+                            <h1 style="margin: 0; font-size: 20px; font-weight: 800; color: ${brand.primaryColor}; letter-spacing: -0.3px;">${brand.name}</h1>
+                            <p style="margin: 2px 0 0 0; font-size: 12px; color: #475569; font-weight: 600;">${brand.tagline}</p>
+                            <p style="margin: 3px 0 0 0; font-size: 11.5px; color: #64748b;">
+                                CNPJ: <strong>${brand.cnpj}</strong> • ${brand.address}
+                            </p>
+                            <p style="margin: 2px 0 0 0; font-size: 11.5px; color: #64748b;">
+                                Tel: ${brand.phone} • E-mail: ${brand.email}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div style="text-align: right; min-width: 210px; background: ${brand.accentLight}; padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.06);">
+                        <div style="font-size: 11px; text-transform: uppercase; font-weight: 800; color: ${brand.secondaryColor}; letter-spacing: 0.5px;">Proposta Comercial</div>
+                        <div style="font-size: 18px; font-weight: 800; color: #0f172a; margin-top: 2px;">Nº ${propNumber}</div>
+                        <div style="font-size: 11.5px; color: #475569; margin-top: 4px;">Data: <strong>${emitDate}</strong></div>
+                        <div style="font-size: 11.5px; color: #475569;">Validade: <strong>${validity}</strong></div>
+                    </div>
+                </div>
+
+                <!-- 2. DADOS DO CLIENTE & RESPONSÁVEL -->
+                <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 16px; margin-bottom: 22px;">
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 18px;">
+                        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px; margin-bottom: 6px;">Cliente Proponente</div>
+                        <div style="font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 4px;">${prop.company || '—'}</div>
+                        <div style="font-size: 12.5px; color: #334155;"><strong>Aos cuidados de:</strong> ${prop.contact || lead.contact || 'Diretoria / Responsável'}</div>
+                        ${lead.cnpj ? `<div style="font-size: 12px; color: #64748b;">CNPJ: ${lead.cnpj}</div>` : ''}
+                        <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
+                            ${lead.email ? `E-mail: ${lead.email}` : ''} ${lead.whatsapp || lead.phone ? `• Tel: ${lead.whatsapp || lead.phone}` : ''}
+                        </div>
+                    </div>
+
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 18px;">
+                        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px; margin-bottom: 6px;">Responsável Comercial</div>
+                        <div style="font-size: 14.5px; font-weight: 700; color: #0f172a;">${sellerName}</div>
+                        <div style="font-size: 12px; color: #475569; margin-top: 2px;">Departamento Técnico e Comercial</div>
+                        <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Canal: ${prop.channel || 'Venda Direta'}</div>
+                    </div>
+                </div>
+
+                <!-- 3. APRESENTAÇÃO / INTRODUÇÃO -->
+                ${prop.intro ? `
+                    <div style="margin-bottom: 22px; padding: 14px 18px; border-left: 3px solid ${brand.primaryColor}; background: #fdfdfd; border-radius: 0 8px 8px 0; border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9;">
+                        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: ${brand.primaryColor}; letter-spacing: 0.5px; margin-bottom: 6px;">Apresentação Institucional</div>
+                        <div style="font-size: 12.5px; color: #334155; line-height: 1.6; white-space: pre-line;">${prop.intro}</div>
+                    </div>
+                ` : ''}
+
+                <!-- 4. TABELA DE SERVIÇOS -->
+                <div style="margin-bottom: 22px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <h3 style="margin: 0; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #0f172a;">
+                            1. Serviços e Escopo de Fornecimento
+                        </h3>
+                        <span style="font-size: 11.5px; color: #64748b; font-weight: 600;">Valores em Moeda Nacional (BRL)</span>
+                    </div>
+
+                    <table style="width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                        <thead>
+                            <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #475569;">
+                                <th style="padding: 10px 12px; width: 44px; text-align: center;">Item</th>
+                                <th style="padding: 10px 12px; text-align: left;">Descrição do Serviço / Escopo</th>
+                                <th style="padding: 10px 12px; width: 60px; text-align: center;">Qtd</th>
+                                <th style="padding: 10px 12px; width: 110px; text-align: right;">Unitário</th>
+                                <th style="padding: 10px 12px; width: 120px; text-align: right;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${servicesRowsHTML}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 5. TABELA DE PRODUTOS / MATERIAIS (SE HOUVER) -->
+                ${productsList.length > 0 ? `
+                    <div style="margin-bottom: 22px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                            <h3 style="margin: 0; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #0f172a;">
+                                2. Produtos, Peças ou Materiais Inclusos
+                            </h3>
+                        </div>
+
+                        <table style="width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                            <thead>
+                                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #475569;">
+                                    <th style="padding: 10px 12px; width: 44px; text-align: center;">Item</th>
+                                    <th style="padding: 10px 12px; text-align: left;">Descrição do Produto / Material</th>
+                                    <th style="padding: 10px 12px; width: 60px; text-align: center;">Qtd</th>
+                                    <th style="padding: 10px 12px; width: 110px; text-align: right;">Unitário</th>
+                                    <th style="padding: 10px 12px; width: 120px; text-align: right;">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${productsRowsHTML}
+                            </tbody>
+                        </table>
+                    </div>
+                ` : ''}
+
+                <!-- 6. DETALHES TÉCNICOS / ESPECIFICAÇÃO -->
+                ${prop.techDescription ? `
+                    <div style="margin-bottom: 22px; padding: 14px 18px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px;">
+                        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px; margin-bottom: 6px;">Especificações Técnicas e Metodologia</div>
+                        <div style="font-size: 12.5px; color: #334155; line-height: 1.5; white-space: pre-line;">${prop.techDescription}</div>
+                    </div>
+                ` : ''}
+
+                ${deliveryHTML}
+
+                <!-- 7. RESUMO FINANCEIRO E CONDIÇÕES -->
+                <div style="margin-top: 22px; display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 20px; align-items: start;">
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px 18px;">
+                        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px; margin-bottom: 8px;">Condições Comerciais & Pagamento</div>
+                        <div style="font-size: 12.5px; color: #334155; line-height: 1.6; white-space: pre-line;">
+                            ${prop.notes || 'Previsão de entrega: A combinar com o cliente.\nCondições de pagamento: 50% na aprovação + 50% na conclusão.\nImpostos inclusos na proposta.'}
+                        </div>
+                    </div>
+
+                    <div style="background: #ffffff; border: 2px solid ${brand.primaryColor}; border-radius: 10px; padding: 16px 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.04);">
+                        <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: ${brand.primaryColor}; letter-spacing: 0.5px; margin-bottom: 10px;">Resumo do Investimento</div>
+                        
+                        <div style="display: flex; justify-content: space-between; font-size: 12.5px; color: #475569; margin-bottom: 5px;">
+                            <span>Subtotal Serviços:</span>
+                            <span style="font-weight: 600;">${fmtCur(totalServicesVal || prop.value)}</span>
+                        </div>
+
+                        ${totalProductsVal > 0 ? `
+                            <div style="display: flex; justify-content: space-between; font-size: 12.5px; color: #475569; margin-bottom: 5px;">
+                                <span>Subtotal Produtos:</span>
+                                <span style="font-weight: 600;">${fmtCur(totalProductsVal)}</span>
+                            </div>
+                        ` : ''}
+
+                        ${prop.freight ? `
+                            <div style="display: flex; justify-content: space-between; font-size: 12.5px; color: #475569; margin-bottom: 5px;">
+                                <span>Frete / Logística:</span>
+                                <span style="font-weight: 600;">${fmtCur(prop.freight)}</span>
+                            </div>
+                        ` : ''}
+
+                        <div style="border-top: 1px dashed #cbd5e1; margin: 10px 0; padding-top: 10px; display: flex; justify-content: space-between; align-items: baseline;">
+                            <span style="font-size: 14px; font-weight: 800; color: #0f172a; text-transform: uppercase;">Investimento Total:</span>
+                            <span style="font-size: 20px; font-weight: 900; color: ${brand.primaryColor};">${fmtCur(totalFinal)}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 8. ASSINATURAS E ACEITE (DE ACORDO) -->
+                <div style="margin-top: 36px; padding-top: 24px; border-top: 1px solid #e2e8f0; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; page-break-inside: avoid;">
+                    <div style="text-align: center;">
+                        <div style="border-bottom: 1.5px solid #0f172a; width: 85%; margin: 0 auto 8px auto;"></div>
+                        <div style="font-size: 13px; font-weight: 700; color: #0f172a;">${brand.name}</div>
+                        <div style="font-size: 11px; color: #64748b;">${sellerName} • Responsável Comercial</div>
+                    </div>
+
+                    <div style="text-align: center;">
+                        <div style="border-bottom: 1.5px solid #0f172a; width: 85%; margin: 0 auto 8px auto;"></div>
+                        <div style="font-size: 13px; font-weight: 700; color: #0f172a;">${prop.company || 'Aceite do Cliente'}</div>
+                        <div style="font-size: 11px; color: #64748b;">De Acordo / Assinatura do Contratante</div>
+                        <div style="font-size: 10.5px; color: #94a3b8; margin-top: 2px;">Data do Aceite: ____/____/________</div>
+                    </div>
+                </div>
+
+                <!-- 9. RODAPÉ DE PÁGINA -->
+                <div style="margin-top: 30px; padding-top: 12px; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; font-size: 10.5px; color: #94a3b8;">
+                    <span>Documento Comercial Oficial • ${brand.legalName}</span>
+                    <span>Vellia CRM — Inteligência e Gestão Comercial</span>
+                </div>
+            </div>
+        `;
+    },
+
+    buildProposalPrintHTML(prop) {
+        const brand = this.getCompanyBranding(prop.workspace);
+        const bodyContent = this.buildProposalPrintBodyHTML(prop);
+
+        return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Proposta Comercial #${prop.budgetNumber || '001'} - ${prop.company || 'Cliente'}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        @page {
+            size: A4;
+            margin: 12mm 15mm;
+        }
+        * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 10px;
+            background: #ffffff;
+            color: #0f172a;
+        }
+        .proposal-print-document {
+            width: 100%;
+        }
+        @media print {
+            body {
+                padding: 0;
+            }
+            .no-print {
+                display: none !important;
+            }
+            tr {
+                page-break-inside: avoid;
+            }
+            table {
+                page-break-inside: auto;
+            }
+        }
+        @media screen {
+            body {
+                background: #525659;
+                display: flex;
+                justify-content: center;
+                padding: 30px 10px;
+            }
+            .proposal-print-document {
+                background: #ffffff;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                padding: 40px;
+                border-radius: 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    ${bodyContent}
+    <script>
+        window.onload = function() {
+            setTimeout(function() {
+                window.focus();
+                window.print();
+            }, 300);
+        };
+    </script>
+</body>
+</html>`;
     },
 
     openOnlineApprovalView(proposalId) {

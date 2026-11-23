@@ -133,6 +133,107 @@ export const Proposals = {
             inputGcFiles.addEventListener("change", (e) => this.handleBudgetFilesUpload(e));
         }
 
+        // Controles de Localização e Vínculo de Lead no Orçamento
+        const btnOpenLeadSelector = document.getElementById("gc-btn-open-lead-selector");
+        if (btnOpenLeadSelector) {
+            btnOpenLeadSelector.addEventListener("click", () => this.openSelectLeadModal());
+        }
+        const btnFindLead = document.getElementById("gc-btn-find-lead");
+        if (btnFindLead) {
+            btnFindLead.addEventListener("click", () => this.openSelectLeadModal());
+        }
+        const btnCloseLeadSelector = document.getElementById("gc-btn-close-lead-selector");
+        if (btnCloseLeadSelector) {
+            btnCloseLeadSelector.addEventListener("click", () => this.closeSelectLeadModal());
+        }
+        const inputLeadFilter = document.getElementById("gc-lead-search-filter");
+        if (inputLeadFilter) {
+            inputLeadFilter.addEventListener("input", (e) => this.renderLeadSelectorList(e.target.value));
+        }
+        const btnUnlinkLead = document.getElementById("gc-btn-unlink-lead");
+        if (btnUnlinkLead) {
+            btnUnlinkLead.addEventListener("click", () => this.unlinkLeadFromBudget());
+        }
+
+        // Detecção e preenchimento inteligente ao digitar o nome ou CNPJ do cliente
+        const inputClient = document.getElementById("gc-budget-client");
+        if (inputClient) {
+            const handleMatch = () => {
+                const val = inputClient.value.trim();
+                if (!val) {
+                    this.unlinkLeadFromBudget();
+                    return;
+                }
+                const leads = Store.getLeads();
+                const cleanDigits = val.replace(/\D/g, "");
+
+                // 1. Match exato por empresa / razão social
+                let matched = leads.find(l => l.company && l.company.toLowerCase().trim() === val.toLowerCase());
+
+                // 2. Match por CNPJ
+                if (!matched && cleanDigits.length >= 11) {
+                    matched = leads.find(l => l.cnpj && l.cnpj.replace(/\D/g, "") === cleanDigits);
+                }
+
+                // 3. Match por Nome Fantasia
+                if (!matched) {
+                    matched = leads.find(l => l.tradeName && l.tradeName.toLowerCase().trim() === val.toLowerCase());
+                }
+
+                // 4. Se tiver digitado pelo menos 4 caracteres e houver exatamente 1 correspondência
+                if (!matched && val.length >= 4) {
+                    const partials = leads.filter(l => (l.company && l.company.toLowerCase().includes(val.toLowerCase())) || (l.tradeName && l.tradeName.toLowerCase().includes(val.toLowerCase())));
+                    if (partials.length === 1) {
+                        matched = partials[0];
+                    }
+                }
+
+                if (matched) {
+                    this.applyLeadToBudget(matched);
+                }
+            };
+
+            inputClient.addEventListener("change", handleMatch);
+            inputClient.addEventListener("input", (e) => {
+                const val = e.target.value.trim();
+                const leads = Store.getLeads();
+                const matched = leads.find(l => l.company && l.company.toLowerCase().trim() === val.toLowerCase());
+                if (matched) {
+                    this.applyLeadToBudget(matched);
+                }
+            });
+        }
+
+        // Busca automática de endereço pelo CEP na entrega do orçamento
+        const inputDeliveryCep = document.getElementById("gc-delivery-cep");
+        if (inputDeliveryCep) {
+            inputDeliveryCep.addEventListener("input", async (e) => {
+                let v = e.target.value.replace(/\D/g, "");
+                if (v.length > 8) v = v.substring(0, 8);
+                if (v.length > 5) {
+                    e.target.value = `${v.substring(0, 5)}-${v.substring(5)}`;
+                }
+                if (v.length === 8 && typeof CNPJService !== "undefined" && typeof CNPJService.lookupCEP === "function") {
+                    try {
+                        const cepData = await CNPJService.lookupCEP(v);
+                        if (cepData) {
+                            const setIfEmpty = (id, val) => {
+                                const el = document.getElementById(id);
+                                if (el && val) el.value = val;
+                            };
+                            setIfEmpty("gc-delivery-street", cepData.street);
+                            setIfEmpty("gc-delivery-neighborhood", cepData.neighborhood);
+                            setIfEmpty("gc-delivery-city", cepData.city);
+                            setIfEmpty("gc-delivery-state", cepData.state);
+                            document.getElementById("gc-delivery-number")?.focus();
+                        }
+                    } catch (err) {
+                        console.warn("Falha na consulta de CEP na proposta:", err);
+                    }
+                }
+            });
+        }
+
         ["gc-budget-freight", "gc-total-discount-cash", "gc-total-discount-pct"].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.addEventListener("input", () => this.recalculateBudgetTotals());
@@ -943,10 +1044,253 @@ export const Proposals = {
         if (!datalist) return;
         const leads = Store.getLeads();
         const proposals = Store.getProposals();
-        const names = new Set();
-        leads.forEach(l => { if (l.company) names.add(l.company.trim()); });
-        proposals.forEach(p => { if (p.company) names.add(p.company.trim()); });
-        datalist.innerHTML = Array.from(names).map(name => `<option value="${name}"></option>`).join("");
+        const seen = new Set();
+        const options = [];
+
+        // Prioridade para Leads cadastrados no CRM
+        leads.forEach(l => {
+            if (l.company && !seen.has(l.company.trim().toLowerCase())) {
+                seen.add(l.company.trim().toLowerCase());
+                const contactStr = l.contact ? ` • ${l.contact}` : '';
+                const cityStr = l.city ? ` (${l.city}/${l.state || ''})` : '';
+                options.push(`<option value="${l.company}">${l.company}${contactStr}${cityStr}</option>`);
+            }
+        });
+
+        // Propostas anteriores
+        proposals.forEach(p => {
+            if (p.company && !seen.has(p.company.trim().toLowerCase())) {
+                seen.add(p.company.trim().toLowerCase());
+                options.push(`<option value="${p.company}">${p.company}</option>`);
+            }
+        });
+
+        datalist.innerHTML = options.join("");
+    },
+
+    applyLeadToBudget(lead) {
+        if (!lead) return;
+        currentEditingLeadId = lead.id;
+
+        const setVal = (id, val) => {
+            const el = document.getElementById(id);
+            if (el && val !== undefined && val !== null) el.value = val;
+        };
+
+        // 1. Dados Básicos do Cliente
+        setVal("gc-budget-client", lead.company || "");
+        setVal("gc-budget-attention", lead.contact || "");
+
+        // 2. Vendedor / Responsável
+        const currentUser = Auth.getCurrentUser();
+        let sellerName = currentUser?.name || "San Charles";
+        if (lead.owner) {
+            const allUsers = Store.getUsers ? Store.getUsers() : [];
+            const ownerUser = allUsers.find(u => u.email === lead.owner);
+            if (ownerUser) sellerName = ownerUser.name || ownerUser.email;
+        }
+        setVal("gc-budget-seller", sellerName);
+
+        // 3. Canal de Venda inteligente baseado na Origem do lead
+        if (lead.source) {
+            const s = lead.source.toLowerCase();
+            let channel = "Presencial";
+            if (s.includes("whatsapp")) channel = "WhatsApp";
+            else if (s.includes("telefone") || s.includes("ligação")) channel = "Telefone";
+            else if (s.includes("email") || s.includes("e-mail")) channel = "E-mail";
+            else if (s.includes("indicação") || s.includes("indicacao")) channel = "Indicação";
+            else if (s.includes("google") || s.includes("meta") || s.includes("site") || s.includes("web")) channel = "Site Institucional";
+            setVal("gc-budget-channel", channel);
+        }
+
+        // 4. Endereço Completo de Entrega
+        const checkDelivery = document.getElementById("gc-check-delivery-address");
+        const containerDelivery = document.getElementById("gc-delivery-address-container");
+        const hasAddress = !!(lead.cep || lead.street || lead.address || lead.city || lead.state);
+        if (checkDelivery) checkDelivery.checked = hasAddress;
+        if (containerDelivery) containerDelivery.style.display = hasAddress ? "block" : "none";
+
+        if (hasAddress) {
+            const formattedCep = lead.cep ? (typeof CNPJService !== "undefined" && CNPJService.formatCEP ? CNPJService.formatCEP(lead.cep) : lead.cep) : "";
+            setVal("gc-delivery-cep", formattedCep);
+            setVal("gc-delivery-street", lead.street || lead.address || "");
+            setVal("gc-delivery-number", lead.number || "");
+            setVal("gc-delivery-neighborhood", lead.neighborhood || "");
+            setVal("gc-delivery-city", lead.city || "");
+            setVal("gc-delivery-state", lead.state || "");
+        }
+
+        // 5. Notas internas ricas com todos os dados do lead
+        const details = [];
+        if (lead.contact) details.push(`Contato: ${lead.contact}${lead.role ? ` (${lead.role})` : ''}`);
+        if (lead.whatsapp) details.push(`WhatsApp: ${lead.whatsapp}`);
+        if (lead.phone) details.push(`Telefone: ${lead.phone}`);
+        if (lead.phone2) details.push(`Telefone 2: ${lead.phone2}`);
+        if (lead.email) details.push(`E-mail: ${lead.email}`);
+        if (lead.cnpj) details.push(`CNPJ: ${typeof CNPJService !== "undefined" && CNPJService.formatCNPJ ? CNPJService.formatCNPJ(lead.cnpj) : lead.cnpj}`);
+        if (lead.segment || lead.source) details.push(`Segmento / Origem: ${lead.segment || ''} (${lead.source || ''})`);
+        if (lead.city || lead.state) details.push(`Localização: ${lead.city || '-'} / ${lead.state || '-'}`);
+        if (lead.address) details.push(`Endereço Cadastral: ${lead.address}`);
+        if (lead.notes) details.push(`\nObservações do Lead:\n${lead.notes}`);
+        setVal("gc-budget-internal-notes", details.join("\n"));
+
+        // 6. Atualizar descrição padrão do serviço caso esteja vazia ou genérica
+        const serviceDetailInput = document.querySelector("#gc-services-tbody input.gc-input-detail");
+        if (serviceDetailInput && (!serviceDetailInput.value || serviceDetailInput.value === "Atendimento técnico e operacional")) {
+            serviceDetailInput.value = `Atendimento especializado para ${lead.company}`;
+        }
+
+        // 7. Badge visual de confirmação do lead vinculado
+        const badge = document.getElementById("gc-lead-badge-info");
+        const badgeText = document.getElementById("gc-lead-badge-text");
+        if (badge && badgeText) {
+            const cnpjFmt = lead.cnpj ? (typeof CNPJService !== "undefined" && CNPJService.formatCNPJ ? ` • ${CNPJService.formatCNPJ(lead.cnpj)}` : ` • ${lead.cnpj}`) : '';
+            const contactFmt = lead.contact ? ` • ${lead.contact}` : '';
+            badgeText.textContent = `Lead vinculado: ${lead.company}${contactFmt}${cnpjFmt}`;
+            badge.style.display = "flex";
+        }
+
+        this.showBudgetToast(`Lead "${lead.company}" localizado! Dados preenchidos na proposta.`);
+    },
+
+    unlinkLeadFromBudget() {
+        currentEditingLeadId = null;
+        const badge = document.getElementById("gc-lead-badge-info");
+        if (badge) badge.style.display = "none";
+    },
+
+    openSelectLeadModal() {
+        const modal = document.getElementById("gc-lead-selector-modal");
+        const overlay = document.getElementById("modal-overlay");
+        if (!modal) return;
+
+        this.renderLeadSelectorList("");
+        modal.classList.add("open");
+        modal.style.display = "flex";
+        modal.style.opacity = "1";
+        modal.style.pointerEvents = "auto";
+        if (overlay) {
+            overlay.classList.add("open");
+            overlay.style.display = "block";
+            overlay.style.opacity = "1";
+        }
+
+        const filterInput = document.getElementById("gc-lead-search-filter");
+        if (filterInput) {
+            filterInput.value = "";
+            setTimeout(() => filterInput.focus(), 80);
+        }
+    },
+
+    closeSelectLeadModal() {
+        const modal = document.getElementById("gc-lead-selector-modal");
+        const overlay = document.getElementById("modal-overlay");
+        if (modal) {
+            modal.classList.remove("open");
+            modal.style.display = "none";
+            modal.style.opacity = "";
+            modal.style.pointerEvents = "";
+        }
+        if (overlay && !document.getElementById("new-lead-modal")?.classList.contains("open") && !document.getElementById("edit-lead-modal")?.classList.contains("open")) {
+            overlay.classList.remove("open");
+            overlay.style.display = "none";
+        }
+    },
+
+    renderLeadSelectorList(filter = "") {
+        const listEl = document.getElementById("gc-lead-selector-list");
+        if (!listEl) return;
+
+        const leads = Store.getLeads();
+        const q = filter.toLowerCase().trim();
+        const cleanQ = q.replace(/\D/g, "");
+
+        const filtered = leads.filter(l => {
+            if (!q) return true;
+            if (l.company && l.company.toLowerCase().includes(q)) return true;
+            if (l.contact && l.contact.toLowerCase().includes(q)) return true;
+            if (l.city && l.city.toLowerCase().includes(q)) return true;
+            if (l.state && l.state.toLowerCase().includes(q)) return true;
+            if (l.segment && l.segment.toLowerCase().includes(q)) return true;
+            if (l.tradeName && l.tradeName.toLowerCase().includes(q)) return true;
+            if (cleanQ && l.cnpj && l.cnpj.includes(cleanQ)) return true;
+            if (cleanQ && l.whatsapp && l.whatsapp.includes(cleanQ)) return true;
+            return false;
+        });
+
+        if (filtered.length === 0) {
+            listEl.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 13px;">Nenhum lead encontrado com o termo informado.</div>`;
+            return;
+        }
+
+        listEl.innerHTML = filtered.slice(0, 30).map(l => {
+            const cnpjStr = l.cnpj ? (typeof CNPJService !== "undefined" && CNPJService.formatCNPJ ? CNPJService.formatCNPJ(l.cnpj) : l.cnpj) : "";
+            const locationStr = [l.city, l.state].filter(Boolean).join(" - ");
+            return `
+                <div class="gc-lead-select-item" data-id="${l.id}" style="padding: 10px 14px; border: 1px solid var(--border-color, #e2e8f0); border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-surface, #ffffff); transition: all 0.15s ease;">
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-weight: 700; font-size: 13.5px; color: var(--text-primary, #0f172a);">${l.company || 'Sem Empresa'}</span>
+                            <span class="badge" style="font-size: 10px; padding: 2px 6px;">${l.stage || 'Contato'}</span>
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px; font-size: 11.5px; color: var(--text-muted, #64748b); margin-top: 3px;">
+                            ${l.contact ? `<span>👤 <strong>${l.contact}</strong></span>` : ''}
+                            ${cnpjStr ? `<span>📄 ${cnpjStr}</span>` : ''}
+                            ${locationStr ? `<span>📍 ${locationStr}</span>` : ''}
+                            ${l.whatsapp ? `<span>💬 ${l.whatsapp}</span>` : ''}
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-primary" style="height: 28px; padding: 0 10px; font-size: 11px; border-radius: 6px; flex-shrink: 0;">
+                        Selecionar
+                    </button>
+                </div>
+            `;
+        }).join("");
+
+        listEl.querySelectorAll(".gc-lead-select-item").forEach(item => {
+            item.addEventListener("click", () => {
+                const id = item.getAttribute("data-id");
+                const lead = Store.getLeadById(id);
+                if (lead) {
+                    this.applyLeadToBudget(lead);
+                    this.closeSelectLeadModal();
+                }
+            });
+            item.addEventListener("mouseenter", () => {
+                item.style.borderColor = "var(--primary, #3b82f6)";
+                item.style.background = "rgba(59, 130, 246, 0.04)";
+            });
+            item.addEventListener("mouseleave", () => {
+                item.style.borderColor = "var(--border-color, #e2e8f0)";
+                item.style.background = "var(--bg-surface, #ffffff)";
+            });
+        });
+    },
+
+    showBudgetToast(msg) {
+        if (window.Toast && typeof window.Toast.show === "function") {
+            window.Toast.show(msg, "success");
+            return;
+        }
+        const old = document.getElementById("gc-budget-quick-toast");
+        if (old) old.remove();
+        const toast = document.createElement("div");
+        toast.id = "gc-budget-quick-toast";
+        toast.style.cssText = `
+            position: fixed; bottom: 24px; right: 24px; z-index: 99999;
+            background: var(--bg-card, #1e293b); color: var(--text-primary, #f1f5f9);
+            border: 1px solid rgba(16,185,129,0.4); border-left: 4px solid #10b981;
+            border-radius: 10px; padding: 12px 18px; font-size: 13px; font-weight: 600;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25); display: flex; align-items: center; gap: 8px;
+            font-family: 'Inter', sans-serif; animation: vellia-slide-in 0.3s ease;
+        `;
+        toast.innerHTML = `<span>✅</span><span>${msg}</span>`;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = "0";
+            toast.style.transition = "opacity 0.3s ease";
+            setTimeout(() => toast.remove(), 300);
+        }, 3500);
     },
 
     openBudgetScreen(proposalId = null, leadData = null, suggestedService = null, suggestedPrice = 0, initialPayload = null) {
@@ -1048,6 +1392,18 @@ export const Proposals = {
             currentBudgetAttachments = Array.isArray(proposal.attachments) ? [...proposal.attachments] : [];
             this.renderBudgetAttachments();
 
+            // Atualizar badge de lead se vinculado
+            const linkedLead = proposal.leadId ? Store.getLeadById(proposal.leadId) : Store.getLeads().find(l => l.company && l.company.toLowerCase().trim() === (proposal.company || "").toLowerCase().trim());
+            const badge = document.getElementById("gc-lead-badge-info");
+            const badgeText = document.getElementById("gc-lead-badge-text");
+            if (linkedLead && badge && badgeText) {
+                currentEditingLeadId = linkedLead.id;
+                badgeText.textContent = `Lead vinculado: ${linkedLead.company}${linkedLead.contact ? ' • ' + linkedLead.contact : ''}`;
+                badge.style.display = "flex";
+            } else if (badge) {
+                badge.style.display = "none";
+            }
+
         } else {
             // Novo Orçamento
             if (titleEl) titleEl.textContent = "Adicionar orçamento";
@@ -1138,12 +1494,12 @@ export const Proposals = {
             // Entrega
             const checkDelivery = document.getElementById("gc-check-delivery-address");
             const containerDelivery = document.getElementById("gc-delivery-address-container");
-            const hasLocation = !!(leadData?.city || leadData?.state || leadData?.address);
+            const hasLocation = !!(leadData?.city || leadData?.state || leadData?.address || leadData?.street || leadData?.cep);
             if (checkDelivery) checkDelivery.checked = hasLocation;
             if (containerDelivery) containerDelivery.style.display = hasLocation ? "block" : "none";
             if (hasLocation) {
                 setVal("gc-delivery-cep", leadData?.cep || "");
-                setVal("gc-delivery-street", leadData?.address || "");
+                setVal("gc-delivery-street", leadData?.street || leadData?.address || "");
                 setVal("gc-delivery-number", leadData?.number || "");
                 setVal("gc-delivery-neighborhood", leadData?.neighborhood || "");
                 setVal("gc-delivery-city", leadData?.city || "");
@@ -1160,6 +1516,13 @@ export const Proposals = {
 
             currentBudgetAttachments = [];
             this.renderBudgetAttachments();
+
+            // Ativar ou desativar badge de vínculo
+            if (leadData) {
+                this.applyLeadToBudget(leadData);
+            } else {
+                this.unlinkLeadFromBudget();
+            }
         }
 
         // Alternar visualização para tela cheia de orçamento

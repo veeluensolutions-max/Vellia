@@ -372,6 +372,9 @@ export const CRM = {
                 this.closeEditLeadModal();
                 this.closeQualifyLeadModal?.();
                 this.cancelStageChangeRequest?.();
+                if (window.Proposals && typeof window.Proposals.closeSelectLeadModal === "function") {
+                    window.Proposals.closeSelectLeadModal();
+                }
                 document.getElementById("modal-overlay").style.display = "none";
             });
         }
@@ -384,6 +387,9 @@ export const CRM = {
                 this.closeEditLeadModal();
                 this.closeQualifyLeadModal?.();
                 this.cancelStageChangeRequest?.();
+                if (window.Proposals && typeof window.Proposals.closeSelectLeadModal === "function") {
+                    window.Proposals.closeSelectLeadModal();
+                }
                 const mOverlay = document.getElementById("modal-overlay");
                 if (mOverlay) mOverlay.style.display = "none";
                 const dOverlay = document.getElementById("drawer-overlay");

@@ -117,6 +117,30 @@ export const Renewals = {
                 transform: translateY(-1px);
                 box-shadow: 0 6px 14px rgba(16, 185, 129, 0.3);
             }
+            .btn-ren-lead {
+                height: 34px;
+                padding: 0 12px;
+                border-radius: 9px;
+                border: 1px solid rgba(59, 130, 246, 0.35);
+                background: rgba(59, 130, 246, 0.08);
+                color: #2563EB;
+                font-family: var(--ren-font-sans);
+                font-size: 12px;
+                font-weight: 700;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                transition: all 0.18s ease;
+                white-space: nowrap;
+            }
+            .btn-ren-lead:hover {
+                background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+                color: #FFFFFF;
+                border-color: #2563EB;
+                box-shadow: 0 4px 12px rgba(37, 99, 235, 0.28);
+                transform: translateY(-1px);
+            }
             .btn-ren-secondary {
                 height: 34px;
                 padding: 0 11px;
@@ -559,9 +583,14 @@ export const Renewals = {
                         </div>
                     </td>
 
-                    <!-- Coluna 4: Botão para Contactar o Cliente -->
+                    <!-- Coluna 4: Botão para Contactar o Cliente e Mover para Leads -->
                     <td style="padding: 14px 18px; text-align: right; white-space: nowrap;">
                         <div style="display: inline-flex; align-items: center; gap: 7px;">
+                            <button type="button" class="btn-ren-lead" onclick="window.Renewals.moveToLeadsAndOpenInteractions('${item.leadId}', '${item.id}')" title="Mover contato para a esteira de Leads e abrir registro de interações">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
+                                <span>Mover p/ Leads</span>
+                            </button>
+
                             <button type="button" class="btn-ren-contact-primary" onclick="window.Renewals.openContactModal('${item.leadId}', '${item.id}')" title="Abordar cliente para renovação da inspeção">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
                                 <span>Contactar Cliente</span>
@@ -593,6 +622,127 @@ export const Renewals = {
         if ((!curOwner || curOwner === "sistema@vellia.com") && (curUser.role === "seller" || curUser.role === "vendedor")) {
             Store.updateLead(leadId, { owner: curUser.email }, curUser.email);
         }
+    },
+
+    moveToLeadsAndOpenInteractions(leadId, inspectionId) {
+        const curUser = Auth.getCurrentUser();
+        const userEmail = (curUser?.email || "sistema@vellia.com").toLowerCase().trim();
+        const userName = curUser?.name || "Consultor Comercial";
+
+        const allItems = this.getRenewalItems();
+        const item = allItems.find(i => i.id === inspectionId) || allItems.find(i => String(i.leadId) === String(leadId));
+
+        let lead = Store.getLeadById ? Store.getLeadById(leadId) : null;
+        if (!lead && item) {
+            const allLeads = Store.getAllLeadsRaw ? Store.getAllLeadsRaw() : (Store.getLeads() || []);
+            lead = allLeads.find(l => String(l.id) === String(leadId)) || 
+                   allLeads.find(l => l.company && item.company && l.company.toLowerCase().trim() === item.company.toLowerCase().trim());
+        }
+
+        const expParts = (item?.expiryDate || "").split("T")[0].split("-");
+        const expBr = expParts.length === 3 ? `${expParts[2]}/${expParts[1]}/${expParts[0]}` : (item?.expiryDate || "A vencer");
+        const serviceLabel = item?.serviceName || "Inspeção Técnica";
+        const inspectionNum = item?.inspectionNumber ? ` (${item.inspectionNumber})` : "";
+
+        if (!lead && item) {
+            // Criar lead caso não exista na base local
+            const newLeadId = leadId || ("lead-" + Date.now());
+            const newLead = {
+                id: newLeadId,
+                company: item.company,
+                contact: item.contact,
+                phone: item.phone,
+                whatsapp: item.phone,
+                email: item.email,
+                city: item.location?.split("/")[0]?.trim() || "",
+                state: item.location?.split("/")[1]?.trim() || "",
+                segment: serviceLabel,
+                source: "Central de Renovações",
+                stage: "Contato",
+                owner: userEmail,
+                createdBy: userEmail,
+                workspace: localStorage.getItem("activeCompany") || "Veeluen Solutions",
+                interactions: [
+                    {
+                        id: "int-" + Date.now(),
+                        type: "Nota",
+                        description: `🔄 Contato importado da Central de Renovações para início de ciclo comercial. Serviço: ${serviceLabel}${inspectionNum} • Vencimento: ${expBr}. Responsável: ${userName}.`,
+                        author: userEmail,
+                        timestamp: new Date().toISOString()
+                    }
+                ]
+            };
+            if (Store.addLead) {
+                Store.addLead(newLead, userEmail);
+            } else if (Store.createLead) {
+                Store.createLead(newLead, userEmail);
+            }
+            lead = newLead;
+        } else if (lead) {
+            // Se o lead existe, garantir atribuição ao vendedor e reativar estágio para "Contato" se estiver fechado ou sem estágio
+            const updates = {};
+            const curOwner = (lead.owner || "").toLowerCase().trim();
+            if (!curOwner || curOwner === "sistema@vellia.com" || (curUser?.role === "seller" && curOwner !== userEmail)) {
+                updates.owner = userEmail;
+            }
+
+            // Se estava como Cliente Fechado, Contrato ou Perdido, reativar no funil em "Contato"
+            if (!lead.stage || lead.stage === "Cliente Fechado" || lead.stage === "Contrato" || lead.stage === "Cliente Perdido") {
+                updates.stage = "Contato";
+            }
+
+            if (Object.keys(updates).length > 0) {
+                Store.updateLead(lead.id, updates, userEmail);
+            }
+
+            // Registrar interação de movimentação
+            Store.addLeadInteraction(lead.id, userEmail, {
+                type: "Nota",
+                description: `🔄 Contato movimentado da Central de Renovações para a esteira comercial de Leads. Serviço a renovar: ${serviceLabel}${inspectionNum} • Vencimento da inspeção: ${expBr}. Atendimento assumido por ${userName}.`
+            });
+        }
+
+        const targetLeadId = lead ? lead.id : leadId;
+
+        // Disparar atualização para tabela e Kanban de leads
+        window.dispatchEvent(new CustomEvent("vellia:leadUpdated", { detail: { leadId: targetLeadId } }));
+        if (window.CRM && typeof window.CRM.renderLeadsTable === "function") {
+            window.CRM.renderLeadsTable();
+        }
+
+        // 1. Navegar para a tela de Contatos & Leads
+        window.location.hash = "#crm";
+        const menuCrm = document.getElementById("menu-crm");
+        if (menuCrm) {
+            menuCrm.click();
+        }
+
+        // 2. Abrir o Drawer de detalhes do Lead com foco direto na aba de Interações
+        setTimeout(() => {
+            if (window.CRM && typeof window.CRM.openLeadDrawer === "function") {
+                window.CRM.openLeadDrawer(targetLeadId);
+                if (typeof window.CRM.switchDrawerTab === "function") {
+                    window.CRM.switchDrawerTab("followup");
+                }
+
+                // Rolar suavemente até o formulário de registrar interação
+                const formSection = document.getElementById("drawer-interaction-section");
+                if (formSection) {
+                    formSection.scrollIntoView({ behavior: "smooth", block: "center" });
+                    const descInput = document.getElementById("interaction-description");
+                    if (descInput) {
+                        setTimeout(() => {
+                            descInput.focus();
+                            descInput.placeholder = `Registrar interação de renovação (${serviceLabel})...`;
+                        }, 150);
+                    }
+                }
+            }
+
+            if (window.Toast) {
+                window.Toast.show(`Lead "${lead?.company || 'Contato'}" movimentado para sua esteira! Registre sua interação abaixo.`, "success");
+            }
+        }, 220);
     },
 
     quickCallForRenewal(leadId) {
@@ -707,6 +857,10 @@ export const Renewals = {
                     <!-- Ações Rápidas para o Vendedor -->
                     <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid var(--border-color);">
                         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button type="button" id="btn-ren-modal-move-lead" class="btn-ren-lead" style="height: 38px; padding: 0 13px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
+                                <span>Mover p/ Leads & Interações</span>
+                            </button>
                             <button type="button" id="btn-ren-modal-log-call" class="btn-ren-secondary" style="height: 38px; padding: 0 13px; border-color: rgba(16,185,129,0.4); color: #059669; font-weight: 700;">
                                 📞 Registrar Ligação
                             </button>
@@ -738,6 +892,15 @@ export const Renewals = {
             Store.updateLead(leadId, updates, curUser?.email || "sistema@vellia.com");
             return { newContact, newPhone };
         };
+
+        const btnMoveModalLead = document.getElementById("btn-ren-modal-move-lead");
+        if (btnMoveModalLead) {
+            btnMoveModalLead.onclick = () => {
+                saveUpdatedContactInfo();
+                modal.style.display = "none";
+                this.moveToLeadsAndOpenInteractions(leadId, inspectionId);
+            };
+        }
 
         document.getElementById("btn-ren-modal-save-contact").onclick = () => {
             saveUpdatedContactInfo();

@@ -999,6 +999,61 @@ export const Store = {
         window.dispatchEvent(new CustomEvent("vellia:leadDeleted"));
     },
 
+    assignLeadsBulk(leadIds, newOwnerEmail, userEmail = "sistema@vellia.com") {
+        if (!Array.isArray(leadIds) || leadIds.length === 0) return [];
+        const allLeads = this.getAllLeadsRaw();
+        const nowIso = new Date().toISOString();
+        const updated = [];
+        const users = this.getUsers ? this.getUsers() : [];
+        const targetUser = newOwnerEmail ? users.find(u => u.email === newOwnerEmail) : null;
+        const targetName = targetUser ? (targetUser.name || targetUser.email) : (newOwnerEmail || "Não atribuído");
+        const sellersOnly = users.filter(u => u && (u.role === "seller" || u.role === "vendedor"));
+
+        const idSet = new Set(leadIds.map(String));
+        let roundRobinIdx = 0;
+
+        allLeads.forEach(lead => {
+            if (idSet.has(String(lead.id))) {
+                const oldOwner = lead.owner || "Não atribuído";
+                let assignedOwner = newOwnerEmail;
+                let assignedName = targetName;
+
+                if (newOwnerEmail === "__ROUND_ROBIN__") {
+                    if (sellersOnly.length > 0) {
+                        const chosen = sellersOnly[roundRobinIdx % sellersOnly.length];
+                        assignedOwner = chosen.email;
+                        assignedName = chosen.name || chosen.email;
+                        roundRobinIdx++;
+                    } else {
+                        assignedOwner = userEmail;
+                        assignedName = userEmail;
+                    }
+                }
+
+                lead.owner = assignedOwner || null;
+                lead._lastModified = Date.now();
+                lead.interactions = lead.interactions || [];
+                lead.interactions.push({
+                    id: "assign_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
+                    type: "Observação",
+                    description: `👤 Lead redirecionado em massa de "${oldOwner}" para "${assignedName}" por ${userEmail}.`,
+                    timestamp: nowIso,
+                    userEmail
+                });
+                updated.push(lead);
+                upsertSupabase("comercial_leads", encodeLeadForSupabase(lead));
+            }
+        });
+
+        if (updated.length > 0) {
+            MemoryCache.set("comercial_leads", allLeads);
+            this.addLog(userEmail, "LEADS_BULK_ASSIGNED", `${updated.length} lead(s) direcionado(s) para "${targetName}" por ${userEmail}.`, "SUCCESS");
+            window.dispatchEvent(new CustomEvent("vellia:leadUpdated"));
+            window.dispatchEvent(new CustomEvent("vellia:leadsBulkAssigned", { detail: { count: updated.length, owner: newOwnerEmail } }));
+        }
+        return updated;
+    },
+
     deleteLead(leadId) {
         // Mantido para compatibilidade retroativa - agora chama purgeLeads
         const allLeads = this.getAllLeadsRaw().filter(l => l.id !== leadId);

@@ -291,6 +291,11 @@ export const CRM = {
             btnBulkDeselect.addEventListener("click", () => this.clearSelectedLeads());
         }
 
+        const btnBulkAssign = document.getElementById("btn-bulk-assign-owner");
+        if (btnBulkAssign) {
+            btnBulkAssign.addEventListener("click", () => this.assignSelectedLeadsToOwner());
+        }
+
         const btnBulkTrash = document.getElementById("btn-bulk-trash-leads");
         if (btnBulkTrash) {
             btnBulkTrash.addEventListener("click", () => this.deleteSelectedLeads(false));
@@ -1800,6 +1805,7 @@ export const CRM = {
         const bar = document.getElementById("leads-bulk-actions-bar");
         const countEl = document.getElementById("bulk-selected-count");
         const selectAllChk = document.getElementById("lead-select-all");
+        const ownerSelect = document.getElementById("bulk-assign-owner-select");
 
         const count = this.selectedLeadIds.size;
 
@@ -1810,11 +1816,98 @@ export const CRM = {
             countEl.textContent = `${count} ${count === 1 ? 'lead selecionado' : 'leads selecionados'}`;
         }
 
+        if (ownerSelect && (ownerSelect.options.length <= 1 || count > 0)) {
+            const curVal = ownerSelect.value;
+            const allUsers = Store.getUsers ? Store.getUsers() : [];
+            const sellers = allUsers.filter(u => u && (u.role === "seller" || u.role === "vendedor" || u.role === "manager" || u.role === "admin"));
+            const sellersOnly = sellers.filter(u => u.role === "seller" || u.role === "vendedor");
+
+            let html = `<option value="">Selecione o Vendedor...</option>`;
+            if (sellersOnly.length > 1) {
+                html += `<option value="__ROUND_ROBIN__">🤖 Distribuir igualmente (${sellersOnly.length} vendedores)</option>`;
+            }
+            sellers.forEach(u => {
+                const roleLabel = (u.role === "seller" || u.role === "vendedor") ? "Vendedor" : (u.role === "manager" || u.role === "gerente" ? "Gerente" : "Admin");
+                html += `<option value="${u.email}">${u.name || u.email} (${roleLabel})</option>`;
+            });
+            ownerSelect.innerHTML = html;
+            if (curVal) ownerSelect.value = curVal;
+        }
+
         if (selectAllChk && visibleIds.length > 0) {
             const allSelected = visibleIds.every(id => this.selectedLeadIds.has(id));
             const someSelected = visibleIds.some(id => this.selectedLeadIds.has(id));
             selectAllChk.checked = allSelected;
             selectAllChk.indeterminate = !allSelected && someSelected;
+        }
+    },
+
+    async assignSelectedLeadsToOwner() {
+        const count = this.selectedLeadIds.size;
+        if (count === 0) {
+            alert("Nenhum lead selecionado. Marque as caixas de seleção dos leads que deseja transferir.");
+            return;
+        }
+
+        const selectEl = document.getElementById("bulk-assign-owner-select");
+        const selectedOwnerEmail = selectEl ? selectEl.value : "";
+        if (!selectedOwnerEmail) {
+            alert("Por favor, selecione para qual vendedor deseja direcionar os leads selecionados.");
+            if (selectEl) selectEl.focus();
+            return;
+        }
+
+        const currentUser = Auth.getCurrentUser();
+        const actorEmail = currentUser?.email || "admin@vellia.com";
+        const users = Store.getUsers ? Store.getUsers() : [];
+        let targetName = "Vendedor";
+        if (selectedOwnerEmail === "__ROUND_ROBIN__") {
+            targetName = "equipe de vendas (distribuição igualitária)";
+        } else {
+            const targetUser = users.find(u => u.email === selectedOwnerEmail);
+            targetName = targetUser ? (targetUser.name || targetUser.email) : selectedOwnerEmail;
+        }
+
+        const btn = document.getElementById("btn-bulk-assign-owner");
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = `<span style="animation: spin 1s linear infinite; display:inline-block;">⏳</span> Transferindo...`;
+        }
+
+        try {
+            const ids = Array.from(this.selectedLeadIds);
+            const updated = Store.assignLeadsBulk(ids, selectedOwnerEmail, actorEmail);
+
+            this.clearSelectedLeads();
+            this.renderLeadsTable();
+            if (window.Kanban && typeof window.Kanban.renderBoard === "function") {
+                window.Kanban.renderBoard();
+            }
+            if (window.Dashboard && typeof window.Dashboard.renderManagerDailyProductivity === "function") {
+                window.Dashboard.renderManagerDailyProductivity();
+            }
+
+            if (window.Toast && typeof window.Toast.show === "function") {
+                window.Toast.show({
+                    type: "success",
+                    title: "Leads Direcionados!",
+                    message: `${updated.length} lead(s) direcionado(s) com sucesso para ${targetName}.`,
+                    duration: 4000
+                });
+            } else {
+                alert(`✅ ${updated.length} lead(s) direcionado(s) com sucesso para ${targetName}!`);
+            }
+        } catch (err) {
+            console.error("Erro na distribuição de leads em massa:", err);
+            alert("Erro ao direcionar leads: " + (err.message || err));
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = `
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                    <span>Transferir Leads</span>
+                `;
+            }
         }
     },
 

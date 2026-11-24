@@ -3124,7 +3124,10 @@ a {
 .bcg-bar:hover {
     background: var(--primary-dark) !important;
 }
-                                                                             
+
+
+/* ==========================================================================
+
    SISTEMA DE NOTIFICAÇÕES
    ========================================================================== */
 .notifications-wrapper {
@@ -8111,4 +8114,421 @@ input:checked + .switch-slider::before {
     font-weight: 700;
     color: var(--text-primary);
     word-break: break-word;
+}
+
+/* ==========================================================================
+   VELLIA DESIGN REFINEMENT 2026 — ULTRA CLEAN & MODERN SAAS SUITE
+   ========================================================================== */
+
+/* 1. VARIÁVEIS GLOBAIS DE ELEVAÇÃO E CORES CLEAN */
+:root {
+    --clean-bg: #F8FAFC;
+    --clean-surface: #FFFFFF;
+    --clean-border: #E2E8F0;
+    --clean-border-subtle: #F1F5F9;
+    --clean-text: #0F172A;
+    --clean-text-muted: #64748B;
+    --clean-text-light: #94A3B8;
+    --clean-primary: #2563EB;
+    --clean-primary-hover: #1D4ED8;
+    --clean-primary-soft: #EFF6FF;
+    --clean-primary-glow: rgba(37, 99, 235, 0.12);
+    --clean-radius-sm: 6px;
+    --clean-radius-md: 8px;
+    --clean-radius-lg: 12px;
+    --clean-radius-xl: 16px;
+    --clean-shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.03);
+    --clean-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.02);
+    --clean-shadow-md: 0 4px 14px -2px rgba(15, 23, 42, 0.06), 0 2px 4px -2px rgba(15, 23, 42, 0.03);
+    --clean-shadow-lg: 0 12px 28px -4px rgba(15, 23, 42, 0.08), 0 4px 8px -4px rgba(15, 23, 42, 0.03);
+}
+
+/* 2. HEADER EXECUTIVO CLEAN (TOPBAR) */
+.app-header {
+    height: 60px !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border-bottom: 1px solid var(--clean-border) !important;
+    padding: 0 24px !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02) !important;
+}
+
+[data-theme="dark"] .app-header {
+    background: rgba(15, 21, 35, 0.92) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07) !important;
+}
+
+.page-title {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    font-size: 18px !important;
+    font-weight: 750 !important;
+    color: var(--text-primary) !important;
+    letter-spacing: -0.02em !important;
+    line-height: 1.2 !important;
+}
+
+.header-breadcrumbs {
+    font-size: 11.5px !important;
+    color: var(--clean-text-muted) !important;
+    font-weight: 500 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+}
+
+.workspace-header-pill {
+    background: var(--bg-surface) !important;
+    border: 1px solid var(--clean-border) !important;
+    border-radius: var(--clean-radius-md) !important;
+    padding: 5px 12px !important;
+    box-shadow: var(--clean-shadow-xs) !important;
+    transition: all 0.18s ease !important;
+}
+
+.workspace-header-pill:hover {
+    border-color: #3B82F6 !important;
+    background: var(--bg-surface-hover) !important;
+}
+
+.workspace-select-el {
+    font-size: 12.5px !important;
+    font-weight: 700 !important;
+    color: var(--text-primary) !important;
+}
+
+.cmd-palette-trigger {
+    background: var(--bg-surface-subtle) !important;
+    border: 1px solid var(--clean-border) !important;
+    border-radius: var(--clean-radius-md) !important;
+    height: 36px !important;
+    padding: 0 12px !important;
+    transition: all 0.18s ease !important;
+}
+
+.cmd-palette-trigger:hover {
+    border-color: #3B82F6 !important;
+    background: var(--bg-surface) !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12) !important;
+}
+
+.action-btn {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: var(--clean-radius-md) !important;
+    border: 1px solid var(--clean-border) !important;
+    background: var(--bg-surface) !important;
+    color: var(--text-secondary) !important;
+    transition: all 0.18s ease !important;
+}
+
+.action-btn:hover {
+    background: var(--bg-surface-hover) !important;
+    color: var(--text-primary) !important;
+    border-color: #CBD5E1 !important;
+    transform: translateY(-1px) !important;
+}
+
+/* 3. SIDEBAR MODERNA & ELEGANTE */
+.app-sidebar {
+    width: 255px !important;
+    background: #0B0F19 !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.07) !important;
+    padding: 16px 12px !important;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12) !important;
+}
+
+.sidebar-header {
+    padding: 4px 6px 14px 6px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07) !important;
+}
+
+.sidebar-logo-icon {
+    width: 30px !important;
+    height: 30px !important;
+    border-radius: 8px !important;
+    background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%) !important;
+    box-shadow: 0 3px 10px rgba(37, 99, 235, 0.35) !important;
+}
+
+.sidebar-group-title {
+    font-size: 10px !important;
+    font-weight: 750 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.08em !important;
+    color: #64748B !important;
+    margin: 16px 8px 6px 8px !important;
+}
+
+.sidebar-menu .menu-item a {
+    border-radius: var(--clean-radius-md) !important;
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    color: #94A3B8 !important;
+    transition: all 0.16s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+}
+
+.sidebar-menu .menu-item a:hover {
+    background: rgba(255, 255, 255, 0.06) !important;
+    color: #FFFFFF !important;
+    transform: translateX(2px) !important;
+}
+
+.sidebar-menu .menu-item.active a {
+    background: rgba(37, 99, 235, 0.15) !important;
+    color: #60A5FA !important;
+    font-weight: 600 !important;
+    border-left: 3px solid #3B82F6 !important;
+    padding-left: 9px !important;
+}
+
+.workspace-switcher-card {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: var(--clean-radius-md) !important;
+    padding: 8px 10px !important;
+    margin-top: 10px !important;
+}
+
+/* 4. CARDS DE KPI & DASHBOARD */
+.modern-kpi-card, .dashboard-card, .kpi-card {
+    background: var(--bg-surface) !important;
+    border: 1px solid var(--clean-border) !important;
+    border-radius: var(--clean-radius-lg) !important;
+    padding: 18px 20px !important;
+    box-shadow: var(--clean-shadow-xs) !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.modern-kpi-card:hover, .dashboard-card:hover, .kpi-card:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: var(--clean-shadow-md) !important;
+    border-color: #CBD5E1 !important;
+}
+
+.kpi-value {
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-size: 26px !important;
+    font-weight: 800 !important;
+    color: var(--text-primary) !important;
+    letter-spacing: -0.025em !important;
+}
+
+.kpi-label {
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    color: var(--clean-text-muted) !important;
+}
+
+/* 5. BOTÕES DE AÇÃO & TOOLBAR */
+.btn {
+    height: 36px !important;
+    padding: 0 14px !important;
+    border-radius: var(--clean-radius-md) !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+    transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.btn-primary, .btn-primary-new, #btn-new-lead {
+    background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%) !important;
+    color: #FFFFFF !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25) !important;
+    font-weight: 700 !important;
+}
+
+.btn-primary:hover, .btn-primary-new:hover, #btn-new-lead:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
+    filter: brightness(1.04) !important;
+}
+
+.btn-outline, .btn-secondary {
+    background: var(--bg-surface) !important;
+    border: 1px solid var(--clean-border) !important;
+    color: var(--clean-text) !important;
+}
+
+.btn-outline:hover, .btn-secondary:hover {
+    background: var(--bg-surface-hover) !important;
+    border-color: #CBD5E1 !important;
+    color: var(--text-primary) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: var(--clean-shadow-xs) !important;
+}
+
+/* 6. FILTROS RÁPIDOS EM PÍLULA (PILL FILTERS) */
+.crm-pill-filters-bar {
+    display: flex !important;
+    gap: 6px !important;
+    flex-wrap: wrap !important;
+    margin-bottom: 16px !important;
+}
+
+.crm-pill-filter {
+    background: var(--bg-surface) !important;
+    border: 1px solid var(--clean-border) !important;
+    border-radius: var(--clean-radius-md) !important;
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: var(--text-secondary) !important;
+    box-shadow: var(--clean-shadow-xs) !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+.crm-pill-filter:hover {
+    border-color: #CBD5E1 !important;
+    background: var(--bg-surface-hover) !important;
+    color: var(--text-primary) !important;
+    transform: translateY(-1px) !important;
+}
+
+.crm-pill-filter.active {
+    background: var(--clean-primary-soft) !important;
+    border-color: var(--clean-primary) !important;
+    color: var(--clean-primary) !important;
+    font-weight: 700 !important;
+    box-shadow: 0 1px 3px rgba(37, 99, 235, 0.15) !important;
+}
+
+.pill-badge {
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+    padding: 1px 6px !important;
+    border-radius: 6px !important;
+    background: rgba(15, 23, 42, 0.06) !important;
+    color: var(--clean-text-muted) !important;
+}
+
+.crm-pill-filter.active .pill-badge {
+    background: rgba(37, 99, 235, 0.16) !important;
+    color: var(--clean-primary) !important;
+}
+
+/* 7. BARRA DE BUSCA E FILTROS ESTRUTURADOS */
+.crm-filters {
+    background: var(--bg-surface) !important;
+    border: 1px solid var(--clean-border) !important;
+    border-radius: var(--clean-radius-lg) !important;
+    padding: 14px 18px !important;
+    box-shadow: var(--clean-shadow-xs) !important;
+    margin-bottom: 18px !important;
+    gap: 14px !important;
+    display: flex !important;
+    align-items: flex-end !important;
+    flex-wrap: wrap !important;
+}
+
+.filter-group label {
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    color: var(--clean-text-muted) !important;
+    margin-bottom: 4px !important;
+}
+
+.filter-control {
+    background: var(--bg-app) !important;
+    border: 1px solid var(--clean-border) !important;
+    border-radius: var(--clean-radius-md) !important;
+    height: 38px !important;
+    font-size: 13px !important;
+    color: var(--text-primary) !important;
+    padding: 0 12px !important;
+    transition: all 0.16s ease !important;
+}
+
+.filter-control:focus {
+    background: var(--bg-surface) !important;
+    border-color: var(--clean-primary) !important;
+    box-shadow: 0 0 0 3px var(--clean-primary-glow) !important;
+    outline: none !important;
+}
+
+/* 8. TABELAS DE DADOS (CLEAN ELEVATION) */
+.table-container, .crm-table-wrapper {
+    background: var(--bg-surface) !important;
+    border: 1px solid var(--clean-border) !important;
+    border-radius: var(--clean-radius-lg) !important;
+    box-shadow: var(--clean-shadow-xs) !important;
+    overflow: hidden !important;
+}
+
+.crm-table th, .table th {
+    background: var(--bg-surface-subtle) !important;
+    color: var(--clean-text-muted) !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    border-bottom: 1px solid var(--clean-border) !important;
+    padding: 12px 14px !important;
+}
+
+.crm-table td, .table td {
+    border-bottom: 1px solid var(--clean-border-subtle) !important;
+    padding: 12px 14px !important;
+    font-size: 13px !important;
+    color: var(--text-primary) !important;
+    transition: background 0.12s ease !important;
+}
+
+.crm-table tr:hover td, .table tr:hover td {
+    background: var(--bg-surface-hover) !important;
+}
+
+.crm-table tr.row-selected td {
+    background: rgba(37, 99, 235, 0.06) !important;
+}
+
+/* 9. FUNIL KANBAN CLEAN */
+.kanban-board {
+    gap: 14px !important;
+}
+
+.kanban-column {
+    background: var(--bg-surface-subtle) !important;
+    border: 1px solid var(--clean-border) !important;
+    border-radius: var(--clean-radius-lg) !important;
+    padding: 14px !important;
+}
+
+.kanban-card {
+    background: var(--bg-surface) !important;
+    border: 1px solid var(--clean-border) !important;
+    border-radius: var(--clean-radius-md) !important;
+    padding: 14px 16px !important;
+    box-shadow: var(--clean-shadow-xs) !important;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.kanban-card:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: var(--clean-shadow-md) !important;
+    border-color: #CBD5E1 !important;
+}
+
+/* 10. MODAIS & GAVETAS LATERAIS (GLASSMORPHISM SUTIL) */
+.modal-content, .lead-drawer, .drawer {
+    border: 1px solid var(--clean-border) !important;
+    box-shadow: var(--clean-shadow-lg) !important;
+}
+
+.modal-header, .drawer-header {
+    border-bottom: 1px solid var(--clean-border-subtle) !important;
+    background: var(--bg-surface) !important;
 }

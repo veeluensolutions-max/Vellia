@@ -787,7 +787,7 @@ export const Renewals = {
             ? `venceu em ${expBr}`
             : `vence em ${expBr} (daqui a ${item.daysRemaining} dias)`;
 
-        const defaultWaMessage = `Olá ${item.contact && item.contact !== "Responsável Técnico" ? item.contact : "tudo bem"}! Aqui é ${sellerName}, da equipe comercial.\n\nIdentificamos em nosso controle técnico que a inspeção/laudo de *${item.serviceName}* da empresa *${item.company}* ${statusText}.\n\nGostaria de verificar com você a programação para realizarmos a renovação dentro do prazo e enviarmos a proposta comercial atualizada. Podemos alinhar por aqui ou por uma breve ligação?`;
+        const defaultWaMessage = `Olá ${item.contact && item.contact !== "Responsável Técnico" ? item.contact : "tudo bem"}! Aqui é ${sellerName}, da equipe comercial.\n\nIdentificamos em nosso controle técnico que *${item.serviceName}* da empresa *${item.company}* ${statusText}.\n\nGostaria de verificar com você a programação para realizarmos a renovação dentro do prazo e enviarmos a proposta comercial atualizada. Podemos alinhar por aqui ou por uma breve ligação?`;
 
         let modal = document.getElementById("renewal-contact-modal");
         if (!modal) {

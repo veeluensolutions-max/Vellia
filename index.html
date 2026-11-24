@@ -2930,120 +2930,140 @@
 
                     <!-- CONTAINER 1: LISTAGEM, FILTROS, KPIS E ANÁLISE DE PROPOSTAS -->
                     <div id="proposals-list-container">
-                        <!-- KPI Cards de Propostas -->
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 24px;">
-                            <div class="vellia-card stat-card" style="padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;">
-                                <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
-                                    <span class="stat-label" style="font-size: 11px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.03em;">Total de Propostas</span>
-                                    <span class="stat-value" id="prop-stat-total" style="font-size: 20px; font-weight: 700; color: #111827; line-height: 1.2;">0</span>
+                        <!-- Top Header SaaS de Propostas -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; flex-wrap: wrap; gap: 14px;">
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <h2 style="font-size: 22px; font-weight: 800; color: var(--text-primary); margin: 0; letter-spacing: -0.02em;">Propostas Comerciais</h2>
+                                    <span style="font-size: 11px; font-weight: 700; color: #2563EB; background: rgba(37, 99, 235, 0.1); padding: 3px 9px; border-radius: 9999px; border: 1px solid rgba(37, 99, 235, 0.25);">Pipeline & Orçamentos</span>
                                 </div>
-                                <div class="stat-icon-box" style="width: 36px; height: 36px; border-radius: 8px; background: #F1F3F7; color: #4B5563; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                                </div>
+                                <p style="color: var(--text-muted); font-size: 13px; margin: 4px 0 0 0;">Acompanhe negociações em andamento, orçamentos emitidos, fechamentos e conversões de vendas.</p>
                             </div>
-                            
-                            <div class="vellia-card stat-card" style="padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;">
-                                <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
-                                    <span class="stat-label" style="font-size: 11px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.03em;">Aguardando Retorno</span>
-                                    <span class="stat-value" id="prop-stat-sent" style="font-size: 20px; font-weight: 700; color: #111827; line-height: 1.2;">0</span>
-                                </div>
-                                <div class="stat-icon-box" style="width: 36px; height: 36px; border-radius: 8px; background: #FFFBEB; color: #D97706; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                </div>
-                            </div>
-
-                            <div class="vellia-card stat-card" style="padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;">
-                                <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
-                                    <span class="stat-label" style="font-size: 11px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.03em;">Vendas Ganhas</span>
-                                    <span class="stat-value" id="prop-stat-won" style="font-size: 20px; font-weight: 700; color: #16A36A; line-height: 1.2;">0</span>
-                                </div>
-                                <div class="stat-icon-box" style="width: 36px; height: 36px; border-radius: 8px; background: #ECFDF5; color: #16A36A; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                </div>
-                            </div>
-
-                            <div class="vellia-card stat-card" style="padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;">
-                                <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
-                                    <span class="stat-label" style="font-size: 11px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.03em;">Perdas</span>
-                                    <span class="stat-value" id="prop-stat-lost" style="font-size: 20px; font-weight: 700; color: #DC2626; line-height: 1.2;">0</span>
-                                </div>
-                                <div class="stat-icon-box" style="width: 36px; height: 36px; border-radius: 8px; background: #FEF2F2; color: #DC2626; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                                </div>
-                            </div>
-
-                            <div class="vellia-card stat-card" style="padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;">
-                                <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
-                                    <span class="stat-label" style="font-size: 11px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.03em;">Receita Gerada</span>
-                                    <span class="stat-value" id="prop-stat-revenue" style="font-size: 17px; font-weight: 700; color: #16A36A; line-height: 1.2;">R$ 0</span>
-                                </div>
-                                <div class="stat-icon-box" style="width: 36px; height: 36px; border-radius: 8px; background: #ECFDF5; color: #16A36A; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                                </div>
-                            </div>
-
-                            <div class="vellia-card stat-card" style="padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;">
-                                <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
-                                    <span class="stat-label" style="font-size: 11px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.03em;">Em Pipeline</span>
-                                    <span class="stat-value" id="prop-stat-pipeline" style="font-size: 17px; font-weight: 700; color: #6257F5; line-height: 1.2;">R$ 0</span>
-                                </div>
-                                <div class="stat-icon-box" style="width: 36px; height: 36px; border-radius: 8px; background: #F0EEFF; color: #6257F5; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-                                </div>
-                            </div>
-
-                            <div class="vellia-card stat-card" style="padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;">
-                                <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
-                                    <span class="stat-label" style="font-size: 11px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.03em;">Conversão</span>
-                                    <span class="stat-value" id="prop-stat-conv" style="font-size: 20px; font-weight: 700; color: #D97706; line-height: 1.2;">0%</span>
-                                </div>
-                                <div class="stat-icon-box" style="width: 36px; height: 36px; border-radius: 8px; background: #FFFBEB; color: #D97706; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Barra de ações e filtros -->
-                        <div class="crm-header-bar" style="margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
-                            <div class="filter-group" style="min-width: 220px;">
-                                <label for="proposals-search">Buscar</label>
-                                <input type="text" id="proposals-search" class="filter-control" placeholder="Empresa, contato ou título...">
-                            </div>
-                            <div class="filter-group" style="min-width: 160px;">
-                                <label for="proposals-filter-status">Status</label>
-                                <select id="proposals-filter-status" class="filter-control" style="height: 38px;">
-                                    <option value="all">Todos</option>
-                                    <option value="Enviada">Enviada</option>
-                                    <option value="Em Negociação">Em Negociação</option>
-                                    <option value="Aguardando Agendamento">Aguardando Agendamento</option>
-                                    <option value="Agendada">Agendada</option>
-                                    <option value="Ganho">Ganho</option>
-                                    <option value="Perdido">Perdido</option>
-                                    <option value="Cancelada">Cancelada</option>
-                                </select>
-                            </div>
-                            <div style="margin-left: auto; margin-top: auto; display: flex; gap: 10px; flex-wrap: wrap;">
-                                <button id="btn-sync-proposals-supabase" class="btn btn-outline" style="border-color: #10b981; color: #10b981; display: flex; align-items: center; gap: 6px; height: 38px; font-weight: 600;" title="Sincronizar propostas com o Supabase">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <button id="btn-sync-proposals-supabase" class="btn btn-outline" style="border-color: #10B981; color: #059669; background: rgba(16, 185, 129, 0.05); display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; padding: 8px 14px; border-radius: 10px;" title="Sincronizar propostas com o Supabase">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
                                     <span>Sincronizar Nuvem</span>
                                 </button>
-                                <button id="btn-export-pdf-report" class="btn btn-outline" style="border-color: var(--primary); color: var(--primary); display: flex; align-items: center; gap: 6px; height: 38px;">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                                <button id="btn-export-pdf-report" class="btn btn-outline" style="border-color: var(--primary); color: var(--primary); background: rgba(99, 102, 241, 0.05); display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; padding: 8px 14px; border-radius: 10px;" title="Exportar relatório de propostas em PDF">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                                     <span>Exportar PDF</span>
                                 </button>
-                                <button id="btn-voice-dictation-proposal" class="btn btn-outline" style="border-color: #8b5cf6; color: #8b5cf6; display: flex; align-items: center; gap: 6px; height: 38px; font-weight: 700; background: rgba(139, 92, 246, 0.08);">
-                                    <span style="font-size: 16px;">🎙️</span>
+                                <button id="btn-voice-dictation-proposal" class="btn btn-outline" style="border-color: #8B5CF6; color: #7C3AED; background: rgba(139, 92, 246, 0.08); display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; padding: 8px 14px; border-radius: 10px;" title="Ditar proposta por voz com inteligência artificial">
+                                    <span style="font-size: 15px;">🎙️</span>
                                     <span>Ditar Proposta IA</span>
                                 </button>
-                                <button id="btn-new-proposal" class="btn btn-primary" style="height: 38px;">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                <button id="btn-new-proposal" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; padding: 9px 18px; border-radius: 10px; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35); cursor: pointer;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                     <span>Nova Proposta</span>
                                 </button>
                             </div>
                         </div>
 
-                        <!-- Tabela de Propostas -->
-                        <div class="vellia-card" style="padding: 0; overflow: hidden; margin-bottom: 24px;">
+                        <!-- KPI Cards Modernos de Propostas -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 20px;">
+                            <div class="vellia-card stat-card" style="padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; border-radius: 14px;">
+                                <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
+                                    <span class="stat-label">Pipeline em Aberto</span>
+                                    <span class="stat-value" id="prop-stat-pipeline" style="font-size: 20px; font-weight: 800; color: #4F46E5;">R$ 0,00</span>
+                                    <span style="font-size: 11px; color: var(--text-muted);">em negociação & enviadas</span>
+                                </div>
+                                <div class="stat-icon-box" style="width: 42px; height: 42px; border-radius: 12px; background: rgba(79, 70, 229, 0.1); color: #4F46E5; display: flex; align-items: center; justify-content: center;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                                </div>
+                            </div>
+                            
+                            <div class="vellia-card stat-card" style="padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; border-radius: 14px;">
+                                <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
+                                    <span class="stat-label">Receita Fechada (Ganha)</span>
+                                    <span class="stat-value" id="prop-stat-revenue" style="font-size: 20px; font-weight: 800; color: #059669;">R$ 0,00</span>
+                                    <span style="font-size: 11px; color: var(--text-muted);"><span id="prop-stat-won" style="font-weight: 700; color: #059669;">0</span> vendas confirmadas</span>
+                                </div>
+                                <div class="stat-icon-box success" style="width: 42px; height: 42px; border-radius: 12px; background: #ECFDF5; color: #10B981; display: flex; align-items: center; justify-content: center;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
+                                </div>
+                            </div>
+
+                            <div class="vellia-card stat-card" style="padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; border-radius: 14px;">
+                                <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
+                                    <span class="stat-label">Taxa de Conversão</span>
+                                    <span class="stat-value" id="prop-stat-conv" style="font-size: 20px; font-weight: 800; color: #D97706;">0%</span>
+                                    <span style="font-size: 11px; color: var(--text-muted);">eficiência de fechamento</span>
+                                </div>
+                                <div class="stat-icon-box warning" style="width: 42px; height: 42px; border-radius: 12px; background: #FFFBEB; color: #F59E0B; display: flex; align-items: center; justify-content: center;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                                </div>
+                            </div>
+
+                            <div class="vellia-card stat-card" style="padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; border-radius: 14px;">
+                                <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
+                                    <span class="stat-label">Aguardando Retorno</span>
+                                    <span class="stat-value" id="prop-stat-sent" style="font-size: 20px; font-weight: 800; color: #2563EB;">0</span>
+                                    <span style="font-size: 11px; color: var(--text-muted);">propostas enviadas</span>
+                                </div>
+                                <div class="stat-icon-box" style="width: 42px; height: 42px; border-radius: 12px; background: rgba(37, 99, 235, 0.1); color: #2563EB; display: flex; align-items: center; justify-content: center;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                                </div>
+                            </div>
+
+                            <div class="vellia-card stat-card" style="padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; border-radius: 14px;">
+                                <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
+                                    <span class="stat-label">Total de Propostas</span>
+                                    <span class="stat-value" id="prop-stat-total" style="font-size: 20px; font-weight: 800; color: var(--text-primary);">0</span>
+                                    <span style="font-size: 11px; color: var(--text-muted);"><span id="prop-stat-lost" style="font-weight: 600; color: #DC2626;">0</span> perdas registradas</span>
+                                </div>
+                                <div class="stat-icon-box" style="width: 42px; height: 42px; border-radius: 12px; background: #F1F5F9; color: #475569; display: flex; align-items: center; justify-content: center;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Barra de Filtros em Pílulas (Pill Filters) -->
+                        <div class="crm-pill-filters-bar" id="proposals-pill-filters" style="margin-bottom: 16px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                            <button class="crm-pill-filter active" data-proposal-filter="all" type="button">
+                                <span>📋 Todas</span>
+                                <span class="pill-badge" id="prop-pill-count-all">0</span>
+                            </button>
+                            <button class="crm-pill-filter" data-proposal-filter="Enviada" type="button">
+                                <span>📤 Aguardando Retorno</span>
+                                <span class="pill-badge" id="prop-pill-count-sent">0</span>
+                            </button>
+                            <button class="crm-pill-filter" data-proposal-filter="Em Negociação" type="button">
+                                <span>💬 Em Negociação</span>
+                                <span class="pill-badge" id="prop-pill-count-negotiating">0</span>
+                            </button>
+                            <button class="crm-pill-filter" data-proposal-filter="Ganho" type="button">
+                                <span>✅ Ganhas</span>
+                                <span class="pill-badge" id="prop-pill-count-won">0</span>
+                            </button>
+                            <button class="crm-pill-filter" data-proposal-filter="Perdido" type="button">
+                                <span>❌ Perdidas</span>
+                                <span class="pill-badge" id="prop-pill-count-lost">0</span>
+                            </button>
+                        </div>
+
+                        <!-- Tabela de Propostas com Busca Integrada -->
+                        <div class="vellia-card" style="padding: 0; overflow: hidden; margin-bottom: 24px; border-radius: 14px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+                            <div style="display: flex; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--border-color); flex-wrap: wrap; background: var(--bg-surface); align-items: center; justify-content: space-between;">
+                                <div style="flex: 1; min-width: 280px; position: relative; max-width: 520px;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="position: absolute; left: 14px; top: 12px; color: var(--text-muted);"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                    <input type="text" id="proposals-search" class="form-control" style="padding-left: 40px; padding-right: 32px; height: 40px; font-size: 13px; border-radius: 10px; border: 1.5px solid var(--border-color); width: 100%; box-sizing: border-box;" placeholder="Buscar por empresa, contato, título ou valor...">
+                                    <button type="button" id="btn-clear-proposals-search" style="display: none; position: absolute; right: 10px; top: 11px; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 2px;" title="Limpar busca">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                    </button>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <select id="proposals-filter-status" class="form-control" style="width: auto; height: 40px; font-size: 13px; border-radius: 10px; padding: 0 14px; font-weight: 500;">
+                                        <option value="all">Todos os Status</option>
+                                        <option value="Enviada">Enviada</option>
+                                        <option value="Em Negociação">Em Negociação</option>
+                                        <option value="Aguardando Agendamento">Aguardando Agendamento</option>
+                                        <option value="Agendada">Agendada</option>
+                                        <option value="Ganho">Ganho</option>
+                                        <option value="Perdido">Perdido</option>
+                                        <option value="Cancelada">Cancelada</option>
+                                    </select>
+                                </div>
+                            </div>
                             <div class="table-responsive">
                                 <table class="custom-table">
                                     <thead>

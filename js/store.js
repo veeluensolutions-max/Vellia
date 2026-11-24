@@ -438,8 +438,10 @@ async function syncFromSupabase() {
                     deleteSupabase("comercial_users", `?id=eq.${encodeURIComponent(u.id)}`);
                     continue;
                 }
-                const isExcelencia = emailNorm === 'mika@vellia.com' || emailNorm.includes('excelenciaambiental') || (u.name && u.name.toLowerCase().includes('mika'));
-                const companyAccess = u.companyAccess || (isExcelencia ? 'Excelência Ambiental' : 'Ambas');
+                const localAccessMap = JSON.parse(localStorage.getItem("comercial_user_company_access") || "{}");
+                const localUsers = JSON.parse(localStorage.getItem("comercial_users") || "[]");
+                const localUser = localUsers.find(lu => lu && (lu.id === u.id || (lu.email && u.email && lu.email.toLowerCase() === u.email.toLowerCase())));
+                const companyAccess = u.companyAccess || localAccessMap[emailNorm] || (localUser && localUser.companyAccess) || "Ambas";
                 validUsers.push({ ...u, companyAccess });
             }
 
@@ -1066,12 +1068,9 @@ export const Store = {
         const nowIso = new Date().toISOString();
         let targetWorkspace = lead.workspace;
         if (!targetWorkspace) {
-            const isMika = userEmail === "mika@vellia.com" || (typeof Auth !== "undefined" && Auth.getCurrentUser && Auth.getCurrentUser()?.email === "mika@vellia.com");
             const curAccess = (typeof Auth !== "undefined" && Auth.getCurrentUser) ? Auth.getCurrentUser()?.companyAccess : null;
             if (curAccess && curAccess !== "Ambas") {
                 targetWorkspace = curAccess;
-            } else if (isMika) {
-                targetWorkspace = "Excelência Ambiental";
             } else {
                 targetWorkspace = localStorage.getItem('activeCompany') || 'Veeluen Solutions';
             }
@@ -1132,13 +1131,10 @@ export const Store = {
         const nowIso = new Date().toISOString();
         const nowMs = Date.now();
 
-        const isMika = userEmail === "mika@vellia.com" || (typeof Auth !== "undefined" && Auth.getCurrentUser && Auth.getCurrentUser()?.email === "mika@vellia.com");
         const curAccess = (typeof Auth !== "undefined" && Auth.getCurrentUser) ? Auth.getCurrentUser()?.companyAccess : null;
         let defaultWorkspace = localStorage.getItem('activeCompany') || 'Veeluen Solutions';
         if (curAccess && curAccess !== "Ambas") {
             defaultWorkspace = curAccess;
-        } else if (isMika) {
-            defaultWorkspace = "Excelência Ambiental";
         }
 
         const createdLeads = leadsInputArray.map((lead, idx) => {
@@ -1421,8 +1417,6 @@ export const Store = {
 
     addProposal(data) {
         const proposals = this.getProposalsRaw();
-        const creator = data.createdBy || "sistema@vellia.com";
-        const isMika = creator === "mika@vellia.com" || (typeof Auth !== "undefined" && Auth.getCurrentUser && Auth.getCurrentUser()?.email === "mika@vellia.com");
         const curAccess = (typeof Auth !== "undefined" && Auth.getCurrentUser) ? Auth.getCurrentUser()?.companyAccess : null;
         let ws = data.workspace;
         if (!ws) {
@@ -1433,8 +1427,6 @@ export const Store = {
             if (!ws) {
                 if (curAccess && curAccess !== "Ambas") {
                     ws = curAccess;
-                } else if (isMika) {
-                    ws = "Excelência Ambiental";
                 } else {
                     ws = localStorage.getItem('activeCompany') || 'Veeluen Solutions';
                 }

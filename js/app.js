@@ -77,26 +77,7 @@ const INACTIVITY_WARN_TIME = 9 * 60 * 1000; // 9 minutos de inatividade antes do
 const COUNTDOWN_DURATION = 60; // 60 segundos de contagem regressiva
 
 function checkLockout() {
-    const email = elements.loginEmail ? elements.loginEmail.value.trim().toLowerCase() : "";
-    if (!email) return false;
-
-    const lockoutUntil = localStorage.getItem(`lockout_${email}`);
-    if (lockoutUntil) {
-        const remaining = parseInt(lockoutUntil, 10) - Date.now();
-        if (remaining > 0) {
-            const minutes = Math.ceil(remaining / 60000);
-            if (elements.loginError && elements.loginErrorText) {
-                elements.loginError.style.display = "flex";
-                elements.loginErrorText.textContent = `Acesso temporariamente bloqueado. Tente novamente em ${minutes} minuto(s).`;
-            }
-            const btnSubmit = document.getElementById("btn-login-submit");
-            if (btnSubmit) btnSubmit.disabled = true;
-            return true;
-        } else {
-            localStorage.removeItem(`lockout_${email}`);
-            localStorage.removeItem(`attempts_${email}`);
-        }
-    }
+    // Bloqueio por tempo/tentativas desativado permanentemente
     const btnSubmit = document.getElementById("btn-login-submit");
     if (btnSubmit) btnSubmit.disabled = false;
     return false;
@@ -320,8 +301,11 @@ function showAppShell(user) {
     configureSidebarMenu(user.role);
 
     // Enforçar restrição de Empresa
-    const isMika = user.email && (user.email.toLowerCase().trim() === "mika@vellia.com" || (user.name && user.name.toLowerCase().includes("mika")));
-    const companyAccess = user.companyAccess || (isMika ? "Excelência Ambiental" : "Ambas");
+    const emailNorm = user.email ? user.email.toLowerCase().trim() : "";
+    const localAccessMap = JSON.parse(localStorage.getItem("comercial_user_company_access") || "{}");
+    const storedUsers = JSON.parse(localStorage.getItem("comercial_users") || "[]");
+    const currentStoredUser = storedUsers.find(u => u && u.email && u.email.toLowerCase().trim() === emailNorm);
+    const companyAccess = user.companyAccess || localAccessMap[emailNorm] || (currentStoredUser && currentStoredUser.companyAccess) || "Ambas";
     const workspaceContainers = document.querySelectorAll(".company-selector-container, .workspace-switcher-card");
 
     if (companyAccess !== "Ambas") {
@@ -1733,21 +1717,6 @@ function setupEventListeners() {
             if (result.success) {
                 showAppShell(result.user);
             } else {
-                const emailLower = email.toLowerCase().trim();
-                let attempts = parseInt(localStorage.getItem(`attempts_${emailLower}`) || "0", 10) + 1;
-                localStorage.setItem(`attempts_${emailLower}`, attempts.toString());
-
-                if (attempts >= 5) {
-                    const lockoutTime = Date.now() + (3 * 60 * 1000); // Bloqueio temporário de 3 minutos
-                    localStorage.setItem(`lockout_${emailLower}`, lockoutTime.toString());
-                    if (elements.loginErrorText && elements.loginError) {
-                        elements.loginErrorText.textContent = "Muitas tentativas incorretas. Acesso bloqueado por 3 minutos.";
-                        elements.loginError.style.display = "flex";
-                    }
-                    if (btnSubmit) btnSubmit.disabled = true;
-                    return;
-                }
-
                 if (elements.loginErrorText && elements.loginError) {
                     elements.loginErrorText.textContent = result.error || "Usuário ou senha inválidos.";
                     elements.loginError.style.display = "flex";

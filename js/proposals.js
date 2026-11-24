@@ -56,6 +56,7 @@ export const Proposals = {
     formatProposalDate,
     getIsoDateInput,
     _eventsBound: false,
+    _currentPillFilter: "all",
     init() {
         this.renderStats();
         this.renderTable();
@@ -304,13 +305,57 @@ export const Proposals = {
         // Interatividade de Cards de Serviços e Slider de Desconto
         this.bindProposalFormInteractive();
 
+        // Filtros em Pílulas (Pill Filters)
+        const pillButtons = document.querySelectorAll("#proposals-pill-filters button[data-proposal-filter]");
+        pillButtons.forEach(btn => {
+            btn.addEventListener("click", () => {
+                const filterVal = btn.getAttribute("data-proposal-filter") || "all";
+                this._currentPillFilter = filterVal;
+                pillButtons.forEach(b => b.classList.toggle("active", b === btn));
+
+                const filterStatus = document.getElementById("proposals-filter-status");
+                if (filterStatus) {
+                    if (filterVal === "all") filterStatus.value = "all";
+                    else if (filterVal === "Enviada") filterStatus.value = "Enviada";
+                    else if (filterVal === "Em Negociação") filterStatus.value = "Em Negociação";
+                    else if (filterVal === "Ganho") filterStatus.value = "Ganho";
+                    else if (filterVal === "Perdido") filterStatus.value = "Perdido";
+                }
+                const colStatus = document.getElementById("prop-col-filter-status");
+                if (colStatus && filterStatus) colStatus.value = filterStatus.value;
+
+                this.renderTable();
+            });
+        });
+
         // Busca e filtro
         const search = document.getElementById("proposals-search");
-        if (search) search.addEventListener("input", () => this.renderTable());
+        const btnClearSearch = document.getElementById("btn-clear-proposals-search");
+        if (search) {
+            search.addEventListener("input", () => {
+                if (btnClearSearch) {
+                    btnClearSearch.style.display = search.value.trim().length > 0 ? "block" : "none";
+                }
+                this.renderTable();
+            });
+        }
+        if (btnClearSearch && search) {
+            btnClearSearch.addEventListener("click", () => {
+                search.value = "";
+                btnClearSearch.style.display = "none";
+                this.renderTable();
+                search.focus();
+            });
+        }
 
         const filter = document.getElementById("proposals-filter-status");
         if (filter) {
             filter.addEventListener("change", (e) => {
+                this._currentPillFilter = e.target.value;
+                pillButtons.forEach(b => {
+                    const val = b.getAttribute("data-proposal-filter");
+                    b.classList.toggle("active", val === this._currentPillFilter);
+                });
                 const colStatus = document.getElementById("prop-col-filter-status");
                 if (colStatus) colStatus.value = e.target.value;
                 this.renderTable();
@@ -548,6 +593,7 @@ export const Proposals = {
         const proposals = this.getFilteredProposalsForUser();
         const total = proposals.length;
         const sent = proposals.filter(p => p.status === "Enviada").length;
+        const negotiating = proposals.filter(p => p.status === "Em Negociação").length;
         const won = proposals.filter(p => ["Ganho", "Aguardando Agendamento", "Agendada"].includes(p.status)).length;
         const lost = proposals.filter(p => p.status === "Perdido").length;
         const totalRevenue = proposals
@@ -555,7 +601,7 @@ export const Proposals = {
             .reduce((sum, p) => sum + (p.value || 0), 0);
         const convRate = total > 0 ? Math.round((won / total) * 100) : 0;
 
-        // Pipeline (abertas + em negocia\u00e7\u00e3o)
+        // Pipeline (abertas + em negociação)
         const pipeline = proposals
             .filter(p => p.status === "Enviada" || p.status === "Em Negociação")
             .reduce((sum, p) => sum + (p.value || 0), 0);
@@ -569,6 +615,13 @@ export const Proposals = {
         this.setEl("prop-stat-revenue", fmt(totalRevenue));
         this.setEl("prop-stat-pipeline", fmt(pipeline));
         this.setEl("prop-stat-conv", `${convRate}%`);
+
+        // Contadores das Pílulas de Filtro (Pill Filters)
+        this.setEl("prop-pill-count-all", total);
+        this.setEl("prop-pill-count-sent", sent);
+        this.setEl("prop-pill-count-negotiating", negotiating);
+        this.setEl("prop-pill-count-won", won);
+        this.setEl("prop-pill-count-lost", lost);
     },
 
     setEl(id, val) {

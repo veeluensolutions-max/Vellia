@@ -113,10 +113,10 @@ export const Users = {
                             }).catch(() => {});
                             continue;
                         }
+                        const localAccessMap = JSON.parse(localStorage.getItem("comercial_user_company_access") || "{}");
                         const localUsers = JSON.parse(localStorage.getItem("comercial_users") || "[]");
                         const localUser = localUsers.find(lu => lu && (lu.id === u.id || (lu.email && u.email && lu.email.toLowerCase() === u.email.toLowerCase())));
-                        const isMika = emailNorm === "mika@vellia.com" || (u.name && u.name.toLowerCase().includes("mika"));
-                        const companyAccess = (localUser && localUser.companyAccess) || u.companyAccess || (isMika ? "Excelência Ambiental" : "Ambas");
+                        const companyAccess = (localUser && localUser.companyAccess) || localAccessMap[emailNorm] || u.companyAccess || "Ambas";
                         validUsers.push({ ...u, companyAccess });
                     }
 
@@ -720,6 +720,13 @@ export const Users = {
                         users[idx].companyAccess = companyAccess;
                         if (hashedPassword) users[idx].password = hashedPassword;
                         Store.saveUsers(users);
+
+                        // Persistir no mapa de acesso por empresa para nunca ser sobrescrito
+                        try {
+                            const localAccessMap = JSON.parse(localStorage.getItem("comercial_user_company_access") || "{}");
+                            localAccessMap[email] = companyAccess;
+                            localStorage.setItem("comercial_user_company_access", JSON.stringify(localAccessMap));
+                        } catch(e) {}
 
                         // Se o usuário editado for o próprio usuário da sessão, sincroniza a sessão imediatamente
                         try {

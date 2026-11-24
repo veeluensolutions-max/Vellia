@@ -67,14 +67,15 @@ export const Auth = {
             Store.saveUsers(users);
         }
 
-        const isMika = user.email && (user.email.toLowerCase().trim() === "mika@vellia.com" || (user.name && user.name.toLowerCase().includes("mika")));
+        const localAccessMap = JSON.parse(localStorage.getItem("comercial_user_company_access") || "{}");
+        const companyAccess = user.companyAccess || localAccessMap[emailLower] || "Ambas";
         const sessionUser = {
             id: user.id,
             name: user.name,
             email: user.email,
             role: user.role,
             avatar: user.avatar,
-            companyAccess: user.companyAccess || (isMika ? "Excelência Ambiental" : "Ambas")
+            companyAccess: companyAccess
         };
 
         // Sessão temporária via sessionStorage (fecha a aba/navegador = exige login novamente)
@@ -100,7 +101,15 @@ export const Auth = {
             // Sessão temporária ativa apenas enquanto a aba/navegador estiver aberto
             const session = sessionStorage.getItem("comercial_session");
             if (session) {
-                return JSON.parse(session);
+                const userObj = JSON.parse(session);
+                // Sincroniza dinamicamente o companyAccess se foi alterado pelo admin
+                const emailNorm = userObj.email ? userObj.email.toLowerCase().trim() : "";
+                const localAccessMap = JSON.parse(localStorage.getItem("comercial_user_company_access") || "{}");
+                if (localAccessMap[emailNorm] && localAccessMap[emailNorm] !== userObj.companyAccess) {
+                    userObj.companyAccess = localAccessMap[emailNorm];
+                    sessionStorage.setItem("comercial_session", JSON.stringify(userObj));
+                }
+                return userObj;
             }
             // Limpa resíduos legados do localStorage para impedir acesso sem login
             if (localStorage.getItem("comercial_session")) {

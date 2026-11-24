@@ -1375,6 +1375,19 @@ export const Store = {
         return null;
     },
 
+    deleteContract(id, userEmail = "sistema@vellia.com") {
+        let contracts = this.getContracts();
+        const target = contracts.find(c => c.id === id);
+        if (!target) return false;
+        contracts = contracts.filter(c => c.id !== id);
+        MemoryCache.set("comercial_contracts", contracts);
+        try {
+            deleteSupabase("comercial_contracts", `?id=eq.${encodeURIComponent(id)}`);
+        } catch(e) {}
+        this.addLog(userEmail, "CONTRACT_DELETED", `Contrato ${target.number} excluído.`);
+        return true;
+    },
+
     getContractServices() {
         return MemoryCache.get("comercial_contract_services", () => []) || [];
     },

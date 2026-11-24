@@ -2301,61 +2301,108 @@
                 <div id="view-contracts" class="spa-view" style="display: none;">
                     <!-- CONTAINER 1: LISTAGEM DE CONTRATOS -->
                     <div id="contracts-list-container">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; flex-wrap: wrap; gap: 14px;">
                             <div>
-                                <h2 style="font-size: 20px; font-weight: 700; color: var(--text-primary); margin: 0; letter-spacing: -0.02em;">Gestão de Contratos</h2>
-                                <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px;">Acompanhe contratos ativos, renovações e faturamentos recorrentes.</p>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <h2 style="font-size: 22px; font-weight: 800; color: var(--text-primary); margin: 0; letter-spacing: -0.02em;">Gestão de Contratos</h2>
+                                    <span style="font-size: 11px; font-weight: 700; color: var(--primary); background: rgba(99, 102, 241, 0.12); padding: 3px 9px; border-radius: 9999px; border: 1px solid rgba(99, 102, 241, 0.25);">SaaS Recorrência & SLA</span>
+                                </div>
+                                <p style="color: var(--text-muted); font-size: 13px; margin: 4px 0 0 0;">Acompanhe contratos ativos, faturamento recorrente (MRR), vigências e renovações.</p>
                             </div>
-                            <button class="btn btn-primary" id="btn-new-contract" style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; padding: 8px 16px;">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                <span>Novo Contrato</span>
-                            </button>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <button class="btn btn-primary" id="btn-new-contract" style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; padding: 10px 18px; border-radius: 10px; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35); cursor: pointer;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                    <span>Novo Contrato</span>
+                                </button>
+                            </div>
                         </div>
                         
                         <!-- KPI Cards de Contratos -->
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
-                            <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px;">
+                            <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-radius: 14px;">
                                 <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
                                     <span class="stat-label">Contratos Ativos</span>
-                                    <span class="stat-value" id="contract-stat-active">0</span>
+                                    <span class="stat-value" id="contract-stat-active" style="font-size: 22px; font-weight: 800; color: var(--text-primary);">0</span>
+                                    <span style="font-size: 11px; color: var(--text-muted);">em vigência regular</span>
                                 </div>
-                                <div class="stat-icon-box" style="background: rgba(98, 87, 245, 0.08); color: var(--primary);">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                                <div class="stat-icon-box" style="width: 44px; height: 44px; border-radius: 12px; background: rgba(99, 102, 241, 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center;">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                                 </div>
                             </div>
-                            <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+                            <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-radius: 14px;">
                                 <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
                                     <span class="stat-label">Receita Recorrente (MRR)</span>
-                                    <span class="stat-value" id="contract-stat-mrr" style="color: var(--primary);">R$ 0,00</span>
+                                    <span class="stat-value" id="contract-stat-mrr" style="font-size: 22px; font-weight: 800; color: #059669;">R$ 0,00</span>
+                                    <span style="font-size: 11px; color: var(--text-muted);">faturamento mensal</span>
                                 </div>
-                                <div class="stat-icon-box success" style="background: #ECFDF5; color: #16A36A;">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                                <div class="stat-icon-box success" style="width: 44px; height: 44px; border-radius: 12px; background: #ECFDF5; color: #10B981; display: flex; align-items: center; justify-content: center;">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
                                 </div>
                             </div>
-                            <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+                            <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-radius: 14px;">
                                 <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
-                                    <span class="stat-label">Valor Total Contratado (TCV)</span>
-                                    <span class="stat-value" id="contract-stat-tcv">R$ 0,00</span>
+                                    <span class="stat-label">Valor Total (TCV)</span>
+                                    <span class="stat-value" id="contract-stat-tcv" style="font-size: 22px; font-weight: 800; color: var(--text-primary);">R$ 0,00</span>
+                                    <span style="font-size: 11px; color: var(--text-muted);">carteira total contratada</span>
                                 </div>
-                                <div class="stat-icon-box" style="background: #F1F5F9; color: #475569;">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                                <div class="stat-icon-box" style="width: 44px; height: 44px; border-radius: 12px; background: rgba(59, 130, 246, 0.1); color: #2563EB; display: flex; align-items: center; justify-content: center;">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                                </div>
+                            </div>
+                            <div class="vellia-card stat-card" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-radius: 14px;">
+                                <div class="stat-info" style="display: flex; flex-direction: column; gap: 3px;">
+                                    <span class="stat-label">Vencendo (Próximos 30d)</span>
+                                    <span class="stat-value" id="contract-stat-expiring" style="font-size: 22px; font-weight: 800; color: #D97706;">0</span>
+                                    <span style="font-size: 11px; color: var(--text-muted);">atenção para renovação</span>
+                                </div>
+                                <div class="stat-icon-box warning" style="width: 44px; height: 44px; border-radius: 12px; background: #FFFBEB; color: #F59E0B; display: flex; align-items: center; justify-content: center;">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Barra de Filtros em Pílula (Pill Filters) -->
+                        <div class="crm-pill-filters-bar" id="contracts-pill-filters" style="margin-bottom: 16px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                            <button class="crm-pill-filter active" data-contract-filter="all" type="button">
+                                <span>📋 Todos</span>
+                                <span class="pill-badge" id="contract-pill-count-all">0</span>
+                            </button>
+                            <button class="crm-pill-filter" data-contract-filter="Ativo" type="button">
+                                <span>🟢 Ativos</span>
+                                <span class="pill-badge" id="contract-pill-count-active">0</span>
+                            </button>
+                            <button class="crm-pill-filter" data-contract-filter="Vencendo" type="button">
+                                <span>🟡 Vencendo em 30d</span>
+                                <span class="pill-badge" id="contract-pill-count-expiring">0</span>
+                            </button>
+                            <button class="crm-pill-filter" data-contract-filter="Em formalização" type="button">
+                                <span>🔵 Em Formalização</span>
+                                <span class="pill-badge" id="contract-pill-count-formalizing">0</span>
+                            </button>
+                            <button class="crm-pill-filter" data-contract-filter="Encerrado" type="button">
+                                <span>⚪ Encerrados</span>
+                                <span class="pill-badge" id="contract-pill-count-closed">0</span>
+                            </button>
+                        </div>
                         
-                        <div class="vellia-card" style="padding: 0; overflow: hidden; margin-bottom: 24px;">
-                            <div style="display: flex; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--border-color); flex-wrap: wrap; background: #FFFFFF; align-items: center;">
-                                <div class="search-box" style="flex: 1; min-width: 250px; position: relative;">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 12px; top: 11px; color: #94A3B8;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                                    <input type="text" id="contracts-search" class="form-control" style="padding-left: 38px; height: 38px; font-size: 13px;" placeholder="Buscar por cliente, CNPJ ou número...">
+                        <div class="vellia-card" style="padding: 0; overflow: hidden; margin-bottom: 24px; border-radius: 14px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+                            <div style="display: flex; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--border-color); flex-wrap: wrap; background: var(--bg-surface); align-items: center; justify-content: space-between;">
+                                <div style="flex: 1; min-width: 280px; position: relative; max-width: 520px;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="position: absolute; left: 14px; top: 12px; color: var(--text-muted);"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                    <input type="text" id="contracts-search" class="form-control" style="padding-left: 40px; padding-right: 32px; height: 40px; font-size: 13px; border-radius: 10px; border: 1.5px solid var(--border-color); width: 100%; box-sizing: border-box;" placeholder="Buscar por cliente, CNPJ, número ou vendedor...">
+                                    <button type="button" id="btn-clear-contracts-search" style="display: none; position: absolute; right: 10px; top: 11px; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 2px;" title="Limpar busca">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                    </button>
                                 </div>
-                                <select id="contracts-filter-status" class="form-control" style="width: auto; height: 38px; font-size: 13px;">
-                                    <option value="all">Todos os Status</option>
-                                    <option value="Ativo">Ativos</option>
-                                    <option value="Em formalização">Em formalização</option>
-                                    <option value="Vencendo">Próximos do Vencimento</option>
-                                    <option value="Encerrado">Encerrados</option>
-                                </select>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <select id="contracts-filter-status" class="form-control" style="width: auto; height: 40px; font-size: 13px; border-radius: 10px; padding: 0 14px; font-weight: 500;">
+                                        <option value="all">Todos os Status</option>
+                                        <option value="Ativo">Ativos</option>
+                                        <option value="Em formalização">Em formalização</option>
+                                        <option value="Vencendo">Próximos do Vencimento</option>
+                                        <option value="Encerrado">Encerrados</option>
+                                    </select>
+                                </div>
                             </div>
                             
                             <div class="table-responsive" style="margin: 0;">
@@ -2363,10 +2410,10 @@
                                     <thead>
                                         <tr>
                                             <th>Número</th>
-                                            <th>Cliente / Oportunidade</th>
+                                            <th>Cliente / Contratante</th>
                                             <th>Valor Total</th>
                                             <th>Recorrente (MRR)</th>
-                                            <th>Vigência</th>
+                                            <th>Vigência & Prazos</th>
                                             <th>Status</th>
                                             <th style="text-align: right;">Ações</th>
                                         </tr>

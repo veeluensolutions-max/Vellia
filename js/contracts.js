@@ -5,6 +5,7 @@ let currentEditingContractId = null;
 
 export const Contracts = {
     _eventsBound: false,
+    _currentPillFilter: "all",
 
     init() {
         if (!this._eventsBound) {
@@ -114,11 +115,59 @@ export const Contracts = {
             });
         }
 
-        // Filtros da tabela
+        // Filtros em Pílulas (Pill Filters)
+        const pillButtons = document.querySelectorAll("#contracts-pill-filters button[data-contract-filter]");
+        pillButtons.forEach(btn => {
+            btn.addEventListener("click", () => {
+                const filterVal = btn.getAttribute("data-contract-filter") || "all";
+                this._currentPillFilter = filterVal;
+                pillButtons.forEach(b => b.classList.toggle("active", b === btn));
+
+                const filterStatus = document.getElementById("contracts-filter-status");
+                if (filterStatus) {
+                    if (filterVal === "all") filterStatus.value = "all";
+                    else if (filterVal === "Ativo") filterStatus.value = "Ativo";
+                    else if (filterVal === "Vencendo") filterStatus.value = "Vencendo";
+                    else if (filterVal === "Em formalização") filterStatus.value = "Em formalização";
+                    else if (filterVal === "Encerrado") filterStatus.value = "Encerrado";
+                }
+                this.renderTable();
+            });
+        });
+
+        // Filtros da tabela e busca com botão de limpar
         const searchInput = document.getElementById("contracts-search");
+        const btnClearSearch = document.getElementById("btn-clear-contracts-search");
         const filterStatus = document.getElementById("contracts-filter-status");
-        if (searchInput) searchInput.addEventListener("input", () => this.renderTable());
-        if (filterStatus) filterStatus.addEventListener("change", () => this.renderTable());
+
+        if (searchInput) {
+            searchInput.addEventListener("input", () => {
+                if (btnClearSearch) {
+                    btnClearSearch.style.display = searchInput.value.trim().length > 0 ? "block" : "none";
+                }
+                this.renderTable();
+            });
+        }
+
+        if (btnClearSearch && searchInput) {
+            btnClearSearch.addEventListener("click", () => {
+                searchInput.value = "";
+                btnClearSearch.style.display = "none";
+                this.renderTable();
+                searchInput.focus();
+            });
+        }
+
+        if (filterStatus) {
+            filterStatus.addEventListener("change", () => {
+                this._currentPillFilter = filterStatus.value;
+                pillButtons.forEach(b => {
+                    const val = b.getAttribute("data-contract-filter");
+                    b.classList.toggle("active", val === this._currentPillFilter);
+                });
+                this.renderTable();
+            });
+        }
 
         // Modais legados (mantidos para compatibilidade)
         const btnCloseModal = document.getElementById("btn-close-contract-modal");
@@ -828,56 +877,158 @@ Testemunhas:
         if (!tbody) return;
 
         const activeCompany = localStorage.getItem("activeCompany") || "Veeluen Solutions";
-        let contracts = Store.getContracts().filter(c => c.workspace === activeCompany);
-        
-        // Calcular KPIs (Receita Recorrente e Valor Total Ativo)
-        const activeOrWarning = contracts.filter(c => c.status === "Ativo" || c.status === "Vencendo");
-        const countActive = activeOrWarning.length;
-        const totalMrr = activeOrWarning.reduce((sum, c) => sum + (c.recurringValue || 0), 0);
-        const totalTcv = activeOrWarning.reduce((sum, c) => sum + (c.totalValue || 0), 0);
+        const allWorkspaceContracts = Store.getContracts().filter(c => c.workspace === activeCompany);
+        const today = new Date();
 
+        // Helper para cálculo de dias até o vencimento
+        const getDaysDiff = (endDateStr) => {
+            if (!endDateStr) return null;
+            const end = new Date(endDateStr + "T23:59:59");
+            return Math.ceil((end - today) / (1000 * 60 * 60 * 24));
+        };
+
+        // Contagens para os 4 KPIs
+        const activeContracts = allWorkspaceContracts.filter(c => c.status === "Ativo" || c.status === "Vencendo");
+        const countActive = activeContracts.length;
+        const totalMrr = activeContracts.reduce((sum, c) => sum + (parseFloat(c.recurringValue) || 0), 0);
+        const totalTcv = activeContracts.reduce((sum, c) => sum + (parseFloat(c.totalValue) || 0), 0);
+        
+        // Vencendo nos próximos 30 dias (ou status Vencendo)
+        const expiringContracts = allWorkspaceContracts.filter(c => {
+            if (c.status === "Encerrado" || c.status === "Cancelado") return false;
+            if (c.status === "Vencendo") return true;
+            const diff = getDaysDiff(c.endDate);
+            return diff !== null && diff >= 0 && diff <= 30;
+        });
+        const countExpiring = expiringContracts.length;
+
+        // Atualizar os 4 cards de KPI no DOM
         const elCount = document.getElementById("contract-stat-active");
         const elMrr = document.getElementById("contract-stat-mrr");
         const elTcv = document.getElementById("contract-stat-tcv");
+        const elExpiring = document.getElementById("contract-stat-expiring");
         
         if (elCount) elCount.textContent = countActive;
         if (elMrr) elMrr.textContent = `R$ ${totalMrr.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
         if (elTcv) elTcv.textContent = `R$ ${totalTcv.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        if (elExpiring) elExpiring.textContent = countExpiring;
 
-        contracts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        // Contagens dinâmicas das 5 Pílulas de Filtro
+        const countAll = allWorkspaceContracts.length;
+        const countPillActive = allWorkspaceContracts.filter(c => c.status === "Ativo").length;
+        const countPillExpiring = countExpiring;
+        const countPillFormalizing = allWorkspaceContracts.filter(c => c.status === "Em formalização" || c.status === "Aguardando assinatura").length;
+        const countPillClosed = allWorkspaceContracts.filter(c => c.status === "Encerrado" || c.status === "Cancelado" || c.status === "Renovado").length;
+
+        const elPillAll = document.getElementById("contract-pill-count-all");
+        const elPillActive = document.getElementById("contract-pill-count-active");
+        const elPillExpiring = document.getElementById("contract-pill-count-expiring");
+        const elPillFormalizing = document.getElementById("contract-pill-count-formalizing");
+        const elPillClosed = document.getElementById("contract-pill-count-closed");
+
+        if (elPillAll) elPillAll.textContent = countAll;
+        if (elPillActive) elPillActive.textContent = countPillActive;
+        if (elPillExpiring) elPillExpiring.textContent = countPillExpiring;
+        if (elPillFormalizing) elPillFormalizing.textContent = countPillFormalizing;
+        if (elPillClosed) elPillClosed.textContent = countPillClosed;
+
+        // Ordenar por data mais recente
+        let contracts = [...allWorkspaceContracts].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
         const searchInput = document.getElementById("contracts-search");
         const filterStatus = document.getElementById("contracts-filter-status");
 
-        const term = searchInput ? searchInput.value.toLowerCase() : "";
-        const statusVal = filterStatus ? filterStatus.value : "all";
+        const term = searchInput ? searchInput.value.trim().toLowerCase() : "";
+        const currentPill = this._currentPillFilter || "all";
 
         const leads = Store.getAllLeadsRaw ? Store.getAllLeadsRaw() : (JSON.parse(localStorage.getItem('comercial_leads')) || []);
 
+        // Filtragem
         contracts = contracts.filter(c => {
-            if (statusVal !== "all" && c.status !== statusVal) return false;
-            
-            const lead = leads.find(l => l.id === c.leadId);
-            const leadName = lead ? `${lead.company} ${lead.contact}`.toLowerCase() : "";
-            
-            if (term && !c.number.toLowerCase().includes(term) && !leadName.includes(term)) {
+            // Filtro por Status / Pílula
+            if (currentPill !== "all") {
+                if (currentPill === "Ativo" && c.status !== "Ativo") return false;
+                else if (currentPill === "Vencendo") {
+                    const diff = getDaysDiff(c.endDate);
+                    const isExp = c.status === "Vencendo" || (diff !== null && diff >= 0 && diff <= 30);
+                    if (!isExp) return false;
+                }
+                else if (currentPill === "Em formalização" && (c.status !== "Em formalização" && c.status !== "Aguardando assinatura")) return false;
+                else if (currentPill === "Encerrado" && (c.status !== "Encerrado" && c.status !== "Cancelado" && c.status !== "Renovado")) return false;
+            } else if (filterStatus && filterStatus.value !== "all" && c.status !== filterStatus.value) {
                 return false;
+            }
+            
+            // Busca textual (número, cliente, contato, vendedor, observações)
+            if (term) {
+                const lead = leads.find(l => l.id === c.leadId);
+                const leadCompany = (lead?.company || "").toLowerCase();
+                const leadContact = (lead?.contact || "").toLowerCase();
+                const leadCnpj = (lead?.cnpj || "").toLowerCase();
+                const num = (c.number || "").toLowerCase();
+                const owner = (c.owner || c.createdBy || "").toLowerCase();
+                const notes = (c.notes || "").toLowerCase();
+
+                if (!num.includes(term) && !leadCompany.includes(term) && !leadContact.includes(term) && !leadCnpj.includes(term) && !owner.includes(term) && !notes.includes(term)) {
+                    return false;
+                }
             }
             return true;
         });
 
         tbody.innerHTML = "";
 
+        // Empty States Modernos
         if (contracts.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px;">Nenhum contrato encontrado.</td></tr>`;
+            const hasActiveFilters = term.length > 0 || currentPill !== "all" || (filterStatus && filterStatus.value !== "all");
+
+            if (hasActiveFilters) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 50px 20px;">
+                            <div style="max-width: 440px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+                                <div style="width: 54px; height: 54px; border-radius: 50%; background: #F1F5F9; display: flex; align-items: center; justify-content: center; color: #64748B;">
+                                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                </div>
+                                <div style="font-size: 15px; font-weight: 700; color: #1E293B;">Nenhum contrato encontrado</div>
+                                <p style="font-size: 13px; color: #64748B; margin: 0; line-height: 1.5;">Nenhum contrato corresponde aos termos de busca ou filtros selecionados.</p>
+                                <button type="button" class="btn btn-secondary" onclick="window.Contracts.resetFilters()" style="margin-top: 6px; font-size: 12.5px; padding: 8px 16px; border-radius: 8px; cursor: pointer;">
+                                    Limpar Filtros e Busca
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 60px 20px;">
+                            <div style="max-width: 460px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 14px;">
+                                <div style="width: 64px; height: 64px; border-radius: 16px; background: rgba(99, 102, 241, 0.1); display: flex; align-items: center; justify-content: center; color: var(--primary);">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                                </div>
+                                <div>
+                                    <div style="font-size: 16px; font-weight: 800; color: #1E293B; margin-bottom: 4px;">Nenhum contrato cadastrado</div>
+                                    <p style="font-size: 13px; color: #64748B; margin: 0; line-height: 1.5;">Cadastre seu primeiro contrato para acompanhar faturamento recorrente (MRR), vigências e renovações automatizadas com IA.</p>
+                                </div>
+                                <button type="button" class="btn btn-primary" onclick="window.Contracts.openContractScreen()" style="margin-top: 4px; font-size: 13px; font-weight: 700; padding: 10px 20px; border-radius: 10px; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3); cursor: pointer;">
+                                    + Cadastrar Primeiro Contrato
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
             return;
         }
 
+        // Renderizar linhas da tabela
         contracts.forEach(c => {
             const lead = leads.find(l => l.id === c.leadId);
-            const leadDisplay = lead ? (lead.company || 'Cliente sem nome') : 'Desconhecido';
-            const initials = leadDisplay.substring(0, 2).toUpperCase();
+            const leadDisplay = lead ? (lead.company || 'Cliente sem nome') : 'Cliente Avulso';
+            const initials = leadDisplay.trim().substring(0, 2).toUpperCase() || "CT";
             
+            // Badge de Status com dot pulsante
             let statusPillClass = "status-pill status-inactive";
             let statusDot = "●";
             if (c.status === "Ativo") {
@@ -889,6 +1040,28 @@ Testemunhas:
             } else if (c.status === "Encerrado" || c.status === "Cancelado" || c.status === "Renovado") {
                 statusPillClass = "status-pill status-inactive";
             }
+
+            // Cálculo dos dias restantes da vigência
+            let daysBadge = "";
+            if (c.endDate) {
+                const diffDays = getDaysDiff(c.endDate);
+                if (diffDays !== null) {
+                    if (diffDays < 0) {
+                        daysBadge = `<div style="margin-top: 4px;"><span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #DC2626; background: #FEE2E2; padding: 2px 7px; border-radius: 6px;">🔴 Expirado (${Math.abs(diffDays)}d)</span></div>`;
+                    } else if (diffDays === 0) {
+                        daysBadge = `<div style="margin-top: 4px;"><span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #DC2626; background: #FEE2E2; padding: 2px 7px; border-radius: 6px;">⚠️ Vence hoje</span></div>`;
+                    } else if (diffDays <= 30) {
+                        daysBadge = `<div style="margin-top: 4px;"><span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #D97706; background: #FEF3C7; padding: 2px 7px; border-radius: 6px;">🟡 Vence em ${diffDays}d</span></div>`;
+                    } else {
+                        daysBadge = `<div style="margin-top: 4px;"><span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: #059669; background: #D1FAE5; padding: 2px 7px; border-radius: 6px;">🟢 ${diffDays} dias rest.</span></div>`;
+                    }
+                }
+            }
+
+            const formattedStart = c.startDate ? new Date(c.startDate + "T12:00:00").toLocaleDateString('pt-BR') : '-';
+            const formattedEnd = c.endDate ? new Date(c.endDate + "T12:00:00").toLocaleDateString('pt-BR') : '-';
+            const totalVal = parseFloat(c.totalValue) || 0;
+            const recurringVal = parseFloat(c.recurringValue) || 0;
 
             let actionButtons = `
                 <button class="btn-icon" onclick="window.Contracts.openContractScreen('${c.id}')" title="Editar Contrato (GestãoClick)">
@@ -908,21 +1081,37 @@ Testemunhas:
                 `;
             }
 
+            // Botão de Excluir Contrato seguro
+            actionButtons += `
+                <button class="btn-icon" style="color: #EF4444;" onclick="window.Contracts.deleteContract('${c.id}')" title="Excluir Contrato">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+            `;
+
             const tr = document.createElement("tr");
             tr.innerHTML = `
-                <td style="font-weight: 600; font-family: monospace; color: #475569; font-size: 12.5px;">${c.number}</td>
+                <td>
+                    <span style="font-weight: 700; font-family: monospace; color: #334155; font-size: 12px; background: #F1F5F9; padding: 4px 8px; border-radius: 6px; border: 1px solid #E2E8F0;">
+                        ${c.number || 'S/N'}
+                    </span>
+                </td>
                 <td>
                     <div style="display: flex; align-items: center; gap: 10px;">
-                        <div class="table-avatar">${initials}</div>
+                        <div class="table-avatar" style="width: 34px; height: 34px; font-size: 12px; font-weight: 700;">${initials}</div>
                         <div>
-                            <div style="font-weight: 600; color: #0F172A; font-size: 13px;">${leadDisplay}</div>
-                            <div style="font-size: 11px; color: #94A3B8;">${lead ? (lead.contact || 'Contato não inf.') : '-'}</div>
+                            <div style="font-weight: 700; color: #0F172A; font-size: 13px;">${leadDisplay}</div>
+                            <div style="font-size: 11px; color: #94A3B8;">${lead ? (lead.contact || 'Sem contato') : '-'}</div>
                         </div>
                     </div>
                 </td>
-                <td style="font-weight: 600; color: #0F172A;">R$ ${c.totalValue.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                <td style="font-weight: 600; color: var(--primary);">R$ ${c.recurringValue.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                <td style="font-size: 12.5px; color: #64748B;">${c.startDate ? new Date(c.startDate).toLocaleDateString('pt-BR') : '-'} até ${c.endDate ? new Date(c.endDate).toLocaleDateString('pt-BR') : '-'}</td>
+                <td style="font-weight: 700; color: #0F172A;">R$ ${totalVal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                <td style="font-weight: 700; color: #059669;">R$ ${recurringVal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                <td>
+                    <div style="font-size: 12px; color: #475569; font-weight: 500;">
+                        ${formattedStart} <span style="color: #94A3B8;">→</span> ${formattedEnd}
+                    </div>
+                    ${daysBadge}
+                </td>
                 <td><span class="${statusPillClass}">${statusDot} ${c.status}</span></td>
                 <td style="text-align: right;">
                     <div style="display: inline-flex; gap: 6px; justify-content: flex-end;">
@@ -932,6 +1121,36 @@ Testemunhas:
             `;
             tbody.appendChild(tr);
         });
+    },
+
+    deleteContract(contractId) {
+        const c = Store.getContractById(contractId);
+        if (!c) return;
+
+        const confirmMsg = `Deseja realmente excluir o contrato "${c.number}"?\nEsta ação removerá o contrato do sistema.`;
+        if (!confirm(confirmMsg)) return;
+
+        const user = Auth.getCurrentUser();
+        Store.deleteContract(contractId, user ? user.email : "sistema@vellia.com");
+        this.renderTable();
+    },
+
+    resetFilters() {
+        const searchInput = document.getElementById("contracts-search");
+        const btnClearSearch = document.getElementById("btn-clear-contracts-search");
+        const filterStatus = document.getElementById("contracts-filter-status");
+
+        if (searchInput) searchInput.value = "";
+        if (btnClearSearch) btnClearSearch.style.display = "none";
+        if (filterStatus) filterStatus.value = "all";
+
+        this._currentPillFilter = "all";
+        const pillButtons = document.querySelectorAll("#contracts-pill-filters button[data-contract-filter]");
+        pillButtons.forEach(b => {
+            b.classList.toggle("active", b.getAttribute("data-contract-filter") === "all");
+        });
+
+        this.renderTable();
     },
 
     activeContractId: null,

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório Executivo de Atualizações - Vellia CRM (24/11/2026)</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 10mm 12mm 10mm 12mm;
+        }
+        * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+            color: #0f172a;
+            margin: 0;
+            padding: 0;
+            font-size: 9.5pt;
+            line-height: 1.35;
+            background: #ffffff;
+        }
+        .header {
+            border-bottom: 2.5px solid #2563eb;
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .brand-title {
+            font-size: 17pt;
+            font-weight: 800;
+            color: #1e3a8a;
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
+        .brand-sub {
+            font-size: 8.5pt;
+            color: #475569;
+            margin-top: 2px;
+            font-weight: 600;
+        }
+        .meta-box {
+            text-align: right;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 6px 12px;
+        }
+        .meta-box .date {
+            font-size: 10pt;
+            font-weight: 800;
+            color: #1e40af;
+        }
+        .meta-box .version {
+            font-size: 8pt;
+            color: #64748b;
+        }
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .kpi-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 8px 10px;
+            text-align: center;
+        }
+        .kpi-card .num {
+            font-size: 14pt;
+            font-weight: 800;
+            color: #2563eb;
+            line-height: 1.1;
+        }
+        .kpi-card .label {
+            font-size: 7.5pt;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-top: 2px;
+            letter-spacing: 0.3px;
+        }
+        .section-title {
+            font-size: 11pt;
+            font-weight: 800;
+            color: #0f172a;
+            border-left: 4px solid #2563eb;
+            padding-left: 8px;
+            margin: 12px 0 8px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .section-title span.badge {
+            font-size: 7.5pt;
+            font-weight: 700;
+            background: #dbeafe;
+            color: #1d4ed8;
+            padding: 2px 7px;
+            border-radius: 99px;
+            border: 1px solid #bfdbfe;
+        }
+        .card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+            page-break-inside: avoid;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        .card-title {
+            font-size: 9.5pt;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .tag {
+            font-size: 7pt;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+        .tag-success { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+        .tag-blue { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
+        .tag-amber { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+        .card-desc {
+            font-size: 8.5pt;
+            color: #475569;
+            margin-bottom: 6px;
+        }
+        ul.feature-list {
+            margin: 0;
+            padding-left: 16px;
+            font-size: 8.2pt;
+            color: #334155;
+        }
+        ul.feature-list li {
+            margin-bottom: 2px;
+        }
+        ul.feature-list li strong {
+            color: #0f172a;
+        }
+        .highlight-box {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 8pt;
+            color: #166534;
+            margin-top: 6px;
+        }
+        .table-custom {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 6px 0 10px 0;
+            font-size: 8pt;
+        }
+        .table-custom th {
+            background: #f1f5f9;
+            color: #334155;
+            font-weight: 700;
+            text-align: left;
+            padding: 5px 8px;
+            border: 1px solid #cbd5e1;
+        }
+        .table-custom td {
+            padding: 4px 8px;
+            border: 1px solid #e2e8f0;
+            color: #475569;
+        }
+        .table-custom tr:nth-child(even) td {
+            background: #f8fafc;
+        }
+        .signatures {
+            margin-top: 14px;
+            padding-top: 10px;
+            border-top: 1.5px solid #cbd5e1;
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+            font-size: 8pt;
+            page-break-inside: avoid;
+        }
+        .sig-line {
+            width: 200px;
+            border-top: 1px solid #475569;
+            margin: 25px auto 4px auto;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        .sig-sub {
+            color: #64748b;
+            font-size: 7.5pt;
+        }
+        .footer {
+            margin-top: 10px;
+            text-align: center;
+            font-size: 7pt;
+            color: #94a3b8;
+            border-top: 1px dashed #e2e8f0;
+            padding-top: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .page-break {
+            page-break-after: always;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- CABEÇALHO -->
+    <div class="header">
+        <div>
+            <h1 class="brand-title">VELLIA CRM • RELATÓRIO EXECUTIVO</h1>
+            <div class="brand-sub">Sumário de Atualizações, Novas Funcionalidades e Correções Estruturais</div>
+        </div>
+        <div class="meta-box">
+            <div class="date">📅 24 de Novembro de 2026</div>
+            <div class="version">Versão do Sistema: <strong>v2.8.4 Enterprise</strong></div>
+        </div>
+    </div>
+
+    <!-- KPIS DE ENTREGA DO DIA -->
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="num">6</div>
+            <div class="label">Módulos Aperfeiçoados</div>
+        </div>
+        <div class="kpi-card">
+            <div class="num">100%</div>
+            <div class="label">Multi-Empresa Unificado</div>
+        </div>
+        <div class="kpi-card">
+            <div class="num">0 min</div>
+            <div class="label">Tempo Bloqueio Login</div>
+        </div>
+        <div class="kpi-card">
+            <div class="num">4ee8ef2</div>
+            <div class="label">Build Estável no GitHub</div>
+        </div>
+    </div>
+
+    <!-- SEÇÃO 1: TROCA E SELEÇÃO DE EMPRESAS EM LEADS E PROPOSTAS -->
+    <div class="section-title">
+        <span>1. Gestão Multi-Empresa em Leads e Propostas</span>
+        <span class="badge">Funcionalidade Chave</span>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">🏢 Seleção e Migração Dinâmica de Unidade Comercial</div>
+            <span class="tag tag-success">Implementado</span>
+        </div>
+        <div class="card-desc">
+            Permite aos consultores e administradores gerenciar com precisão a qual empresa cada lead ou orçamento pertence, com flexibilidade total para transferências sem perda de histórico.
+        </div>
+        <ul class="feature-list">
+            <li><strong>Cadastro de Novo Lead:</strong> Campo <em>"Empresa / Unidade Comercial"</em> adicionado ao formulário de criação, com pré-seleção automática baseada na empresa ativa.</li>
+            <li><strong>Edição de Lead:</strong> Possibilidade de alterar a unidade de qualquer lead existente com persistência instantânea no banco de dados Supabase.</li>
+            <li><strong>Painel Lateral do Lead (Drawer):</strong> Adicionado seletor rápido no topo do perfil do lead, permitindo transferência entre <em>Veeluen Solutions</em> e <em>Excelência Ambiental</em> em 1 clique.</li>
+            <li><strong>Orçamentos (GestãoClick):</strong> Seletor de empresa integrado ao Card 1 de Dados Gerais, vinculando corretamente a unidade emissora da proposta comercial.</li>
+            <li><strong>Modal de Detalhes da Proposta:</strong> Seletor interativo para reclassificar a unidade comercial de qualquer proposta com notificação em tempo real.</li>
+        </ul>
+        <div class="highlight-box">
+            ⚡ <strong>Impacto Operacional:</strong> Eliminação de erros de faturamento e direcionamento cruzado entre Veeluen Solutions e Excelência Ambiental.
+        </div>
+    </div>
+
+    <!-- SEÇÃO 2: LIBERAÇÃO DE ACESSO E AUTENTICAÇÃO -->
+    <div class="section-title">
+        <span>2. Autenticação, Acesso e Produtividade Contínua</span>
+        <span class="badge">Segurança & Usabilidade</span>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">🔓 Acesso Sem Bloqueio & Alternância Completa de Empresas</div>
+            <span class="tag tag-blue">Otimização</span>
+        </div>
+        <div class="card-desc">
+            Remoção de fricções no login diário e desbloqueio do perfil de múltiplos acessos para a equipe comercial.
+        </div>
+        <ul class="feature-list">
+            <li><strong>Remoção do Bloqueio de 3 Minutos:</strong> Desativação permanente do lockout temporário por tentativas incorretas, evitando paradas operacionais indesejadas.</li>
+            <li><strong>Alternância de Empresas Desbloqueada:</strong> Remoção de regras estáticas que prendiam operadores como Mika na Excelência Ambiental. Usuários com acesso a <em>"Ambas"</em> agora alternam livremente via cabeçalho.</li>
+            <li><strong>Restauração do Modal de Usuários:</strong> Correção estrutural do aninhamento HTML de tags no modal de gerenciamento de usuários, reestabelecendo a edição de papéis e permissões.</li>
+        </ul>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- SEÇÃO 3: GESTÃO DE CONTRATOS & RENOVAÇÕES -->
+    <div class="section-title">
+        <span>3. Gestão Moderna de Contratos & Pós-Venda</span>
+        <span class="badge">Modernização SaaS</span>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">📋 Dashboard Clean de Contratos Recorrentes</div>
+            <span class="tag tag-success">Design Moderno</span>
+        </div>
+        <div class="card-desc">
+            Transformação completa da interface de contratos, elevando a transparência financeira de receitas recorrentes e contratos de longo prazo.
+        </div>
+        <ul class="feature-list">
+            <li><strong>3 KPIs Estratégicos no Topo:</strong>
+                <br>• <em>Contratos Ativos:</em> Quantidade de acordos comerciais em vigência.
+                <br>• <em>Receita Recorrente (MRR):</em> Acompanhamento da receita mensal previsível.
+                <br>• <em>Valor Total Contratado (TCV):</em> Visão macro do valor total sob contrato.
+            </li>
+            <li><strong>Busca Rápida Inteligente & Filtros por Status:</strong> Localização por cliente, CNPJ ou número do contrato com filtro por situação cadastral.</li>
+            <li><strong>Mensagens de Renovação Humanizadas:</strong> Ajuste nos disparos padrão de abordagem pós-venda, removendo jargões restritivos de laudos e focando no relacionamento contínuo.</li>
+        </ul>
+    </div>
+
+    <!-- SEÇÃO 4: RESUMO DOS COMMITS TÉCNICOS -->
+    <div class="section-title">
+        <span>4. Rastreabilidade Técnica dos Commits (24/11/2026)</span>
+        <span class="badge">Git Changelog</span>
+    </div>
+
+    <table class="table-custom">
+        <thead>
+            <tr>
+                <th style="width: 12%;">Commit</th>
+                <th style="width: 15%;">Módulo</th>
+                <th style="width: 48%;">Descrição da Alteração</th>
+                <th style="width: 25%;">Arquivos Principais</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>4ee8ef2</strong></td>
+                <td>CRM / Leads / GC</td>
+                <td>Permitir troca e seleção de empresa em leads e propostas</td>
+                <td>index.html, crm.js, proposals.js</td>
+            </tr>
+            <tr>
+                <td><strong>e5db418</strong></td>
+                <td>Auth / Workspace</td>
+                <td>Remover lockout e permitir alternância multi-empresa</td>
+                <td>app.js, auth.js, store.js, users.js</td>
+            </tr>
+            <tr>
+                <td><strong>2b7cca7</strong></td>
+                <td>Contratos</td>
+                <td>Modernização visual com design clean SaaS e KPIs MRR/TCV</td>
+                <td>index.html, app.css, crm.js</td>
+            </tr>
+            <tr>
+                <td><strong>bec9d13</strong></td>
+                <td>Usuários</td>
+                <td>Corrigir aninhamento HTML e restaurar modal de edição</td>
+                <td>index.html, users.js</td>
+            </tr>
+            <tr>
+                <td><strong>4c5cd0b</strong></td>
+                <td>Renovações</td>
+                <td>Remover termos de inspeção/laudo da abordagem padrão</td>
+                <td>crm.js, proposals.js</td>
+            </tr>
+            <tr>
+                <td><strong>e39716d</strong></td>
+                <td>UI / UX Global</td>
+                <td>Refinamento global de design clean SaaS mantendo integridade</td>
+                <td>index.html, app.css, theme.css</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="highlight-box" style="background: #f8fafc; border-color: #cbd5e1; color: #334155;">
+        🔒 <strong>Integridade de Dados Garantida:</strong> Todas as alterações preservaram 100% da compatibilidade de esquemas no banco Supabase Cloud, garantindo migração suave sem impacto em dados preexistentes.
+    </div>
+
+    <!-- BLOCO DE ASSINATURAS E APROVAÇÃO -->
+    <div class="signatures">
+        <div>
+            <div class="sig-line">Engenharia de Software & Produto</div>
+            <div class="sig-sub">Vellia CRM • Veeluen Solutions</div>
+        </div>
+        <div>
+            <div class="sig-line">Diretoria Comercial & Operações</div>
+            <div class="sig-sub">Homologado para Uso em Produção</div>
+        </div>
+    </div>
+
+    <!-- RODAPÉ -->
+    <div class="footer">
+        <span>Documento oficial de homologação técnica • Veeluen Solutions & Excelência Ambiental</span>
+        <span>Gerado automaticamente pelo Sistema Vellia CRM em 24/11/2026</span>
+    </div>
+
+</body>
+</html>

@@ -116,12 +116,15 @@ export const Users = {
                         const localUsers = JSON.parse(localStorage.getItem("comercial_users") || "[]");
                         const localUser = localUsers.find(lu => lu && (lu.id === u.id || (lu.email && u.email && lu.email.toLowerCase() === u.email.toLowerCase())));
                         const isMika = emailNorm === "mika@vellia.com" || (u.name && u.name.toLowerCase().includes("mika"));
-                        const companyAccess = u.companyAccess || (localUser && localUser.companyAccess) || (isMika ? "Excelência Ambiental" : "Ambas");
+                        const companyAccess = (localUser && localUser.companyAccess) || u.companyAccess || (isMika ? "Excelência Ambiental" : "Ambas");
                         validUsers.push({ ...u, companyAccess });
                     }
 
                     if (validUsers.length > 0) {
                         localStorage.setItem("comercial_users", JSON.stringify(validUsers));
+                        if (Store.cache && typeof Store.cache.set === "function") {
+                            Store.cache.set("comercial_users", validUsers);
+                        }
                     }
                     this.renderUsers();
                 }
@@ -620,7 +623,10 @@ export const Users = {
         };
 
         const closeModal = () => {
-            if (overlay) overlay.style.display = "none";
+            if (overlay) {
+                overlay.style.display = "none";
+                overlay.classList.remove("open");
+            }
             if (modal) {
                 modal.style.display = "none";
                 modal.classList.remove("open");
@@ -714,6 +720,18 @@ export const Users = {
                         users[idx].companyAccess = companyAccess;
                         if (hashedPassword) users[idx].password = hashedPassword;
                         Store.saveUsers(users);
+
+                        // Se o usuário editado for o próprio usuário da sessão, sincroniza a sessão imediatamente
+                        try {
+                            const cur = Auth.getCurrentUser();
+                            if (cur && (cur.id === userId || (cur.email && cur.email.toLowerCase() === email))) {
+                                cur.name = name;
+                                cur.role = role;
+                                cur.companyAccess = companyAccess;
+                                sessionStorage.setItem("comercial_session", JSON.stringify(cur));
+                                localStorage.setItem("comercial_current_user", JSON.stringify(cur));
+                            }
+                        } catch(sessErr) {}
 
                         // Sincronizar PATCH direto com o Supabase
                         try {
@@ -830,7 +848,10 @@ export const Users = {
 
         const overlay = document.getElementById("users-modal-overlay");
         const modal = document.getElementById("user-config-modal");
-        if (overlay) overlay.style.display = "block";
+        if (overlay) {
+            overlay.style.display = "block";
+            overlay.classList.add("open");
+        }
         if (modal) {
             modal.style.display = "flex";
             modal.classList.add("open");

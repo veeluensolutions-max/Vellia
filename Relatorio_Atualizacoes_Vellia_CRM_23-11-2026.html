@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório Executivo de Atualizações - Vellia CRM (23/11/2026)</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 10mm 12mm 10mm 12mm;
+        }
+        * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+            color: #0f172a;
+            margin: 0;
+            padding: 0;
+            font-size: 10pt;
+            line-height: 1.4;
+            background: #ffffff;
+        }
+        .header {
+            border-bottom: 2.5px solid #2563eb;
+            padding-bottom: 12px;
+            margin-bottom: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .brand-title {
+            font-size: 18pt;
+            font-weight: 800;
+            color: #1e3a8a;
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
+        .brand-sub {
+            font-size: 9pt;
+            color: #475569;
+            margin-top: 2px;
+            font-weight: 600;
+        }
+        .meta-box {
+            text-align: right;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 6px 14px;
+        }
+        .meta-box .date {
+            font-size: 10.5pt;
+            font-weight: 800;
+            color: #1e40af;
+        }
+        .meta-box .version {
+            font-size: 8.5pt;
+            color: #64748b;
+        }
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+        .kpi-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 8px 10px;
+            text-align: center;
+        }
+        .kpi-card .num {
+            font-size: 15pt;
+            font-weight: 800;
+            color: #2563eb;
+            line-height: 1.1;
+        }
+        .kpi-card .label {
+            font-size: 8pt;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-top: 2px;
+        }
+        .section-title {
+            font-size: 11pt;
+            font-weight: 800;
+            color: #0f172a;
+            border-left: 4px solid #2563eb;
+            padding-left: 8px;
+            margin: 14px 0 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+        .item-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 7px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            page-break-inside: avoid;
+        }
+        .item-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        .item-title {
+            font-size: 10pt;
+            font-weight: 700;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .badge {
+            font-size: 7.5pt;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+        .badge-blue { background: #dbeafe; color: #1e40af; }
+        .badge-green { background: #d1fae5; color: #065f46; }
+        .badge-purple { background: #f3e8ff; color: #6b21a8; }
+        .badge-amber { background: #fef3c7; color: #92400e; }
+        .item-desc {
+            font-size: 9pt;
+            color: #334155;
+            margin-bottom: 4px;
+            line-height: 1.4;
+        }
+        .item-benefits {
+            font-size: 8.5pt;
+            color: #475569;
+            background: #f8fafc;
+            border-left: 3px solid #cbd5e1;
+            padding: 4px 8px;
+            border-radius: 0 4px 4px 0;
+        }
+        .item-benefits strong {
+            color: #0f172a;
+        }
+        .footer {
+            margin-top: 18px;
+            padding-top: 10px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 8pt;
+            color: #94a3b8;
+            page-break-inside: avoid;
+        }
+        .signatures {
+            margin-top: 16px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 36px;
+            page-break-inside: avoid;
+            padding-top: 8px;
+        }
+        .sig-line {
+            border-top: 1px solid #94a3b8;
+            text-align: center;
+            padding-top: 4px;
+            font-size: 9pt;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        .sig-sub {
+            font-size: 8pt;
+            color: #64748b;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- CABEÇALHO -->
+    <div class="header">
+        <div>
+            <h1 class="brand-title">VELLIA CRM & SOLUTIONS</h1>
+            <div class="brand-sub">Relatório Oficial de Entregas & Atualizações do Sistema</div>
+        </div>
+        <div class="meta-box">
+            <div class="date">23 de Novembro de 2026</div>
+            <div class="version">Versão de Produção • Release Oficial</div>
+        </div>
+    </div>
+
+    <!-- CARDS DE RESUMO / KPIS -->
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="num">7</div>
+            <div class="label">Módulos Aperfeiçoados</div>
+        </div>
+        <div class="kpi-card">
+            <div class="num">100%</div>
+            <div class="label">Integridade Cloud</div>
+        </div>
+        <div class="kpi-card">
+            <div class="num">0</div>
+            <div class="label">Impacto Supabase</div>
+        </div>
+        <div class="kpi-card">
+            <div class="num">Sincronizado</div>
+            <div class="label">GitHub Main Branch</div>
+        </div>
+    </div>
+
+    <!-- SEÇÃO: GESTÃO DE LEADS & CONTATOS -->
+    <div class="section-title">1. Gestão de Leads, Distribuição & Inteligência de Cadastro</div>
+
+    <div class="item-card">
+        <div class="item-head">
+            <div class="item-title">
+                <span>🏢</span>
+                <span>Cadastro e Edição de Leads Padrão GestãoClick com Busca CNPJ & CEP</span>
+            </div>
+            <span class="badge badge-blue">Interface & APIs</span>
+        </div>
+        <div class="item-desc">
+            Reformulação da interface de Novo Lead e Edição para o padrão corporativo GestãoClick (seções: <em>Dados Gerais</em>, <em>Endereços</em> e <em>Contatos</em>). Implementada consulta instantânea à Receita Federal via BrasilAPI ao digitar o CNPJ, preenchendo automaticamente Razão Social, Logradouro, Número, Bairro, Cidade, UF e Situação Cadastral. Integrado também preenchimento automático por CEP.
+        </div>
+        <div class="item-benefits">
+            <strong>Impacto Operacional:</strong> Elimina digitação manual, reduz erros cadastrais a zero e preserva estritamente o esquema existente no Supabase sem quebrar sincronização.
+        </div>
+    </div>
+
+    <div class="item-card">
+        <div class="item-head">
+            <div class="item-title">
+                <span>👥</span>
+                <span>Distribuição e Direcionamento em Massa de Leads para Vendedores</span>
+            </div>
+            <span class="badge badge-green">Produtividade</span>
+        </div>
+        <div class="item-desc">
+            Adição de seleção múltipla (checkboxes) na tabela de contatos e leads com barra flutuante de ações em lote. Permite marcar dezenas de leads simultaneamente e direcioná-los com 1 clique para qualquer vendedor da equipe (Ariella, Mika, San Charles, etc.).
+        </div>
+        <div class="item-benefits">
+            <strong>Impacto Operacional:</strong> Agilidade imediata para os gestores organizarem carteiras e filas de atendimento diárias sem intervenção manual lead a lead.
+        </div>
+    </div>
+
+    <div class="item-card">
+        <div class="item-head">
+            <div class="item-title">
+                <span>📊</span>
+                <span>Importação Inteligente Excel (.xlsx) com Modelo Padronizado e Higienização</span>
+            </div>
+            <span class="badge badge-purple">Dados & Qualidade</span>
+        </div>
+        <div class="item-desc">
+            Disponibilização do botão de download de modelo oficial em Excel (.xlsx) e rotina inteligente de higienização de contatos na importação (limpeza de caracteres estranhos, formatação correta de DDD/telefones e validação de documentos).
+        </div>
+        <div class="item-benefits">
+            <strong>Impacto Operacional:</strong> Segurança total ao importar bases externas sem corromper nomes, telefones ou formatos já salvos.
+        </div>
+    </div>
+
+    <div class="item-card">
+        <div class="item-head">
+            <div class="item-title">
+                <span>🔧</span>
+                <span>Correção de Transparência e Estilização dos Modais</span>
+            </div>
+            <span class="badge badge-amber">Estabilidade</span>
+        </div>
+        <div class="item-desc">
+            Ajuste e consolidação de classes CSS globais e remoção de restrições de display inline que causavam opacidade indesejada ao clicar em "Novo Lead", garantindo abertura limpa e com máxima legibilidade.
+        </div>
+        <div class="item-benefits">
+            <strong>Impacto Operacional:</strong> Experiência visual fluida, consistente e rápida para os usuários em telas desktop e mobile.
+        </div>
+    </div>
+
+    <!-- SEÇÃO: PROPOSTAS E ORÇAMENTOS COMERCIAIS -->
+    <div class="section-title">2. Propostas Comerciais, Orçamentos & Impressão Timbrada</div>
+
+    <div class="item-card">
+        <div class="item-head">
+            <div class="item-title">
+                <span>🔍</span>
+                <span>Localização e Autopreenchimento de Leads no Orçamento</span>
+            </div>
+            <span class="badge badge-blue">Comercial</span>
+        </div>
+        <div class="item-desc">
+            Integração do botão de busca rápida de clientes diretamente na tela de orçamentos (GestãoClick). Ao selecionar o lead cadastrado, o sistema preenche imediatamente a razão social, aos cuidados de, vendedor responsável, contatos e endereço completo de entrega/execução técnica.
+        </div>
+        <div class="item-benefits">
+            <strong>Impacto Operacional:</strong> Elaboração de orçamentos 4x mais rápida, sem necessidade de consultar abas paralelas ou redigitar dados.
+        </div>
+    </div>
+
+    <div class="item-card">
+        <div class="item-head">
+            <div class="item-title">
+                <span>🖨️</span>
+                <span>Modelo Profissional de Impressão e PDF com Papel Timbrado Dinâmico</span>
+            </div>
+            <span class="badge badge-green">Alta Fidelidade</span>
+        </div>
+        <div class="item-desc">
+            Desenvolvimento de um novo gerador de documentos timbrados em formato A4:
+            <ul style="margin: 4px 0 4px 18px; padding: 0;">
+                <li><strong>Branding Dinâmico:</strong> Alternância automática entre <em>Veeluen Solutions</em> (azul real) e <em>Excelência Ambiental</em> (verde esmeralda), com logomarca, CNPJ, dados de contato e sede.</li>
+                <li><strong>Tabelas Detalhadas:</strong> Grade visual para serviços técnicos e produtos, com número de item, descrição de escopo, quantidade, preço unitário e valor total.</li>
+                <li><strong>Condições & Assinaturas:</strong> Bloco de resumo financeiro do investimento, termos e prazos comerciais, e linhas formais de assinatura bilateral (contratada e aceite do contratante).</li>
+                <li><strong>Modal de Pré-visualização & Vetorização:</strong> Visualizador A4 prévio com opções de "Imprimir / Salvar PDF" nativo (100% vetorial sem perda de nitidez) e download direto de arquivo PDF.</li>
+            </ul>
+        </div>
+        <div class="item-benefits">
+            <strong>Impacto Operacional:</strong> Propostas executivas de altíssimo padrão corporativo prontas para envio imediato aos clientes e fechamento de contratos.
+        </div>
+    </div>
+
+    <!-- SEÇÃO: CENTRAL DE RENOVAÇÕES -->
+    <div class="section-title">3. Central de Renovações & Atendimento Comercial</div>
+
+    <div class="item-card">
+        <div class="item-head">
+            <div class="item-title">
+                <span>🔄</span>
+                <span>Botão "Mover para Leads" & Abertura Imediata de Interações</span>
+            </div>
+            <span class="badge badge-purple">Conversão & Pós-Venda</span>
+        </div>
+        <div class="item-desc">
+            Inclusão do botão de ação rápida <code>[ 👤 Mover p/ Leads ]</code> tanto na tabela da Central de Renovações quanto dentro do modal de contato. Ao acionar o botão:
+            <ul style="margin: 4px 0 4px 18px; padding: 0;">
+                <li>O contato é direcionado à carteira do vendedor conectado (caso estivesse sem vendedor).</li>
+                <li>O estágio no funil de vendas é reativado para <strong>"Contato"</strong>.</li>
+                <li>Uma nota automática com o histórico técnico do laudo/serviço e data de vencimento é registrada na timeline.</li>
+                <li>O usuário é levado automaticamente para a tela de Contatos com o drawer aberto e o foco direto no formulário de <strong>Registrar Interação</strong> (Ligação, WhatsApp, Reunião ou Nota).</li>
+            </ul>
+        </div>
+        <div class="item-benefits">
+            <strong>Impacto Operacional:</strong> Conexão perfeita entre a base operacional de inspeções vencidas e a esteira de vendas, acelerando a taxa de recompra e retenção.
+        </div>
+    </div>
+
+    <!-- BLOCO DE ASSINATURA TÉCNICA E APROVAÇÃO -->
+    <div class="signatures">
+        <div>
+            <div class="sig-line">Equipe de Engenharia & Tecnologia</div>
+            <div class="sig-sub">Vellia CRM • Veeluen Solutions</div>
+        </div>
+        <div>
+            <div class="sig-line">Aprovação da Diretoria Comercial</div>
+            <div class="sig-sub">Implementação & Produção Homologada</div>
+        </div>
+    </div>
+
+    <!-- RODAPÉ -->
+    <div class="footer">
+        <span>Documento confidencial para uso interno da Veeluen Solutions & Excelência Ambiental.</span>
+        <span>Gerado automaticamente pelo Sistema Vellia CRM em 23/11/2026.</span>
+    </div>
+
+</body>
+</html>

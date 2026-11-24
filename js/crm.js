@@ -1706,6 +1706,11 @@ export const CRM = {
             cnpjStatus.style.color = "var(--text-muted)";
         }
 
+        const wsEl = document.getElementById("edit-lead-workspace");
+        if (wsEl) {
+            wsEl.value = lead.workspace || localStorage.getItem("activeCompany") || "Veeluen Solutions";
+        }
+
         const clientTypeEl = document.getElementById("edit-lead-client-type");
         if (clientTypeEl) clientTypeEl.value = lead.clientType || (lead.cnpj ? "Pessoa Jurídica" : "Pessoa Física");
 
@@ -1870,6 +1875,7 @@ export const CRM = {
         }
 
         const updatedData = {
+            workspace: document.getElementById("edit-lead-workspace")?.value || "Veeluen Solutions",
             cnpj: CNPJService.cleanDigits(document.getElementById("edit-lead-cnpj")?.value || ""),
             clientType: document.getElementById("edit-lead-client-type")?.value || "Pessoa Jurídica",
             stage: document.getElementById("edit-lead-stage")?.value || "Contato",
@@ -2257,6 +2263,25 @@ export const CRM = {
 
         // Atualizar campos do Drawer
         document.getElementById("drawer-lead-company").textContent = lead.company;
+        const drawerWsSelect = document.getElementById("drawer-lead-workspace-select");
+        if (drawerWsSelect) {
+            drawerWsSelect.value = lead.workspace || localStorage.getItem("activeCompany") || "Veeluen Solutions";
+            drawerWsSelect.onchange = (e) => {
+                const targetWs = e.target.value;
+                if (!targetWs) return;
+                Store.updateLead(lead.id, { workspace: targetWs }, currentUser?.email || "sistema@vellia.com");
+                lead.workspace = targetWs;
+                this.renderLeadsTable();
+                this.renderKanban();
+                if (window.Toast && typeof window.Toast.show === "function") {
+                    window.Toast.show({
+                        type: "success",
+                        title: "Unidade Atualizada",
+                        message: `Lead transferido para "${targetWs}" com sucesso.`
+                    });
+                }
+            };
+        }
         document.getElementById("drawer-lead-contact").textContent = lead.contact;
         document.getElementById("drawer-lead-role").textContent = lead.role || "Não preenchido";
         document.getElementById("drawer-lead-email").textContent = lead.email || "Não informado";
@@ -3174,6 +3199,10 @@ export const CRM = {
         }
 
         // Resetar campos de endereço e novos campos
+        const wsEl = document.getElementById("lead-workspace");
+        if (wsEl) {
+            wsEl.value = (prefillData && prefillData.workspace) || localStorage.getItem("activeCompany") || "Veeluen Solutions";
+        }
         const clientTypeEl = document.getElementById("lead-client-type");
         if (clientTypeEl) clientTypeEl.value = "Pessoa Jurídica";
         const stageInitEl = document.getElementById("lead-stage-init");
@@ -3357,7 +3386,9 @@ export const CRM = {
         }
 
         // Salvar lead
+        const targetWorkspace = getVal("lead-workspace") || (typeof Auth !== "undefined" && Auth.getCurrentUser?.()?.companyAccess && Auth.getCurrentUser().companyAccess !== "Ambas" ? Auth.getCurrentUser().companyAccess : (localStorage.getItem("activeCompany") || "Veeluen Solutions"));
         const newLead = Store.addLead({
+            workspace: targetWorkspace,
             cnpj,
             clientType,
             company,

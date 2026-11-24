@@ -3191,8 +3191,8 @@
                                 </h4>
                             </div>
                             <div class="gc-card-body">
-                                <!-- Linha 1: Número, Cliente, Vendedor -->
-                                <div class="gc-grid gc-grid-3" style="margin-bottom: 14px;">
+                                <!-- Linha 1: Número, Cliente, Empresa, Vendedor -->
+                                <div class="gc-grid gc-grid-4" style="margin-bottom: 14px;">
                                     <div class="gc-form-group">
                                         <label class="gc-label" for="gc-budget-number">Número</label>
                                         <div class="gc-input-group">
@@ -3201,6 +3201,13 @@
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                             </button>
                                         </div>
+                                    </div>
+                                    <div class="gc-form-group">
+                                        <label class="gc-label" for="gc-budget-workspace">Empresa / Unidade <span class="gc-required">*</span></label>
+                                        <select id="gc-budget-workspace" class="gc-select" style="font-weight: 700; color: var(--primary, #3b82f6); height: 38px;">
+                                            <option value="Veeluen Solutions">🏢 Veeluen Solutions</option>
+                                            <option value="Excelência Ambiental">🌿 Excelência Ambiental</option>
+                                        </select>
                                     </div>
                                     <div class="gc-form-group">
                                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
@@ -5077,7 +5084,16 @@ Condições de pagamento:
                             <h3 class="lead-drawer-company-title" id="drawer-lead-company">Nome da Empresa</h3>
                             <span id="drawer-lead-temp-badge" class="badge" style="font-size: 10.5px; padding: 2px 8px; border-radius: 99px; font-weight: 700;">🔥 Quente</span>
                         </div>
-                        <span id="drawer-lead-subtitle" class="lead-drawer-subtitle">Responsável & Contato</span>
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 2px;">
+                            <span id="drawer-lead-subtitle" class="lead-drawer-subtitle" style="margin: 0;">Responsável & Contato</span>
+                            <div style="display: inline-flex; align-items: center; gap: 4px; background: rgba(99, 102, 241, 0.07); padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(99, 102, 241, 0.2);">
+                                <label for="drawer-lead-workspace-select" style="font-size: 10px; font-weight: 700; color: var(--primary, #6366f1); text-transform: uppercase; margin: 0;">Unidade:</label>
+                                <select id="drawer-lead-workspace-select" style="height: 22px; padding: 0 4px; font-size: 11px; font-weight: 700; border-radius: 4px; background: transparent; border: none; cursor: pointer; color: var(--text-primary); outline: none;" title="Alterar empresa/unidade comercial deste lead">
+                                    <option value="Veeluen Solutions">🏢 Veeluen Solutions</option>
+                                    <option value="Excelência Ambiental">🌿 Excelência Ambiental</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <button type="button" id="btn-close-drawer" class="drawer-close" onclick="window.CRM?.closeLeadDrawer()" style="width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: var(--bg-app); border: 1px solid var(--border-color); cursor: pointer; color: var(--text-secondary); flex-shrink: 0;" title="Fechar Painel">
@@ -5605,6 +5621,13 @@ Condições de pagamento:
                     <!-- Linha 1: Tipo de Cliente, Situação, CNPJ/CPF com busca, Empresa -->
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 14px;">
                         <div class="form-group" style="margin: 0;">
+                            <label for="lead-workspace" style="font-size: 11px; font-weight: 700; color: var(--primary, #3b82f6); text-transform: uppercase; display: block; margin-bottom: 4px;">Empresa / Unidade Comercial *</label>
+                            <select id="lead-workspace" class="form-control" style="height: 38px; font-size: 13px; font-weight: 600; border-color: rgba(99, 102, 241, 0.4); background: rgba(99, 102, 241, 0.04);">
+                                <option value="Veeluen Solutions">🏢 Veeluen Solutions</option>
+                                <option value="Excelência Ambiental">🌿 Excelência Ambiental</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin: 0;">
                             <label for="lead-client-type" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Tipo de Cliente *</label>
                             <select id="lead-client-type" class="form-control" style="height: 38px; font-size: 13px;">
                                 <option value="PJ" selected>Pessoa Jurídica (PJ)</option>
@@ -5832,6 +5855,13 @@ Condições de pagamento:
 
                     <!-- Linha 1: Tipo de Cliente, CNPJ com busca, Empresa -->
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 14px;">
+                        <div class="form-group" style="margin: 0;">
+                            <label for="edit-lead-workspace" style="font-size: 11px; font-weight: 700; color: var(--primary, #3b82f6); text-transform: uppercase; display: block; margin-bottom: 4px;">Empresa / Unidade Comercial *</label>
+                            <select id="edit-lead-workspace" class="form-control" style="height: 38px; font-size: 13px; font-weight: 600; border-color: rgba(99, 102, 241, 0.4); background: rgba(99, 102, 241, 0.04);">
+                                <option value="Veeluen Solutions">🏢 Veeluen Solutions</option>
+                                <option value="Excelência Ambiental">🌿 Excelência Ambiental</option>
+                            </select>
+                        </div>
                         <div class="form-group" style="margin: 0;">
                             <label for="edit-lead-client-type" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Tipo de Cliente *</label>
                             <select id="edit-lead-client-type" class="form-control" style="height: 38px; font-size: 13px;">
@@ -6502,7 +6532,16 @@ Condições de pagamento:
                     <div id="detail-company" style="font-size: 18px; font-weight: 700; color: var(--text-primary);"></div>
                     <div id="detail-contact" style="font-size: 13px; color: var(--text-secondary);"></div>
                 </div>
-                <div id="detail-status-badge"></div>
+                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+                    <div id="detail-status-badge"></div>
+                    <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(99, 102, 241, 0.08); padding: 4px 8px; border-radius: 8px; border: 1px solid rgba(99, 102, 241, 0.25);">
+                        <span style="font-size: 10.5px; font-weight: 700; color: var(--primary, #6366f1); text-transform: uppercase;">Unidade:</span>
+                        <select id="detail-prop-workspace-select" style="height: 24px; padding: 0 4px; font-size: 11.5px; font-weight: 700; border-radius: 4px; background: transparent; border: none; cursor: pointer; color: var(--text-primary); outline: none;" title="Alterar empresa/unidade desta proposta">
+                            <option value="Veeluen Solutions">🏢 Veeluen Solutions</option>
+                            <option value="Excelência Ambiental">🌿 Excelência Ambiental</option>
+                        </select>
+                    </div>
+                </div>
             </div>
             <div style="background: var(--bg-app); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px;">
                 <div id="detail-title" style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;"></div>

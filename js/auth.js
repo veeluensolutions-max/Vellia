@@ -16,7 +16,7 @@ export const Auth = {
             try {
                 await Store.syncFromSupabase();
                 user = Store.getUserByEmail(emailLower);
-            } catch(e) {}
+            } catch (e) { }
         }
 
         if (!user) {

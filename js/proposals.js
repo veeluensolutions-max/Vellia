@@ -1408,6 +1408,7 @@ export const Proposals = {
             // Preenchimento dos dados do GestãoClick
             const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ""; };
             setVal("gc-budget-number", proposal.budgetNumber || proposal.id.slice(-4));
+            setVal("gc-budget-workspace", proposal.workspace || localStorage.getItem("activeCompany") || "Veeluen Solutions");
             setVal("gc-budget-client", proposal.company || "");
             setVal("gc-budget-seller", proposal.seller || proposal.createdBy || Auth.getCurrentUser()?.name || "San Charles");
             setVal("gc-budget-date", getIsoDateInput(proposal.sentAt));
@@ -1546,6 +1547,7 @@ export const Proposals = {
 
             const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ""; };
             setVal("gc-budget-number", nextNumber);
+            setVal("gc-budget-workspace", (leadData && leadData.workspace) || localStorage.getItem("activeCompany") || "Veeluen Solutions");
             setVal("gc-budget-client", leadData?.company || initialPayload?.company || "");
             setVal("gc-budget-seller", sellerName);
             setVal("gc-budget-date", todayStr);
@@ -1961,7 +1963,9 @@ export const Proposals = {
                 }
 
                 // Edição
+                const budgetWorkspace = getVal("gc-budget-workspace") || (targetLead && targetLead.workspace) || existingProp.workspace || localStorage.getItem("activeCompany") || "Veeluen Solutions";
                 const updatedProposal = {
+                    workspace: budgetWorkspace,
                     company,
                     contact,
                     title,
@@ -1989,21 +1993,15 @@ export const Proposals = {
                     internalNotes
                 };
 
-                if (existingProp.workspace) {
-                    updatedProposal.workspace = existingProp.workspace;
-                }
-                if (targetLead && targetLead.workspace) {
-                    updatedProposal.workspace = targetLead.workspace;
-                }
-
                 Store.updateProposal(currentEditingBudgetId, updatedProposal, currentUser ? currentUser.email : "sistema@vellia.com");
                 Audit.logStageChange(currentUser?.email, company, "Atualização", "Orçamento", `Orçamento #${budgetNumber} atualizado: R$ ${finalValue}`);
                 alert(`Orçamento #${budgetNumber} atualizado com sucesso na nuvem!`);
             } else {
                 // Nova proposta
+                const budgetWorkspace = getVal("gc-budget-workspace") || (targetLead && targetLead.workspace) || localStorage.getItem("activeCompany") || "Veeluen Solutions";
                 const newProposal = {
                     leadId: targetLead ? targetLead.id : (currentEditingLeadId || null),
-                    workspace: targetLead ? targetLead.workspace : undefined,
+                    workspace: budgetWorkspace,
                     company,
                     contact,
                     title,
@@ -2092,6 +2090,26 @@ export const Proposals = {
         this.setEl("detail-contact", proposal.contact || "—");
         this.setEl("detail-title", proposal.title);
         this.setEl("detail-value", fmt(proposal.value));
+
+        const propWsSelect = document.getElementById("detail-prop-workspace-select");
+        if (propWsSelect) {
+            propWsSelect.value = proposal.workspace || localStorage.getItem("activeCompany") || "Veeluen Solutions";
+            propWsSelect.onchange = (e) => {
+                const targetWs = e.target.value;
+                if (!targetWs) return;
+                Store.updateProposal(proposal.id, { workspace: targetWs }, Auth.getCurrentUser()?.email || "sistema@vellia.com");
+                proposal.workspace = targetWs;
+                this.renderStats();
+                this.renderTable();
+                if (window.Toast && typeof window.Toast.show === "function") {
+                    window.Toast.show({
+                        type: "success",
+                        title: "Unidade Atualizada",
+                        message: `Proposta transferida para "${targetWs}" com sucesso.`
+                    });
+                }
+            };
+        }
         this.setEl("detail-status-badge", "");
         const statusEl = document.getElementById("detail-status-badge");
         if (statusEl) statusEl.innerHTML = this.getStatusBadge(proposal.status);

@@ -810,6 +810,142 @@ export const CRM = {
         }
     },
 
+    renderFollowupRuler(lead) {
+        if (!lead) return;
+        const now = Date.now();
+        let lastDate = new Date(lead.createdAt || now);
+        if (lead.interactions && lead.interactions.length > 0) {
+            const sorted = [...lead.interactions].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            const d = new Date(sorted[0].timestamp);
+            if (d > lastDate) lastDate = d;
+        }
+        if (lead.comments && lead.comments.length > 0) {
+            const sorted = [...lead.comments].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            const d = new Date(sorted[0].timestamp);
+            if (d > lastDate) lastDate = d;
+        }
+        if (lead.stageHistory && lead.stageHistory.length > 0) {
+            const sorted = [...lead.stageHistory].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            const d = new Date(sorted[0].timestamp);
+            if (d > lastDate) lastDate = d;
+        }
+        const daysNoContact = Math.floor(Math.abs(now - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+
+        const stagnantStatusEl = document.getElementById("drawer-lead-stagnant-status");
+        if (stagnantStatusEl) {
+            if (daysNoContact >= 3 && lead.stage !== "Cliente Fechado" && lead.stage !== "Cliente Perdido") {
+                stagnantStatusEl.style.display = "inline-flex";
+                const isCritical = daysNoContact >= 7;
+                stagnantStatusEl.innerHTML = `
+                    <span style="font-size: 11px; font-weight: 700; background: ${isCritical ? '#fee2e2' : '#fef3c7'}; color: ${isCritical ? '#b91c1c' : '#b45309'}; border: 1px solid ${isCritical ? '#fca5a5' : '#fde68a'}; padding: 3px 9px; border-radius: 99px; display: inline-flex; align-items: center; gap: 4px;">
+                        ${isCritical ? '🚨' : '⏳'} Sem contato há ${daysNoContact} dias
+                    </span>
+                `;
+            } else {
+                stagnantStatusEl.style.display = "none";
+            }
+        }
+
+        const currentUser = Auth.getCurrentUser();
+        const sellerName = currentUser?.name || "Consultor Comercial";
+        const contactName = lead.contact || lead.company || "Cliente";
+        const companyName = lead.company || "sua empresa";
+        const segment = lead.segment || "serviços técnicos";
+        const unitName = lead.workspace || localStorage.getItem("activeCompany") || "Veeluen Solutions";
+
+        const text24h = `Olá, ${contactName}! Tudo bem? Aqui é ${sellerName} da ${unitName}. Passando para confirmar se você conseguiu visualizar o material que preparamos para a ${companyName} sobre ${segment}. Surgiu alguma dúvida técnica inicial? Fico à total disposição!`;
+        const text3d = `Olá, ${contactName}! Como estão as coisas na ${companyName}? Passando para saber se você e sua equipe tiveram a oportunidade de avaliar nossa proposta comercial para ${segment}. Conseguimos alinhar uma rápida conversa para tirar dúvidas ou fazer qualquer ajuste?`;
+        const text7d = `Olá, ${contactName}! Tudo bem? Estamos fechando nosso cronograma de atendimentos operacionais e reservas técnicas deste período na ${unitName}. Gostaria de saber se a contratação de ${segment} ainda é prioridade para a ${companyName} para garantirmos as melhores condições para vocês.`;
+
+        const el24 = document.getElementById("followup-text-24h");
+        const el3d = document.getElementById("followup-text-3d");
+        const el7d = document.getElementById("followup-text-7d");
+        if (el24) el24.textContent = text24h;
+        if (el3d) el3d.textContent = text3d;
+        if (el7d) el7d.textContent = text7d;
+
+        const getStepText = (step) => {
+            if (step === "24h") return text24h;
+            if (step === "3d") return text3d;
+            if (step === "7d") return text7d;
+            return text24h;
+        };
+
+        const getStepLabel = (step) => {
+            if (step === "24h") return "1º Contato (24h)";
+            if (step === "3d") return "2º Contato (3 a 5 dias)";
+            if (step === "7d") return "3º Contato (7+ dias)";
+            return "Follow-up";
+        };
+
+        // Eventos dos botões de copiar
+        document.querySelectorAll(".btn-copy-followup").forEach(btn => {
+            btn.onclick = () => {
+                const step = btn.getAttribute("data-step");
+                const text = getStepText(step);
+                navigator.clipboard.writeText(text).then(() => {
+                    if (window.Toast && typeof window.Toast.show === "function") {
+                        window.Toast.show({
+                            type: "success",
+                            title: "Mensagem Copiada!",
+                            message: `Template de follow-up (${getStepLabel(step)}) copiado com sucesso.`
+                        });
+                    } else {
+                        alert("Mensagem copiada para a área de transferência!");
+                    }
+                }).catch(() => {
+                    const ta = document.createElement("textarea");
+                    ta.value = text;
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand("copy");
+                    ta.remove();
+                    alert("Mensagem copiada!");
+                });
+            };
+        });
+
+        // Eventos dos botões de WhatsApp direto
+        document.querySelectorAll(".btn-wa-followup").forEach(btn => {
+            btn.onclick = () => {
+                const step = btn.getAttribute("data-step");
+                const text = getStepText(step);
+                const rawPhone = lead.whatsapp || lead.phone || "";
+                const cleanPhone = rawPhone.replace(/\D/g, "");
+
+                if (!cleanPhone) {
+                    alert(`O lead "${lead.company}" não possui WhatsApp ou telefone cadastrado.`);
+                    return;
+                }
+
+                const waPhone = cleanPhone.length <= 11 ? `55${cleanPhone}` : cleanPhone;
+                const waUrl = `https://api.whatsapp.com/send?phone=${waPhone}&text=${encodeURIComponent(text)}`;
+                window.open(waUrl, "_blank");
+
+                // Registrar interação automaticamente no histórico do lead
+                Store.addLeadInteraction(lead.id, currentUser?.email || "sistema@vellia.com", {
+                    type: "WhatsApp",
+                    description: `💬 Follow-up automático enviado (${getStepLabel(step)}) via WhatsApp Web.`
+                });
+
+                // Atualizar timeline e tabela
+                this.renderTimeline(lead);
+                this.renderLeadsTable();
+                if (window.Kanban && typeof window.Kanban.renderKanban === "function") {
+                    window.Kanban.renderKanban();
+                }
+
+                if (window.Toast && typeof window.Toast.show === "function") {
+                    window.Toast.show({
+                        type: "success",
+                        title: "Follow-up Enviado!",
+                        message: `Interação registrada na linha do tempo do lead.`
+                    });
+                }
+            };
+        });
+    },
+
     async generateDocsProposal() {
         if (!activeLeadId) return;
         const lead = Store.getLeadById(activeLeadId);
@@ -962,9 +1098,20 @@ export const CRM = {
             let lastDate = new Date(lead.createdAt || now);
             if (lead.interactions && lead.interactions.length > 0) {
                 const sorted = [...lead.interactions].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                lastDate = new Date(sorted[0].timestamp);
+                const d = new Date(sorted[0].timestamp);
+                if (d > lastDate) lastDate = d;
             }
-            return Math.floor(Math.abs(now - lastDate) / (1000 * 60 * 60 * 24));
+            if (lead.comments && lead.comments.length > 0) {
+                const sorted = [...lead.comments].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                const d = new Date(sorted[0].timestamp);
+                if (d > lastDate) lastDate = d;
+            }
+            if (lead.stageHistory && lead.stageHistory.length > 0) {
+                const sorted = [...lead.stageHistory].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                const d = new Date(sorted[0].timestamp);
+                if (d > lastDate) lastDate = d;
+            }
+            return Math.floor(Math.abs(now - lastDate.getTime()) / (1000 * 60 * 60 * 24));
         };
 
         const getLeadMinutesSLA = (lead) => {
@@ -1250,7 +1397,7 @@ export const CRM = {
                     </td>
                     <td>
                         <span class="badge ${stageBadgeClass}" style="font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px;">${lead.stage}</span>
-                        <div style="margin-top: 4px;">
+                        <div style="margin-top: 4px; display: flex; flex-direction: column; gap: 3px;">
                             ${(() => {
                     const m = getLeadMinutesSLA(lead);
                     if (lead.stage === "Cliente Fechado" || lead.stage === "Cliente Perdido") return "";
@@ -1258,6 +1405,17 @@ export const CRM = {
                     if (m <= 60) return `<span style="font-size: 10px; font-weight: 600; background: #FFFBEB; color: #D97706; border: 1px solid #FDE68A; padding: 1.5px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">⏱️ ${m}m Alerta</span>`;
                     const h = Math.floor(m / 60);
                     return `<span style="font-size: 10px; font-weight: 600; background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; padding: 1.5px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">🚨 ${h}h+ Atrasado</span>`;
+                })()}
+                            ${(() => {
+                    const days = getLeadDaysNoContact(lead);
+                    if (lead.stage === "Cliente Fechado" || lead.stage === "Cliente Perdido") return "";
+                    if (days >= 7) {
+                        return `<span style="font-size: 9.5px; font-weight: 700; background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; padding: 1.5px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;" title="Lead estagnado: sem contato há ${days} dias!">⚠️ Parado há ${days}d</span>`;
+                    }
+                    if (days >= 3) {
+                        return `<span style="font-size: 9.5px; font-weight: 700; background: #FFFBEB; color: #D97706; border: 1px solid #FDE68A; padding: 1.5px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;" title="Necessita de follow-up: sem contato há ${days} dias">⏳ Parado há ${days}d</span>`;
+                    }
+                    return "";
                 })()}
                         </div>
                     </td>
@@ -2305,6 +2463,7 @@ export const CRM = {
             stageSelect.value = lead.stage;
         }
         this.updatePipelineStepper(lead.stage);
+        this.renderFollowupRuler(lead);
         this.switchDrawerTab("followup");
 
         // Parsear dados estruturados da Receita Federal se existirem em notes

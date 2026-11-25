@@ -1974,8 +1974,8 @@
                             <span>⚡ Mornos</span>
                             <span class="pill-badge pill-badge-warm" id="pill-count-warm">0</span>
                         </button>
-                        <button class="crm-pill-filter" data-filter="nocontact">
-                            <span>⚠️ Sem Contato (+3d)</span>
+                        <button class="crm-pill-filter" data-filter="nocontact" id="pill-filter-nocontact">
+                            <span>⚡ Fila Follow-up (+3d)</span>
                             <span class="pill-badge pill-badge-nocontact" id="pill-count-nocontact">0</span>
                         </button>
                         <button class="crm-pill-filter" data-filter="highvalue">
@@ -5181,6 +5181,68 @@ Condições de pagamento:
             <!-- ABA 1: ACOMPANHAMENTO & HISTÓRICO (PADRÃO)                     -->
             <!-- ============================================================== -->
             <div id="tab-pane-followup" class="lead-tab-pane active">
+                <!-- Card: Régua Inteligente de Follow-up Comercial -->
+                <div class="lead-clean-card" id="drawer-followup-rule-section" style="background: linear-gradient(180deg, #ffffff, #f8fafc); border: 1.5px solid rgba(99, 102, 241, 0.25); border-radius: 12px; margin-bottom: 12px; padding: 14px 16px;">
+                    <div class="lead-clean-card-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 12px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 18px;">🎯</span>
+                            <div>
+                                <span class="lead-clean-card-title" style="font-size: 13.5px; font-weight: 800; color: #1e293b; display: block;">Régua Inteligente de Follow-up (1-Clique)</span>
+                                <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">Mensagens prontas e personalizadas para envio imediato via WhatsApp</span>
+                            </div>
+                        </div>
+                        <div id="drawer-lead-stagnant-status" style="display: none;"></div>
+                    </div>
+
+                    <!-- 3 Passos da Régua de Follow-up -->
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <!-- Passo 1: 24h Pós-Envio / Primeiro Contato -->
+                        <div class="followup-step-box" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <span style="font-size: 10px; font-weight: 800; background: #e0e7ff; color: #4338ca; padding: 2px 7px; border-radius: 99px; text-transform: uppercase;">1º Contato • 24 Horas</span>
+                                    <span style="font-size: 11px; font-weight: 600; color: #334155;">Confirmação de recebimento da proposta</span>
+                                </div>
+                                <div style="display: flex; gap: 6px;">
+                                    <button type="button" class="btn btn-outline btn-sm btn-copy-followup" data-step="24h" style="height: 25px; padding: 0 8px; font-size: 11px; font-weight: 700; border-radius: 6px;" title="Copiar texto">📋 Copiar</button>
+                                    <button type="button" class="btn btn-sm btn-wa-followup" data-step="24h" style="height: 25px; padding: 0 10px; font-size: 11px; font-weight: 700; background: #25d366; color: #fff; border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Disparar no WhatsApp Web">💬 Enviar WhatsApp</button>
+                                </div>
+                            </div>
+                            <div class="followup-preview-text" id="followup-text-24h" style="font-size: 12px; color: #475569; background: #f8fafc; padding: 8px 10px; border-radius: 6px; border: 1px dashed #cbd5e1; line-height: 1.45;"></div>
+                        </div>
+
+                        <!-- Passo 2: 3 a 5 Dias - Esfriando / Dúvidas Técnicas -->
+                        <div class="followup-step-box" style="background: #ffffff; border: 1px solid #fed7aa; border-radius: 8px; padding: 10px 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <span style="font-size: 10px; font-weight: 800; background: #ffedd5; color: #c2410c; padding: 2px 7px; border-radius: 99px; text-transform: uppercase;">2º Contato • 3 a 5 Dias</span>
+                                    <span style="font-size: 11px; font-weight: 600; color: #334155;">Alinhamento técnico e condições de fechamento</span>
+                                </div>
+                                <div style="display: flex; gap: 6px;">
+                                    <button type="button" class="btn btn-outline btn-sm btn-copy-followup" data-step="3d" style="height: 25px; padding: 0 8px; font-size: 11px; font-weight: 700; border-radius: 6px;" title="Copiar texto">📋 Copiar</button>
+                                    <button type="button" class="btn btn-sm btn-wa-followup" data-step="3d" style="height: 25px; padding: 0 10px; font-size: 11px; font-weight: 700; background: #25d366; color: #fff; border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Disparar no WhatsApp Web">💬 Enviar WhatsApp</button>
+                                </div>
+                            </div>
+                            <div class="followup-preview-text" id="followup-text-3d" style="font-size: 12px; color: #475569; background: #fff7ed; padding: 8px 10px; border-radius: 6px; border: 1px dashed #fed7aa; line-height: 1.45;"></div>
+                        </div>
+
+                        <!-- Passo 3: 7+ Dias - Decisão / Urgência Operacional -->
+                        <div class="followup-step-box" style="background: #ffffff; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <span style="font-size: 10px; font-weight: 800; background: #fee2e2; color: #b91c1c; padding: 2px 7px; border-radius: 99px; text-transform: uppercase;">3º Contato • 7+ Dias</span>
+                                    <span style="font-size: 11px; font-weight: 600; color: #334155;">Fechamento de agenda e condições especiais</span>
+                                </div>
+                                <div style="display: flex; gap: 6px;">
+                                    <button type="button" class="btn btn-outline btn-sm btn-copy-followup" data-step="7d" style="height: 25px; padding: 0 8px; font-size: 11px; font-weight: 700; border-radius: 6px;" title="Copiar texto">📋 Copiar</button>
+                                    <button type="button" class="btn btn-sm btn-wa-followup" data-step="7d" style="height: 25px; padding: 0 10px; font-size: 11px; font-weight: 700; background: #25d366; color: #fff; border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Disparar no WhatsApp Web">💬 Enviar WhatsApp</button>
+                                </div>
+                            </div>
+                            <div class="followup-preview-text" id="followup-text-7d" style="font-size: 12px; color: #475569; background: #fef2f2; padding: 8px 10px; border-radius: 6px; border: 1px dashed #fecaca; line-height: 1.45;"></div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Card: Registrar Interação Rápida -->
                 <div class="lead-clean-card" id="drawer-interaction-section">
                     <div class="lead-clean-card-header">

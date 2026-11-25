@@ -370,16 +370,22 @@ export const Kanban = {
             if (stage !== "Cliente Fechado" && stage !== "Cliente Perdido") {
                 if (daysNoContact >= 7) {
                     coldLeadBanner = `
-                        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); font-size: 10px; font-weight: 700; border-radius: 4px; padding: 4px 8px; margin-top: 4px; display: flex; align-items: center; gap: 6px;">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                            Lead Frio - Retomar Contato!
+                        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); font-size: 10px; font-weight: 700; border-radius: 6px; padding: 4px 8px; margin-top: 5px; display: flex; align-items: center; justify-content: space-between; gap: 4px;">
+                            <span style="display: inline-flex; align-items: center; gap: 4px;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                <span>⚠️ Parado há ${daysNoContact}d</span>
+                            </span>
+                            <span style="font-weight: 800; text-decoration: underline; cursor: pointer; color: #dc2626;" onclick="event.stopPropagation(); CRM.openLeadDrawer('${lead.id}')">Follow-up ›</span>
                         </div>
                     `;
                 } else if (daysNoContact >= 3) {
                     coldLeadBanner = `
-                        <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid var(--warning); color: var(--warning); font-size: 10px; font-weight: 700; border-radius: 4px; padding: 4px 8px; margin-top: 4px; display: flex; align-items: center; gap: 6px;">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                            Esfriando - Faça Contato
+                        <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid var(--warning); color: var(--warning); font-size: 10px; font-weight: 700; border-radius: 6px; padding: 4px 8px; margin-top: 5px; display: flex; align-items: center; justify-content: space-between; gap: 4px;">
+                            <span style="display: inline-flex; align-items: center; gap: 4px;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                <span>⏳ Parado há ${daysNoContact}d</span>
+                            </span>
+                            <span style="font-weight: 800; text-decoration: underline; cursor: pointer; color: #d97706;" onclick="event.stopPropagation(); CRM.openLeadDrawer('${lead.id}')">Follow-up ›</span>
                         </div>
                     `;
                 }

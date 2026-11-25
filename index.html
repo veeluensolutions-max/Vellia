@@ -5931,6 +5931,18 @@ Condições de pagamento:
                                 <option value="PF">Pessoa Física (PF)</option>
                             </select>
                         </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="edit-lead-stage" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">Situação / Estágio *</label>
+                            <select id="edit-lead-stage" class="form-control" style="height: 38px; font-size: 13px;">
+                                <option value="Contato">1. Contato (Ativo)</option>
+                                <option value="Lead Gerado">2. Lead Gerado</option>
+                                <option value="Lead Qualificado">3. Lead Qualificado</option>
+                                <option value="Proposta Enviada">4. Proposta Enviada</option>
+                                <option value="Negociação">5. Negociação</option>
+                                <option value="Cliente Fechado">6. Cliente Fechado</option>
+                                <option value="Cliente Perdido">7. Cliente Perdido</option>
+                            </select>
+                        </div>
                         <div class="form-group" style="margin: 0; grid-column: span 2;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                                 <label for="edit-lead-cnpj" style="font-size: 11px; font-weight: 700; color: var(--primary); text-transform: uppercase; margin: 0; display: flex; align-items: center; gap: 4px;">
@@ -6034,6 +6046,10 @@ Condições de pagamento:
                             <select id="edit-lead-owner" class="form-control" style="height: 38px; font-size: 13px;">
                                 <!-- Preenchido dinamicamente -->
                             </select>
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="edit-lead-estimated-value" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px;">💰 Valor Estimado (R$)</label>
+                            <input type="number" id="edit-lead-estimated-value" class="form-control" style="height: 38px; font-size: 13px;" placeholder="0,00" step="0.01">
                         </div>
                     </div>
                 </div>

@@ -1084,11 +1084,11 @@ window.openMetaConfigModal = function() {
         `;
         document.body.appendChild(configModal);
 
-        // Registrar eventos do modal
-        document.getElementById("btn-close-meta-modal").addEventListener("click", () => window.closeMetaConfigModal());
-        document.getElementById("btn-close-meta-modal-footer").addEventListener("click", () => window.closeMetaConfigModal());
+        // Registrar eventos do modal com verificação defensiva
+        document.getElementById("btn-close-meta-modal")?.addEventListener("click", () => window.closeMetaConfigModal());
+        document.getElementById("btn-close-meta-modal-footer")?.addEventListener("click", () => window.closeMetaConfigModal());
         
-        document.getElementById("btn-save-meta-config").addEventListener("click", async () => {
+        document.getElementById("btn-save-meta-config")?.addEventListener("click", async () => {
             const verifyToken = document.getElementById("meta-verify-token-input").value.trim();
             const accessToken = document.getElementById("meta-access-token-input").value.trim();
             const pixelId = document.getElementById("meta-pixel-id-input").value.trim();
@@ -1123,7 +1123,7 @@ window.openMetaConfigModal = function() {
             window.closeMetaConfigModal();
         });
 
-        document.getElementById("btn-fire-capi-test").addEventListener("click", async () => {
+        document.getElementById("btn-fire-capi-test")?.addEventListener("click", async () => {
             const capiBtn = document.getElementById("btn-fire-capi-test");
             capiBtn.disabled = true;
             capiBtn.textContent = "Enviando Evento CAPI...";
@@ -1162,7 +1162,7 @@ window.openMetaConfigModal = function() {
             }
         });
 
-        document.getElementById("btn-fire-sandbox-webhook").addEventListener("click", async () => {
+        document.getElementById("btn-fire-sandbox-webhook")?.addEventListener("click", async () => {
             const fireBtn = document.getElementById("btn-fire-sandbox-webhook");
             const rawPayload = document.getElementById("meta-sandbox-payload").value;
             let payload;

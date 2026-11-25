@@ -2032,11 +2032,15 @@ export const CRM = {
             if (cep) addressStr += ` (CEP: ${CNPJService.formatCEP ? CNPJService.formatCEP(cep) : cep})`;
         }
 
+        const existingLead = Store.getLeadById(id) || {};
+        const stageInputVal = document.getElementById("edit-lead-stage")?.value;
+        const estValInput = document.getElementById("edit-lead-estimated-value")?.value;
+
         const updatedData = {
-            workspace: document.getElementById("edit-lead-workspace")?.value || "Veeluen Solutions",
+            workspace: document.getElementById("edit-lead-workspace")?.value || existingLead.workspace || "Veeluen Solutions",
             cnpj: CNPJService.cleanDigits(document.getElementById("edit-lead-cnpj")?.value || ""),
-            clientType: document.getElementById("edit-lead-client-type")?.value || "Pessoa Jurídica",
-            stage: document.getElementById("edit-lead-stage")?.value || "Contato",
+            clientType: document.getElementById("edit-lead-client-type")?.value || existingLead.clientType || "Pessoa Jurídica",
+            stage: stageInputVal || existingLead.stage || "Contato",
             company: document.getElementById("edit-lead-company").value.trim(),
             tradeName: document.getElementById("edit-lead-trade-name")?.value.trim() || "",
             contact: document.getElementById("edit-lead-contact").value.trim(),
@@ -2046,8 +2050,8 @@ export const CRM = {
             phone: document.getElementById("edit-lead-phone").value.trim(),
             phone2: document.getElementById("edit-lead-phone2").value.trim(),
             email2: document.getElementById("edit-lead-email2").value.trim(),
-            owner: document.getElementById("edit-lead-owner")?.value || "",
-            estimatedValue: parseFloat(document.getElementById("edit-lead-estimated-value")?.value) || 0,
+            owner: document.getElementById("edit-lead-owner")?.value || existingLead.owner || "",
+            estimatedValue: (estValInput !== undefined && estValInput !== "") ? (parseFloat(estValInput) || 0) : (existingLead.estimatedValue || 0),
             cep,
             street,
             number,

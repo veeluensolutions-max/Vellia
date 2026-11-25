@@ -64,11 +64,10 @@ export const Auth = {
         const idx = users.findIndex(u => u.id === user.id);
         if (idx !== -1) {
             users[idx].lastLoginAt = new Date().toISOString();
-            Store.saveUsers(users);
+            await Store.saveUsers(users);
         }
 
-        const localAccessMap = JSON.parse(localStorage.getItem("comercial_user_company_access") || "{}");
-        const companyAccess = user.companyAccess || localAccessMap[emailLower] || "Ambas";
+        const companyAccess = user.companyAccess || "Ambas";
         const sessionUser = {
             id: user.id,
             name: user.name,

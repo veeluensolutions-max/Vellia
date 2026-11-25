@@ -233,6 +233,39 @@ function decodeLeadFromSupabase(rawLead) {
     return rawLead;
 }
 
+export function encodeUserForSupabase(user) {
+    if (!user) return user;
+    const cleanAvatar = (user.avatar || (user.name ? user.name.substring(0, 2) : "US")).split("#")[0].trim().toUpperCase();
+    const companyAccess = user.companyAccess || "Ambas";
+    return {
+        id: user.id,
+        name: user.name || "",
+        email: user.email || "",
+        password: user.password || "",
+        role: user.role || "seller",
+        avatar: `${cleanAvatar}#${companyAccess}`,
+        status: user.status || "active",
+        lastLoginAt: user.lastLoginAt || null
+    };
+}
+
+export function decodeUserFromSupabase(rawUser) {
+    if (!rawUser) return rawUser;
+    let rawAvatar = rawUser.avatar || (rawUser.name ? rawUser.name.substring(0, 2) : "US").toUpperCase();
+    let companyAccess = rawUser.companyAccess || "Ambas";
+    let cleanAvatar = rawAvatar;
+    if (typeof rawAvatar === "string" && rawAvatar.includes("#")) {
+        const parts = rawAvatar.split("#");
+        cleanAvatar = (parts[0] || "US").trim().toUpperCase();
+        companyAccess = (parts[1] || "Ambas").trim();
+    }
+    return {
+        ...rawUser,
+        avatar: cleanAvatar,
+        companyAccess: companyAccess
+    };
+}
+
 export function getLeadTimestamp(lead) {
     if (!lead) return 0;
     if (lead.createdAt) {
@@ -438,14 +471,12 @@ async function syncFromSupabase() {
                     deleteSupabase("comercial_users", `?id=eq.${encodeURIComponent(u.id)}`);
                     continue;
                 }
-                const localAccessMap = JSON.parse(localStorage.getItem("comercial_user_company_access") || "{}");
-                const localUsers = JSON.parse(localStorage.getItem("comercial_users") || "[]");
-                const localUser = localUsers.find(lu => lu && (lu.id === u.id || (lu.email && u.email && lu.email.toLowerCase() === u.email.toLowerCase())));
-                const companyAccess = u.companyAccess || localAccessMap[emailNorm] || (localUser && localUser.companyAccess) || "Ambas";
-                validUsers.push({ ...u, companyAccess });
+                const decodedUser = decodeUserFromSupabase(u);
+                validUsers.push(decodedUser);
             }
 
             MemoryCache.set("comercial_users", validUsers);
+            try { localStorage.setItem("comercial_users", JSON.stringify(validUsers)); } catch(e) {}
             localStorage.setItem("comercial_users_initialized", "true");
             try {
                 window.dispatchEvent(new CustomEvent("vellia:userUpdated", { detail: validUsers }));
@@ -835,9 +866,13 @@ export const Store = {
         return list.filter(u => u && u.role !== "system" && u.id !== "usr_meta_config" && !(u.email && String(u.email).toLowerCase().includes("config@")));
     },
 
-    saveUsers(users) {
-        MemoryCache.set("comercial_users", users);
-        upsertSupabase("comercial_users", users);
+    async saveUsers(users) {
+        if (!Array.isArray(users)) return;
+        const decodedUsers = users.map(u => decodeUserFromSupabase(u));
+        MemoryCache.set("comercial_users", decodedUsers);
+        try { localStorage.setItem("comercial_users", JSON.stringify(decodedUsers)); } catch (e) { }
+        const encodedForDb = users.map(u => encodeUserForSupabase(u));
+        return await upsertSupabase("comercial_users", encodedForDb);
     },
 
     async deleteUser(userId) {
@@ -1996,7 +2031,10 @@ export const Store = {
         try {
             console.log("☁️ [Store.syncToSupabase] Iniciando upload forçado de dados para o Supabase...");
             const users = this.getUsers();
-            if (users.length > 0) await upsertSupabase("comercial_users", users);
+            if (users.length > 0) {
+                const encodedUsers = users.map(u => encodeUserForSupabase(u));
+                await upsertSupabase("comercial_users", encodedUsers);
+            }
 
             const leads = this.getAllLeadsRaw();
             for (const l of leads) {
@@ -2017,6 +2055,14 @@ export const Store = {
             console.error("❌ [Store.syncToSupabase] Erro ao sincronizar:", e);
             return { success: false, error: e.message };
         }
+    },
+
+    decodeUser(u) {
+        return decodeUserFromSupabase(u);
+    },
+
+    encodeUser(u) {
+        return encodeUserForSupabase(u);
     },
 
     decodeLead(l) {

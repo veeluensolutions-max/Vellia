@@ -105,6 +105,9 @@ export const Users = {
                     for (const u of remoteUsers) {
                         if (!u || !u.email) continue;
                         const emailNorm = u.email.toLowerCase().trim();
+                        if (u.role === "system" || u.id === "usr_meta_config" || emailNorm.includes("config@")) {
+                            continue;
+                        }
                         if (deletedEmails.has(emailNorm) || deletedIds.has(u.id)) {
                             // Deletar resquício no Supabase se reaparecer
                             fetch(`${SUPABASE_URL}/rest/v1/comercial_users?id=eq.${encodeURIComponent(u.id)}`, {
@@ -113,11 +116,8 @@ export const Users = {
                             }).catch(() => {});
                             continue;
                         }
-                        const localAccessMap = JSON.parse(localStorage.getItem("comercial_user_company_access") || "{}");
-                        const localUsers = JSON.parse(localStorage.getItem("comercial_users") || "[]");
-                        const localUser = localUsers.find(lu => lu && (lu.id === u.id || (lu.email && u.email && lu.email.toLowerCase() === u.email.toLowerCase())));
-                        const companyAccess = (localUser && localUser.companyAccess) || localAccessMap[emailNorm] || u.companyAccess || "Ambas";
-                        validUsers.push({ ...u, companyAccess });
+                        const decoded = Store.decodeUser ? Store.decodeUser(u) : u;
+                        validUsers.push(decoded);
                     }
 
                     if (validUsers.length > 0) {
@@ -419,7 +419,7 @@ export const Users = {
 
             // Coluna de Ações
             const tdActions = document.createElement("td");
-            tdActions.style.cssText = "padding: 14px 16px; text-align: right;";
+            tdActions.style.cssText = "padding: 14px 20px 14px 16px; text-align: right; min-width: 130px; white-space: nowrap;";
             
             const actionsDiv = document.createElement("div");
             actionsDiv.style.cssText = "display: flex; gap: 8px; justify-content: flex-end; align-items: center;";
@@ -713,25 +713,27 @@ export const Users = {
                     // Modo Edição
                     const idx = users.findIndex(u => u && (u.id === userId || u.email === userId));
                     if (idx !== -1) {
+                        const cleanAvatar = (users[idx].avatar || (name ? name.substring(0, 2) : "US")).split("#")[0].trim().toUpperCase();
                         users[idx].name = name;
                         users[idx].email = email;
                         users[idx].role = role;
                         users[idx].status = status;
                         users[idx].companyAccess = companyAccess;
+                        users[idx].avatar = cleanAvatar;
                         if (hashedPassword) users[idx].password = hashedPassword;
-                        Store.saveUsers(users);
+                        await Store.saveUsers(users);
 
-                        // Persistir no mapa de acesso por empresa para nunca ser sobrescrito
+                        // Persistir no mapa de acesso por empresa local
                         try {
                             const localAccessMap = JSON.parse(localStorage.getItem("comercial_user_company_access") || "{}");
-                            localAccessMap[email] = companyAccess;
+                            localAccessMap[email.toLowerCase().trim()] = companyAccess;
                             localStorage.setItem("comercial_user_company_access", JSON.stringify(localAccessMap));
                         } catch(e) {}
 
                         // Se o usuário editado for o próprio usuário da sessão, sincroniza a sessão imediatamente
                         try {
                             const cur = Auth.getCurrentUser();
-                            if (cur && (cur.id === userId || (cur.email && cur.email.toLowerCase() === email))) {
+                            if (cur && (cur.id === userId || (cur.email && cur.email.toLowerCase() === email.toLowerCase()))) {
                                 cur.name = name;
                                 cur.role = role;
                                 cur.companyAccess = companyAccess;
@@ -740,13 +742,19 @@ export const Users = {
                             }
                         } catch(sessErr) {}
 
-                        // Sincronizar PATCH direto com o Supabase
+                        // Sincronizar PATCH direto com o Supabase com avatar codificado
                         try {
                             const SUPABASE_URL = "https://ogrbsonpkiamoytxjshg.supabase.co";
                             const SUPABASE_KEY = "sb_publishable_Wi3eKJi5uyEzqihEDF6Eaw_-i0zcHe7";
-                            const patchPayload = { name, email, role, status };
+                            const patchPayload = { 
+                                name, 
+                                email, 
+                                role, 
+                                status,
+                                avatar: `${cleanAvatar}#${companyAccess}`
+                            };
                             if (hashedPassword) patchPayload.password = hashedPassword;
-                            fetch(`${SUPABASE_URL}/rest/v1/comercial_users?id=eq.${encodeURIComponent(users[idx].id)}`, {
+                            await fetch(`${SUPABASE_URL}/rest/v1/comercial_users?id=eq.${encodeURIComponent(users[idx].id)}`, {
                                 method: "PATCH",
                                 headers: {
                                     "apikey": SUPABASE_KEY,
@@ -754,8 +762,10 @@ export const Users = {
                                     "Content-Type": "application/json"
                                 },
                                 body: JSON.stringify(patchPayload)
-                            }).catch(err => console.warn("Supabase user patch error:", err));
-                        } catch(err) {}
+                            });
+                        } catch(err) {
+                            console.warn("Supabase user patch error:", err);
+                        }
 
                         try {
                             const cur = Auth.getCurrentUser();
@@ -766,12 +776,13 @@ export const Users = {
                     }
                 } else {
                     // Modo Cadastro
-                    const exists = users.some(u => u.email && u.email.toLowerCase().trim() === email);
+                    const exists = users.some(u => u.email && u.email.toLowerCase().trim() === email.toLowerCase().trim());
                     if (exists) {
                         alert("Atenção: Este e-mail já está cadastrado no sistema!");
                         return;
                     }
 
+                    const cleanAvatar = (name ? name.substring(0, 2) : "US").toUpperCase();
                     const newUser = {
                         id: "usr_" + Date.now(),
                         name,
@@ -780,18 +791,28 @@ export const Users = {
                         status,
                         companyAccess,
                         password: hashedPassword || (await hashPassword("123456")),
-                        avatar: (name ? name.substring(0, 2) : "US").toUpperCase(),
+                        avatar: cleanAvatar,
                         lastLoginAt: null
                     };
 
                     users.push(newUser);
-                    Store.saveUsers(users);
+                    await Store.saveUsers(users);
 
-                    // Sincronizar individualmente de forma imediata no Supabase
+                    // Sincronizar individualmente no Supabase com avatar codificado
                     try {
                         const SUPABASE_URL = "https://ogrbsonpkiamoytxjshg.supabase.co";
                         const SUPABASE_KEY = "sb_publishable_Wi3eKJi5uyEzqihEDF6Eaw_-i0zcHe7";
-                        fetch(`${SUPABASE_URL}/rest/v1/comercial_users`, {
+                        const dbPayload = {
+                            id: newUser.id,
+                            name: newUser.name,
+                            email: newUser.email,
+                            role: newUser.role,
+                            status: newUser.status,
+                            password: newUser.password,
+                            avatar: `${cleanAvatar}#${companyAccess}`,
+                            lastLoginAt: null
+                        };
+                        await fetch(`${SUPABASE_URL}/rest/v1/comercial_users`, {
                             method: "POST",
                             headers: {
                                 "apikey": SUPABASE_KEY,
@@ -799,9 +820,11 @@ export const Users = {
                                 "Content-Type": "application/json",
                                 "Prefer": "resolution=merge-duplicates"
                             },
-                            body: JSON.stringify(newUser)
-                        }).catch(err => console.warn("Supabase single user upsert:", err));
-                    } catch(err) {}
+                            body: JSON.stringify(dbPayload)
+                        });
+                    } catch(err) {
+                        console.warn("Supabase single user upsert:", err);
+                    }
 
                     try {
                         const cur = Auth.getCurrentUser();
@@ -813,7 +836,7 @@ export const Users = {
 
                 closeModal();
                 this.renderUsers();
-                alert(`✅ Usuário "${name}" salvo com sucesso!`);
+                alert(`✅ Usuário "${name}" salvo e sincronizado com sucesso!`);
             } catch(error) {
                 console.error("Erro ao salvar usuário:", error);
                 alert("Erro ao salvar usuário: " + (error.message || error));
@@ -865,7 +888,7 @@ export const Users = {
         }
     },
 
-    toggleStatus(id) {
+    async toggleStatus(id) {
         const users = Store.getUsers();
         const idx = users.findIndex(u => u.id === id);
         if (idx === -1) return;
@@ -879,7 +902,22 @@ export const Users = {
         const effectiveStatus = users[idx].status || "active";
         const newStatus = effectiveStatus === "active" ? "inactive" : "active";
         users[idx].status = newStatus;
-        Store.saveUsers(users);
+        await Store.saveUsers(users);
+
+        try {
+            const SUPABASE_URL = "https://ogrbsonpkiamoytxjshg.supabase.co";
+            const SUPABASE_KEY = "sb_publishable_Wi3eKJi5uyEzqihEDF6Eaw_-i0zcHe7";
+            fetch(`${SUPABASE_URL}/rest/v1/comercial_users?id=eq.${encodeURIComponent(users[idx].id)}`, {
+                method: "PATCH",
+                headers: {
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": `Bearer ${SUPABASE_KEY}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ status: newStatus })
+            }).catch(() => {});
+        } catch(e) {}
+
         Store.addLog(current.email, "USER_MANAGEMENT", `Status do usuário ${users[idx].name} alterado para ${newStatus === "active" ? "ATIVO" : "INATIVO"}.`, "SUCCESS");
 
         this.renderUsers();
@@ -894,8 +932,24 @@ export const Users = {
         const confirmReset = confirm(`Deseja resetar a senha de "${name}" para a senha padrão '123456'?`);
         if (!confirmReset) return;
 
-        users[idx].password = await hashPassword("123456");
-        Store.saveUsers(users);
+        const hashed = await hashPassword("123456");
+        users[idx].password = hashed;
+        await Store.saveUsers(users);
+
+        try {
+            const SUPABASE_URL = "https://ogrbsonpkiamoytxjshg.supabase.co";
+            const SUPABASE_KEY = "sb_publishable_Wi3eKJi5uyEzqihEDF6Eaw_-i0zcHe7";
+            fetch(`${SUPABASE_URL}/rest/v1/comercial_users?id=eq.${encodeURIComponent(users[idx].id)}`, {
+                method: "PATCH",
+                headers: {
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": `Bearer ${SUPABASE_KEY}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ password: hashed })
+            }).catch(() => {});
+        } catch(e) {}
+
         Store.addLog(Auth.getCurrentUser().email, "USER_MANAGEMENT", `Senha do usuário ${name} resetada para padrão pelo Admin.`, "SUCCESS");
 
         alert(`Senha de "${name}" resetada com sucesso para '123456'!`);

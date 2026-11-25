@@ -575,16 +575,179 @@ a {
     margin-bottom: 36px;
 }
 
-/* Glassmorphism Floating Card no Hero */
+/* Glassmorphism Floating Card no Hero com 3D Tilt e Efeito de Giro */
 .hero-glass-card {
-    background: rgba(255, 255, 255, 0.07);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.16);
     border-radius: var(--radius-lg);
     padding: 24px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    animation: floatSmooth 6s ease-in-out infinite;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    animation: heroCardFloat 7s ease-in-out infinite;
+    position: relative;
+    overflow: hidden;
+    transform-style: preserve-3d;
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.25s ease-out;
+}
+
+/* Reflexo de luz dinâmico varrendo o card suavemente */
+.hero-glass-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        115deg,
+        transparent 20%,
+        rgba(255, 255, 255, 0.06) 40%,
+        rgba(129, 140, 248, 0.18) 50%,
+        rgba(255, 255, 255, 0.06) 60%,
+        transparent 80%
+    );
+    transform: rotate(-25deg);
+    pointer-events: none;
+    animation: heroCardShine 8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    z-index: 1;
+}
+
+@keyframes heroCardFloat {
+    0%, 100% {
+        transform: perspective(1000px) translateY(0px) rotateX(1deg) rotateY(-1.5deg);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    }
+    50% {
+        transform: perspective(1000px) translateY(-10px) rotateX(-2deg) rotateY(2deg);
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.48), 0 0 35px rgba(99, 102, 241, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    }
+}
+
+@keyframes heroCardShine {
+    0% { transform: translateY(-120%) rotate(-25deg); }
+    30%, 100% { transform: translateY(140%) rotate(-25deg); }
+}
+
+/* Ícone de batimento com pulso dinâmico */
+.hero-pulse-box {
+    position: relative;
+    overflow: visible;
+}
+
+.hero-pulse-icon {
+    animation: heroHeartbeat 2.5s ease-in-out infinite;
+}
+
+.hero-pulse-ring {
+    position: absolute;
+    inset: -4px;
+    border-radius: 14px;
+    border: 2px solid rgba(129, 140, 248, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    animation: heroRingPulse 2.5s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+}
+
+@keyframes heroHeartbeat {
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(129, 140, 248, 0)); }
+    15% { transform: scale(1.15); filter: drop-shadow(0 0 12px rgba(129, 140, 248, 0.8)); }
+    30% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(129, 140, 248, 0.3)); }
+    45% { transform: scale(1.08); filter: drop-shadow(0 0 8px rgba(129, 140, 248, 0.6)); }
+}
+
+@keyframes heroRingPulse {
+    0% { transform: scale(0.9); opacity: 0.8; }
+    40% { transform: scale(1.35); opacity: 0; }
+    100% { transform: scale(1.35); opacity: 0; }
+}
+
+/* Ponto online com onda de radar viva */
+.hero-online-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #34d399;
+    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7);
+    animation: heroDotRadar 2s infinite;
+}
+
+@keyframes heroDotRadar {
+    0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
+    70% { box-shadow: 0 0 0 7px rgba(52, 211, 153, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+}
+
+/* ==========================================================================
+   ROLETA GIRATÓRIA DOS NÚMEROS (ODOMETER / 3D SLOT MACHINE NUMBERS)
+   ========================================================================== */
+.hero-odometer-box {
+    display: inline-flex;
+    align-items: center;
+    font-size: 22px;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    position: relative;
+    user-select: none;
+}
+
+.hero-reel-container {
+    display: inline-block;
+    height: 28px;
+    line-height: 28px;
+    overflow: hidden;
+    position: relative;
+    vertical-align: middle;
+    width: 15px;
+    text-align: center;
+}
+
+.hero-reel-strip {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    transform: translateY(0px);
+    transition: transform 2.2s cubic-bezier(0.12, 0.95, 0.28, 1);
+    transform-style: preserve-3d;
+}
+
+.hero-reel-num {
+    height: 28px;
+    line-height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    font-weight: 800;
+    font-size: 22px;
+}
+
+.hero-odometer-static {
+    display: inline-flex;
+    align-items: center;
+    height: 28px;
+    line-height: 28px;
+    color: #ffffff;
+    font-size: 22px;
+    font-weight: 800;
+}
+
+.hero-badge-glow {
+    display: inline-flex;
+    align-items: center;
+    transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.hero-badge-glow:hover {
+    transform: scale(1.08);
+    filter: brightness(1.2);
 }
 
 .hero-feature-chips {
